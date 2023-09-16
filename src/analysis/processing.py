@@ -154,7 +154,7 @@ class hhbbtautauProcessor(processor.ProcessorABC):
 
         cfg.DYNACONF_WORKS="merge_configs"
         cfg.MERGE_ENABLED_FOR_DYNACONF=True
-        cfg.SETTINGS_FILE_FOR_DYNACONF = projectcoffea_path("config/monojet.yaml")
+        cfg.SETTINGS_FILE_FOR_DYNACONF = projectcoffea_path("config/hhbbtautau.yaml")
 
         # Reload config based on year
         if events:

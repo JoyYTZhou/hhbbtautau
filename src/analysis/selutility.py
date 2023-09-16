@@ -5,51 +5,66 @@ import awkward as ak
 from awkward import JaggedArray, ArrayBuilder
 from HHtobbtautau.src.analysis.dsmethods import *
 from coffea.nanoevents.methods import candidate
+import coffea.processor as processor
 
 def setup_candidates(events, cfg):
-    # if df['is_data'] and extract_year(df['dataset']) != 2018:
-    #     # 2016, 2017 data
-    #     jes_suffix = ''
-    #     jes_suffix_met = ''
-    # elif df['is_data']:
-    #     # 2018 data
-    #     jes_suffix = '_nom'
-    #     jes_suffix_met = '_nom'
-    # else:
-    #     # MC, all years
-    #     jes_suffix = '_nom'
-    #     if cfg.MET.JER:
-    #         jes_suffix_met = '_jer'
-    #     else:
-    #         jes_suffix_met = '_nom'
+    """ Preselect candidate events for a target process
 
+    :param events: events in a NANOAD dataset
+    :type events: coffea.nanoevents.NanoEvents.array
+    :param cfg: configuration object
+    :type cfg: DynaConf object
+    :return: events 
+    :rtype: coffea.nanoevents.NanoEvents.array
+    """
 
+    # TODO: Add trigger selection here
+
+    # A collection of dictionaries, each dictionary describing a single muon candidate property
     muons = ak.zip({
-        "pt": events.Muon_pt,
+        "pt": events.Muon_pt, # type events.Muon_pt: high-level awkward array
         "eta": events.Muon_eta,
         "phi": events.Muon_phi,
         "mass": events.Muon_mass,
         "charge": events.Muon_charge,
         "softId": events.Muon_softId,
+        "looseId": events.Muon_looseId,
+        "tightId": events.Muon_tightId,
         "isolation": events.Muon_pfRelIso03_all,
     }, with_name="PtEtaPhiMCandidate", behavior=candidate.behavior)
 
-    muons = JaggedCandidateArray.candidatesfromcounts(
-        df['nMuon'],
-        pt=df['Muon_pt'],
-        eta=df['Muon_eta'],
-        abseta=np.abs(df['Muon_eta']),
-        phi=df['Muon_phi'],
-        mass=0 * df['Muon_pt'],
-        charge=df['Muon_charge'],
-        looseId=df['Muon_looseId'],
-        iso=df["Muon_pfRelIso04_all"],
-        tightId=df['Muon_tightId'],
-        dxy=df['Muon_dxy'],
-        dz=df['Muon_dz']
-    )
+    # A collection of dictionaries, each dictionary describing a single electron candidate property 
+    electrons = ak.zip({
+        "pt": events.Electron_pt, # type events.Electron_pt: high-level awkward array
+        "eta": events.Electron_eta,
+        "phi": events.Electron_phi,
+        "mass": events.Electron_mass,
+        "charge": events.Electron_charge,
+        "isolation": events.Electron_pfRelIso03_all,
+    }, with_name="PtEtaPhiECandidate", behavior=candidate.behavior)
+
+    # A collection of dictionaries, each dictionary describing a single tau candidate property
+    taus = ak.zip({
+        "pt": events.Tau_pt, # type events.Tau_pt: high-level awkward array
+        "eta": events.Tau_eta,
+        "phi": events.Tau_phi,
+        "mass": events.Tau_mass,
+        "charge": events.Tau_charge,
+        "isolation": events.Tau_pfRelIso03_all,
+    }, with_name="PtEtaPhiTCandidate", behavior=candidate.behavior)
+
+    # Create lepselection object: coffea.process.PackedSelection
+    lepselection = processor.PackedSelection()
+
+    # Add selections to the leptons
+    lepselection.add_selection(""
 
 
+
+
+    
+
+    # A collection of dictionaries, each dictionary describing a single jet candidate property
 
 def find_first_parent(in_mother, in_pdg, maxgen=10):
     """Finds the first parent with a PDG ID different from the daughter
