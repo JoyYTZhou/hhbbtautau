@@ -17,9 +17,7 @@ def setup_candidates(events, cfg):
     :return: events 
     :rtype: coffea.nanoevents.NanoEvents.array
     """
-
-    # TODO: Add trigger selection here
-
+    
     # A collection of dictionaries, each dictionary describing a single muon candidate property
     muons = ak.zip({
         "pt": events.Muon_pt, # type events.Muon_pt: high-level awkward array
@@ -27,10 +25,10 @@ def setup_candidates(events, cfg):
         "phi": events.Muon_phi,
         "mass": events.Muon_mass,
         "charge": events.Muon_charge,
-        "softId": events.Muon_softId,
-        "looseId": events.Muon_looseId,
-        "tightId": events.Muon_tightId,
-        "isolation": events.Muon_pfRelIso03_all,
+        "dxy": events.Muon_dxy,
+        "dz": events.Muon_dz,
+        "iso": events.Muon_pfRelIso04_all,
+        "tightid": events.Muon_tightId
     }, with_name="PtEtaPhiMCandidate", behavior=candidate.behavior)
 
     # A collection of dictionaries, each dictionary describing a single electron candidate property 
@@ -40,7 +38,9 @@ def setup_candidates(events, cfg):
         "phi": events.Electron_phi,
         "mass": events.Electron_mass,
         "charge": events.Electron_charge,
-        "isolation": events.Electron_pfRelIso03_all,
+        "dxy": events.Electron_dxy,
+        "dz": events.Electron_dz,
+        "bdtid": events.Electron_mvaIso,
     }, with_name="PtEtaPhiECandidate", behavior=candidate.behavior)
 
     # A collection of dictionaries, each dictionary describing a single tau candidate property
@@ -50,14 +50,68 @@ def setup_candidates(events, cfg):
         "phi": events.Tau_phi,
         "mass": events.Tau_mass,
         "charge": events.Tau_charge,
-        "isolation": events.Tau_pfRelIso03_all,
+        "dxy": events.Tau_dxy,
+        "dz": events.Tau_dz,
+        "idvsjet": events.Tau_idDeepTau2018v2p5VSjet,
+        "idvsmu": events.Tau_idDeepTau2018v2p5VSmu,
+        "idvse": events.Tau_idDeepTau2018v2p5VSe,
     }, with_name="PtEtaPhiTCandidate", behavior=candidate.behavior)
 
     # Create lepselection object: coffea.process.PackedSelection
     lepselection = processor.PackedSelection()
 
     # Add selections to the leptons
-    lepselection.add_selection(""
+    if cfg.signal.channelno>1:
+        for i in range(cfg.signal.channelno):
+            lepcfgname = "signal.channel"+str(i)
+            channelname = cfg[lepcfgname+".name"]
+            lepselname = cfg[lepcfgname+".selections"]
+            # select electrons
+            if lepselname.electron!=None:
+                eselect = lepselection.electron
+                ############    ALERT   ############
+                # ! This wouldn't work if there are more than one electrons in the dataset.
+                # ! For this analysis it would work
+                lepselection.add("ElectronSelection", (ak.num(electrons)==eselect.count) & 
+                                 (ak.any(abs(electrons.pt)>eselect.ptLevel, axis=1)) & 
+                                 (ak.any(abs(electrons.eta)<eselect.absetaLevel, axis=1)) & 
+                                 (ak.any(abs(electrons.bdtid>eselect.BDTLevel), axis=1)) &
+                                 (ak.any(abs(electrons.dxy)<eselect.absdxyLevel, axis=1)) & 
+                                 (ak.any(abs(electrons.dz)<eselect.abdzLevel, axis=1))
+                )
+            # TODO: For future these should have more options
+            else:
+                lepselection.add("ElectronSelection", ak.num(electrons)==0)
+            # select muons
+            if lepselname.muon!=None:
+                mselect = lepselection.muon
+                ############    ALERT   ############
+                # ! This wouldn't work if there are more than one muons in the dataset.
+                # ! For this analysis it would work
+                lepselection.add("MuonSelection", (ak.num(muons)==mselect.count) &
+                                 (ak.any(muons.pt>mselect.ptLevel, axis=1)) &
+                                 (ak.any(abs(muons.eta)<mselect.absetaLevel, axis=1)) & 
+                                 (ak.any(muons.iso<mselect.isoLevel, axis=1)) & 
+                                 (ak.any(muons.tightid==mselect.IDLevel, axis=1)) & 
+                                 (ak.any(abs(muons.dxy)<mselect.absdxyLevel, axis=1)) & 
+                                 (ak.any(abs(muons.dz)<mselect.absdzLevel, axis=1))
+                )
+            else:
+                lepselection.add("MuonSelection", ak.num(muons)==0)
+            # select taus
+            if lepselname.tau!=None:
+                tselect = lepselection.tau
+                lepselection.add("TauSelection", (ak.any(taus.pt>tselect.ptLevel, axis=1)) & 
+                                 (ak.any(abs(taus.eta)<tselect.absetaLevel, axis=1)) & 
+                                 (ak.any(taus.idvsjet>tselect.IDvsjetLevel, axis=1)) &
+                                 (ak.any(taus.idvsmu>tselect.IDvsmuLevel, axis=1)) & 
+                                 (ak.any(taus.idvse>tselect.IDvseLevel, axis=1)) &
+                                 (ak.any(abs(taus.dz)<tselect.absdzLevel, axis=1)) & 
+                                 (ak.num(taus)>=1)
+                )
+            
+
+
 
 
 
