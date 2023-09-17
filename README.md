@@ -1,4 +1,4 @@
-# HH to bbtautau with Coffea
+# HH to bbtautau
 
 ## Update instructions
 Please push to Master branch for any changes. 
