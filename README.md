@@ -1,6 +1,10 @@
 # hhbbtautau
 
 ## Update instructions
-Master branch is the real WIP.
+Please push to Master branch for any changes. 
 
 Main branch should be temporarily usable (NOT NOW).
+
+## TODO's:
+1. Finish selections and config file
+2. Book necessary histograms
