@@ -2,7 +2,7 @@ default:
   test: false
   signal:
     channelno: 3
-    channel1:
+    channel2:
       name: "tauetauh"
       triggers:
         electron: ["HLT_Ele24_eta2p1_WPTight_Gsf_TightChargedIsoPFTauHPS30_eta2p1_CrossL1","HLT_Ele32_WPTight_Gsf"]
@@ -25,9 +25,17 @@ default:
           IDvseLevel: 3 
           absdzLevel: 0.2
         pair:
-          name: ['electron', 'tau']
+          name: "ET"
+          OS: True
           dRLevel: 0.5
-    channel2:
+        jet:
+          ptLevel: 20
+          absetaLevel: 2.4
+          dRLevel: 0.5
+          count: 2
+          overlapCheck: True
+          overlapObject: "E"
+    channel1:
       name: "taumtauh"
       triggers:
         electron: None
@@ -43,33 +51,44 @@ default:
           count: 1
           absdxyLevel: 0.045
           absdzLevel: 0.2
+        tau:
+          ptLevel: 35
+          absetaLevel: 2.3
+          IDvsjetLevel: 5
+          IDvsmuLevel: 4
+          IDvseLevel: 3 
+          absdzLevel: 0.2
+        pair:
+          name: "MT" 
+          OS: True
+          dRLevel: 0.5
+    channel3:
+      name: "tauhtauh"
+      selection:
+        electron: None
+        muon: None
+        tau: "double"
+        tau1:
+          ptLevel: 40
+          absetaLevel: 2.3
+        tau2:
+          ptLevel: 40
+          absetaLevel: 2.3
+          IDvsjetLevel: 5
+          IdvsmuLevel: 1
+          IDvseLevel: 2
+    commonsel:
+      
+
+        
+
+          
           
           
 
 
     
         
-      selection:
-        fields:
-          electron:
-            ID: "Electron_mvaIso"
-          muon:
-            isolation: "Muon_pfRelIso04_all"
-            ID: "Muon_tightId"
-
-          electron:
-            ID: 0.8 # tight working point defined in the paper
-            pt: 
-          tau:
-            name: "tauh cross-e trigger"
-            pt: 
-            ID: 
-          muon:
-            name: ""
-            mass: 
-            abseta: 2.1
-            ID: true
-            isolation: 0.15
         
           
 

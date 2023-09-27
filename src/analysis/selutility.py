@@ -6,18 +6,152 @@ from awkward import JaggedArray, ArrayBuilder
 from HHtobbtautau.src.analysis.dsmethods import *
 from coffea.nanoevents.methods import candidate
 import coffea.processor as processor
+from coffea.nanoevents.methods import vector
+import pandas as pd
+import uproot
 
-def setup_candidates(events, cfg):
-    """ Preselect candidate events for a target process
+def setup_majorcandidates(events, cfg, filename):
+    """ Preselect candidate events for a target process with major object selections.
 
     :param events: events in a NANOAD dataset
     :type events: coffea.nanoevents.NanoEvents.array
     :param cfg: configuration object
     :type cfg: DynaConf object
-    :return: events 
-    :rtype: coffea.nanoevents.NanoEvents.array
+    :param filename: filename of the root file to be written with the filtered events
+    :type filename: string
+    :return: events dataframe with major object selections
+    :rtype: dataframe
     """
+
+    muons, electrons, taus = lep_properties(events)
+
+    # Set up selections for the major candidates
+    if cfg.signal.channelno>=1:
+        for i in range(cfg.signal.channelno):
+            # Create lepselection object: coffea.process.PackedSelection
+            lepselection = processor.PackedSelection()
+            lepcfgname = "signal.channel"+str(i)
+            channelname = cfg[lepcfgname+".name"]
+            lepselname = cfg[lepcfgname+".selections"]
+            # select electrons
+            if lepselname.electron != None:
+                eselect = lepselname.electron
+                
+                electronmask = (electrons.pt>eselect.ptLevel) & \
+                               (abs(electrons.eta)<eselect.absetaLevel) & \
+                               (electrons.bdtid>eselect.BDTLevel) & \
+                               (abs(electrons.dxy)<eselect.absdxyLevel) & \
+                               (abs(electrons.dz)<eselect.abdzLevel)
+                               
+                filter_electrons = electrons[electronmask]
+                lepselection.add("ElectronSelection", (ak.num(filter_electrons)==eselect.count))
+            
+            # select muons
+            if lepselname.muon != None:
+                mselect = lepselname.muon
+                ############    ALERT   ############
+                # ! This wouldn't work if there are more than one muons in the dataset.
+                # ! For this analysis it would work
+                muonmask = (muons.pt>mselect.ptLevel) & \
+                            (abs(muons.eta)<mselect.absetaLevel) & \
+                            (muons.bdtid>mselect.BDTLevel) & \
+                            (abs(muons.dxy)<mselect.absdxyLevel) & \
+                            (abs(muons.dz)<mselect.absdzLevel) & \
+                            (muons.iso<mselect.isoLevel) & \
+                            (muons.tightid>mselect.IDLevel)
+                            
+                filter_muons = muons[muonmask]
+                lepselection.add("MuonSelection", (ak.num(filter_muons)==mselect.count))
+                
+            # select taus
+            if lepselname.tau != None:
+                if lepselname.muon!="double":
+                    tselect = lepselname.tau
+                    
+                    taumask = (taus.pt>tselect.ptLevel) & \
+                              (abs(taus.eta)<tselect.absetaLevel) & \
+                              (taus.idvsjet>tselect.IDvsjetLevel) & \
+                              (taus.idvsmu>tselect.IDvsmuLevel) & \
+                              (taus.idvse>tselect.IDvseLevel) & \
+                              (abs(taus.dz)<tselect.absdzLevel)
+                    
+                    filter_taus = taus[taumask]
+                    lepselection.add("TauSelection", (ak.num(filter_taus)>=tselect.count))
+                else:
+                    tselect1 = lepselname.tau1
+            else:
+                    lepselection.add("TauSelection", ak.num(taus)==0)
+            
+            # Evaluate the selection collections at this point to identify individual leptons selected
+            filtered_events = events[lepselection.all(*(lepselection.names))]
+            filter_muons = muons[lepselection.all(*(lepselection.names))]
+            filter_taus = taus[lepselection.all(*(lepselection.names))]
+            filter_electrons = electrons[lepselection.all(*(lepselection.names))]
+            
+            # select pair properties
+            if lepselname.pair != None:
+                pairselect = lepselname.pair
+                if pairselect.find("M") != -1 and pairselect.find("T")!= -1:
+                    dR = (filter_muons[:,0].delta_r(filter_taus) >= pairselect.dRLevel)
+                    if pairselect.OS == True: 
+                        OS = (filter_muons[:,0]["charge"] * filter_taus["charge"] < 0)
+                        pairmask = OS & dR
+                    else: 
+                        SS = (filter_muons[:,0]["charge"] * filter_taus["charge"] > 0)
+                        pairmask = SS & dR
+                elif pairselect.find("E") != -1 and pairselect.find("T")!= -1:
+                    dR = (filter_electrons[:,0].delta_r(filter_taus) >= pairselect.dRLevel)
+                    if pairselect.OS == True:
+                        OS = (filter_electrons[:,0]["charge"] * filter_taus["charge"] < 0)
+                        pairmask = dR & OS
+                    else:
+                        SS = (filter_electrons[:,0]["charge"] * filter_taus["charge"] > 0)
+                        pairmask = dR & SS
+                filtered_events = filtered_events[ak.any(pairmask, axis=1)]
+            
+            
+            # select jet properties
+            if lepselname.jet != None:
+                jetselect = lepselname.jet
+                ak4s, ak8s = jet_properties(filtered_events, cfg)
+                
+                ak4mask = (ak4s.pt > jetselect.pt) & \
+                          (abs(ak4s.eta) < jetselect.absetaLevel) 
+                filter_ak4s = ak4s[ak4mask]
+                ak4mask = (ak.num(filter_ak4s) >= jetselect.count)
+                filtered_events = filtered_events[ak4mask]
+                filter_muons = filter_muons[ak4mask]
+                filter_electrons = filter_electrons[ak4mask]
+                filter_taus = filter_taus[ak4mask]
+                filter_ak4s = filter_ak4s[ak4mask]
+            else:
+                pass
+                
+                
+                
+                
+                
+                
+            with uproot.update(filename) as rootfile:
+                  rootfile[channelname].extend({
+                      "Muon": muons,
+                      "Electron": electrons,
+                      "Tau": taus
+                  })
+            
+            
+            
+
+def lep_properties(events, extra=None):
+    """
+    Return a collection of dictionaries containing the properties of leptons.
     
+    :param events: events in a NANOAD dataset
+    :type events: coffea.nanoevents.NanoEvents.array 
+    :return: dictionaries of properties
+    :rtype: coffea.nanoevents.methods.vector.PtEtaPhiMLorentzVectorArray
+
+    """
     # A collection of dictionaries, each dictionary describing a single muon candidate property
     muons = ak.zip({
         "pt": events.Muon_pt, # type events.Muon_pt: high-level awkward array
@@ -29,7 +163,7 @@ def setup_candidates(events, cfg):
         "dz": events.Muon_dz,
         "iso": events.Muon_pfRelIso04_all,
         "tightid": events.Muon_tightId
-    }, with_name="PtEtaPhiMCandidate", behavior=candidate.behavior)
+    }, with_name="PtEtaPhiMLorentzVector", behavior=vector.behavior)
 
     # A collection of dictionaries, each dictionary describing a single electron candidate property 
     electrons = ak.zip({
@@ -41,7 +175,7 @@ def setup_candidates(events, cfg):
         "dxy": events.Electron_dxy,
         "dz": events.Electron_dz,
         "bdtid": events.Electron_mvaIso,
-    }, with_name="PtEtaPhiECandidate", behavior=candidate.behavior)
+    }, with_name="PtEtaPhiECandidate", behavior=vector.behavior)
 
     # A collection of dictionaries, each dictionary describing a single tau candidate property
     taus = ak.zip({
@@ -57,97 +191,80 @@ def setup_candidates(events, cfg):
         "idvse": events.Tau_idDeepTau2018v2p5VSe,
     }, with_name="PtEtaPhiTCandidate", behavior=candidate.behavior)
 
-    # Create lepselection object: coffea.process.PackedSelection
-    lepselection = processor.PackedSelection()
+    return muons, electrons, taus
 
-    # Add selections to the leptons
-    if cfg.signal.channelno>1:
-        for i in range(cfg.signal.channelno):
-            lepcfgname = "signal.channel"+str(i)
-            channelname = cfg[lepcfgname+".name"]
-            lepselname = cfg[lepcfgname+".selections"]
-            # select electrons
-            if lepselname.electron!=None:
-                eselect = lepselection.electron
-                ############    ALERT   ############
-                # ! This wouldn't work if there are more than one electrons in the dataset.
-                # ! For this analysis it would work
-                lepselection.add("ElectronSelection", (ak.num(electrons)==eselect.count) & 
-                                 (ak.any(abs(electrons.pt)>eselect.ptLevel, axis=1)) & 
-                                 (ak.any(abs(electrons.eta)<eselect.absetaLevel, axis=1)) & 
-                                 (ak.any(abs(electrons.bdtid>eselect.BDTLevel), axis=1)) &
-                                 (ak.any(abs(electrons.dxy)<eselect.absdxyLevel, axis=1)) & 
-                                 (ak.any(abs(electrons.dz)<eselect.abdzLevel, axis=1))
-                )
-            # TODO: For future these should have more options
-            else:
-                lepselection.add("ElectronSelection", ak.num(electrons)==0)
-            # select muons
-            if lepselname.muon!=None:
-                mselect = lepselection.muon
-                ############    ALERT   ############
-                # ! This wouldn't work if there are more than one muons in the dataset.
-                # ! For this analysis it would work
-                lepselection.add("MuonSelection", (ak.num(muons)==mselect.count) &
-                                 (ak.any(muons.pt>mselect.ptLevel, axis=1)) &
-                                 (ak.any(abs(muons.eta)<mselect.absetaLevel, axis=1)) & 
-                                 (ak.any(muons.iso<mselect.isoLevel, axis=1)) & 
-                                 (ak.any(muons.tightid==mselect.IDLevel, axis=1)) & 
-                                 (ak.any(abs(muons.dxy)<mselect.absdxyLevel, axis=1)) & 
-                                 (ak.any(abs(muons.dz)<mselect.absdzLevel, axis=1))
-                )
-            else:
-                lepselection.add("MuonSelection", ak.num(muons)==0)
-            # select taus
-            if lepselname.tau!=None:
-                tselect = lepselection.tau
-                lepselection.add("TauSelection", (ak.any(taus.pt>tselect.ptLevel, axis=1)) & 
-                                 (ak.any(abs(taus.eta)<tselect.absetaLevel, axis=1)) & 
-                                 (ak.any(taus.idvsjet>tselect.IDvsjetLevel, axis=1)) &
-                                 (ak.any(taus.idvsmu>tselect.IDvsmuLevel, axis=1)) & 
-                                 (ak.any(taus.idvse>tselect.IDvseLevel, axis=1)) &
-                                 (ak.any(abs(taus.dz)<tselect.absdzLevel, axis=1)) & 
-                                 (ak.num(taus)>=1)
-                )
-            
+def jet_properties(events, cfg, extra=None):
+    """ Returns the selected jet properties
+    
+    :param events: events
+    :type events: coffea.nanoevents.methods.base.NanoEventsArray
+    :param cfg: configuration file with the next level directly point to jet properties
+    :type cfg: DynaConf object
+    :return: AK4 and AK8 jets
+    :rtype: ak.array
+    """
+    
+    # A collection of dictionaries, each dictionary describing a single muon candidate property
+    ak4s = ak.zip({
+        "pt": events.Jet_pt, # type events.Muon_pt: high-level awkward array
+        "eta": events.Jet_eta,
+        "phi": events.Jet_phi,
+        "mass": events.Jet_mass,
+        "deepJetbtagger": events.Jet_btagDeepFlavB,
+        "deepCSVbtagger": events.Jet_btagDeepB,
+        "jetID": events.Jet_jetId,
+        "deepJetCvsB": events.Jet_btagDeepFlavCvB
+    }, with_name = "PtEtaPhiMCandidate", behavior = vector.behavior)
 
+    ak8s = ak.zip({
+        "pt": events.FatJet_pt,
+        "eta": events.FatJet_eta,
+        "phi": events.FatJet_phi,
+        "mass": events.FatJet_mass,
+        "jetID": events.FatJet_jetId,
+        "QCD": events.FatJet_particleNetMD_QCD,
+        "Xbb": events.FatJet_particleNetMD_Xbb,
+        "Xcc": events.FatJet_particleNetMD_Xcc,
+        "Xqq": events.FatJet_particleNetMD_Xqq,
+        "Hbb": events.FatJet_btagHbb
+    }, with_name = "PtEtaPhiMCandidate", behavior = vector.behavior)
+    
+    return ak4s, ak8s
 
+def overlap_check(object1, object2):
+    """
+    Check overlap between two objects. Note: Object 1 should only contain one item per event. 
 
+    :param object1: Contains ID of the leptons
+    :type object1: coffea.nanoevents.methods.vector.PtEtaPhiMLorentzVectorArray
+    :param object2: Contains ID of the jet
+    :type object2: coffea.nanoevents.methods.vector.PtEtaPhiMLorentzVectorArray
 
+    """
+    
+    return 0
+    
+    
+def events_todf(events, objects):
+    """
+    Converts filtered events array (after object selections, preferably) into pandas dataframe.
+    This can be useful for applying combinatorial selections
+    
+    :param events: filtered events array
+    :type events: coffea.nanoevents.methods.base.NanoEventsArray
+    :param objects: selected objects
+    :type objects: list
+    :return df: filtered events dataframe
+    :type df: pandas.DataFrame
+    """
 
 
     
+    
 
-    # A collection of dictionaries, each dictionary describing a single jet candidate property
+    
 
-def find_first_parent(in_mother, in_pdg, maxgen=10):
-    """Finds the first parent with a PDG ID different from the daughter
 
-    :param in_mother: Index of the mother particle for each gen. particle
-    :type in_mother: JaggedArray
-    :param pdg: PDG ID for each gen. particle
-    :type pdg: JaggedArray
-    :param maxgen: Number of maximal generations to go back, defaults to 10
-    :type maxgen: int, optional
-    :return: Index and PDG id of first parent with diff. PDG ID
-    :rtype: tuple of JaggedArrays
-    """
-    out_mother = (in_mother>=0) * in_mother # Index of parent, output
-    tmp_mother = out_mother # Index of parent, working copy
-    found = np.zeros(in_pdg.size) # Mask
-
-    # Loop over generations
-    # If mother particle ID is same as daughter particle ID, do nothing
-    # Otherwise, update parent_id, but only once!
-    for i in range(maxgen):
-        # Make sure we dont go negative
-        tmp_mother = (tmp_mother>=0) * tmp_mother
-        update = (in_pdg[tmp_mother]!=in_pdg) * (found==0)
-        out_mother = update*tmp_mother + (~update) * out_mother
-        found=found+update
-        tmp_mother = in_mother[tmp_mother]
-
-    return out_mother
 
 def find_gen_dilepton(gen, pdgsum=0):
     """
@@ -243,63 +360,6 @@ def merge_dileptons(dilepton1, dilepton2, target, dilepton3=None):
     vpt = vpt1 + vpt2 + vpt3
 
     return vpt, vphi
-
-
-def dressed_dilep(df, gen, dressed):
-    """
-    Build a dilepton candidate from dressed leptons.
-
-    :param df: Data frame
-    :type df: dataframe
-    :param gen: Gen. candidates
-    :type gen: JaggedArray
-    :param dressed: Dressed gen candidates
-    :type dressed: JaggedArray
-    :return: pt and phi of dilepton
-    :rtype: tuple of two 1D arrays
-    """
-    # Dressed leptons
-    neutrinos = gen[(gen.status==1) & isnu(gen.pdg) & ((gen.flag&1)==1)]
-    if is_lo_z(df['dataset']) or is_nlo_z(df['dataset']) or is_lo_z_ewk(df['dataset']):
-        target = 91
-
-        # nu
-        dilep_nu = find_gen_dilepton(neutrinos, 0)
-        dilep_nu = dilep_nu[np.abs(dilep_nu.mass-target).argmin()]
-
-        # For Z(nunu), we are done here
-        if is_lo_znunu(df['dataset']):
-            return dilep_nu.pt.max(), dilep_nu.phi.max()
-
-        # For DY, we have to deal with ele/mu decays as well as
-        # with leptonic tau decays
-        # e, mu
-        dilep_dress = find_gen_dilepton(dressed, 0)
-        dilep_dress = dilep_dress[np.abs(dilep_dress.mass-target).argmin()]
-
-        # tau
-        dilep_tau = find_gen_dilepton(gen[np.abs(gen.pdg)==15], 0)
-        dilep_tau = dilep_tau[np.abs(dilep_tau.mass-target).argmin()]
-
-
-        # Merge by taking higher-mass
-        return merge_dileptons(dilep_tau, dilep_dress, target=target)
-
-    elif is_lo_w(df['dataset']) or is_nlo_w(df['dataset']) or is_lo_w_ewk(df['dataset']):
-        target = 81
-        # e, mu
-        dilep_dress = dressed.cross(neutrinos)
-        dilep_dress = dilep_dress[ (
-                                      ((np.abs(dilep_dress.i0.pdg)==11) & (np.abs(dilep_dress.i1.pdg)==12) ) \
-                                    | ((np.abs(dilep_dress.i0.pdg)==13) & (np.abs(dilep_dress.i1.pdg)==14) ) \
-                                    ) & (dilep_dress.i0.pdg*dilep_dress.i1.pdg< 0)
-                                    ]
-        dilep_dress = dilep_dress[np.abs(dilep_dress.mass-target).argmin()]
-
-        # tau
-        dilep_tau = find_gen_dilepton(gen[(np.abs(gen.pdg)==15) | (np.abs(gen.pdg)==16)], 1)
-        dilep_tau = dilep_tau[np.abs(dilep_tau.mass-target).argmin()]
-        return  merge_dileptons(dilep_tau, dilep_dress, target=target)
 
 
 def genv(gen):
