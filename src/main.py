@@ -6,6 +6,7 @@ import argparse
 from tqdm import tqdm
 import glob
 import numpy as np
+import uproot
 
 # TODO: Change this to use cfg
 parser = argparse.ArgumentParser(
@@ -25,4 +26,8 @@ events = NanoEventsFactory.from_root(
     filelist,
     schemeclass=BaseSchema,
     metadata={"dataset": "ttbar"},).events()
+
+# Create a root file for after object level selections
+
+
 
