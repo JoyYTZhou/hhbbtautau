@@ -37,52 +37,53 @@ def setup_majorcandidates(events, cfg):
             # select electrons
             if lepselname.electron != None:
                 eselect = lepselname.electron
-                
-                electronmask = (electrons.pt>eselect.ptLevel) & \
-                               (abs(electrons.eta)<eselect.absetaLevel) & \
-                               (electrons.bdtid>eselect.BDTLevel) & \
-                               (abs(electrons.dxy)<eselect.absdxyLevel) & \
-                               (abs(electrons.dz)<eselect.abdzLevel)
-                               
-                filter_electrons = electrons[electronmask]
-                lepselection.add("ElectronSelection", (ak.num(filter_electrons)==eselect.count))
-            
+                if not eselect.veto:
+                    electronmask = (electrons.pt>eselect.ptLevel) & \
+                                (abs(electrons.eta)<eselect.absetaLevel) & \
+                                (electrons.bdtid>eselect.BDTLevel) & \
+                                (abs(electrons.dxy)<eselect.absdxyLevel) & \
+                                (abs(electrons.dz)<eselect.abdzLevel)
+                    filter_electrons = electrons[electronmask]
+                    lepselection.add("ElectronSelection", (ak.num(filter_electrons)==eselect.count))
+                # apply vetos    
+                else:
+                    electronmask = (electrons.pt>eselect.ptLevel)
+                    filter_electrons = electrons[electronmask]
+                    lepselection.add("ElectronSelection", (ak.num(filter_electrons)==0))
+
             # select muons
             if lepselname.muon != None:
                 mselect = lepselname.muon
-                muonmask = (muons.pt>mselect.ptLevel) & \
-                            (abs(muons.eta)<mselect.absetaLevel) & \
-                            (muons.bdtid>mselect.BDTLevel) & \
-                            (abs(muons.dxy)<mselect.absdxyLevel) & \
-                            (abs(muons.dz)<mselect.absdzLevel) & \
-                            (muons.iso<mselect.isoLevel) & \
-                            (muons.tightid>mselect.IDLevel)
-                            
-                filter_muons = muons[muonmask]
-                lepselection.add("MuonSelection", (ak.num(filter_muons)==mselect.count))
+                if not mselect.veto:
+                    muonmask = (muons.pt>mselect.ptLevel) & \
+                                (abs(muons.eta)<mselect.absetaLevel) & \
+                                (abs(muons.dxy)<mselect.absdxyLevel) & \
+                                (abs(muons.dz)<mselect.absdzLevel) & \
+                                (muons.iso<mselect.isoLevel) & \
+                                (muons.tightid==mselect.IDLevel)
+                    filter_muons = muons[muonmask]
+                    lepselection.add("MuonSelection", (ak.num(filter_muons)==mselect.count))
+                else:
+                    muonmas = (muons.pt>mselect.ptLevel)
+                    filter_muons = muons[muonmask]
+                    lepselection.add("MuonSelection", (ak.num(filter_muons)==0))
                 
             # select taus
             if lepselname.tau != None:
-                if lepselname.muon!="double":
-                    tselect = lepselname.tau
-                    
+                tselect = lepselname.tau
+                if not tselect.veto:
                     taumask = (taus.pt>tselect.ptLevel) & \
-                              (abs(taus.eta)<tselect.absetaLevel) & \
-                              (taus.idvsjet>tselect.IDvsjetLevel) & \
-                              (taus.idvsmu>tselect.IDvsmuLevel) & \
-                              (taus.idvse>tselect.IDvseLevel) & \
-                              (abs(taus.dz)<tselect.absdzLevel)
-                    
+                            (abs(taus.eta)<tselect.absetaLevel) & \
+                            (taus.idvsjet>tselect.IDvsjetLevel) & \
+                            (taus.idvsmu>tselect.IDvsmuLevel) & \
+                            (taus.idvse>tselect.IDvseLevel) & \
+                            (abs(taus.dz)<tselect.absdzLevel) 
                     filter_taus = taus[taumask]
                     lepselection.add("TauSelection", (ak.num(filter_taus)>=tselect.count))
                 else:
-                    tselect1 = lepselname.tau1
-                    tselect2 = lepselname.tau2
-                    
-                    taumask = (taus)
-            else:
-                    lepselection.add("TauSelection", ak.num(taus)==0)
-            
+                    # TODO: for now a placeholder
+                    pass
+
             # Evaluate the selection collections at this point to identify individual leptons selected
             filtered_events = events[lepselection.all(*(lepselection.names))]
             events_dict[i] = filtered_events
@@ -111,7 +112,8 @@ def pair_selections(events_dict, cfg):
         # select pair properties
         if lepselname.pair != None:
             pairselect = lepselname.pair
-            if pairselect.find("M") != -1 and pairselect.find("T")!= -1:
+            pairname = pairselect.name
+            if pairname.find("M") != -1 and pairname.find("T")!= -1:
                 dR = (filter_muons[:,0].delta_r(filter_taus) >= pairselect.dRLevel)
                 if pairselect.OS == True: 
                     OS = (filter_muons[:,0]["charge"] * filter_taus["charge"] < 0)
@@ -119,7 +121,7 @@ def pair_selections(events_dict, cfg):
                 else: 
                     SS = (filter_muons[:,0]["charge"] * filter_taus["charge"] > 0)
                     pairmask = SS & dR
-            elif pairselect.find("E") != -1 and pairselect.find("T")!= -1:
+            elif pairname.find("E") != -1 and pairname.find("T")!= -1:
                 dR = (filter_electrons[:,0].delta_r(filter_taus) >= pairselect.dRLevel)
                 if pairselect.OS == True:
                     OS = (filter_electrons[:,0]["charge"] * filter_taus["charge"] < 0)
@@ -127,7 +129,10 @@ def pair_selections(events_dict, cfg):
                 else:
                     SS = (filter_electrons[:,0]["charge"] * filter_taus["charge"] > 0)
                     pairmask = dR & SS
+            elif pairname.find("T") != -1 and pairname.find("T") != -1:
+                pass
             events = events[ak.any(pairmask, axis=1)]
+            
         pair_dict[i] = events
         
     return pair_dict
@@ -281,6 +286,20 @@ def jet_properties(events, extra=None):
     }, with_name = "PtEtaPhiMCandidate", behavior = vector.behavior)
     
     return ak4s, ak8s
+
+def LV(field_name, events):
+    """ Extract four-momentum vectors of an object from NANOAOD file with methods in vector.
+    
+    :param field_name: the name of the object in NANOAOD format (the prefix)
+    :type field_name: string
+    :param events: events
+    :type events: coffea.nanoevents.methods.base.NanoEventsArray
+    :return: PtEtaPhiM four vector
+    :rtype: vector.backends.awkward.MomentumArray4D
+    """
+    
+
+
 
 def overlap_check(object1, object2):
     """
