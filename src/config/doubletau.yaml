@@ -1,5 +1,5 @@
 default:
-  test: false
+  test: False
   signal:
     channelno: 3
     channel2:
@@ -10,14 +10,18 @@ default:
         tau: None
       selections:
         electron:
+          veto: False
           BDTLevel: 0.8
           ptLevel: 33
           absetaLevel: 2.1
           absdxyLevel: 0.045
           absdzLevel: 0.2
           count: 1
-        muon: None
+        muon:
+          veto: True
+          pt: 25
         tau: 
+          veto: False
           ptLevel: 35
           absetaLevel: 2.3
           IDvsjetLevel: 5
@@ -42,7 +46,9 @@ default:
         muon: ["HLT_Mu25_TkMu0_Onia","HLT_IsoMu20_eta2p1_TightChargedIsoPFTauHPS27_eta2p1_TightID_CrossL1"]
         tau: None
       selection:
-        electron: None
+        electron:
+          veto: True
+          pt: 25
         muon: 
           ptLevel: 25
           absetaLevel: 2.1
@@ -58,6 +64,7 @@ default:
           IDvsmuLevel: 4
           IDvseLevel: 3 
           absdzLevel: 0.2
+          count: 1
         pair:
           name: "MT" 
           OS: True
@@ -67,16 +74,20 @@ default:
       selection:
         electron: None
         muon: None
-        tau: "double"
-        tau1:
-          ptLevel: 40
-          absetaLevel: 2.3
-        tau2:
+        tau:
+          veto: False
           ptLevel: 40
           absetaLevel: 2.3
           IDvsjetLevel: 5
           IdvsmuLevel: 1
           IDvseLevel: 2
+          absdzLevel: 0.2
+          count: 2
+        pair:
+          name: "TT"
+          OS: True
+          
+
     commonsel:
       
 

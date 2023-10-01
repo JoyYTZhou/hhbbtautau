@@ -3,328 +3,103 @@ import copy
 
 import coffea.processor as processor
 import numpy as np
-from coffea import hist
+import hist
 
-from HHtobbtautau.src.analysis.mathutility import object_overlap, sigmoid, exponential
+from HHtobbtautau.src.analysis.mathutility import *
 
 from HHtobbtautau.src.analysis.dsmethods import *
 
-Hist = hist.Hist
-Bin = hist.Bin
-Cat = hist.Cat
 
-def empty_column_accumulator_int():
+def empty_colacc_int():
     return processor.column_accumulator(np.array([],dtype=np.uint64))
-
-def empty_column_accumulator_int64():
+def empty_colacc_int64():
     return processor.column_accumulator(np.array([],dtype=np.int64))
-def empty_column_accumulator_float64():
+def empty_colacc_float64():
     return processor.column_accumulator(np.array([],dtype=np.float64))
-def empty_column_accumulator_float32():
+def empty_colacc_float32():
     return processor.column_accumulator(np.array([],dtype=np.float32))
-def empty_column_accumulator_float16():
+def empty_colacc_float16():
     return processor.column_accumulator(np.array([],dtype=np.float16))
-def empty_column_accumulator_bool():
+def empty_colacc_bool():
     return processor.column_accumulator(np.array([],dtype=np.bool))
 
 
 def accu_int():
     return processor.defaultdict_accumulator(int)
 
-def defaultdict_accumulator_of_empty_column_accumulator_int64():
-    return processor.defaultdict_accumulator(empty_column_accumulator_int64)
-def defaultdict_accumulator_of_empty_column_accumulator_float64():
-    return processor.defaultdict_accumulator(empty_column_accumulator_float64)
-def defaultdict_accumulator_of_empty_column_accumulator_float32():
-    return processor.defaultdict_accumulator(empty_column_accumulator_float32)
-def defaultdict_accumulator_of_empty_column_accumulator_float16():
-    return processor.defaultdict_accumulator(empty_column_accumulator_float16)
-def defaultdict_accumulator_of_empty_column_accumulator_bool():
-    return processor.defaultdict_accumulator(empty_column_accumulator_bool)
+def defaultdict_accumulator_of_empty_colacc_int64():
+    return processor.defaultdict_accumulator(empty_colacc_int64)
+def defaultdict_accumulator_of_empty_colacc_float64():
+    return processor.defaultdict_accumulator(empty_colacc_float64)
+def defaultdict_accumulator_of_empty_colacc_float32():
+    return processor.defaultdict_accumulator(empty_colacc_float32)
+def defaultdict_accumulator_of_empty_colacc_float16():
+    return processor.defaultdict_accumulator(empty_colacc_float16)
+def defaultdict_accumulator_of_empty_colacc_bool():
+    return processor.defaultdict_accumulator(empty_colacc_bool)
+
 
 def hhtobbtautau_accumulator(cfg):
-    dataset_ax = Cat("dataset", "Primary dataset")
-    region_ax = Cat("region", "Selection region")
-    type_ax = Cat("type", "Type")
-    variation_ax = Cat("variation","Variation")
-    wppass_ax = Bin("wppass", "WP Pass",2,-0.5,1.5)
-    vpt_ax = Bin("vpt",r"$p_{T}^{V}$ (GeV)", 50, 0, 2000)
+    """ Construct an accumulator for hhtobbtautau analysis.
+    
+    :param cfg: configuration object
+    :type cfg: DynaConf object
+    :return: dictionary of coffea nanoevents array with major object selections
+    :rtype: dict{int: coffea.nanoevents.NanoEvents.array}
+    """
 
-    met_ax = Bin("met", r"$p_{T}^{miss}$ (GeV)", 40, 0, 2000)
-    recoil_ax = Bin("recoil", r"Recoil (GeV)", 200, 0, 2000)
-    recoil_ax_coarse = Bin("recoil", r"Recoil (GeV)", 20, 0, 2000)
-    recoil_ax_vcoarse = Bin("recoil", r"Recoil (GeV)", 10, 0, 2000)
-    gen_v_pt_ax = Bin("pt", r"pt (GeV)", 200, 0, 2000)
-
-    jet_pt_ax = Bin("jetpt", r"$p_{T}$ (GeV)", 50, 0, 1000)
-    jet_eta_ax = Bin("jeteta", r"$\eta$", 50, -5, 5)
-    jet_eta_ax_coarse = Bin("jeteta", r"$\eta$", 10, -5, 5)
-    jet_phi_ax = Bin("jetphi", r"$\phi$", 50,-np.pi, np.pi)
-
-    jet_mass_ax = Bin("mass", r"$M_{jet}$ (GeV)", 100,0,300)
-
-    dpfcalo_ax = Bin("dpfcalo", r"$(CaloMET-PFMET) / Recoil$", 20, -1, 1)
-    dpftk_ax = Bin("dpfcalo", r"$(TKMet-PFMET) / Recoil$", 20, -1, 1)
-    btag_ax = Bin("btag", r"B tag discriminator", 20, 0, 1)
-    multiplicity_ax = Bin("multiplicity", r"multiplicity", 10, -0.5, 9.5)
-    dphi_ax = Bin("dphi", r"$\Delta\phi$", 50, 0, 3.5)
-    dr_ax = Bin("dr", r"$\Delta R$", 50, 0, 2)
-    vec_b_ax = Bin("vec_b", "vec_b", 50, 0,1)
-    vec_dphi_ax = Bin("vec_dphi", "vec_dphi", 50, 0, np.pi)
-
-    dxy_ax = Bin("dxy", r"$d_{xy}$", 20, 0, 0.5)
-    dz_ax = Bin("dz", r"$d_{z}$", 20, 0, 0.5)
-
-    tmp =[0, 0.25, 0.5, 0.6, 0.7, 0.75, 0.8, 0.85, 0.9, 0.92,0.94,0.95,0.96,0.97,0.98,0.99, 1.0]
-    tmp = tmp + [2-x for x in reversed(tmp[:-1])]
-    response_ax = Bin("response", r"response", tmp)
-    id_ax = Bin("id", r"ID bool", 2,-0.5,1.5)
-
-    pt_ax = Bin("pt", r"$p_{T}$ (GeV)", 50, 0, 1000)
-    ht_ax = Bin("ht", r"$H_{T}$ (GeV)", 50, 0, 4000)
-    mt_ax = Bin("mt", r"$M_{T}$ (GeV)", 50, 0, 1000)
-    eta_ax = Bin("eta", r"$\eta$", 50, -5, 5)
-    eta_ax_coarse = Bin("eta", r"$\eta$", 25, -5, 5)
-    phi_ax = Bin("phi", r"$\phi$", 50,-np.pi, np.pi)
-    phi_ax_coarse = Bin("phi", r"$\phi$", 20,-np.pi, np.pi)
-
-    ratio_ax = Bin("ratio", "ratio", 50,0,2)
-
-    tau21_ax = Bin("tau21", r"Tagger", 50,0,1)
-    tagger_ax = Bin("tagger", r"Tagger", 50,0,1)
-
-    dilepton_mass_ax = Bin("dilepton_mass", r"$M(\ell\ell)$ (GeV)", 50,50,150)
-
-    weight_type_ax = Cat("weight_type", "Weight type")
-    weight_ax = Bin("weight_value", "Weight",20,0.5,1.5)
-    sf_ax = Bin("sf", "sf",50,0.8,1.8)
-
-    nvtx_ax = Bin('nvtx','Number of vertices',50,-0.5,99.5)
-    rho_ax = Bin('rho','Energy density',50, 0, 100)
-    frac_ax = Bin('frac','Fraction', 50, 0, 1)
-    deepcsv_ax = Bin('deepcsv','DeepCSV discriminator', 50, 0, 1)
-    Hist = hist.Hist
-    items = {}
-    items["genvpt_check"] = Hist("Counts", dataset_ax, type_ax, vpt_ax)
-    items["lhe_ht"] = Hist("Counts", dataset_ax, ht_ax)
-    items["met"] = Hist("Counts", dataset_ax, region_ax, met_ax)
-    items["met_phi"] = Hist("Counts", dataset_ax, region_ax, phi_ax)
-    items["recoil"] = Hist("Counts", dataset_ax, region_ax, recoil_ax)
-    items["recoil_veto_weight"] = Hist("Counts", dataset_ax, region_ax, recoil_ax,variation_ax)
-    items["recoil_nopog"] = Hist("Counts", dataset_ax, region_ax, recoil_ax)
-    items["recoil_nopu"] = Hist("Counts", dataset_ax, region_ax, recoil_ax)
-    items["recoil_notrg"] = Hist("Counts", dataset_ax, region_ax, recoil_ax)
-    items["recoil_nopref"] = Hist("Counts", dataset_ax, region_ax, recoil_ax)
-
-    items["recoil_nodibosonnlo"] = Hist("Counts", dataset_ax, region_ax, recoil_ax)
-    items["recoil_dibosonnlo_up"] = Hist("Counts", dataset_ax, region_ax, recoil_ax)
-    items["recoil_dibosonnlo_dn"] = Hist("Counts", dataset_ax, region_ax, recoil_ax)
-
-    items["gen_v_pt"] = Hist("Counts", dataset_ax, region_ax, gen_v_pt_ax)
-    items["gen_v_pt_notheory"] = Hist("Counts", dataset_ax, region_ax, gen_v_pt_ax)
-
-    if cfg and cfg.RUN.BTAG_STUDY:
-        items["recoil_hardbveto"] = Hist("Counts", dataset_ax, region_ax, recoil_ax)
-        items["recoil_bveto_up"] = Hist("Counts", dataset_ax, region_ax, recoil_ax)
-        items["recoil_bveto_down"] = Hist("Counts", dataset_ax, region_ax, recoil_ax)
-    if cfg and cfg.RUN.PHOTON_ID_STUDY:
-        items["recoil_photon_id_up"] = Hist("Counts", dataset_ax, region_ax, recoil_ax)
-        items["recoil_photon_id_dn"] = Hist("Counts", dataset_ax, region_ax, recoil_ax)
-        items["recoil_photon_id_extrap_up"] = Hist("Counts", dataset_ax, region_ax, recoil_ax)
-        items["recoil_photon_id_extrap_dn"] = Hist("Counts", dataset_ax, region_ax, recoil_ax)
-    if cfg and cfg.RUN.ELE_ID_STUDY:
-        items["recoil_ele_id_up"] = Hist("Counts", dataset_ax, region_ax, recoil_ax)
-        items["recoil_ele_id_dn"] = Hist("Counts", dataset_ax, region_ax, recoil_ax)
-        items["recoil_ele_id_nm"] = Hist("Counts", dataset_ax, region_ax, recoil_ax)
-        items["recoil_ele_reco_up"] = Hist("Counts", dataset_ax, region_ax, recoil_ax)
-        items["recoil_ele_reco_dn"] = Hist("Counts", dataset_ax, region_ax, recoil_ax)
-    items["recoil_phi"] = Hist("Counts", dataset_ax, region_ax, phi_ax)
-    items["ak4_pt0_over_recoil"] = Hist("Counts", dataset_ax, region_ax, ratio_ax)
-    items["ak4_pt0"] = Hist("Counts", dataset_ax, region_ax, jet_pt_ax)
-    items["ak4_ptraw0"] = Hist("Counts", dataset_ax, region_ax, jet_pt_ax)
-    items["ak4_eta0"] = Hist("Counts", dataset_ax, region_ax, jet_eta_ax)
-    items["ak4_phi0"] = Hist("Counts", dataset_ax, region_ax, jet_phi_ax)
-    items["ak4_chf0"] = Hist("Counts", dataset_ax, region_ax, frac_ax)
-    items["ak4_nhf0"] = Hist("Counts", dataset_ax, region_ax, frac_ax)
-    items["ak4_nef0"] = Hist("Counts", dataset_ax, region_ax, frac_ax)
-    items["ak4_muf0"] = Hist("Counts", dataset_ax, region_ax, frac_ax)
-    items["ak4_cef0"] = Hist("Counts", dataset_ax, region_ax, frac_ax)
-    items["ak4_chf"] = Hist("Counts", dataset_ax, region_ax, frac_ax)
-    items["ak4_nhf"] = Hist("Counts", dataset_ax, region_ax, frac_ax)
-    items["ak4_nef"] = Hist("Counts", dataset_ax, region_ax, frac_ax)
-    items["ak4_muf"] = Hist("Counts", dataset_ax, region_ax, frac_ax)
-    items["ak4_cef"] = Hist("Counts", dataset_ax, region_ax, frac_ax)
-
-    items["ak4_pt0_eta0"] = Hist("Counts", dataset_ax, region_ax, jet_pt_ax,jet_eta_ax_coarse)
-    items["ak4_pt0_recoil"] = Hist("Counts", dataset_ax, region_ax, jet_pt_ax,recoil_ax_coarse)
-
-    items["ak4_pt"] = Hist("Counts", dataset_ax, region_ax, jet_pt_ax)
-    items["ak4_eta"] = Hist("Counts", dataset_ax, region_ax, jet_eta_ax)
-    items["ak4_phi"] = Hist("Counts", dataset_ax, region_ax, jet_phi_ax)
-    items["ak4_deepcsv"] = Hist("Counts", dataset_ax, region_ax, deepcsv_ax)
-    items["bjet_pt"] = Hist("Counts", dataset_ax, region_ax, jet_pt_ax)
-    items["bjet_eta"] = Hist("Counts", dataset_ax, region_ax, jet_eta_ax)
-    items["bjet_phi"] = Hist("Counts", dataset_ax, region_ax, jet_phi_ax)
-    items["bjet_sf"] = Hist("Counts", dataset_ax, region_ax, sf_ax)
-    items["ak4_eta_phi"] = Hist("Counts", dataset_ax, region_ax, eta_ax_coarse, phi_ax_coarse)
-    items["ak4_eta0_phi0"] = Hist("Counts", dataset_ax, region_ax, eta_ax_coarse, phi_ax_coarse)
-    items["ak4_btag"] = Hist("Counts", dataset_ax, region_ax, btag_ax)
-
-    items["ak8_pt0"] = Hist("Counts", dataset_ax, region_ax, jet_pt_ax)
-    items["ak8_pt0_recoil"] = Hist("Counts", dataset_ax, region_ax, jet_pt_ax, recoil_ax_coarse)
-    items["ak8_eta0"] = Hist("Counts", dataset_ax, region_ax, jet_eta_ax)
-    items["ak8_phi0"] = Hist("Counts", dataset_ax, region_ax, jet_phi_ax)
-    items["ak8_mass0"] = Hist("Counts", dataset_ax, region_ax, jet_mass_ax)
-    items["ak8_mass_response"] = Hist("Counts", dataset_ax, region_ax, response_ax)
-    items["ak8_tau210"] = Hist("Counts", dataset_ax, region_ax, tau21_ax)
-    items["ak8_wvsqcd0"] = Hist("Counts", dataset_ax, region_ax, tagger_ax)
-    items["ak8_wvsqcdmd0"] = Hist("Counts", dataset_ax, region_ax, tagger_ax)
-    items["ak8_zvsqcd0"] = Hist("Counts", dataset_ax, region_ax, tagger_ax)
-    items["ak8_zvsqcdmd0"] = Hist("Counts", dataset_ax, region_ax, tagger_ax)
-    items["ak8_tvsqcd0"] = Hist("Counts", dataset_ax, region_ax, tagger_ax)
-    items["ak8_tvsqcdmd0"] = Hist("Counts", dataset_ax, region_ax, tagger_ax)
-    items["ak8_wvstqcd0"] = Hist("Counts", dataset_ax, region_ax, tagger_ax)
-    items["ak8_wvstqcdmd0"] = Hist("Counts", dataset_ax, region_ax, tagger_ax)
-    items["ak8_eta_phi"] = Hist("Counts", dataset_ax, region_ax, eta_ax_coarse, phi_ax_coarse)
-    items["ak8_eta0_phi0"] = Hist("Counts", dataset_ax, region_ax, eta_ax_coarse, phi_ax_coarse)
-
-    items["trailak8_ak4_pt"] = Hist("Counts", dataset_ax, region_ax, jet_pt_ax)
-    items["trailak8_ak4_dr_min"] = Hist("Counts", dataset_ax, region_ax, dr_ax)
-
-    if cfg and cfg.RUN.MONOVMISTAG_STUDY:
-        items["ak8_passloose_pt0"] = Hist("Counts", dataset_ax, region_ax, wppass_ax, jet_pt_ax)
-        items["ak8_passmedium_pt0"] = Hist("Counts", dataset_ax, region_ax, wppass_ax, jet_pt_ax)
-        items["ak8_passtight_pt0"] = Hist("Counts", dataset_ax, region_ax, wppass_ax, jet_pt_ax)
-        items["ak8_passloosemd_pt0"] = Hist("Counts", dataset_ax, region_ax, wppass_ax, jet_pt_ax)
-        items["ak8_passtightmd_pt0"] = Hist("Counts", dataset_ax, region_ax, wppass_ax, jet_pt_ax)
-        items["ak8_passloose_mass0"] = Hist("Counts", dataset_ax, region_ax, wppass_ax, jet_mass_ax)
-        items["ak8_passmedium_mass0"] = Hist("Counts", dataset_ax, region_ax, wppass_ax, jet_mass_ax)
-        items["ak8_passtight_mass0"] = Hist("Counts", dataset_ax, region_ax, wppass_ax, jet_mass_ax)
-        items["ak8_passloosemd_mass0"] = Hist("Counts", dataset_ax, region_ax, wppass_ax, jet_mass_ax)
-        items["ak8_passtightmd_mass0"] = Hist("Counts", dataset_ax, region_ax, wppass_ax, jet_mass_ax)
-    items["ak8_Vmatched_pt0"] = Hist("Counts", dataset_ax, region_ax, jet_pt_ax)
-
-    items["ak8_pt"] = Hist("Counts", dataset_ax, region_ax, jet_pt_ax)
-    items["ak8_eta"] = Hist("Counts", dataset_ax, region_ax, jet_eta_ax)
-    items["ak8_phi"] = Hist("Counts", dataset_ax, region_ax, jet_phi_ax)
-    items["ak8_mass"] = Hist("Counts", dataset_ax, region_ax, jet_mass_ax)
-    items["lowmass_ak8_pt"] = Hist("Counts", dataset_ax, region_ax, jet_pt_ax)
-    items["lowmass_ak8_eta"] = Hist("Counts", dataset_ax, region_ax, jet_eta_ax)
-    items["lowmass_ak8_phi"] = Hist("Counts", dataset_ax, region_ax, jet_phi_ax)
-    items["lowmass_ak8_mass"] = Hist("Counts", dataset_ax, region_ax, jet_mass_ax)
-    items["vlowmass_ak8_pt"] = Hist("Counts", dataset_ax, region_ax, jet_pt_ax)
-    items["vlowmass_ak8_eta"] = Hist("Counts", dataset_ax, region_ax, jet_eta_ax)
-    items["vlowmass_ak8_phi"] = Hist("Counts", dataset_ax, region_ax, jet_phi_ax)
-    items["vlowmass_ak8_mass"] = Hist("Counts", dataset_ax, region_ax, jet_mass_ax)
-
-    items["dpfcalo"] = Hist("Counts", dataset_ax, region_ax, dpfcalo_ax)
-    items["dpftk"] = Hist("Counts", dataset_ax, region_ax, dpftk_ax)
-    items["dphijm"] = Hist("min(4 leading jets, MET)", dataset_ax, region_ax, dphi_ax)
-    items["dphijr"] = Hist("min(4 leading jets, Recoil)", dataset_ax, region_ax, dphi_ax)
-
-    items["vec_dphi"] = Hist("vec_dphi", dataset_ax, region_ax, vec_dphi_ax)
-    items["vec_b"] = Hist("vec_b", dataset_ax, region_ax, vec_b_ax)
-
-    items["dphi_pf_tk"] = Hist(r"\Delta\Phi(PF, TK)", dataset_ax, region_ax, dphi_ax)
-    items["dphi_pf_calo"] = Hist(r"\Delta\Phi(PF, Calo)", dataset_ax, region_ax, dphi_ax)
-
-    # Multiplicity histograms
-    for cand in ['ak4', 'ak8', 'bjet', 'loose_ele', 'loose_muo', 'tight_ele', 'tight_muo', 'tau', 'photon','gen_dilepton']:
-        items[f"{cand}_mult"] = Hist(cand, dataset_ax, region_ax, multiplicity_ax)
-
-    items["muon_pt"] = Hist("Counts", dataset_ax, region_ax, pt_ax)
-    items["muon_eta"] = Hist("Counts", dataset_ax, region_ax, eta_ax)
-    items["muon_phi"] = Hist("Counts", dataset_ax, region_ax, phi_ax)
-    items["muon_eta_phi"] = Hist("Counts", dataset_ax, region_ax, eta_ax_coarse, phi_ax_coarse)
-    items["muon_dxy"] = Hist("Counts", dataset_ax, region_ax, dxy_ax)
-    items["muon_dz"] = Hist("Counts", dataset_ax, region_ax, dz_ax)
-    items["muon_pt0"] = Hist("Counts", dataset_ax, region_ax, pt_ax)
-    items["muon_eta0"] = Hist("Counts", dataset_ax, region_ax, eta_ax)
-    items["muon_phi0"] = Hist("Counts", dataset_ax, region_ax, phi_ax)
-    items["muon_pt1"] = Hist("Counts", dataset_ax, region_ax, pt_ax)
-    items["muon_eta1"] = Hist("Counts", dataset_ax, region_ax, eta_ax)
-    items["muon_phi1"] = Hist("Counts", dataset_ax, region_ax, phi_ax)
-    items["muon_dxy0"] = Hist("Counts", dataset_ax, region_ax, dxy_ax)
-    items["muon_dz0"] = Hist("Counts", dataset_ax, region_ax, dz_ax)
-    items["muon_mt"] = Hist("Counts", dataset_ax, region_ax, mt_ax)
-    items["dimuon_pt"] = Hist("Counts", dataset_ax, region_ax, pt_ax)
-    items["dimuon_eta"] = Hist("Counts", dataset_ax, region_ax, eta_ax)
-    items["dimuon_rapidity"] = Hist("Counts", dataset_ax, region_ax, eta_ax)
-    items["dimuon_mass"] = Hist("Counts", dataset_ax, region_ax, dilepton_mass_ax)
-    items["dimuon_dr"] = Hist("Counts", dataset_ax, region_ax, dr_ax)
-
-    items["electron_pt"] = Hist("Counts", dataset_ax, region_ax, pt_ax)
-    items["electron_eta"] = Hist("Counts", dataset_ax, region_ax, eta_ax)
-    items["electron_phi"] = Hist("Counts", dataset_ax, region_ax, phi_ax)
-    items["electron_eta_phi"] = Hist("Counts", dataset_ax, region_ax, eta_ax_coarse, phi_ax_coarse)
-    items["electron_dxy"] = Hist("Counts", dataset_ax, region_ax, dxy_ax)
-    items["electron_dz"] = Hist("Counts", dataset_ax, region_ax, dz_ax)
-    items["electron_pt0"] = Hist("Counts", dataset_ax, region_ax, pt_ax)
-    items["electron_eta0"] = Hist("Counts", dataset_ax, region_ax, eta_ax)
-    items["electron_phi0"] = Hist("Counts", dataset_ax, region_ax, phi_ax)
-    items["electron_pt1"] = Hist("Counts", dataset_ax, region_ax, pt_ax)
-    items["electron_eta1"] = Hist("Counts", dataset_ax, region_ax, eta_ax)
-    items["electron_phi1"] = Hist("Counts", dataset_ax, region_ax, phi_ax)
-    items["electron_tightid1"] = Hist("Counts", dataset_ax, region_ax, id_ax)
-    items["electron_mt"] = Hist("Counts", dataset_ax, region_ax, mt_ax)
-    items["dielectron_pt"] = Hist("Counts", dataset_ax, region_ax, pt_ax)
-    items["dielectron_eta"] = Hist("Counts", dataset_ax, region_ax, eta_ax)
-    items["dielectron_rapidity"] = Hist("Counts", dataset_ax, region_ax, eta_ax)
-    items["dielectron_mass"] = Hist("Counts", dataset_ax, region_ax, dilepton_mass_ax)
-    items["dielectron_dr"] = Hist("Counts", dataset_ax, region_ax, dr_ax)
-
-    items['photon_pt0'] = Hist("Counts", dataset_ax, region_ax, pt_ax)
-    items['photon_eta0'] = Hist("Counts", dataset_ax, region_ax, eta_ax)
-    items['photon_phi0'] = Hist("Counts", dataset_ax, region_ax, phi_ax)
-    items["photon_eta_phi"] = Hist("Counts", dataset_ax, region_ax, eta_ax_coarse, phi_ax_coarse)
-
-    items['drphotonjet'] = Hist("Counts", dataset_ax, region_ax, dr_ax)
-    items['drelejet'] = Hist("Counts", dataset_ax, region_ax, dr_ax)
-    items['drmuonjet'] = Hist("Counts", dataset_ax, region_ax, dr_ax)
-
-    # One cutflow counter per region
-    regions = monojet_regions(cfg).keys()
-    for region in regions:
-        if region=="inclusive":
-            continue
-        items[f'cutflow_{region}']  = processor.defaultdict_accumulator(accu_int)
-
-    items['nevents'] = processor.defaultdict_accumulator(float)
-    items['sumw'] = processor.defaultdict_accumulator(float)
-    items['sumw2'] = processor.defaultdict_accumulator(float)
-    items['sumw_pileup'] = processor.defaultdict_accumulator(float)
-
-    items['selected_events'] = processor.defaultdict_accumulator(empty_column_accumulator_int)
-    items['kinematics'] = processor.defaultdict_accumulator(list)
-
-
-    items['tree_bool'] = processor.defaultdict_accumulator(defaultdict_accumulator_of_empty_column_accumulator_bool)
-    items['tree_int64'] = processor.defaultdict_accumulator(defaultdict_accumulator_of_empty_column_accumulator_int64)
-    items['tree_float16'] = processor.defaultdict_accumulator(defaultdict_accumulator_of_empty_column_accumulator_float16)
-
-    items['weights'] = Hist("Weights", dataset_ax, region_ax, weight_type_ax, weight_ax)
-    items['npv'] = Hist('Number of primary vertices', dataset_ax, region_ax, nvtx_ax)
-    items['npvgood'] = Hist('Number of good primary vertices', dataset_ax, region_ax, nvtx_ax)
-    items['npv_nopu'] = Hist('Number of primary vertices (No PU weights)', dataset_ax, region_ax, nvtx_ax)
-    items['npvgood_nopu'] = Hist('Number of good primary vertices (No PU weights)', dataset_ax, region_ax, nvtx_ax)
-
-    items['rho_all'] = Hist(r'$\rho$ for all PF candidates', dataset_ax, region_ax, rho_ax)
-    items['rho_central'] = Hist(r'$\rho$ for central PF candidates', dataset_ax, region_ax, rho_ax)
-    items['rho_all_nopu'] = Hist(r'$\rho$ for all PF candidates (No PU weights)', dataset_ax, region_ax, rho_ax)
-    items['rho_central_nopu'] = Hist(r'$\rho$ for central PF candidates (No PU weights)', dataset_ax, region_ax, rho_ax)
-
-
-    items['npv_vs_recoil'] = Hist('Number of primary vertices', dataset_ax, region_ax, nvtx_ax,recoil_ax_vcoarse)
-    items['npvgood_vs_recoil'] = Hist('Number of good primary vertices', dataset_ax, region_ax, nvtx_ax,recoil_ax_vcoarse)
-    items['npv_vs_recoil_nopu'] = Hist('Number of primary vertices (No PU weights)', dataset_ax, region_ax, nvtx_ax,recoil_ax_vcoarse)
-    items['npvgood_vs_recoil_nopu'] = Hist('Number of good primary vertices (No PU weights)', dataset_ax, region_ax, nvtx_ax,recoil_ax_vcoarse)
-
-    items['rho_all_vs_recoil'] = Hist(r'$\rho$ for all PF candidates', dataset_ax, region_ax, rho_ax,recoil_ax_vcoarse)
-    items['rho_central_vs_recoil'] = Hist(r'$\rho$ for central PF candidates', dataset_ax, region_ax, rho_ax,recoil_ax_vcoarse)
-    items['rho_all_vs_recoil_nopu'] = Hist(r'$\rho$ for all PF candidates (No PU weights)', dataset_ax, region_ax, rho_ax,recoil_ax_vcoarse)
-    items['rho_central_vs_recoil_nopu'] = Hist(r'$\rho$ for central PF candidates (No PU weights)', dataset_ax, region_ax, rho_ax,recoil_ax_vcoarse)
-
-    return  processor.dict_accumulator(items)
+    selected_events = {}
+    if cfg.signal.channelno >= 1:
+        for i in range(cfg.signal.channelno):
+            event_dict = {}
+            lepcfgname = "signal.channel"+str(i)
+            channelname = cfg[lepcfgname+".name"]
+            lepselname = cfg[lepcfgname+".selections"]
+            if lepselname.electron != None:
+                event_dict["Electron_pt"] = empty_colacc_float32
+                event_dict["Electron_mass"] = empty_colacc_float32
+                event_dict["Electron_BTDID"] = empty_colacc_float16
+                event_dict["Electron_eta"] = empty_colacc_float32
+                event_dict["Electron_dxy"] = empty_colacc_float32
+                event_dict["Electron_dz"] = empty_colacc_float32
+                event_dict["Electron_phi"] = empty_colacc_float32
+            if lepselname.muon != None:
+                event_dict["Muon_pt"] = empty_colacc_float32
+                event_dict["Muon_mass"] = empty_colacc_float32
+                event_dict["Muon_eta"] = empty_colacc_float32
+                event_dict["Muon_dxy"] = empty_colacc_float32
+                event_dict["Muon_dz"] = empty_colacc_float32
+                event_dict["Muon_isoID"] = empty_colacc_float32
+                event_dict["Muon_phi"] = empty_colacc_float32
+            if lepselname.tau != None:
+                if lepselname.tau.count == 1:
+                    event_dict["Tau_pt"] = empty_colacc_float32
+                    event_dict["Tau_mass"] = empty_colacc_float32
+                    event_dict["Tau_eta"] = empty_colacc_float32
+                    event_dict["Tau_dz"] = empty_colacc_float32
+                    event_dict["Tau_phi"] = empty_colacc_float32
+                else:
+                    for i in range(1,lepselname.tau.count+1): 
+                        tauname = "Tau"+str(i) 
+                        event_dict[tauname+"_pt"] = empty_colacc_float32
+                        event_dict[tauname+"_mass"] = empty_colacc_float32
+                        event_dict[tauname+"_eta"] = empty_colacc_float32
+                        event_dict[tauname+"_phi"] = empty_colacc_float32
+                        event_dict[tauname+"_dz"] = empty_colacc_float32
+            if lepselname.pair != None:
+                pairname = lepselname.pair.name
+                event_dict["dR_"+str(pairname)] = empty_colacc_float32
+                event_dict["mass_"+str(pairname)] = empty_colacc_float32
+                event_dict["pt_"+str(pairname)] = empty_colacc_float32
+            
+            selected_events[channelname] = processor.dict_accumulator({
+                "Cutflow": accu_int,
+                "Objects": processor.defaultdict_accumulator(event_dict)
+            })
+    
+    combined_accumulator = processor.dict_accumulator(selected_events)
+    
+    return combined_accumulator
 
 
 def monojet_regions(cfg):

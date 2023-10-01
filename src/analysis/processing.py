@@ -9,29 +9,12 @@ import coffea.processor as processor
 
 from dynaconf import settings as cfg
 
-from HHtobbtautau.src.analysis.mathutility import (
-                                min_dphi_jet_met,
-                                recoil,
-                                mt,
-                                weight_shape,
-                                projectcoffea_path,
-                                dphi,
-                                mask_and,
-                                mask_or,
-                                evaluator_from_config,
-                                calculate_vecB,
-                                calculate_vecDPhi
-                                )
-
-from HHtobbtautau.src.analysis.dsmethods import (extract_year,
-                                                 )
-
 from HHtobbtautau.src.analysis.selutility import *
 
-from HHtobbtautau.src.analysis.histbooker import (
-                                hhtobbtautau_accumulator,
+from HHtobbtautau.src.analysis.dsmethods import *
 
-)
+from HHtobbtautau.src.analysis.histbooker import *
+
 
 def trigger_selection(selection, events, cfg):
     """Add trigger selections to coffea processor selection.
@@ -172,59 +155,11 @@ class hhbbtautauProcessor(processor.ProcessorABC):
         self._configure(events)
         dataset = events['dataset']
 
-        # Candidates
-        # Already pre-filtered!
-        # All leptons are at least loose
-        # Check out setup_candidates for filtering details
-        met_pt, met_phi, ak4, bjets, ak8, muons, electrons, taus, photons = setup_candidates(events, cfg)
-        bjets = bjets[bjets.looseId]
+        # Lepton selections
+        setup_majorcandidates(events)
+        
+        
 
-        # Muons
-        events['is_tight_muon'] = muons.tightId \
-                      & (muons.iso < cfg.MUON.CUTS.TIGHT.ISO) \
-                      & (muons.pt>cfg.MUON.CUTS.TIGHT.PT) \
-                      & (muons.abseta<cfg.MUON.CUTS.TIGHT.ETA)
-
-        dimuons = muons.distincts()
-        dimuon_charge = dimuons.i0['charge'] + dimuons.i1['charge']
-
-        events['MT_mu'] = ((muons.counts==1) * mt(muons.pt, muons.phi, met_pt, met_phi)).max()
-
-        # Electrons
-        events['is_tight_electron'] = electrons.tightId \
-                            & (electrons.pt > cfg.ELECTRON.CUTS.TIGHT.PT) \
-                            & (electrons.absetasc < cfg.ELECTRON.CUTS.TIGHT.ETA)
-
-        dielectrons = electrons.distincts()
-        dielectron_charge = dielectrons.i0['charge'] + dielectrons.i1['charge']
-
-        events['MT_el'] = ((electrons.counts==1) * mt(electrons.pt, electrons.phi, met_pt, met_phi)).max()
-
-        # ak4
-        leadak4_index=ak4.pt.argmax()
-
-        elejet_pairs = ak4[:,:1].cross(electrons)
-        events['dREleJet'] = np.hypot(elejet_pairs.i0.eta-elejet_pairs.i1.eta , dphi(elejet_pairs.i0.phi,elejet_pairs.i1.phi)).min()
-        muonjet_pairs = ak4[:,:1].cross(muons)
-        events['dRMuonJet'] = np.hypot(muonjet_pairs.i0.eta-muonjet_pairs.i1.eta , dphi(muonjet_pairs.i0.phi,muonjet_pairs.i1.phi)).min()
-
-        # Photons
-        # Angular distance leading photon - leading jet
-        phojet_pairs = ak4[:,:1].cross(photons[:,:1])
-        events['dRPhotonJet'] = np.hypot(phojet_pairs.i0.eta-phojet_pairs.i1.eta , dphi(phojet_pairs.i0.phi,phojet_pairs.i1.phi)).min()
-
-        # Recoil
-        events['recoil_pt'], events['recoil_phi'] = recoil(met_pt,met_phi, electrons, muons, photons)
-        events["dPFCaloSR"] = (met_pt - events["CaloMET_pt"]) / met_pt
-        events["dPFCalo"] = (met_pt - events["CaloMET_pt"]) / events["recoil_pt"]
-        events["dPFTk"] = (met_pt - events["TkMET_pt"]) / events["recoil_pt"]
-
-        events["minDPhiJetRecoil"] = min_dphi_jet_met(ak4, events['recoil_phi'], njet=4, ptmin=30, etamax=2.4)
-        events["minDPhiJetMet"] = min_dphi_jet_met(ak4, met_phi, njet=4, ptmin=30, etamax=2.4)
-        events["dPhiTkPf"] = dphi(met_phi, events["TkMET_phi"])
-        events["dPhiCalPf"] = dphi(met_phi, events["CaloMET_phi"])
-        events["vec_b"]    = calculate_vecB(ak4, met_pt, met_phi)
-        events["vec_dphi"] = calculate_vecDPhi(ak4, met_pt, met_phi, events['TkMET_phi'])
 
         selection = processor.PackedSelection()
 
