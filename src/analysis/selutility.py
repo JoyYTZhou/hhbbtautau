@@ -10,7 +10,7 @@ from coffea.nanoevents.methods import vector
 import pandas as pd
 import uproot
 
-def setup_majorcandidates(events, cfg):
+def lepton_selections(events, cfg):
     """ Preselect candidate events for a target process with major object selections.
 
     :param events: events in a NANOAD dataset
@@ -19,12 +19,19 @@ def setup_majorcandidates(events, cfg):
     :type cfg: DynaConf object
     :param filename: filename of the root file to be written with the filtered events
     :type filename: string
-    :return: dictionary of coffea nanoevents array with major object selections
+    :return: dictionary of coffea nanoevents array with major object selections. 
+             keys = channel names, values = events array
     :rtype: dict{int: coffea.nanoevents.NanoEvents.array}
+    :return: cutflow dictionary. 
+             Keys = Channel names, values = {
+                 Keys = Selection name, Values = Event number
+             }
+    :rtype: dict{dict: int}
     """
 
     muons, electrons, taus = lep_properties(events)
     events_dict = {}
+    cutflow_dict = {}
     
     # Set up selections for the major candidates
     if cfg.signal.channelno>=1:
@@ -85,13 +92,17 @@ def setup_majorcandidates(events, cfg):
                     pass
 
             # Evaluate the selection collections at this point to identify individual leptons selected
-            filtered_events = events[lepselection.all(*(lepselection.names))]
-            events_dict[i] = filtered_events
+            filtered_events = events
+            cutflow_dict[channelname]["Total"] = len(filtered_events)
+            for sel in lepselection.names:
+                filtered_events = filtered_events[lepselection.all(sel)]
+                cutflow_dict[channelname][sel] = len(filtered_events)
+            events_dict[channelname] = filtered_events
             events = events[~(lepselection.all(*(lepselection.names)))]
     
-    return events_dict
+    return events_dict, cutflow_dict
 
-def pair_selections(events_dict, cfg):
+def pair_selections(events_dict, cutflow_dict, cfg):
     """ Place pair selections on candidate events belonging to parallel target processes.
 
     :param events_dict: events with object preselections in different channels organized by a dictionary.
@@ -101,8 +112,7 @@ def pair_selections(events_dict, cfg):
     :return: dictionary of coffea nanoevents array with major object selections
     :rtype: dict{int: coffea.nanoevents.NanoEvents.array}
     """ 
-    
-    pair_dict = {}
+
     for i, events in events_dict.items():  
         lepcfgname = "signal.channel"+str(i) 
         channelname = cfg[lepcfgname+".name"]
@@ -131,24 +141,23 @@ def pair_selections(events_dict, cfg):
                     pairmask = dR & SS
             elif pairname.find("T") != -1 and pairname.find("T") != -1:
                 pass
-            events = events[ak.any(pairmask, axis=1)]
+            events = events[ak.any(pairmask, axis=1)] 
             
-        pair_dict[i] = events
-        
-    return pair_dict
+        events_dict[channelname] = events
+        cutflow_dict[channelname]["Pair Selection"] = len(events)
 
-def jet_selections(events_dict, cfg):
+def jet_selections(events_dict, cutflow_dict, cfg):
     """ Place jet selections on candidate events belonging to parallel target processes.   
     
     :param events_dict: dictionary of coffea nanoevents array with major object selections and pair selections
     :type events_dict: dict{coffea.nanoevents.NanoEvents.array}
+    :param cutflow_dict: dictionary of cutflows in different channels
+    :type cutflow_dict: dict{channelname:{
+            selection: int
+            }
     :param cfg: configuration object
     :type cfg: DynaConf object
-    :return: dictionary of coffea nanoevents array with major object selections
-    :rtype: dict{int: coffea.nanoevents.NanoEvents.array} 
-    
     """
-    jet_dict = {}
     for i, events in events_dict.items():  
         lepcfgname = "signal.channel"+str(i) 
         channelname = cfg[lepcfgname+".name"]
@@ -162,11 +171,10 @@ def jet_selections(events_dict, cfg):
             filter_ak4s = ak4s[ak4mask]
             ak4mask = (ak.num(filter_ak4s) >= jetselect.count)
             events = events[ak4mask]
-            jet_dict[i] = events
+            events_dict[channelname] = events
+            cutflow_dict[channelname]["Jet selections"] = len(events)
         else:
             pass
-    
-    return jet_dict
         
         
 def write_rootfiles(events_dict, cfg, filename): 
@@ -286,6 +294,11 @@ def jet_properties(events, extra=None):
     }, with_name = "PtEtaPhiMCandidate", behavior = vector.behavior)
     
     return ak4s, ak8s
+
+def CF_from_selections(selection, events):
+    """
+
+    """
 
 def LV(field_name, events):
     """ Extract four-momentum vectors of an object from NANOAOD file with methods in vector.
