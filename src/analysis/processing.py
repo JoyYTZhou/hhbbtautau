@@ -155,95 +155,24 @@ class hhbbtautauProcessor(processor.ProcessorABC):
         self._configure(events)
         dataset = events['dataset']
 
-        # Lepton selections
-        setup_majorcandidates(events)
-        
-        
-
-
-        selection = processor.PackedSelection()
-
         # Triggers
-        pass_all = np.ones(events.size)==1
-        selection.add('inclusive', pass_all)
-        selection = trigger_selection(selection, events, cfg)
-        selection.add('mu_pt_trig_safe', muons.pt.max() > 30)
-
-        # Common selection
-        selection.add('veto_ele', electrons.counts==0)
-        selection.add('veto_muo', muons.counts==0)
-        selection.add('veto_photon', photons.counts==0)
-        selection.add('veto_tau', taus.counts==0)
-
-        # B jets are treated using veto weights
-        # So accept them in MC, but reject in data
-        if events['is_data']:
-            selection.add('veto_b', bjets.counts==0)
-        else:
-            selection.add('veto_b', pass_all)
-
-        selection.add('mindphijr',events['minDPhiJetRecoil'] > cfg.SELECTION.SIGNAL.MINDPHIJR)
-        selection.add('mindphijm',events['minDPhiJetMet'] > cfg.SELECTION.SIGNAL.MINDPHIJR)
-        selection.add('dpfcalo_sr',np.abs(events['dPFCaloSR']) < cfg.SELECTION.SIGNAL.DPFCALO)
-        selection.add('dpfcalo',np.abs(events['dPFCalo']) < cfg.SELECTION.SIGNAL.DPFCALO)
-        selection.add('recoil', events['recoil_pt']>cfg.SELECTION.SIGNAL.RECOIL)
-        selection.add('met_sr', met_pt>cfg.SELECTION.SIGNAL.RECOIL)
+        # TODO: Add triggers
         
-        selection.add('dphipftkvetoinv', events["dPhiTkPf"] > 2.)
-        selection.add('dphipftkveto', events["dPhiTkPf"] <= 2. )
+        # Lepton selections
+        events_dict, cutflow_dict = lepton_selections(events, cfg)
 
+        # Pair selections
+        pair_selections(events, events_dict, cfg)
 
-        if events['year'] == 2018:
-            selection.add('hemveto',events['hemveto'])
-            selection.add('hemveto_metphi', (met_pt>470) | (met_phi>-0.62) | (met_phi<-1.62))
-        else:
-            selection.add('hemveto',pass_all)
-            selection.add('hemveto_metphi', pass_all)
-        # AK4 Jet
-        leadak4_pt_eta = (ak4.pt.max() > cfg.SELECTION.SIGNAL.leadak4.PT) \
-                         & (ak4.abseta[leadak4_index] < cfg.SELECTION.SIGNAL.leadak4.ETA).any()
-        selection.add('leadak4_pt_eta', leadak4_pt_eta)
+        # Jet selections
+        jet_selections(events, events_dict, cfg)
 
-        selection.add('leadak4_id',(ak4.tightId[leadak4_index] \
-                                                    & (ak4.chf[leadak4_index] >cfg.SELECTION.SIGNAL.leadak4.CHF) \
-                                                    & (ak4.nhf[leadak4_index]<cfg.SELECTION.SIGNAL.leadak4.NHF)).any())
-
-        # AK8 Jet
-        leadak8_index=ak8.pt.argmax()
-        leadak8 = ak8[ak8.pt.argmax()]
-
-        lowmass_ak8 = ak8[ak8.mass < 65]
-        vlowmass_ak8 = ak8[ak8.mass < 20]
-
-        trailak8 = ak8[:,1:]
-        trailak8_ak4_pairs = trailak8.cross(ak4)
-        dr_trailak8_ak4 = np.hypot(
-                                    trailak8_ak4_pairs.i0.eta - trailak8_ak4_pairs.i1.eta,
-                                    dphi(trailak8_ak4_pairs.i0.phi, trailak8_ak4_pairs.i1.phi)
-                            )
         
-        trailak8_ak4_best_pair = trailak8_ak4_pairs[dr_trailak8_ak4.argmin()]
-        trailak8_ak4_dr_min = dr_trailak8_ak4.min()
-        trailak8_ak4_pt = trailak8_ak4_best_pair.i1.pt
+        
+        
 
-        if not events['is_data']:
-            ## Matching reco AK8 to gen AK*
-            genVs = gen[((gen.pdg==23) | (gen.pdg==24) | (gen.pdg==-24)) & (gen.pt>10)]
-            leadak8_gen_match_v_mask = leadak8.match(genVs, deltaRCut=0.8)
-            matched_leadak8 = leadak8[leadak8_gen_match_v_mask]
-            unmatched_leadak8 = leadak8[~leadak8_gen_match_v_mask]
-            events['leadak8_gen_match_v'] = leadak8_gen_match_v_mask.any()
 
-            # Matching reco AK8 to gen AK8
-            gen_ak8 = setup_gen_jets_ak8(events)
-            pairs = leadak8.cross(gen_ak8)
-            dr = np.hypot(
-                    np.abs(pairs.i0.eta - pairs.i1.eta),
-                    np.abs(pairs.i0.phi - pairs.i1.phi)
-            )
 
-            best_pair = pairs[dr.argmin()]
-            leadak8_gen_match_ak8_mask = (dr.min() < 0.8)
 
             events['leadak8_gen_match_ak8'] = leadak8_gen_match_ak8_mask
             events['leadak8_gen_match_ak8_pt'] = best_pair.i1.pt
