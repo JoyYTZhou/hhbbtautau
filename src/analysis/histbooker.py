@@ -3,11 +3,14 @@ import copy
 
 import coffea.processor as processor
 import numpy as np
+import awkward as ak
 import hist
+import vector as vec
 
-from HHtobbtautau.src.analysis.mathutility import *
 
-from HHtobbtautau.src.analysis.dsmethods import *
+from src.analysis.mathutility import *
+from src.analysis.selutility import LV
+from src.analysis.dsmethods import *
 
 
 def empty_colacc_int():
@@ -55,23 +58,13 @@ def hhtobbtautau_accumulator(cfg):
             lepcfgname = "signal.channel"+str(i)
             channelname = cfg[lepcfgname+".name"]
             lepselname = cfg[lepcfgname+".selections"]
-            if lepselname.electron != None:
-                event_dict["Electron_pt"] = empty_colacc_float32
-                event_dict["Electron_mass"] = empty_colacc_float32
-                event_dict["Electron_BTDID"] = empty_colacc_float16
-                event_dict["Electron_eta"] = empty_colacc_float32
-                event_dict["Electron_dxy"] = empty_colacc_float32
-                event_dict["Electron_dz"] = empty_colacc_float32
-                event_dict["Electron_phi"] = empty_colacc_float32
-            if lepselname.muon != None:
-                event_dict["Muon_pt"] = empty_colacc_float32
-                event_dict["Muon_mass"] = empty_colacc_float32
-                event_dict["Muon_eta"] = empty_colacc_float32
-                event_dict["Muon_dxy"] = empty_colacc_float32
-                event_dict["Muon_dz"] = empty_colacc_float32
-                event_dict["Muon_isoID"] = empty_colacc_float32
-                event_dict["Muon_phi"] = empty_colacc_float32
-            if lepselname.tau != None:
+            if not lepselname.electron.veto:
+                for outputname in lepselname.electron.outputs:
+                    event_dict[outputname] = empty_colacc_float32
+            if not lepselname.muon.veto:
+                for outputname in lepselname.muon.outputs:
+                    event_dict[outputname] = empty_colacc_float32
+            if not lepselname.tau.veto:
                 if lepselname.tau.count == 1:
                     event_dict["Tau_pt"] = empty_colacc_float32
                     event_dict["Tau_mass"] = empty_colacc_float32
@@ -101,13 +94,81 @@ def hhtobbtautau_accumulator(cfg):
     
     return combined_accumulator
 
-def hbbtautau_accumulate(cfg, events_dict, cutflow_dict):
+def hbbtautau_accumulate(output, cfg, events_dict, cutflow_dict):
     """ Fill in the accumulator for the current process. 
-    
-
-
+    :param output: output accumulator
+    :type output: self.accumulator.identity
+    :param cfg: configuration object
+    :type cfg: DynaConf object
+    :param events_dict: dictionary containing selected events in the format of coffea.nanoevents.NanoEvents.array
+    :type events_dict: dict{channel: coffea.nanoevents.NanoEvents.array}
+    :param cutflow_dict: dictionary containing cutflow in each channel
+    :type cutflow_dict: dict{channelname:{
+            selection: int
+            }
+    :return output: accumulated accumulator
+    :param output: self.accumulator
     """
-
+    for keyname, event in events_dict.items():
+        lepcfgname = f"signal.{keyname}"
+        channelname = cfg[lepcfgname+".name"]
+        lepselname = cfg[lepcfgname+".selections"]
+        if not lepselname.electron.veto:
+            for outputname, nanoaodname in lepselname.electron.outputs: 
+                output["Objects"][outputname] += event[nanoaodname]
+        if not lepselname.muon.veto:
+            for outputname, nanoaodname in lepselname.muon.outputs: 
+                output["Objects"][outputname] += event[nanoaodname]
+        if not lepselname.tau.veto:
+            for outputname, nanoaodname in lepselname.tau.outputs:
+                if lepselname.tau.count==1:
+                    output["Objects"][outputname] += event[nanoaodname]
+                else:
+                    pass
+                    # TODO: place holder for now
+        if lepselname.pair != None:
+            pairname = lepselname.pair.name
+            if pairname.find("M") != -1 and pairname.find("T") != -1:
+                # Select the most energetic tauh candidate
+                tau_LV = LV("Tau", event)[:,0]
+                muon_LV = ak.flatten(LV("Muon", event))
+                write_mergedLV(output, tau_LV, muon_LV)
+            elif pairname.find("E") != -1 and pairname.find("T") != -1:
+                tau_LV = LV("Tau", event)[:,0]
+                electron_LV = ak.flatten(LV("Electron", event))
+                write_mergedLV(output, tau_LV, electron_LV)
+            elif pairname.count("T") == 2:
+                tau1_LV = LV("Tau", event)[:,0]
+                tau2_LV = LV("Tau", event)[:,1]
+                write_mergedLV(output, tau1_LV, tau2_LV)
+                
+             
+def write_mergedLV(output, leptonLV1, leptonLV2, keyname = "Objects"):
+    """ Write the various properties of LV(l+l) to the output accumulator
+    :param output: output accumulator
+    :type output: self.accumulator.identity
+    :param leptonLV1: Lorentz four-vector of the first vector
+    :type leptonLV1: vector.backends.awkward.MomentumRecord4D
+    :param leptonLV2: Lorentz four-vector of the second vector
+    :type leptonLV2: vector.backends.awkward.MomentumRecord4D
+    :param keyname: keyname in the output accumulator to which the values will be written
+    :type keyname: string
+    """
+    ll_LV = leptonLV1 + leptonLV2
+    output[keyname]["ptll"] = ll_LV.pt
+    output[keyname]["mll"] = ll_LV.M
+    output[keyname]["dRll"] = leptonLV1.deltaR(leptonLV2)
+            
+def ak_to_np(var_array):
+    """ Converts variable-sized array (e.g., events["Electron_pt"]) to an accumulator
+    :param var_array: akward array containing one variable per event
+    :type var_array: awkward.highlevel.Array (type='n * var * float32', n being the number of events)
+    :return: col_accumulator
+    """
+    return processor.column_accumulator(ak.to_numpy(ak.flatten(var_array)))
+    
+    
+    
 def fitfun(x, a, b, c):
     return a * np.exp(-b * x) + c
 
