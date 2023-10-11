@@ -7,6 +7,7 @@ from HHtobbtautau.src.analysis.dsmethods import *
 from coffea.nanoevents.methods import candidate
 import coffea.processor as processor
 from coffea.nanoevents.methods import vector
+import vector as vec
 import pandas as pd
 import uproot
 
@@ -93,11 +94,12 @@ def lepton_selections(events, cfg):
 
             # Evaluate the selection collections at this point to identify individual leptons selected
             filtered_events = events
-            cutflow_dict[channelname]["Total"] = len(filtered_events)
+            keyname = "channel"+str(i)
+            cutflow_dict[keyname]["Total"] = len(filtered_events)
             for sel in lepselection.names:
                 filtered_events = filtered_events[lepselection.all(sel)]
-                cutflow_dict[channelname][sel] = len(filtered_events)
-            events_dict[channelname] = filtered_events
+                cutflow_dict[keyname][sel] = len(filtered_events)
+            events_dict[keyname] = filtered_events
             events = events[~(lepselection.all(*(lepselection.names)))]
     
     return events_dict, cutflow_dict
@@ -113,9 +115,8 @@ def pair_selections(events_dict, cutflow_dict, cfg):
     :rtype: dict{int: coffea.nanoevents.NanoEvents.array}
     """ 
 
-    for i, events in events_dict.items():  
-        lepcfgname = "signal.channel"+str(i) 
-        channelname = cfg[lepcfgname+".name"]
+    for channelname, events in events_dict.items():  
+        lepcfgname = f"signal.{channelname}"
         lepselname = cfg[lepcfgname+".selections"]
         filter_muons, filter_electrons, filter_taus = lep_properties(events)
         
@@ -126,6 +127,7 @@ def pair_selections(events_dict, cutflow_dict, cfg):
             if pairname.find("M") != -1 and pairname.find("T")!= -1:
                 dR = (filter_muons[:,0].delta_r(filter_taus) >= pairselect.dRLevel)
                 if pairselect.OS == True: 
+                # TODO: OS can be changed for simplicity
                     OS = (filter_muons[:,0]["charge"] * filter_taus["charge"] < 0)
                     pairmask = OS & dR
                 else: 
@@ -139,10 +141,10 @@ def pair_selections(events_dict, cutflow_dict, cfg):
                 else:
                     SS = (filter_electrons[:,0]["charge"] * filter_taus["charge"] > 0)
                     pairmask = dR & SS
-            elif pairname.find("T") != -1 and pairname.find("T") != -1:
+            elif pairname.count("T") == 2:
+                # TODO: place holder for now for this channel
                 pass
             events = events[ak.any(pairmask, axis=1)] 
-            
         events_dict[channelname] = events
         cutflow_dict[channelname]["Pair Selection"] = len(events)
 
@@ -158,19 +160,35 @@ def jet_selections(events_dict, cutflow_dict, cfg):
     :param cfg: configuration object
     :type cfg: DynaConf object
     """
-    for i, events in events_dict.items():  
-        lepcfgname = "signal.channel"+str(i) 
-        channelname = cfg[lepcfgname+".name"]
-        lepselname = cfg[lepcfgname+".selections"]
-        if lepselname.jet != None:
-            jetselect = lepselname.jet
+    for channelname, events in events_dict.items():  
+        lepcfgname = f"signal.{channelname}"
+        lepselname = cfg[lepcfgname+".selections"] 
+        comselname = cfg["signal.commonsel"]
+        if comselname.ak4jet != None:
             ak4s, ak8s = jet_properties(events)
-            
+            jetselect = comselname.ak4jet
+            # Basic jet check
             ak4mask = (ak4s.pt > jetselect.pt) & \
                         (abs(ak4s.eta) < jetselect.absetaLevel) 
             filter_ak4s = ak4s[ak4mask]
             ak4mask = (ak.num(filter_ak4s) >= jetselect.count)
             events = events[ak4mask]
+            filter_ak4s = LV("Jet", events)
+            # Overlap check 
+            if not lepselname.electron.veto:
+                electronLV = LV("Electron", events)
+                dRmask = (electronLV[:,0].deltaR(filter_ak4s) > jetselect.dRLevel)
+                events = events[ak.sum(dRmask, axis=1)] > jetselect.count
+            if not lepselname.muon.veto:
+                muonLV = LV("Muon", events)
+                dRmask = (muonLV[:,0].deltaR(filter_ak4s) > jetselect.dRLevel)
+                events = events[ak.sum(dRmask, axis=1)] > jetselect.count
+            if not lepselname.tau.veto:
+                tauLV = LV("Tau", events)
+                for i in range(lepselname.tau.count):
+                    dRmask = (filter_ak4s[:,0].deltaR(tauLV[:,i]) > jetselect.dRLevel) & \
+                        (filter_ak4s[:,1].deltaR(tauLV[:,i]) > jetselect.dRLevel)
+                    events = events[ak.any(dRmask, axis=1)]
             events_dict[channelname] = events
             cutflow_dict[channelname]["Jet selections"] = len(events)
         else:
@@ -300,18 +318,27 @@ def CF_from_selections(selection, events):
 
     """
 
-def LV(field_name, events):
+def LV(field_name, events, sortbypt=True):
     """ Extract four-momentum vectors of an object from NANOAOD file with methods in vector.
     
     :param field_name: the name of the object in NANOAOD format (the prefix)
     :type field_name: string
     :param events: events
     :type events: coffea.nanoevents.methods.base.NanoEventsArray
-    :return: PtEtaPhiM four vector
+    :param sortbypt: whether sort the Lorentz vectors in each event by pt
+    :type sortbypt: bool
+    :return: unflattened PtEtaPhiM four vector for events
     :rtype: vector.backends.awkward.MomentumArray4D
     """
-    
-
+    object_ak = ak.zip({
+        "pt": events[field_name+"_pt"],
+        "eta": events[field_name+"_eta"],
+        "phi": events[field_name+"_phi"],
+        "M": events[field_name+"_mass"]
+    })
+    object_ak = object_ak[ak.argsort(object_ak.pt)]
+    object_LV = vec.Array(object_ak)
+    return object_LV
 
 
 def overlap_check(object1, object2):

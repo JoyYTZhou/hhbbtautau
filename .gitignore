@@ -1,0 +1,7 @@
+
+# Ignore dynaconf secret files
+.secrets.*
+# Ignore all ipynb files
+test/.ipynb_checkpoints/
+# Ignore all pycache files
+**/__pycache__
