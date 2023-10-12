@@ -7,9 +7,8 @@ import re
 
 import numpy as np
 import re
-from HHtobbtautau.src.analysis.mathutility import projectcoffea_path
+from analysis.mathutility import projectcoffea_path
 import os
-import yaml
 import socket
 import subprocess
 from collections import defaultdict

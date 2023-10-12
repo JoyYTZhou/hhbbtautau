@@ -18,13 +18,16 @@ default:
           absdzLevel: 0.2
           count: 1
           outputs: 
-            Electron_pt: Electron_pt
-            Electron_mass: Electron_mass
-            Electron_phi: Electron_phi
-            Electron_eta: Electron_eta
-            Electron_dxy: Electron_dxy
-            Electron_dz: Electron_dz
-            Electron_BDTID: Electron_mvaIso
+            float:
+              Electron_pt: Electron_pt
+              Electron_mass: Electron_mass
+              Electron_phi: Electron_phi
+              Electron_eta: Electron_eta
+              Electron_dxy: Electron_dxy
+              Electron_dz: Electron_dz
+              Electron_BDTID: Electron_mvaIso
+            bool: None
+            uint: None
         muon:
           veto: True
           pt: 25
@@ -38,15 +41,18 @@ default:
           absdzLevel: 0.2
           count: 1
           outputs:
-            Tau_pt: Tau_pt
-            Tau_eta: Tau_eta
-            Tau_phi: Tau_phi
-            Tau_mass: Tau_mass
-            Tau_dxy: Tau_dxy
-            Tau_dz: Tau_dz
-            Tau_IDvsjet: Tau_idDeepTau2018v2p5VSjet
-            Tau_IDvsmu: Tau_idDeepTau2018v2p5VSmu
-            Tau_IDvse: Tau_idDeepTau2018v2p5VSe
+            float:
+              Tau_pt: Tau_pt
+              Tau_eta: Tau_eta
+              Tau_phi: Tau_phi
+              Tau_mass: Tau_mass
+              Tau_dxy: Tau_dxy
+              Tau_dz: Tau_dz
+            bool: None
+            uint:
+              Tau_IDvsjet: Tau_idDeepTau2018v2p5VSjet
+              Tau_IDvsmu: Tau_idDeepTau2018v2p5VSmu
+              Tau_IDvse: Tau_idDeepTau2018v2p5VSe
         pair:
           name: "ET"
           OS: True
@@ -57,11 +63,12 @@ default:
         electron: None
         muon: ["HLT_Mu25_TkMu0_Onia","HLT_IsoMu20_eta2p1_TightChargedIsoPFTauHPS27_eta2p1_TightID_CrossL1"]
         tau: None
-      selection:
+      selections:
         electron:
           veto: True
           pt: 25
         muon: 
+          veto: False
           ptLevel: 25
           absetaLevel: 2.1
           IDLevel: True
@@ -70,15 +77,19 @@ default:
           absdxyLevel: 0.045
           absdzLevel: 0.2
           outputs:
-            Muon_dz: Muon_dz
-            Muon_dxy: Muon_dxy
-            Muon_phi: Muon_phi
-            Muon_mass: Muon_mass
-            Muon_eta: Muon_eta
-            Muon_pt: Muon_pt
-            Muon_isoID: Muon_pfRelIso04_all
-            Muon_tightID: Muon_tightID
+            float:
+              Muon_dz: Muon_dz
+              Muon_dxy: Muon_dxy
+              Muon_phi: Muon_phi
+              Muon_mass: Muon_mass
+              Muon_eta: Muon_eta
+              Muon_pt: Muon_pt
+              Muon_isoID: Muon_pfRelIso04_all
+            bool:
+              Muon_tightID: Muon_tightID
+            uint: None
         tau:
+          veto: False
           ptLevel: 35
           absetaLevel: 2.3
           IDvsjetLevel: 5
@@ -87,22 +98,25 @@ default:
           absdzLevel: 0.2
           count: 1
           outputs:
-            Tau_pt: Tau_pt
-            Tau_eta: Tau_eta
-            Tau_phi: Tau_phi
-            Tau_mass: Tau_mass
-            Tau_dxy: Tau_dxy
-            Tau_dz: Tau_dz
-            Tau_IDvsjet: Tau_idDeepTau2018v2p5VSjet
-            Tau_IDvsmu: Tau_idDeepTau2018v2p5VSmu
-            Tau_IDvse: Tau_idDeepTau2018v2p5VSe
+            float:
+              Tau_pt: Tau_pt
+              Tau_eta: Tau_eta
+              Tau_phi: Tau_phi
+              Tau_mass: Tau_mass
+              Tau_dxy: Tau_dxy
+              Tau_dz: Tau_dz
+            bool: None
+            uint:
+              Tau_IDvsjet: Tau_idDeepTau2018v2p5VSjet
+              Tau_IDvsmu: Tau_idDeepTau2018v2p5VSmu
+              Tau_IDvse: Tau_idDeepTau2018v2p5VSe
         pair:
           name: "MT" 
           OS: True
           dRLevel: 0.5
     channel3:
       name: "tauhtauh"
-      selection:
+      selections:
         electron: None
         muon: None
         tau:
@@ -114,6 +128,19 @@ default:
           IDvseLevel: 2
           absdzLevel: 0.2
           count: 2
+          outputs:
+            float:
+              Tau_pt: Tau_pt
+              Tau_eta: Tau_eta
+              Tau_phi: Tau_phi
+              Tau_mass: Tau_mass
+              Tau_dxy: Tau_dxy
+              Tau_dz: Tau_dz
+            bool: None
+            uint:
+              Tau_IDvsjet: Tau_idDeepTau2018v2p5VSjet
+              Tau_IDvsmu: Tau_idDeepTau2018v2p5VSmu
+              Tau_IDvse: Tau_idDeepTau2018v2p5VSe
         pair:
           name: "TT"
           OS: True
@@ -124,3 +151,5 @@ default:
         dRLevel: 0.5
         count: 2
         overlapCheck: True
+          
+          

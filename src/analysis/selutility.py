@@ -2,9 +2,7 @@
 
 import numpy as np
 import awkward as ak
-from awkward import JaggedArray, ArrayBuilder
-from HHtobbtautau.src.analysis.dsmethods import *
-from coffea.nanoevents.methods import candidate
+from analysis.dsmethods import *
 import coffea.processor as processor
 from coffea.nanoevents.methods import vector
 import vector as vec
@@ -178,21 +176,19 @@ def jet_selections(events_dict, cutflow_dict, cfg):
             if not lepselname.electron.veto:
                 electronLV = LV("Electron", events)
                 dRmask = (electronLV[:,0].deltaR(filter_ak4s) > jetselect.dRLevel)
-                events = events[ak.sum(dRmask, axis=1)] > jetselect.count
+                events = events[ak.sum(dRmask, axis=1) > jetselect.count]
             if not lepselname.muon.veto:
                 muonLV = LV("Muon", events)
                 dRmask = (muonLV[:,0].deltaR(filter_ak4s) > jetselect.dRLevel)
-                events = events[ak.sum(dRmask, axis=1)] > jetselect.count
+                events = events[ak.sum(dRmask, axis=1) > jetselect.count]
             if not lepselname.tau.veto:
                 tauLV = LV("Tau", events)
                 for i in range(lepselname.tau.count):
-                    dRmask = (filter_ak4s[:,0].deltaR(tauLV[:,i]) > jetselect.dRLevel) & \
-                        (filter_ak4s[:,1].deltaR(tauLV[:,i]) > jetselect.dRLevel)
-                    events = events[ak.any(dRmask, axis=1)]
-            events_dict[channelname] = events
-            cutflow_dict[channelname]["Jet selections"] = len(events)
-        else:
-            pass
+                    dRmask = (tauLV[:,i].deltaR(filter_ak4s) > jetselect.dRLevel)
+                    events = events[ak.sum(dRmask, axis=1) > jetselect.count] 
+        # TODO: Fill in fatjet selection
+        events_dict[channelname] = events
+        cutflow_dict[channelname]["Jet selections"] = len(events)
         
         
 def write_rootfiles(events_dict, cfg, filename): 
@@ -336,7 +332,8 @@ def LV(field_name, events, sortbypt=True):
         "phi": events[field_name+"_phi"],
         "M": events[field_name+"_mass"]
     })
-    object_ak = object_ak[ak.argsort(object_ak.pt)]
+    if sortbypt:
+        object_ak = object_ak[ak.argsort(object_ak.pt)]
     object_LV = vec.Array(object_ak)
     return object_LV
 
