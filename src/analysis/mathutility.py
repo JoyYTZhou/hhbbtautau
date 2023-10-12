@@ -1,7 +1,7 @@
 # adapted from https://github.com/bu-cms/projectcoffea/blob/master/projectcoffea/helpers/helpers.py
 
 import numpy as np
-import HHtobbtautau
+import analysis as HHtobbtautau
 import os
 
 pjoin = os.path.join
