@@ -1,7 +1,7 @@
 import re
 import copy
 
-import coffea.processor as processor
+from coffea.processor import dict_accumulator, column_accumulator, defaultdict_accumulator
 import numpy as np
 import awkward as ak
 import hist
@@ -15,19 +15,19 @@ from analysis.dsmethods import *
 
 
 def empty_colacc_int():
-    return processor.column_accumulator(np.array([],dtype=np.uint64))
+    return column_accumulator(np.array([],dtype=np.uint64))
 def empty_colacc_int64():
-    return processor.column_accumulator(np.array([],dtype=np.int64))
+    return column_accumulator(np.array([],dtype=np.int64))
 def empty_colacc_float64():
-    return processor.column_accumulator(np.array([],dtype=np.float64))
+    return column_accumulator(np.array([],dtype=np.float64))
 def empty_colacc_float32():
-    return processor.column_accumulator(np.array([],dtype=np.float32))
+    return column_accumulator(np.array([],dtype=np.float32))
 def empty_colacc_float16():
-    return processor.column_accumulator(np.array([],dtype=np.float16))
+    return column_accumulator(np.array([],dtype=np.float16))
 def empty_colacc_bool():
-    return processor.column_accumulator(np.array([],dtype=np.bool))
+    return column_accumulator(np.array([],dtype=np.bool))
 def accu_int():
-    return processor.defaultdict_accumulator(int)
+    return defaultdict_accumulator(int)
 
 def hhtobbtautau_accumulator(cfg):
     """ Construct an accumulator for hhtobbtautau analysis.
@@ -44,17 +44,20 @@ def hhtobbtautau_accumulator(cfg):
         lepcfgname = "signal.channel"+str(i+1)
         channelname = cfg[lepcfgname+".name"]
         lepselname = cfg[lepcfgname+".selections"]
-        if (lepselname.electron != None) and not lepselname.electron.veto:
-            book_single_col_accu(lepselname.electron.outputs, event_dict)
-        if (lepselname.muon != None) and not lepselname.muon.veto:
-            book_single_col_accu(lepselname.muon.outputs, event_dict)
-        if (lepselname.tau != None) and not lepselname.tau.veto:
-            if lepselname.tau.count == 1:
-                book_single_col_accu(lepselname.tau.outputs, event_dict)
-            else:
-                for i in range(lepselname.tau.count): 
-                    subfix = f"_{i}"
-                    book_single_col_accu(lepselname.tau.outputs, event_dict, subfix)
+        if (lepselname.electron != None):
+            if not lepselname.electron.veto:
+                book_single_col_accu(lepselname.electron.outputs, event_dict)
+        if lepselname.muon != None:
+            if not lepselname.muon.veto:
+                book_single_col_accu(lepselname.muon.outputs, event_dict)
+        if lepselname.tau != None:
+            if not lepselname.tau.veto:
+                if lepselname.tau.count == 1:
+                    book_single_col_accu(lepselname.tau.outputs, event_dict)
+                else:
+                    for i in range(lepselname.tau.count): 
+                        subfix = f"_{i}"
+                        book_single_col_accu(lepselname.tau.outputs, event_dict, subfix)
         if lepselname.pair != None:
             pairname = lepselname.pair.name
             event_dict["dR_"+str(pairname)] = empty_colacc_float32()
@@ -65,11 +68,11 @@ def hhtobbtautau_accumulator(cfg):
             event_dict["mjj"] = empty_colacc_float32()
             event_dict["dRjj"] = empty_colacc_float32()
             # TODO: add lepton jet
-        selected_events[channelname] = processor.dict_accumulator({
+        selected_events[channelname] = dict_accumulator({
             "Cutflow": accu_int,
-            "Objects": processor.defaultdict_accumulator(event_dict)
+            "Objects": dict_accumulator(event_dict)
         })
-    combined_accumulator = processor.dict_accumulator(selected_events)
+    combined_accumulator = dict_accumulator(selected_events)
     
     return combined_accumulator
 
@@ -110,18 +113,17 @@ def hbbtautau_accumulate(output, cfg, events_dict, cutflow_dict):
                 # Select the most energetic tauh candidate
                 tau_LV = LV("Tau", event)[:,0]
                 muon_LV = ak.flatten(LV("Muon", event))
-                write_mergedLV(output, tau_LV, muon_LV)
+                write_mergedLV(output[channelname], tau_LV, muon_LV)
             elif pairname.find("E") != -1 and pairname.find("T") != -1:
                 tau_LV = LV("Tau", event)[:,0]
                 electron_LV = ak.flatten(LV("Electron", event))
-                write_mergedLV(output, tau_LV, electron_LV)
+                write_mergedLV(output[channelname], tau_LV, electron_LV)
             elif pairname.count("T") == 2:
                 tau1_LV = LV("Tau", event)[:,0]
                 tau2_LV = LV("Tau", event)[:,1]
-                write_mergedLV(output, tau1_LV, tau2_LV)
+                write_mergedLV(output[channelname], tau1_LV, tau2_LV)
         output[channelname]["Cutflow"] += cutflow_dict[keyname]
 
-@numba.njit
 def book_single_col_accu(cfg, event_dict, subfix=""):
     """Book accumulators of a single type in the event_dict based on cfg
     :param cfg: nested dictionary stucture with data type as key
@@ -164,7 +166,7 @@ def ak_to_np(var_array):
     :type var_array: awkward.highlevel.Array (type='n * var * float32', n being the number of events)
     :return: col_accumulator
     """
-    return processor.column_accumulator(ak.to_numpy(ak.flatten(var_array)))
+    return column_accumulator(ak.to_numpy(ak.flatten(var_array)))
 
     
 def fitfun(x, a, b, c):

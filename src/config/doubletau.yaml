@@ -1,4 +1,5 @@
 default:
+  size: 1
   test: False
   signal:
     channelno: 3
@@ -6,8 +7,8 @@ default:
       name: "tauetauh"
       triggers:
         electron: ["HLT_Ele24_eta2p1_WPTight_Gsf_TightChargedIsoPFTauHPS30_eta2p1_CrossL1","HLT_Ele32_WPTight_Gsf"]
-        muon: None
-        tau: None
+        muon: null
+        tau: null
       selections:
         electron:
           veto: False
@@ -26,11 +27,11 @@ default:
               Electron_dxy: Electron_dxy
               Electron_dz: Electron_dz
               Electron_BDTID: Electron_mvaIso
-            bool: None
-            uint: None
+            bool: null
+            uint: null
         muon:
           veto: True
-          pt: 25
+          ptLevel: 25
         tau: 
           veto: False
           ptLevel: 35
@@ -48,7 +49,7 @@ default:
               Tau_mass: Tau_mass
               Tau_dxy: Tau_dxy
               Tau_dz: Tau_dz
-            bool: None
+            bool: null
             uint:
               Tau_IDvsjet: Tau_idDeepTau2018v2p5VSjet
               Tau_IDvsmu: Tau_idDeepTau2018v2p5VSmu
@@ -60,13 +61,13 @@ default:
     channel1:
       name: "taumtauh"
       triggers:
-        electron: None
+        electron: null
         muon: ["HLT_Mu25_TkMu0_Onia","HLT_IsoMu20_eta2p1_TightChargedIsoPFTauHPS27_eta2p1_TightID_CrossL1"]
-        tau: None
+        tau: null
       selections:
         electron:
           veto: True
-          pt: 25
+          ptLevel: 25
         muon: 
           veto: False
           ptLevel: 25
@@ -87,7 +88,7 @@ default:
               Muon_isoID: Muon_pfRelIso04_all
             bool:
               Muon_tightID: Muon_tightID
-            uint: None
+            uint: null
         tau:
           veto: False
           ptLevel: 35
@@ -105,7 +106,7 @@ default:
               Tau_mass: Tau_mass
               Tau_dxy: Tau_dxy
               Tau_dz: Tau_dz
-            bool: None
+            bool: null
             uint:
               Tau_IDvsjet: Tau_idDeepTau2018v2p5VSjet
               Tau_IDvsmu: Tau_idDeepTau2018v2p5VSmu
@@ -117,8 +118,8 @@ default:
     channel3:
       name: "tauhtauh"
       selections:
-        electron: None
-        muon: None
+        electron: null
+        muon: null
         tau:
           veto: False
           ptLevel: 40
@@ -136,7 +137,7 @@ default:
               Tau_mass: Tau_mass
               Tau_dxy: Tau_dxy
               Tau_dz: Tau_dz
-            bool: None
+            bool: null
             uint:
               Tau_IDvsjet: Tau_idDeepTau2018v2p5VSjet
               Tau_IDvsmu: Tau_idDeepTau2018v2p5VSmu
