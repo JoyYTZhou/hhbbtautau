@@ -52,7 +52,7 @@ class hhbbtautauProcessor(processor.ProcessorABC):
 
     def process(self, events):
         if not cfg.size:
-            return self.accumulator.identity()
+            return self.accumulator().identity()
         # self._configure(events)
         dataset = events.metadata['dataset']
 

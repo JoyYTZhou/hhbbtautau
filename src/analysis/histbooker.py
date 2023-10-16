@@ -44,20 +44,17 @@ def hhtobbtautau_accumulator(cfg):
         lepcfgname = "signal.channel"+str(i+1)
         channelname = cfg[lepcfgname+".name"]
         lepselname = cfg[lepcfgname+".selections"]
-        if (lepselname.electron != None):
-            if not lepselname.electron.veto:
+        if not lepselname.electron.veto and (lepselname.electron.veto != None):
                 book_single_col_accu(lepselname.electron.outputs, event_dict)
-        if lepselname.muon != None:
-            if not lepselname.muon.veto:
+        if not lepselname.muon.veto and (lepselname.muon.veto != None):
                 book_single_col_accu(lepselname.muon.outputs, event_dict)
-        if lepselname.tau != None:
-            if not lepselname.tau.veto:
-                if lepselname.tau.count == 1:
-                    book_single_col_accu(lepselname.tau.outputs, event_dict)
-                else:
-                    for i in range(lepselname.tau.count): 
-                        subfix = f"_{i}"
-                        book_single_col_accu(lepselname.tau.outputs, event_dict, subfix)
+        if not lepselname.tau.veto and (lepselname.tau.veto != None):
+            if lepselname.tau.count == 1:
+                book_single_col_accu(lepselname.tau.outputs, event_dict)
+            else:
+                for i in range(lepselname.tau.count): 
+                    subfix = f"_{i}"
+                    book_single_col_accu(lepselname.tau.outputs, event_dict, subfix)
         if lepselname.pair != None:
             pairname = lepselname.pair.name
             event_dict["dR_"+str(pairname)] = empty_colacc_float32()

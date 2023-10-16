@@ -118,8 +118,10 @@ default:
     channel3:
       name: "tauhtauh"
       selections:
-        electron: null
-        muon: null
+        electron: 
+          veto: null
+        muon: 
+          veto: null
         tau:
           veto: False
           ptLevel: 40
