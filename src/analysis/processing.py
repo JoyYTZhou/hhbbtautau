@@ -51,10 +51,10 @@ class hhbbtautauProcessor(processor.ProcessorABC):
 
 
     def process(self, events):
-        if not events.size:
+        if not cfg.size:
             return self.accumulator.identity()
         # self._configure(events)
-        dataset = events['dataset']
+        dataset = events.metadata['dataset']
 
         # Triggers
         # TODO: Add triggers
@@ -63,10 +63,10 @@ class hhbbtautauProcessor(processor.ProcessorABC):
         events_dict, cutflow_dict = lepton_selections(events, cfg)
 
         # Pair selections
-        pair_selections(events, events_dict, cfg)
+        pair_selections(events_dict, cutflow_dict, cfg)
 
         # Jet selections
-        jet_selections(events, events_dict, cfg)
+        jet_selections(events_dict, cutflow_dict, cfg)
 
         # Fill histograms
         output = self.accumulator.identity()

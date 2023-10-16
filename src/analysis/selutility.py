@@ -37,7 +37,7 @@ def lepton_selections(events, cfg):
         for i in range(cfg.signal.channelno):
             # Create lepselection object: coffea.process.PackedSelection
             lepselection = processor.PackedSelection()
-            lepcfgname = "signal.channel"+str(i)
+            lepcfgname = "signal.channel"+str(i+1)
             channelname = cfg[lepcfgname+".name"]
             lepselname = cfg[lepcfgname+".selections"]
             # select electrons
@@ -48,14 +48,14 @@ def lepton_selections(events, cfg):
                                 (abs(electrons.eta)<eselect.absetaLevel) & \
                                 (electrons.bdtid>eselect.BDTLevel) & \
                                 (abs(electrons.dxy)<eselect.absdxyLevel) & \
-                                (abs(electrons.dz)<eselect.abdzLevel)
+                                (abs(electrons.dz)<eselect.absdzLevel)
                     filter_electrons = electrons[electronmask]
-                    lepselection.add("ElectronSelection", (ak.num(filter_electrons)==eselect.count))
+                    lepselection.add("ElectronSelection", ak.to_numpy(ak.num(filter_electrons)==eselect.count))
                 # apply vetos    
                 else:
                     electronmask = (electrons.pt>eselect.ptLevel)
                     filter_electrons = electrons[electronmask]
-                    lepselection.add("ElectronSelection", (ak.num(filter_electrons)==0))
+                    lepselection.add("ElectronSelection", ak.to_numpy(ak.num(filter_electrons)==0))
 
             # select muons
             if lepselname.muon != None:
@@ -68,11 +68,11 @@ def lepton_selections(events, cfg):
                                 (muons.iso<mselect.isoLevel) & \
                                 (muons.tightid==mselect.IDLevel)
                     filter_muons = muons[muonmask]
-                    lepselection.add("MuonSelection", (ak.num(filter_muons)==mselect.count))
+                    lepselection.add("MuonSelection", ak.to_numpy(ak.num(filter_muons)==mselect.count))
                 else:
                     muonmas = (muons.pt>mselect.ptLevel)
                     filter_muons = muons[muonmask]
-                    lepselection.add("MuonSelection", (ak.num(filter_muons)==0))
+                    lepselection.add("MuonSelection", ak.to_numpy(ak.num(filter_muons)==0))
                 
             # select taus
             if lepselname.tau != None:
@@ -85,19 +85,18 @@ def lepton_selections(events, cfg):
                             (taus.idvse>tselect.IDvseLevel) & \
                             (abs(taus.dz)<tselect.absdzLevel) 
                     filter_taus = taus[taumask]
-                    lepselection.add("TauSelection", (ak.num(filter_taus)>=tselect.count))
+                    lepselection.add("TauSelection", ak.to_numpy(ak.num(filter_taus)>=tselect.count))
                 else:
                     # TODO: for now a placeholder
                     pass
 
             # Evaluate the selection collections at this point to identify individual leptons selected
-            filtered_events = events
-            keyname = "channel"+str(i)
-            cutflow_dict[keyname]["Total"] = len(filtered_events)
-            for sel in lepselection.names:
-                filtered_events = filtered_events[lepselection.all(sel)]
-                cutflow_dict[keyname][sel] = len(filtered_events)
-            events_dict[keyname] = filtered_events
+            keyname = "".join(["channel",str(i+1)])
+            cutflow_dict[keyname] = {}
+            cutflow_dict[keyname]["Total"] = len(events)
+            for i, sel in enumerate(lepselection.names):
+                cutflow_dict[keyname][sel] = lepselection.all(*(lepselection.names[:i+1])).sum()
+            events_dict[keyname] = events[lepselection.all(*(lepselection.names))]
             events = events[~(lepselection.all(*(lepselection.names)))]
     
     return events_dict, cutflow_dict
@@ -253,7 +252,7 @@ def lep_properties(events, extra=None):
         "dxy": events.Electron_dxy,
         "dz": events.Electron_dz,
         "bdtid": events.Electron_mvaIso,
-    }, with_name="PtEtaPhiECandidate", behavior=vector.behavior)
+    }, with_name="PtEtaPhiMLorentzVector", behavior=vector.behavior)
 
     # A collection of dictionaries, each dictionary describing a single tau candidate property
     taus = ak.zip({
@@ -267,7 +266,7 @@ def lep_properties(events, extra=None):
         "idvsjet": events.Tau_idDeepTau2018v2p5VSjet,
         "idvsmu": events.Tau_idDeepTau2018v2p5VSmu,
         "idvse": events.Tau_idDeepTau2018v2p5VSe,
-    }, with_name="PtEtaPhiTCandidate", behavior=candidate.behavior)
+    }, with_name="PtEtaPhiMLorentzVector", behavior=vector.behavior)
 
     return muons, electrons, taus
 

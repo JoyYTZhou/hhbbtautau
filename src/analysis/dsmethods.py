@@ -73,41 +73,43 @@ def load_lists():
     lines = filter(lambda x: "NANOAOD" in x and not x.startswith("#"), lines)
     return lines
 
-def files_from_das(regex):
-    """Generate file list per dataset from DAS
 
-    :param regex: Regular expression to match datasets
-    :type regex: string
-    :return: Mapping of dataset : [files]
-    :rtype: dict
-    """
-    datasets = {}
+# def files_from_das(regex):
+#     """Generate file list per dataset from DAS
 
-    for line in load_lists():
-        # Skip empty lines
-        dataset = line.strip()
-        if not len(line) or line.startswith("#") or not "/" in line:
-            continue
-        # Dataset 'nicknames'
-        name = short_name(dataset)
-        if not re.match(regex, name):
-            continue
+#     :param regex: Regular expression to match datasets
+#     :type regex: string
+#     :return: Mapping of dataset : [files]
+#     :rtype: dict
+#     """
+#     datasets = {}
 
-        # Get files from DAS
-        files = dasgowrapper.das_go_query(f"file dataset={dataset}")
-        datasets[name] = files.split()
+#     for line in load_lists():
+#         # Skip empty lines
+#         dataset = line.strip()
+#         if not len(line) or line.startswith("#") or not "/" in line:
+#             continue
+#         # Dataset 'nicknames'
+#         name = short_name(dataset)
+#         if not re.match(regex, name):
+#             continue
 
-    for dataset, filelist in datasets.items():
-            newlist = []
-            for file in filelist:
-                file = file.decode("utf-8")
-                if file.startswith("/store/"):
-                    newlist.append("root://cms-xrd-global.cern.ch//" + file)
-                else:
-                    newlist.append(file)
-            datasets[dataset] = newlist
+#         # Get files from DAS
+#         files = dasgowrapper.das_go_query(f"file dataset={dataset}")
+#         datasets[name] = files.split()
 
-    return datasets
+#     for dataset, filelist in datasets.items():
+#             newlist = []
+#             for file in filelist:
+#                 file = file.decode("utf-8")
+#                 if file.startswith("/store/"):
+#                     newlist.append("root://cms-xrd-global.cern.ch//" + file)
+#                 else:
+#                     newlist.append(file)
+#             datasets[dataset] = newlist
+
+#     return datasets
+
 
 def files_from_ac(regex):
     """Generate file list per dataset from T2_DE_RWTH
