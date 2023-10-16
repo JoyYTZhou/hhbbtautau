@@ -4,6 +4,7 @@ import numpy as np
 import awkward as ak
 from analysis.dsmethods import *
 import coffea.processor as processor
+from coffea.analysis_tools import PackedSelection
 from coffea.nanoevents.methods import vector
 import vector as vec
 import pandas as pd
@@ -35,14 +36,14 @@ def lepton_selections(events, cfg):
     # Set up selections for the major candidates
     if cfg.signal.channelno>=1:
         for i in range(cfg.signal.channelno):
-            # Create lepselection object: coffea.process.PackedSelection
-            lepselection = processor.PackedSelection()
+            # Create lepselection object: coffea.analysis_tool.PackedSelection
+            lepselection = PackedSelection()
             lepcfgname = "signal.channel"+str(i+1)
             channelname = cfg[lepcfgname+".name"]
             lepselname = cfg[lepcfgname+".selections"]
             # select electrons
-            if lepselname.electron != None:
-                eselect = lepselname.electron
+            eselect = lepselname.electron
+            if eselect.veto != None:
                 if not eselect.veto:
                     electronmask = (electrons.pt>eselect.ptLevel) & \
                                 (abs(electrons.eta)<eselect.absetaLevel) & \
@@ -58,8 +59,8 @@ def lepton_selections(events, cfg):
                     lepselection.add("ElectronSelection", ak.to_numpy(ak.num(filter_electrons)==0))
 
             # select muons
-            if lepselname.muon != None:
-                mselect = lepselname.muon
+            mselect = lepselname.muon
+            if (mselect.veto != None):
                 if not mselect.veto:
                     muonmask = (muons.pt>mselect.ptLevel) & \
                                 (abs(muons.eta)<mselect.absetaLevel) & \
@@ -75,8 +76,8 @@ def lepton_selections(events, cfg):
                     lepselection.add("MuonSelection", ak.to_numpy(ak.num(filter_muons)==0))
                 
             # select taus
-            if lepselname.tau != None:
-                tselect = lepselname.tau
+            tselect = lepselname.tau
+            if tselect.veto != None:
                 if not tselect.veto:
                     taumask = (taus.pt>tselect.ptLevel) & \
                             (abs(taus.eta)<tselect.absetaLevel) & \
@@ -165,24 +166,24 @@ def jet_selections(events_dict, cutflow_dict, cfg):
             ak4s, ak8s = jet_properties(events)
             jetselect = comselname.ak4jet
             # Basic jet check
-            ak4mask = (ak4s.pt > jetselect.pt) & \
+            ak4mask = (ak4s.pt > jetselect.ptLevel) & \
                         (abs(ak4s.eta) < jetselect.absetaLevel) 
             filter_ak4s = ak4s[ak4mask]
             ak4mask = (ak.num(filter_ak4s) >= jetselect.count)
             events = events[ak4mask]
             filter_ak4s = LV("Jet", events)
             # Overlap check 
-            if not lepselname.electron.veto:
+            if not lepselname.electron.veto and (lepselname.electron.veto != None):
                 electronLV = LV("Electron", events)
                 dRmask = (electronLV[:,0].deltaR(filter_ak4s) > jetselect.dRLevel)
                 events = events[ak.sum(dRmask, axis=1) > jetselect.count]
-            if not lepselname.muon.veto:
+            if not lepselname.muon.veto and (lepselname.muon.veto != None):
                 muonLV = LV("Muon", events)
                 dRmask = (muonLV[:,0].deltaR(filter_ak4s) > jetselect.dRLevel)
                 events = events[ak.sum(dRmask, axis=1) > jetselect.count]
-            if not lepselname.tau.veto:
-                tauLV = LV("Tau", events)
+            if not lepselname.tau.veto and (lepselname.tau.veto != None):
                 for i in range(lepselname.tau.count):
+                    tauLV = LV("Tau", events)
                     dRmask = (tauLV[:,i].deltaR(filter_ak4s) > jetselect.dRLevel)
                     events = events[ak.sum(dRmask, axis=1) > jetselect.count] 
         # TODO: Fill in fatjet selection
