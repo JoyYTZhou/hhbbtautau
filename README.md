@@ -3,7 +3,7 @@
 ## Update instructions
 Please push to Master branch for any changes. 
 
-Main branch should be temporarily usable (NOT NOW).
+Main branch should be temporarily usable.
 
 ## TODO's:
 1. ~~Finish selections and config file~~
