@@ -2,19 +2,12 @@
 
 import copy
 import re
-
 import numpy as np
-
 import coffea.processor as processor
-
 from config.selectionconfig import settings as cfg
-
 from analysis.selutility import lepton_selections, pair_selections, jet_selections
-
 from analysis.dsmethods import *
-
 from analysis.histbooker import hbbtautau_accumulate, hhtobbtautau_accumulator
-
 
 def trigger_selection(selection, events, cfg):
     """Add trigger selections to coffea processor selection.
@@ -52,7 +45,7 @@ class hhbbtautauProcessor(processor.ProcessorABC):
 
     def process(self, events):
         if not cfg.size:
-            return self.accumulator().identity()
+            return self.accumulator.identity()
         # self._configure(events)
         dataset = events.metadata['dataset']
 

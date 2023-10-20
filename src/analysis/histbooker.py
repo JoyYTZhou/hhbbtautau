@@ -6,7 +6,7 @@ import numpy as np
 import awkward as ak
 import hist
 import vector as vec
-import numba
+from collections import ChainMap
 
 
 from analysis.mathutility import *
@@ -34,40 +34,40 @@ def hhtobbtautau_accumulator(cfg):
     
     :param cfg: configuration object
     :type cfg: DynaConf object
-    :return: dictionary of coffea nanoevents array with major object selections
-    :rtype: dict{int: coffea.nanoevents.NanoEvents.array}
+    :return: nested accumulator with cutflow int accumulator and object properties col accumulators in each channel
+    :rtype: coffea.processor.dict_accumulator
     """
 
     selected_events = {}
     for i in range(cfg.signal.channelno):
-        event_dict = {}
+        object_dict = {}
         lepcfgname = "signal.channel"+str(i+1)
         channelname = cfg[lepcfgname+".name"]
         lepselname = cfg[lepcfgname+".selections"]
-        if not lepselname.electron.veto and (lepselname.electron.veto != None):
-                book_single_col_accu(lepselname.electron.outputs, event_dict)
-        if not lepselname.muon.veto and (lepselname.muon.veto != None):
-                book_single_col_accu(lepselname.muon.outputs, event_dict)
-        if not lepselname.tau.veto and (lepselname.tau.veto != None):
+        if not lepselname.electron.veto and (lepselname.electron.veto is not None):
+                book_single_col_accu(lepselname.electron.outputs, object_dict)
+        if not lepselname.muon.veto and (lepselname.muon.veto is not None):
+                book_single_col_accu(lepselname.muon.outputs, object_dict)
+        if not lepselname.tau.veto and (lepselname.tau.veto is not None):
             if lepselname.tau.count == 1:
-                book_single_col_accu(lepselname.tau.outputs, event_dict)
+                book_single_col_accu(lepselname.tau.outputs, object_dict)
             else:
                 for i in range(lepselname.tau.count): 
-                    subfix = f"_{i}"
-                    book_single_col_accu(lepselname.tau.outputs, event_dict, subfix)
-        if lepselname.pair != None:
-            pairname = lepselname.pair.name
-            event_dict["dR_"+str(pairname)] = empty_colacc_float32()
-            event_dict["mass_"+str(pairname)] = empty_colacc_float32()
-            event_dict["pt_"+str(pairname)] = empty_colacc_float32()
-        if cfg.signal.commonsel != None and cfg.signal.commonsel.ak4jet != None:
-            event_dict["ptjj"] = empty_colacc_float32()
-            event_dict["mjj"] = empty_colacc_float32()
-            event_dict["dRjj"] = empty_colacc_float32()
+                    subfix = f"_{i+1}"
+                    book_single_col_accu(lepselname.tau.outputs, object_dict, subfix)
+        # book column accumulators for combinatorials of objects kinematics
+        if lepselname.pair is not None:
+            object_dict["dRll"] = empty_colacc_float32()
+            object_dict["mll"] = empty_colacc_float32()
+            object_dict["ptll"] = empty_colacc_float32()
+        if cfg.signal.commonsel is not None and cfg.signal.commonsel.ak4jet is not None:
+            object_dict["ptjj"] = empty_colacc_float32()
+            object_dict["mjj"] = empty_colacc_float32()
+            object_dict["dRjj"] = empty_colacc_float32()
             # TODO: add lepton jet
         selected_events[channelname] = dict_accumulator({
-            "Cutflow": accu_int,
-            "Objects": dict_accumulator(event_dict)
+            "Cutflow": accu_int(),
+            "Objects": dict_accumulator(object_dict)
         })
     combined_accumulator = dict_accumulator(selected_events)
     
@@ -90,30 +90,28 @@ def hbbtautau_accumulate(output, cfg, events_dict, cutflow_dict):
         lepcfgname = f"signal.{keyname}"
         channelname = cfg[lepcfgname+".name"]
         lepselname = cfg[lepcfgname+".selections"]
-        if not lepselname.electron.veto:
-            for outputname, nanoaodname in lepselname.electron.outputs.items(): 
-                output[channelname]["Objects"][outputname] += ak_to_np(event[nanoaodname])
-        if not lepselname.muon.veto:
-            for outputname, nanoaodname in lepselname.muon.outputs.items(): 
-                output[channelname]["Objects"][outputname] += ak_to_np(event[nanoaodname])
-        if not lepselname.tau.veto:
-            for outputname, nanoaodname in lepselname.tau.outputs.items():
-                if lepselname.tau.count==1:
-                    output[channelname]["Objects"][outputname] += ak_to_np(event[nanoaodname])
-                else:
-                    ptsortmask = ak.argsort(event["Tau_pt"])
-                    for i in range(lepselname.tau.count):
-                        output[channelname]["Objects"][outputname+"_"+str(i+1)] += ak_to_np(event[nanoaodname][ptsortmask][:,i])
-        if lepselname.pair != None:
+        if not lepselname.electron.veto and (lepselname.electron.veto is not None):
+            write_single_col_accu(lepselname.electron.outputs, event, output[channelname]["Objects"])
+        if not lepselname.muon.veto and (lepselname.muon.veto is not None):
+            write_single_col_accu(lepselname.muon.outputs, event, output[channelname]["Objects"])
+        if not lepselname.tau.veto and (lepselname.tau.veto is not None):
+            if lepselname.tau.count==1:
+                write_single_col_accu(lepselname.tau.outputs, event, output[channelname]["Objects"])
+            else:
+                ptsortmask = ak.argsort(event["Tau_pt"])
+                for i in range(lepselname.tau.count):
+                    write_single_col_accu(lepselname.tau.outputs, event, output[channelname]["Objects"], ptsortmask, i, f"_{i+1}")
+        if lepselname.pair is not None:
             pairname = lepselname.pair.name
             if pairname.find("M") != -1 and pairname.find("T") != -1:
                 # Select the most energetic tauh candidate
                 tau_LV = LV("Tau", event)[:,0]
-                muon_LV = ak.flatten(LV("Muon", event))
+                # TODO: this is for current purposes, in future, muons should not be selected using pt
+                muon_LV = LV("Muon", event)[:,0]
                 write_mergedLV(output[channelname], tau_LV, muon_LV)
             elif pairname.find("E") != -1 and pairname.find("T") != -1:
                 tau_LV = LV("Tau", event)[:,0]
-                electron_LV = ak.flatten(LV("Electron", event))
+                electron_LV = LV("Electron", event)[:,0]
                 write_mergedLV(output[channelname], tau_LV, electron_LV)
             elif pairname.count("T") == 2:
                 tau1_LV = LV("Tau", event)[:,0]
@@ -121,24 +119,49 @@ def hbbtautau_accumulate(output, cfg, events_dict, cutflow_dict):
                 write_mergedLV(output[channelname], tau1_LV, tau2_LV)
         output[channelname]["Cutflow"] += cutflow_dict[keyname]
 
-def book_single_col_accu(cfg, event_dict, subfix=""):
-    """Book accumulators of a single type in the event_dict based on cfg
+def book_single_col_accu(cfg, object_dict, subfix=""):
+    """Book accumulators of an object in the object_dict based on cfg
     :param cfg: nested dictionary stucture with data type as key
     :type cfg: dict
-    :param event_dict: dictionary of col accumuators
-    :type event_dict: dict
+    :param object_dict: dictionary of col accumuators
+    :type object_dict: dict
     :param subfix: for naming purposes in output accumulator
     :type subfix: string
     """
-    if cfg.float != None:
+    if cfg.float is not None:
         for outputname in cfg.float:
-            event_dict["".join([outputname, subfix])] = empty_colacc_float32()
-    if cfg.uint != None:
+            object_dict["".join([outputname, subfix])] = empty_colacc_float32()
+    if cfg.uint is not None:
         for outputname in cfg.uint:
-            event_dict["".join([outputname, subfix])] = empty_colacc_int()
-    if cfg.bool != None:
+            object_dict["".join([outputname, subfix])] = empty_colacc_int()
+    if cfg.bool is not None:
         for outputname in cfg.bool:
-            event_dict["".join([outputname, subfix])] = empty_colacc_bool()
+            object_dict["".join([outputname, subfix])] = empty_colacc_bool()
+
+def write_single_col_accu(cfg, event, object_dict, sort_by=None, index=None, subfix=""):
+    """Write to accumulators of different data types for one object in the object_dict based on cfg
+    :param cfg: nested dictionary stucture with data type as key
+    :type cfg: dict
+    :param event: events loaded directly from NANOAOD files and contain all the fields
+    :type event: coffea.nanoevents.NanoEvents.array
+    :param object_dict: a dictionary of col accumulators only
+    :type object_dict: dict
+    :param sort_by: a mask to sort the awkward array for the events field
+    :type sort_by: awkward.highlevel.Array (True/False)
+    :param index: the index of the object in each event (should there be multiple per events)
+    :type index: int
+    :param subfix: for naming purposes in output accumulator
+    :type subfix: string
+    """ 
+    if cfg.float is not None:
+        for outputname, nanoaodname in cfg.float.items():
+            object_dict["".join([outputname, subfix])] += ak_to_colacc(event[nanoaodname], sort_by, index)
+    if cfg.uint is not None:
+        for outputname, nanoaodname in cfg.uint.items():
+            object_dict["".join([outputname, subfix])] += ak_to_colacc(event[nanoaodname], sort_by, index)
+    if cfg.bool is not None:
+        for outputname, nanoaodname in cfg.bool.items():
+            object_dict["".join([outputname, subfix])] += ak_to_colacc(event[nanoaodname], sort_by, index)
                 
             
 def write_mergedLV(output, leptonLV1, leptonLV2, keyname = "Objects"):
@@ -153,16 +176,24 @@ def write_mergedLV(output, leptonLV1, leptonLV2, keyname = "Objects"):
     :type keyname: string
     """
     ll_LV = leptonLV1 + leptonLV2
-    output[keyname]["ptll"] += ll_LV.pt
-    output[keyname]["mll"] += ll_LV.M
-    output[keyname]["dRll"] += leptonLV1.deltaR(leptonLV2)
+    output[keyname]["ptll"] += column_accumulator(ak.to_numpy(ll_LV.pt))
+    output[keyname]["mll"] += column_accumulator(ak.to_numpy(ll_LV.M))
+    output[keyname]["dRll"] += column_accumulator(ak.to_numpy(leptonLV1.deltaR(leptonLV2)))
             
-def ak_to_np(var_array):
+def ak_to_colacc(var_array, sort_by=None, index=None):
     """ Converts variable-sized array (e.g., events["Electron_pt"]) to an accumulator
-    :param var_array: akward array containing (preferably one) variable per event
+    :param var_array: akward array containing (preferably one) variable property per event
     :type var_array: awkward.highlevel.Array (type='n * var * float32', n being the number of events)
+    :param sort_by: a mask to sort the awkward array for the events field
+    :type sort_by: awkward.highlevel.Array (True/False)
+    :param index: the index of the object in each event (should there be multiple per events)
+    :type index: int
     :return: col_accumulator
     """
+    if sort_by is not None:
+        var_array = var_array[sort_by]
+    if index is not None:
+        return column_accumulator(ak.to_numpy(var_array[:,index]))
     return column_accumulator(ak.to_numpy(ak.flatten(var_array)))
 
     

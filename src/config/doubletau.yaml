@@ -29,6 +29,8 @@ default:
               Electron_BDTID: Electron_mvaIso
             bool: null
             uint: null
+            int: 
+              Electron_charge: Electron_charge
         muon:
           veto: True
           ptLevel: 25
@@ -50,6 +52,8 @@ default:
               Tau_dxy: Tau_dxy
               Tau_dz: Tau_dz
             bool: null
+            int:
+              Muon_charge: Muon_charge
             uint:
               Tau_IDvsjet: Tau_idDeepTau2018v2p5VSjet
               Tau_IDvsmu: Tau_idDeepTau2018v2p5VSmu
@@ -85,9 +89,9 @@ default:
               Muon_mass: Muon_mass
               Muon_eta: Muon_eta
               Muon_pt: Muon_pt
-              Muon_isoID: Muon_pfRelIso04_all
+              Muon_isoId: Muon_pfRelIso04_all
             bool:
-              Muon_tightID: Muon_tightID
+              Muon_tightId: Muon_tightId
             uint: null
         tau:
           veto: False
