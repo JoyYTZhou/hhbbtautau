@@ -29,77 +29,79 @@ def lepton_selections(events, cfg):
     :rtype: dict{dict: int}
     """
 
-    muons, electrons, taus = lep_properties(events)
     events_dict = {}
     cutflow_dict = {}
     
     # Set up selections for the major candidates
-    if cfg.signal.channelno>=1:
-        for i in range(cfg.signal.channelno):
-            # Create lepselection object: coffea.analysis_tool.PackedSelection
-            lepselection = PackedSelection()
-            lepcfgname = "signal.channel"+str(i+1)
-            channelname = cfg[lepcfgname+".name"]
-            lepselname = cfg[lepcfgname+".selections"]
-            # select electrons
-            eselect = lepselname.electron
-            if eselect.veto != None:
-                if not eselect.veto:
-                    electronmask = (electrons.pt>eselect.ptLevel) & \
-                                (abs(electrons.eta)<eselect.absetaLevel) & \
-                                (electrons.bdtid>eselect.BDTLevel) & \
-                                (abs(electrons.dxy)<eselect.absdxyLevel) & \
-                                (abs(electrons.dz)<eselect.absdzLevel)
-                    filter_electrons = electrons[electronmask]
-                    lepselection.add("ElectronSelection", ak.to_numpy(ak.num(filter_electrons)==eselect.count))
-                # apply vetos    
-                else:
-                    electronmask = (electrons.pt>eselect.ptLevel)
-                    filter_electrons = electrons[electronmask]
-                    lepselection.add("ElectronSelection", ak.to_numpy(ak.num(filter_electrons)==0))
+    for i in range(cfg.signal.channelno):
+        # Create lepton objects
+        muons, electrons, taus = lep_properties(events)
+        # Create lepselection object: coffea.analysis_tool.PackedSelection
+        lepselection = PackedSelection()
+        lepcfgname = "signal.channel"+str(i+1)
+        channelname = cfg[lepcfgname+".name"]
+        lepselname = cfg[lepcfgname+".selections"]
+        # select electrons
+        eselect = lepselname.electron
+        if eselect.veto is not None:
+            if not eselect.veto:
+                electronmask = (electrons.pt>eselect.ptLevel) & \
+                            (abs(electrons.eta)<eselect.absetaLevel) & \
+                            (electrons.bdtid>=eselect.BDTLevel) & \
+                            (abs(electrons.dxy)<eselect.absdxyLevel) & \
+                            (abs(electrons.dz)<eselect.absdzLevel)
+                filter_electrons = electrons[electronmask]
+                lepselection.add("ElectronSelection", ak.to_numpy(ak.num(filter_electrons)==eselect.count))
+            # apply vetos    
+            else:
+                electronmask = (electrons.pt>eselect.ptLevel)
+                filter_electrons = electrons[electronmask]
+                lepselection.add("ElectronSelection", ak.to_numpy(ak.num(filter_electrons)==0))
 
-            # select muons
-            mselect = lepselname.muon
-            if (mselect.veto != None):
-                if not mselect.veto:
-                    muonmask = (muons.pt>mselect.ptLevel) & \
-                                (abs(muons.eta)<mselect.absetaLevel) & \
-                                (abs(muons.dxy)<mselect.absdxyLevel) & \
-                                (abs(muons.dz)<mselect.absdzLevel) & \
-                                (muons.iso<mselect.isoLevel) & \
-                                (muons.tightid==mselect.IDLevel)
-                    filter_muons = muons[muonmask]
-                    lepselection.add("MuonSelection", ak.to_numpy(ak.num(filter_muons)==mselect.count))
-                else:
-                    muonmas = (muons.pt>mselect.ptLevel)
-                    filter_muons = muons[muonmask]
-                    lepselection.add("MuonSelection", ak.to_numpy(ak.num(filter_muons)==0))
-                
-            # select taus
-            tselect = lepselname.tau
-            if tselect.veto != None:
-                if not tselect.veto:
-                    taumask = (taus.pt>tselect.ptLevel) & \
-                            (abs(taus.eta)<tselect.absetaLevel) & \
-                            (taus.idvsjet>tselect.IDvsjetLevel) & \
-                            (taus.idvsmu>tselect.IDvsmuLevel) & \
-                            (taus.idvse>tselect.IDvseLevel) & \
-                            (abs(taus.dz)<tselect.absdzLevel) 
-                    filter_taus = taus[taumask]
-                    lepselection.add("TauSelection", ak.to_numpy(ak.num(filter_taus)>=tselect.count))
-                else:
-                    # TODO: for now a placeholder
-                    pass
+        # select muons
+        mselect = lepselname.muon
+        if (mselect.veto is not None):
+            if not mselect.veto:
+                # TODO: figure out a way to construct the filtered muons quickly from fields
+                muonmask = (muons.pt>mselect.ptLevel) & \
+                            (abs(muons.eta)<mselect.absetaLevel) & \
+                            (abs(muons.dxy)<mselect.absdxyLevel) & \
+                            (abs(muons.dz)<mselect.absdzLevel) & \
+                            (muons.iso<mselect.isoLevel) & \
+                            (muons.tightid==mselect.IDLevel)
+                filter_muons = muons[muonmask]
+                lepselection.add("MuonSelection", ak.to_numpy(ak.num(filter_muons)==mselect.count))
+            else:
+                muonmask = (muons.pt>mselect.ptLevel)
+                filter_muons = muons[muonmask]
+                lepselection.add("MuonSelection", ak.to_numpy(ak.num(filter_muons)==0))
+            
+        # select taus
+        tselect = lepselname.tau
+        if tselect.veto is not None:
+            if not tselect.veto:
+                taumask = (taus.pt>tselect.ptLevel) & \
+                        (abs(taus.eta)<tselect.absetaLevel) & \
+                        (taus.idvsjet>=tselect.IDvsjetLevel) & \
+                        (taus.idvsmu>=tselect.IDvsmuLevel) & \
+                        (taus.idvse>=tselect.IDvseLevel) & \
+                        (abs(taus.dz)<tselect.absdzLevel) 
+                # Add sort_by_truth array mask 
+                filter_taus = taus[taumask]
+                lepselection.add("TauSelection", ak.to_numpy(ak.num(filter_taus)>=tselect.count))
+            else:
+                # TODO: for now a placeholder
+                pass
 
-            # Evaluate the selection collections at this point to identify individual leptons selected
-            keyname = "".join(["channel",str(i+1)])
-            cutflow_dict[keyname] = {}
-            cutflow_dict[keyname]["Total"] = len(events)
-            for i, sel in enumerate(lepselection.names):
-                cutflow_dict[keyname][sel] = lepselection.all(*(lepselection.names[:i+1])).sum()
-            events_dict[keyname] = events[lepselection.all(*(lepselection.names))]
-            events = events[~(lepselection.all(*(lepselection.names)))]
-    
+        # Evaluate the selection collections at this point to identify individual leptons selected
+        keyname = "".join(["channel",str(i+1)])
+        cutflow_dict[keyname] = {}
+        cutflow_dict[keyname]["Total"] = len(events)
+        for i, sel in enumerate(lepselection.names):
+            cutflow_dict[keyname][sel] = lepselection.all(*(lepselection.names[:i+1])).sum()
+        events_dict[keyname] = events[lepselection.all(*(lepselection.names))]
+        events = events[~(lepselection.all(*(lepselection.names)))]
+
     return events_dict, cutflow_dict
 
 def pair_selections(events_dict, cutflow_dict, cfg):
@@ -119,7 +121,7 @@ def pair_selections(events_dict, cutflow_dict, cfg):
         filter_muons, filter_electrons, filter_taus = lep_properties(events)
         
         # select pair properties
-        if lepselname.pair != None:
+        if lepselname.pair is not None:
             pairselect = lepselname.pair
             pairname = pairselect.name
             if pairname.find("M") != -1 and pairname.find("T")!= -1:
@@ -162,7 +164,7 @@ def jet_selections(events_dict, cutflow_dict, cfg):
         lepcfgname = f"signal.{channelname}"
         lepselname = cfg[lepcfgname+".selections"] 
         comselname = cfg["signal.commonsel"]
-        if comselname.ak4jet != None:
+        if comselname.ak4jet is not None:
             ak4s, ak8s = jet_properties(events)
             jetselect = comselname.ak4jet
             # Basic jet check
@@ -173,15 +175,15 @@ def jet_selections(events_dict, cutflow_dict, cfg):
             events = events[ak4mask]
             filter_ak4s = LV("Jet", events)
             # Overlap check 
-            if not lepselname.electron.veto and (lepselname.electron.veto != None):
+            if not lepselname.electron.veto and (lepselname.electron.veto is not None):
                 electronLV = LV("Electron", events)
                 dRmask = (electronLV[:,0].deltaR(filter_ak4s) > jetselect.dRLevel)
                 events = events[ak.sum(dRmask, axis=1) > jetselect.count]
-            if not lepselname.muon.veto and (lepselname.muon.veto != None):
+            if not lepselname.muon.veto and (lepselname.muon.veto is not None):
                 muonLV = LV("Muon", events)
                 dRmask = (muonLV[:,0].deltaR(filter_ak4s) > jetselect.dRLevel)
                 events = events[ak.sum(dRmask, axis=1) > jetselect.count]
-            if not lepselname.tau.veto and (lepselname.tau.veto != None):
+            if not lepselname.tau.veto and (lepselname.tau.veto is not None):
                 for i in range(lepselname.tau.count):
                     tauLV = LV("Tau", events)
                     dRmask = (tauLV[:,i].deltaR(filter_ak4s) > jetselect.dRLevel)
