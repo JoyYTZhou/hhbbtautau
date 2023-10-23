@@ -18,19 +18,6 @@ default:
           absdxyLevel: 0.045
           absdzLevel: 0.2
           count: 1
-          outputs: 
-            float:
-              Electron_pt: Electron_pt
-              Electron_mass: Electron_mass
-              Electron_phi: Electron_phi
-              Electron_eta: Electron_eta
-              Electron_dxy: Electron_dxy
-              Electron_dz: Electron_dz
-              Electron_BDTID: Electron_mvaIso
-            bool: null
-            uint: null
-            int: 
-              Electron_charge: Electron_charge
         muon:
           veto: True
           ptLevel: 25
@@ -43,21 +30,6 @@ default:
           IDvseLevel: 3 
           absdzLevel: 0.2
           count: 1
-          outputs:
-            float:
-              Tau_pt: Tau_pt
-              Tau_eta: Tau_eta
-              Tau_phi: Tau_phi
-              Tau_mass: Tau_mass
-              Tau_dxy: Tau_dxy
-              Tau_dz: Tau_dz
-            bool: null
-            int:
-              Muon_charge: Muon_charge
-            uint:
-              Tau_IDvsjet: Tau_idDeepTau2018v2p5VSjet
-              Tau_IDvsmu: Tau_idDeepTau2018v2p5VSmu
-              Tau_IDvse: Tau_idDeepTau2018v2p5VSe
         pair:
           name: "ET"
           OS: True
@@ -81,18 +53,6 @@ default:
           count: 1
           absdxyLevel: 0.045
           absdzLevel: 0.2
-          outputs:
-            float:
-              Muon_dz: Muon_dz
-              Muon_dxy: Muon_dxy
-              Muon_phi: Muon_phi
-              Muon_mass: Muon_mass
-              Muon_eta: Muon_eta
-              Muon_pt: Muon_pt
-              Muon_isoId: Muon_pfRelIso04_all
-            bool:
-              Muon_tightId: Muon_tightId
-            uint: null
         tau:
           veto: False
           ptLevel: 35
@@ -102,19 +62,6 @@ default:
           IDvseLevel: 3 
           absdzLevel: 0.2
           count: 1
-          outputs:
-            float:
-              Tau_pt: Tau_pt
-              Tau_eta: Tau_eta
-              Tau_phi: Tau_phi
-              Tau_mass: Tau_mass
-              Tau_dxy: Tau_dxy
-              Tau_dz: Tau_dz
-            bool: null
-            uint:
-              Tau_IDvsjet: Tau_idDeepTau2018v2p5VSjet
-              Tau_IDvsmu: Tau_idDeepTau2018v2p5VSmu
-              Tau_IDvse: Tau_idDeepTau2018v2p5VSe
         pair:
           name: "MT" 
           OS: True
@@ -135,19 +82,6 @@ default:
           IDvseLevel: 2
           absdzLevel: 0.2
           count: 2
-          outputs:
-            float:
-              Tau_pt: Tau_pt
-              Tau_eta: Tau_eta
-              Tau_phi: Tau_phi
-              Tau_mass: Tau_mass
-              Tau_dxy: Tau_dxy
-              Tau_dz: Tau_dz
-            bool: null
-            uint:
-              Tau_IDvsjet: Tau_idDeepTau2018v2p5VSjet
-              Tau_IDvsmu: Tau_idDeepTau2018v2p5VSmu
-              Tau_IDvse: Tau_idDeepTau2018v2p5VSe
         pair:
           name: "TT"
           OS: True
@@ -158,5 +92,71 @@ default:
         dRLevel: 0.5
         count: 2
         overlapCheck: True
+    outputs:
+      Tau:
+        float: 
+          pt: Tau_pt
+          eta: Tau_eta
+          phi: Tau_phi
+          mass: Tau_mass
+          dxy: Tau_dxy
+          dz: Tau_dz
+        int:
+          charge: Tau_charge
+        uint:
+          idvsjet: Tau_idDeepTau2018v2p5VSjet
+          idvsmu: Tau_idDeepTau2018v2p5VSmu
+          idvse: Tau_idDeepTau2018v2p5VSe
+      Electron:
+        float:
+          pt: Electron_pt
+          eta: Electron_eta
+          phi: Electron_phi
+          mass: Electron_mass
+          dxy: Electron_dxy
+          dz: Electron_dz
+          bdtid: Electron_mvaIso
+        int:
+          charge: Electron_charge
+      Muon:
+        float:
+          pt: Muon_pt
+          eta: Muon_eta
+          phi: Muon_phi
+          mass: Muon_mass
+          dxy: Muon_dxy
+          dz: Muon_dz
+          iso: Muon_pfRelIso04_all
+        bool:
+          tightid: Muon_tightId
+        int: 
+          charge: Muon_charge
+      Jet:
+        float:
+          pt: Jet_pt
+          eta: Jet_eta
+          phi: Jet_phi
+          mass: Jet_mass
+          deepJetbtagger: Jet_btagDeepFlavB
+          deepCSVbtagger: Jet_btagDeepB
+          deepJetCvsB: Jet_btagDeepFlavCvB
+        uint:
+          jetID: Jet_jetId
+      FatJet:
+        float:
+          pt: FatJet_pt
+          eta: FatJet_eta
+          phi: FatJet_phi
+          mass: FatJet_mass
+          QCD: FatJet_particleNetMD_QCD
+          Xbb: FatJet_particleNetMD_Xbb
+          Xcc: FatJet_particleNetMD_Xcc
+          Xqq: FatJet_particleNetMD_Xqq
+          Hbb: FatJet_btagHbb
+        uint:
+          jetID: FatJet_jetId
+
+
+
           
           
