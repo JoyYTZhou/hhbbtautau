@@ -53,18 +53,15 @@ class hhbbtautauProcessor(processor.ProcessorABC):
         # TODO: Add triggers
         
         # Lepton selections
-        events_dict, cutflow_dict = lepton_selections(events, cfg)
-
+        events_dict, cutflow_dict, object_dict = lepton_selections(events, cfg)
         # Pair selections
-        pair_selections(events_dict, cutflow_dict, cfg)
-
+        pair_selections(events_dict, cutflow_dict, object_dict, cfg)
         # Jet selections
-        jet_selections(events_dict, cutflow_dict, cfg)
-
+        jet_selections(events_dict, cutflow_dict, object_dict, cfg)
         # Fill histograms
         output = self.accumulator.identity()
 
-        hbbtautau_accumulate(output, cfg, events_dict, cutflow_dict)
+        hbbtautau_accumulate(output, cfg, cutflow_dict, object_dict)
 
         return output
 
