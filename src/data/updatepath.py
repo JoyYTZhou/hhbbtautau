@@ -3,6 +3,7 @@
 
 import subprocess
 import json
+import os
 
 def dasgo_query(query, json=False):
     cmd = ["dasgoclient", "--query", query]
@@ -14,9 +15,15 @@ def dasgo_query(query, json=False):
     if proc.returncode != 0:
         raise RuntimeError(f"Could not run DAS Go client query: {query}. Stderr: \n{stderr}")
 
-    return stdout
+    return stdout.decode().splitlines()
 
 if __name__ == "__main__":
-    dasgo_query("dataset=/GluGlutoHHto2B2Tau_kl-*_kt-1p00_*_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer22EEMiniAODv3-Poisson60KeepRAW_124X_mcRun3_2022_realistic_postEE_v1-v2/MINIAODSIM")
+    with open("MCSamplepath.json", 'r') as ds:
+        dsjson = json.load(ds)
+
+    complete_dict = {}
+
+
+    print(dasgo_query("dataset=/GluGlutoHHto2B2Tau_kl-*_kt-1p00_*_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer22EEMiniAODv3-Poisson60KeepRAW_124X_mcRun3_2022_realistic_postEE_v1-v2/MINIAODSIM").decode().splitlines())
     
 
