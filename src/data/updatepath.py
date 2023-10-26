@@ -4,6 +4,7 @@
 import subprocess
 import json
 import os
+from tqdm import tqdm
 
 def dasgo_query(query, json=False):
     cmd = ["dasgoclient", "--query", query]
@@ -17,13 +18,39 @@ def dasgo_query(query, json=False):
 
     return stdout.decode().splitlines()
 
+def xrootd_format(fpath):
+    """Ensure that the file path is file:/* or xrootd"""
+    if fpath.startswith("/store/"):
+        return f"root://cms-xrd-global.cern.ch//{fpath}"
+    elif fpath.startswith("file:") or fpath.startswith("root:"):
+        return fpath
+    else:
+        return f"file://{fpath}"
+
 if __name__ == "__main__":
-    with open("MCSamplepath.json", 'r') as ds:
+    with open("MCsamplepath.json", 'r') as ds:
         dsjson = json.load(ds)
 
     complete_dict = {}
-
-
-    print(dasgo_query("dataset=/GluGlutoHHto2B2Tau_kl-*_kt-1p00_*_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer22EEMiniAODv3-Poisson60KeepRAW_124X_mcRun3_2022_realistic_postEE_v1-v2/MINIAODSIM").decode().splitlines())
     
+    for process in dsjson.keys():
+        complete_dict[process] = {}
+        for name, sample_list in tqdm(dsjson[process].items(), f"finding {process} samples..."):
+            # make dataset query for a list of dataset in one process
+            query_ds = lambda ds: "".join(["dataset=", ds])
+            ds_query_list = list(map(query_ds, sample_list))
+            to_flatten = list(map(dasgo_query, ds_query_list))
+            dslist = [item for sublist in to_flatten for item in sublist] 
 
+            query_file = lambda ds: "".join(["file dataset=", ds])
+            file_query_list = list(map(query_file, dslist))
+            to_flatten = list(map(dasgo_query, file_query_list))
+            filelist = [item for sublist in to_flatten for item in sublist] 
+            filelist_xrootd = list(map(xrootd_format, filelist))
+            complete_dict[process].update({name: filelist_xrootd})
+
+    with open("completepath.json", 'w') as jsonfile:
+        json.dump(complete_dict, jsonfile)
+
+
+        
