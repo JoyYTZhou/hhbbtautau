@@ -9,4 +9,5 @@ Main branch should be temporarily usable.
 1. ~~Finish selections and config file~~
 2. ~~Book necessary histograms~~
 3. ~~Test one file run~~
-4. Produce Cutflow <--
+4. Produce Cutflow <---
+5. Writing Condor Script <---
