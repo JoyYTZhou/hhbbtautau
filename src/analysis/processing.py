@@ -1,8 +1,9 @@
 # adapted from https://github.com/bu-cms/projectcoffea/monojet/monojetProcessor.py
 
 import copy
-import re
+import os
 import numpy as np
+import pandas as pd
 import coffea.processor as processor
 from config.selectionconfig import settings as cfg
 from analysis.selutility import lepton_selections, pair_selections, jet_selections
@@ -31,6 +32,7 @@ class hhbbtautauProcessor(processor.ProcessorABC):
         self._blind=False
         self._configure()
         self._accumulator = hhtobbtautau_accumulator(cfg)
+        self._dataset = None
 
     @property
     def accumulator(self):
@@ -41,13 +43,14 @@ class hhbbtautauProcessor(processor.ProcessorABC):
 
         cfg.DYNACONF_WORKS="merge_configs"
         cfg.MERGE_ENABLED_FOR_DYNACONF=True
-
+        
+        if events is not None:
+            self._dataset = events.metadata['dataset']
 
     def process(self, events):
         if not cfg.size:
             return self.accumulator.identity()
-        # self._configure(events)
-        dataset = events.metadata['dataset']
+        self._configure(events)
 
         # Triggers
         # TODO: Add triggers
@@ -65,5 +68,30 @@ class hhbbtautauProcessor(processor.ProcessorABC):
 
         return output
 
-    def postprocess(self, accumulator):
-        return accumulator
+    def postprocess(self, acc_output, dir_name, cf_list):
+        for channel in acc_output.keys():
+            fi_savename = "_".join([self._dataset, channel])
+            channel_df =  pd.DataFrame.from_dict(acc_output[channel]['Objects'])
+            channel_df['Process'] = self._dataset
+            channel_df.to_csv(os.path.join(dir_name, fi_savename))
+            cf_df = pd.DataFrame.from_dict(acc_output[channel]['Cutflow'])
+            cf_df.index = [self._dataset]
+            cf_list[channel].append(cf_df)
+
+def init_output():
+    cf_df_list = {} 
+    for i in range(cfg.signal.channelno):
+        lepcfgname = "signal.channel"+str(i+1)
+        channelname = cfg[lepcfgname+".name"]
+        cf_df_list[channelname] = []
+    return cf_df_list
+
+def concat_output(cf_df_list, dir_name = None):
+    for channelname, df_list in cf_df_list.items():
+        cf_df_list[channelname] = pd.concat(df_list)
+        if dir_name is not None:
+            finame = f"{channelname}.csv"
+            cf_df_list[channelname].to_csv(os.path.join(dir_name, finame)) 
+
+     
+    

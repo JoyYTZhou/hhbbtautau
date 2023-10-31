@@ -8,29 +8,42 @@ import glob
 import json
 import argparse
 
-# TODO: Change this to use cfg
 parser = argparse.ArgumentParser(
-                    prog='looper',
-                    description='loops over the events directory and performs selections',
-                    epilog='==============================================')
+    prog='looper',
+    description='loops over the events directory and performs selections',
+    epilog='==============================================')
 
-parser.add_argument('-f', '--file', required=True, type=str, help="the path to json file containing the data samples")
+parser.add_argument('-f', '--file', required=True, type=str,
+                    help="the path to json file containing the data samples")
 parser.add_argument('-d', '--isDirectory', required=True, type=bool)
-parser.add_argument('-a', '--all', required=True, default=True, type=bool)
-args=parser.parse_args()
+parser.add_argument('-t', '--test', required=True, default=False, type=bool)
+parser.add_argument('-o', '--output', required=True, type=str, help="output directory path")
+args = parser.parse_args()
 
 with open(args.file, 'r') as samplepath:
     data = json.load(samplepath)
 
-if args.all:
-    
-# TODO: Change this later so that metadata tag can be extracted from cfg file to include sample type
-events = NanoEventsFactory.from_root(
-    filelist,
-    schemeclass=BaseSchema,
-    metadata={"dataset": "ttbar"},).events()
+cutflow = init_output()
 
-# Create a root file for after object level selections
+if not args.test:
+    for sample in ['Background', "Signal"]:
+        for process in data[sample].keys():
+            filelist = data[sample][process]
+            events = NanoEventsFactory.from_root(
+                filelist,
+                schemeclass=BaseSchema,
+                metadata={"dataset": process},).events()  
+            p = hhbbtautauProcessor()
+            out = p.process(events)
+            p.postprocess(out, args.output, cutflow)
+else:
+    filelist = data['Background']['DYJets']
+    events = NanoEventsFactory.from_root(
+        filelist,
+        schemeclass=BaseSchema,
+        metadata={"dataset": 'DYJets'},).events() 
+    p = hhbbtautauProcessor()
+    out = p.process(events)
+    p.postprocess(out, args.output, cutflow)
 
-
-
+concat_output(cutflow, args.output)
