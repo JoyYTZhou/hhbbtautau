@@ -21,7 +21,7 @@ def dasgo_query(query, json=False):
 def xrootd_format(fpath):
     """Ensure that the file path is file:/* or xrootd"""
     if fpath.startswith("/store/"):
-        return f"root://cms-xrd-global.cern.ch//{fpath}"
+        return f"root://cmsxrootd.fnal.gov/{fpath}"
     elif fpath.startswith("file:") or fpath.startswith("root:"):
         return fpath
     else:

@@ -31,7 +31,7 @@ if not args.test:
             filelist = data[sample][process]
             events = NanoEventsFactory.from_root(
                 filelist,
-                schemeclass=BaseSchema,
+                schemaclass=BaseSchema,
                 metadata={"dataset": process},).events()  
             p = hhbbtautauProcessor()
             out = p.process(events)
@@ -40,7 +40,7 @@ else:
     filelist = data['Background']['DYJets']
     events = NanoEventsFactory.from_root(
         filelist,
-        schemeclass=BaseSchema,
+        schemaclass=BaseSchema,
         metadata={"dataset": 'DYJets'},).events() 
     p = hhbbtautauProcessor()
     out = p.process(events)
