@@ -48,6 +48,13 @@ class hhbbtautauProcessor(processor.ProcessorABC):
             self._dataset = events.metadata['dataset']
 
     def process(self, events):
+        """Process events.
+        :return: selected_events[channelname] = dict_accumulator({
+            "Cutflow": accu_int(),
+            "Objects": dict_accumulator(object_accs)
+        })
+        """
+        
         if not cfg.size:
             return self.accumulator.identity()
         self._configure(events)
@@ -66,29 +73,39 @@ class hhbbtautauProcessor(processor.ProcessorABC):
 
         hbbtautau_accumulate(output, cfg, cutflow_dict, object_dict)
 
-        return output
+        return {self._dataset: output}
 
-    def postprocess(self, acc_output, dir_name, cf_list):
-        for channel in acc_output.keys():
-            fi_savename = "_".join([self._dataset, channel])
-            channel_df =  pd.DataFrame.from_dict(acc_output[channel]['Objects'])
-            channel_df['Process'] = self._dataset
-            channel_df.to_csv(os.path.join(dir_name, fi_savename))
-            cf_df = pd.DataFrame.from_dict(acc_output[channel]['Cutflow'])
-            cf_df.index = [self._dataset]
-            cf_list[channel].append(cf_df)
+    def postprocess(self, acc_output):
+        # TODO: Simplify this acc_output  
+        pass
 
-def init_output():
+def output_export(acc_output, cfg, output_dir):
+    """
+
+    """
+    cf_df_list = init_output(cfg.channelnames)
+    obj_df_list = init_output(cfg.channelnames)
+    for dataset, output in acc_output.items():
+        for channelname, acc in output.items():
+            cf_df_list[channelname].append(pd.from_dict(acc['Cutflow']))
+            obj_df = pd.from_dict(acc['Object']) 
+            obj_df['Dataset'] = dataset
+            obj_df_list[channelname].append(obj_df)
+    concat_output(cf_df_list, os.path.join(output_dir, "cutflow"), acc_output.keys())
+    concat_output(obj_df_list, os.path.join(output_dir, "object"))
+    
+    
+
+def init_output(channelnames):
     cf_df_list = {} 
-    for i in range(cfg.signal.channelno):
-        lepcfgname = "signal.channel"+str(i+1)
-        channelname = cfg[lepcfgname+".name"]
-        cf_df_list[channelname] = []
+    cf_df_list.fromkeys(channelnames, [])
     return cf_df_list
 
-def concat_output(cf_df_list, dir_name = None):
+def concat_output(cf_df_list, dir_name = None, index = None):
     for channelname, df_list in cf_df_list.items():
         cf_df_list[channelname] = pd.concat(df_list)
+        if index is not None:
+            cf_df_list[channelname].index = index
         if dir_name is not None:
             finame = f"{channelname}.csv"
             cf_df_list[channelname].to_csv(os.path.join(dir_name, finame)) 

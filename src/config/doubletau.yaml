@@ -2,6 +2,7 @@ default:
   size: 1
   test: False
   signal:
+    channelnames: ["tauetauh", "taumtauh", "tauhtauh"]
     channelno: 3
     channel2:
       name: "tauetauh"
