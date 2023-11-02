@@ -12,21 +12,19 @@ from config.selectionconfig import runsetting as rs
 with open(rs.INPUTFILE_PATH, 'r') as samplepath:
     data = json.load(samplepath)
 
-cutflow = init_output()
-
 if not rs.TEST_MODE:
     # TODO: Place holder for now
     pass
 else:
     fileset = {'DYJets': data['Background']['DYJets']}
     iterative_run = processor.Runner(
-        executor=processor.IterativeExecutor(compression=None),
+        executor=processor.IterativeExecutor(desc="Executing fileset",compression=None),
         schema=BaseSchema,
     )
     out = iterative_run(
         fileset,
         treename=rs.TREE_NAME,
-        processor_instance=hhbbtautauProcessor(),
+        processor_instance=hhbbtautauProcessor()
     )
     output_export(out)
 
