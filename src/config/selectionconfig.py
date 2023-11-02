@@ -10,4 +10,8 @@ settings = Dynaconf(
     settings_files=['doubletau.yaml']
 )
 
-
+runsetting = Dynaconf(
+    root_path=cwd,
+    environments=True,
+    settings_files=['runsetting.toml']
+)

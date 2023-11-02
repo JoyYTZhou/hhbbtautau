@@ -1,0 +1,6 @@
+[default]
+TEST_MODE = true
+INPUTFILE_NAME = "src/data/completepath.json"
+INPUTFILE_PATH = "@format {env[HHBBTT]}/{this.INPUTFILE_NAME}"
+TREE_NAME = "Events"
+
