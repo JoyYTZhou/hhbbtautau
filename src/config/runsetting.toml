@@ -1,6 +1,10 @@
 [default]
 TEST_MODE = true
+SINGLE_FILE = true
+CHANNELNAMES = ["tauetauh", "taumtauh", "tauhtauh"]
 INPUTFILE_NAME = "src/data/completepath.json"
 INPUTFILE_PATH = "@format {env[HHBBTT]}/{this.INPUTFILE_NAME}"
 TREE_NAME = "Events"
+OUTPUTDIR_PATH = "@format {env[OUTPUTPATH]}"
+
 
