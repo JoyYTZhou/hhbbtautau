@@ -95,8 +95,8 @@ def output_export(acc_output, rt_cfg):
     :param rt_cfg: run time configuration object
     :rtype rt_cfg: dynaconf object
     """
-    cf_df_list = init_output(cfg.channelnames)
-    obj_df_list = init_output(cfg.channelnames)
+    cf_df_list = init_output(cfg.signal.channelnames)
+    obj_df_list = init_output(cfg.signal.channelnames)
     for dataset, output in acc_output.items():
         for channelname, acc in output.items():
             cf_df_list[channelname].append(pd.from_dict(acc['Cutflow']))
