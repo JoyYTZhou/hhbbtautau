@@ -79,9 +79,21 @@ class hhbbtautauProcessor(processor.ProcessorABC):
         # TODO: Simplify this acc_output  
         pass
 
-def output_export(acc_output, cfg, output_dir):
-    """
-
+def output_export(acc_output, rt_cfg):
+    """ Export the accumulator to csv file based on settings in the run configuration
+    :param acc_output: accumulated output from coffea.processor/runner.
+        Nested as the following data structure: 
+        {
+            dataset: {
+                channelname: {
+                    "Cutflow": int_accumulator,
+                    "Objects": column_accumulator
+                }
+            }
+        }
+    :rtype acc_output: coffea.processor.dict_accumulator
+    :param rt_cfg: run time configuration object
+    :rtype rt_cfg: dynaconf object
     """
     cf_df_list = init_output(cfg.channelnames)
     obj_df_list = init_output(cfg.channelnames)
@@ -91,10 +103,8 @@ def output_export(acc_output, cfg, output_dir):
             obj_df = pd.from_dict(acc['Object']) 
             obj_df['Dataset'] = dataset
             obj_df_list[channelname].append(obj_df)
-    concat_output(cf_df_list, os.path.join(output_dir, "cutflow"), acc_output.keys())
-    concat_output(obj_df_list, os.path.join(output_dir, "object"))
-    
-    
+    concat_output(cf_df_list, os.path.join(rt_cfg.outputdir_path, "cutflow"), acc_output.keys())
+    concat_output(obj_df_list, os.path.join(rt_cfg.outputdir_path, "object"))
 
 def init_output(channelnames):
     cf_df_list = {} 

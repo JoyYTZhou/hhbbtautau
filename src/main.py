@@ -16,26 +16,29 @@ if not rs.TEST_MODE:
     # TODO: Place holder for now
     pass
 else:
-    filename = "root://cmsxrootd.fnal.gov//store/mc/Run3Summer22EENanoAODv11/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/NANOAODSIM/forPOG_126X_mcRun3_2022_realistic_postEE_v1-v1/70000/53a25c82-3fe6-4604-baa5-64d452496373.root"
-    file = uproot.open(filename)
-    events = NanoEventsFactory.from_root(
-        file,
-        entry_stop=10000,
-        metadata={"dataset": "DYJets"},
-        schemaclass=BaseSchema,
-    ).events()
-    # fileset = {'DYJets': data['Background']['DYJets']}
-    p = hhbbtautauProcessor()
-    out = p.process(events)
-    output_export(out)
-#    iterative_run = processor.Runner(
-#        executor=processor.IterativeExecutor(desc="Executing fileset",compression=None),
-#        schema=BaseSchema,
-#    )
-#    out = iterative_run(
-#        fileset,
-#        treename=rs.TREE_NAME,
-#        processor_instance=hhbbtautauProcessor()
-#    )
+    if rs.SINGLE_FILE:
+        filename = "root://cmsxrootd.fnal.gov//store/mc/Run3Summer22EENanoAODv11/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/NANOAODSIM/forPOG_126X_mcRun3_2022_realistic_postEE_v1-v1/70000/53a25c82-3fe6-4604-baa5-64d452496373.root"
+        single_file = uproot.open(filename)
+        events = NanoEventsFactory.from_root(
+            single_file,
+            entry_stop=10000,
+            metadata={"dataset": "DYJets"},
+            schemaclass=BaseSchema,
+        ).events()
+        p = hhbbtautauProcessor()
+        out = p.process(events)
+        output_export(out, rs)
+    else:
+        fileset = {'DYJets': data['Background']['DYJets']}
+        iterative_run = processor.Runner(
+            executor=processor.IterativeExecutor(desc="Executing fileset",compression=None),
+            schema=BaseSchema,
+        )
+        out = iterative_run(
+            fileset,
+            treename=rs.TREE_NAME,
+            processor_instance=hhbbtautauProcessor()
+        )
+        output_export(out, rs)
 
 
