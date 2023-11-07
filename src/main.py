@@ -28,6 +28,7 @@ else:
         ).events()
         p = hhbbtautauProcessor()
         out = p.process(events)
+        p.postprocess(out)
         output_export(out, rs)
     else:
         fileset = {'DYJets': data['Background']['DYJets']}
