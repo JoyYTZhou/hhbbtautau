@@ -35,7 +35,6 @@ else:
         if rs.LOCAL_TEST:
             fileset = {'DYJets': ["/Users/yuntongzhou/Desktop/Dihiggszztt/sample1.root",
                               "/Users/yuntongzhou/Desktop/Dihiggszztt/sample2.root"]}
-            
         else:
             if rs.RUN_MODE == "iterative":
                 fileset = {'DYJets': data['Background']['DYJets']}
