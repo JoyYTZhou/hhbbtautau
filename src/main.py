@@ -30,8 +30,6 @@ else:
         ).events()
         p = hhbbtautauProcessor()
         out = p.process(events)
-        p.postprocess(out)
-        output_export(out, rs)
     # Iterative run
     else:
         if rs.LOCAL_TEST:
@@ -39,16 +37,20 @@ else:
                               "/Users/yuntongzhou/Desktop/Dihiggszztt/sample2.root"]}
             
         else:
-            fileset = {'DYJets': data['Background']['DYJets']}
-        iterative_run = processor.Runner(
-            executor=processor.IterativeExecutor(desc="Executing fileset",compression=None),
-            schema=BaseSchema,
-        )
-        out = iterative_run(
-            fileset,
-            treename=rs.TREE_NAME,
-            processor_instance=hhbbtautauProcessor()
-        )
-        output_export(out, rs)
+            if rs.RUN_MODE == "iterative":
+                fileset = {'DYJets': data['Background']['DYJets']}
+                iterative_run = processor.Runner(
+                        executor=processor.IterativeExecutor(desc="Executing fileset",compression=None),
+                        schema=BaseSchema,
+                        chunksize=rs.CHUNK_SIZE
+                    )
+                out = iterative_run(
+                        fileset,
+                        treename=rs.TREE_NAME,
+                        processor_instance=hhbbtautauProcessor()
+                    )
+
+p.postprocess(out)
+output_export(out, rs)
 
 
