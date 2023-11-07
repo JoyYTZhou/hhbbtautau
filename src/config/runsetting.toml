@@ -1,6 +1,7 @@
 [default]
 TEST_MODE = true
 SINGLE_FILE = true
+LOCAL_TEST = false
 CHANNELNAMES = ["tauetauh", "taumtauh", "tauhtauh"]
 INPUTFILE_NAME = "src/data/completepath.json"
 INPUTFILE_PATH = "@format {env[HHBBTT]}/{this.INPUTFILE_NAME}"
