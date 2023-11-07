@@ -17,8 +17,10 @@ if not rs.TEST_MODE:
     pass
 else:
     if rs.SINGLE_FILE:
-        filename = "/Users/yuntongzhou/Desktop/Dihiggszztt/sample1.root"
-        # filename = "root://cmsxrootd.fnal.gov//store/mc/Run3Summer22EENanoAODv11/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/NANOAODSIM/forPOG_126X_mcRun3_2022_realistic_postEE_v1-v1/70000/53a25c82-3fe6-4604-baa5-64d452496373.root"
+        if rs.LOCAL_TEST:
+            filename = "/Users/yuntongzhou/Desktop/Dihiggszztt/sample1.root"
+        else: 
+            filename = "root://cmsxrootd.fnal.gov//store/mc/Run3Summer22EENanoAODv11/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/NANOAODSIM/forPOG_126X_mcRun3_2022_realistic_postEE_v1-v1/70000/53a25c82-3fe6-4604-baa5-64d452496373.root"
         single_file = uproot.open(filename)
         events = NanoEventsFactory.from_root(
             single_file,
