@@ -32,8 +32,14 @@ else:
         out = p.process(events)
         p.postprocess(out)
         output_export(out, rs)
+    # Iterative run
     else:
-        fileset = {'DYJets': data['Background']['DYJets']}
+        if rs.LOCAL_TEST:
+            fileset = {'DYJets': ["/Users/yuntongzhou/Desktop/Dihiggszztt/sample1.root",
+                              "/Users/yuntongzhou/Desktop/Dihiggszztt/sample2.root"]}
+            
+        else:
+            fileset = {'DYJets': data['Background']['DYJets']}
         iterative_run = processor.Runner(
             executor=processor.IterativeExecutor(desc="Executing fileset",compression=None),
             schema=BaseSchema,
