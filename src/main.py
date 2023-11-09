@@ -27,6 +27,7 @@ else:
         ).events()
         p = hhbbtautauProcessor()
         out = p.process(events)
+        out = p.postprocess(out)
     # Run multiple files using executors
     else:
         if rs.LOCAL_TEST:
@@ -45,8 +46,6 @@ else:
                     treename=rs.TREE_NAME,
                     processor_instance=hhbbtautauProcessor()
                 )
-
-p.postprocess(out)
 output_export(out, rs)
 
 
