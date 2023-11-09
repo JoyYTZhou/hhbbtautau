@@ -46,7 +46,7 @@ else:
                     treename=rs.TREE_NAME,
                     processor_instance=hhbbtautauProcessor()
                 )
-        elif rs.RUN_MODE == "iterative":
+        elif rs.RUN_MODE == "future":
             iterative_run = processor.Runner(
                     executor=processor.IterativeExecutor(desc="Executing fileset",compression=None),
                     schema=BaseSchema,
