@@ -27,6 +27,7 @@ else:
         ).events()
         p = hhbbtautauProcessor()
         out = p.process(events)
+        out = p.postprocess(out)
     # Run multiple files using executors
     else:
         if rs.LOCAL_TEST:
@@ -45,8 +46,19 @@ else:
                     treename=rs.TREE_NAME,
                     processor_instance=hhbbtautauProcessor()
                 )
+        elif rs.RUN_MODE == "iterative":
+            iterative_run = processor.Runner(
+                    executor=processor.IterativeExecutor(desc="Executing fileset",compression=None),
+                    schema=BaseSchema,
+                    chunksize=rs.CHUNK_SIZE
+                )
+            out = iterative_run(
+                    fileset,
+                    treename=rs.TREE_NAME,
+                    processor_instance=hhbbtautauProcessor()
+                )
 
-p.postprocess(out)
+
 output_export(out, rs)
 
 

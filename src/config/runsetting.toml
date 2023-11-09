@@ -5,6 +5,7 @@ LOCAL_TEST = true
 SINGLE_PATH = "/Users/yuntongzhou/Desktop/Dihiggszztt/sample1.root"
 FILE_SET.DYJETS = ["/Users/yuntongzhou/Desktop/Dihiggszztt/sample1.root", "/Users/yuntongzhou/Desktop/Dihiggszztt/sample2.root"]
 RUN_MODE = "iterative"
+CHUNK_SIZE = 10000
 CHANNELNAMES = ["tauetauh", "taumtauh", "tauhtauh"]
 INPUTFILE_NAME = "src/data/completepath.json"
 INPUTFILE_PATH = "@format {env[HHBBTT]}/{this.INPUTFILE_NAME}"
@@ -13,11 +14,11 @@ OUTPUTDIR_PATH = "@format {env[OUTPUTPATH]}"
 
 [LPC]
 TEST_MODE = true
-SINGLE_FILE = true
+SINGLE_FILE = false
 LOCAL_TEST = false
 RUN_MODE = "iterative"
-FILE_SET.DYJETS = ["~/nobackup/tempinput/DYJets1.root", "~/nobackup/tempinput/DYJets2.root"] 
-CHUNK_SIZE = 1000
+FILE_SET.DYJETS = ["~/nobackup/tempinput/DYJets1.root", "~/nobackup/tempinput/DYJets3.root"] 
+CHUNK_SIZE = 100000
 CHANNELNAMES = ["tauetauh", "taumtauh", "tauhtauh"]
 INPUTFILE_NAME = "src/data/completepath.json"
 INPUTFILE_PATH = "@format {env[HHBBTT]}/{this.INPUTFILE_NAME}"
