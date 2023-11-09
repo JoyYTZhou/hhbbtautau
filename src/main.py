@@ -30,35 +30,31 @@ else:
         out = p.postprocess(out)
     # Run multiple files using executors
     else:
-        if rs.LOCAL_TEST:
-            fileset = rs.FILE_SET
-        else:
-            fileset = rs.FILE_SET
-            # fileset = {'DYJets': data['Background']['DYJets']}
+        # fileset = rs.FILE_SET
+        fileset = {'DYJets': data['Background']['DYJets']}
         if rs.RUN_MODE == "iterative":
             iterative_run = processor.Runner(
-                    executor=processor.IterativeExecutor(desc="Executing fileset",compression=None),
-                    schema=BaseSchema,
-                    chunksize=rs.CHUNK_SIZE
-                )
+                executor=processor.IterativeExecutor(
+                    desc="Executing fileset", compression=None),
+                schema=BaseSchema,
+                chunksize=rs.CHUNK_SIZE
+            )
             out = iterative_run(
-                    fileset,
-                    treename=rs.TREE_NAME,
-                    processor_instance=hhbbtautauProcessor()
-                )
+                fileset,
+                treename=rs.TREE_NAME,
+                processor_instance=hhbbtautauProcessor()
+            )
         elif rs.RUN_MODE == "future":
-            iterative_run = processor.Runner(
-                    executor=processor.IterativeExecutor(desc="Executing fileset",compression=None),
-                    schema=BaseSchema,
-                    chunksize=rs.CHUNK_SIZE
-                )
-            out = iterative_run(
-                    fileset,
-                    treename=rs.TREE_NAME,
-                    processor_instance=hhbbtautauProcessor()
-                )
-
+            futures_run = processor.Runner(
+                executor=processor.FuturesExecutor(
+                    compression=None, workers=2, recoverable=True),
+                schema=BaseSchema,
+                maxchunks=10,
+            )
+            out = futures_run(
+                fileset,
+                treename=rs.TREE_NAME,
+                processor_instance=hhbbtautauProcessor()
+            )
 
 output_export(out, rs)
-
-
