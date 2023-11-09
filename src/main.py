@@ -17,10 +17,7 @@ if not rs.TEST_MODE:
     pass
 else:
     if rs.SINGLE_FILE:
-        if rs.LOCAL_TEST:
-            filename = "/Users/yuntongzhou/Desktop/Dihiggszztt/sample1.root"
-        else: 
-            filename = "root://cmsxrootd.fnal.gov//store/mc/Run3Summer22EENanoAODv11/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/NANOAODSIM/forPOG_126X_mcRun3_2022_realistic_postEE_v1-v1/70000/53a25c82-3fe6-4604-baa5-64d452496373.root"
+        filename = rs.SINGLE_PATH
         single_file = uproot.open(filename)
         events = NanoEventsFactory.from_root(
             single_file,
@@ -30,24 +27,24 @@ else:
         ).events()
         p = hhbbtautauProcessor()
         out = p.process(events)
-    # Iterative run
+    # Run multiple files using executors
     else:
         if rs.LOCAL_TEST:
-            fileset = {'DYJets': ["/Users/yuntongzhou/Desktop/Dihiggszztt/sample1.root",
-                              "/Users/yuntongzhou/Desktop/Dihiggszztt/sample2.root"]}
+            fileset = rs.FILE_SET
         else:
-            if rs.RUN_MODE == "iterative":
-                fileset = {'DYJets': data['Background']['DYJets']}
-                iterative_run = processor.Runner(
-                        executor=processor.IterativeExecutor(desc="Executing fileset",compression=None),
-                        schema=BaseSchema,
-                        chunksize=rs.CHUNK_SIZE
-                    )
-                out = iterative_run(
-                        fileset,
-                        treename=rs.TREE_NAME,
-                        processor_instance=hhbbtautauProcessor()
-                    )
+            fileset = rs.FILE_SET
+            # fileset = {'DYJets': data['Background']['DYJets']}
+        if rs.RUN_MODE == "iterative":
+            iterative_run = processor.Runner(
+                    executor=processor.IterativeExecutor(desc="Executing fileset",compression=None),
+                    schema=BaseSchema,
+                    chunksize=rs.CHUNK_SIZE
+                )
+            out = iterative_run(
+                    fileset,
+                    treename=rs.TREE_NAME,
+                    processor_instance=hhbbtautauProcessor()
+                )
 
 p.postprocess(out)
 output_export(out, rs)
