@@ -11,7 +11,7 @@ OUTPUTDIR_PATH = "@format {env[OUTPUTPATH]}"
 
 [LPC]
 TEST_MODE = true
-SINGLE_FILE = false
+SINGLE_FILE = true
 LOCAL_TEST = false
 RUN_MODE = "iterative"
 CHUNK_SIZE = 1000
