@@ -30,8 +30,10 @@ else:
         out = p.postprocess(out)
     # Run multiple files using executors
     else:
-        # fileset = rs.FILE_SET
-        fileset = {'DYJets': data['Background']['DYJets']}
+        if rs.FILE_SET_LOCAL:
+            fileset = rs.FILE_SET
+        else:
+            fileset = {'DYJets': data['Background']['DYJets']}
         if rs.RUN_MODE == "iterative":
             iterative_run = processor.Runner(
                 executor=processor.IterativeExecutor(
