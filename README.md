@@ -14,6 +14,7 @@ Main branch should be temporarily usable.
 6. Test iterative run on lpc
 7. Test iterative run on lxplus
 8. Add selections on FatJet <---
-9. Write Condor Script <---
-10. Update weighting
-11. Fetch luminosity
+9. ~~Write Condor Script~~
+10. Resolving Condor environment issue <---
+11. Update weighting
+12. Fetch luminosity
