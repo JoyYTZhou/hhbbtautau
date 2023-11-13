@@ -33,7 +33,7 @@ else:
         if rs.FILE_SET_LOCAL:
             fileset = rs.FILE_SET
         else:
-            fileset = {'DYJets': data['Background']['DYJets']}
+            fileset = {'WZZ': data['Background']['WZZ']}
         if rs.RUN_MODE == "iterative":
             iterative_run = processor.Runner(
                 executor=processor.IterativeExecutor(
@@ -49,9 +49,9 @@ else:
         elif rs.RUN_MODE == "future":
             futures_run = processor.Runner(
                 executor=processor.FuturesExecutor(
-                    compression=None, workers=2, recoverable=True),
+                    compression=None, workers=rs.WORKERS, recoverable=True, merging=(rs.N_BATCHES, rs.MIN_SIZE, rs.MAX_SIZE)),
                 schema=BaseSchema,
-                maxchunks=10,
+                chunksize=rs.CHUNK_SIZE
             )
             out = futures_run(
                 fileset,

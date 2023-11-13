@@ -5,3 +5,5 @@
 test/.ipynb_checkpoints/
 # Ignore all pycache files
 **/__pycache__
+# Ignore the virtual python env
+hhbbttrun/

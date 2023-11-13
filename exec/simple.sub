@@ -1,0 +1,10 @@
+universe = vanilla
+executable = /uscms/homes/j/joyzhou/work/hhbbtautau/exec/run.sh
+log = $(ClusterId).$(ProcId).log
+output = $(ClusterId).$(ProcId).out
+error = $(ClusterId).$(ProcId).err
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+transfer_input_files = /uscms/homes/j/joyzhou/work/hhbbtautau/src, /uscms/homes/j/joyzhou/work/hhbbtautau/setup.sh, /uscms/homes/j/joyzhou/work/hhbbtautau/lpcsetup.sh, /uscms/homes/j/joyzhou/work/hhbbtautau/scripts, /uscms/homes/j/joyzhou/work/hhbbtautau/hhbbttrun
+queue
+
