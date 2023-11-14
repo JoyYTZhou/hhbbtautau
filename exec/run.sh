@@ -7,7 +7,8 @@ source lpcsetup.sh
 source scripts/venv.sh
 export PYTHONPATH=$PWD/src:$PYTHONPATH
 export HHBBTT=$PWD
-source setup.sh
+export PROCESS_NAME=$1
+source setup.sh $1
 
 if [ ! -z "${VIRTUAL_ENV}" ]; then
     echo "Found environmental variable."
@@ -18,5 +19,5 @@ else
     sh scripts/envsetup.sh
 
 python3 src/main.py
-sh transfer.sh
+sh transfer.sh $PROCESS_NAME
 

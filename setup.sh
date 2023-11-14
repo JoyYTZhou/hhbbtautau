@@ -1,6 +1,7 @@
 #! /bin/bash
 # =================================================================
 # This script sets up the environment in any execution machine
+# Takes one argument: Process name
 # =================================================================
 
 export PYTHONPATH=$PWD/src:$PYTHONPATH
