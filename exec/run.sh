@@ -7,9 +7,7 @@ source lpcsetup.sh
 source scripts/venv.sh
 export PYTHONPATH=$PWD/src:$PYTHONPATH
 export HHBBTT=$PWD
-export OUTPUTPATH=$PWD/outputs
 source setup.sh
-export CONDORDUMPPATH=
 
 if [ ! -z "${VIRTUAL_ENV}" ]; then
     echo "Found environmental variable."
@@ -20,5 +18,5 @@ else
     sh scripts/envsetup.sh
 
 python3 src/main.py
-export
+sh transfer.sh
 

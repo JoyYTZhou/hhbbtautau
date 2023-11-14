@@ -1,13 +1,16 @@
 #!/bin/bash
+
+# if not submitting batch jobs
 if [ -z "${IS_CONDOR}" ]; then
     OUTPUTPATH="/uscms_data/d1/joyzhou/output"
     export PATH=$PATH:/uscms/home/joyzhou/.local/bin
     source /uscms_data/d1/joyzhou/miniconda3/etc/profile.d/conda.sh
+# if submmitting batch jobs
 else
-    # long path for feeding into main.py
-    export OUTPUTPATH="root://cmseos.fnal.gov//store/user/joyzhou/output"
-    # short path for executing eos commands
+    export OUTPUTPATH=$PWD/outputs
+    # short path for executing eos commands locally
     export SHORTPATH=/store/user/joyzhou/output
+    export CONDORPATH="root://cmseos.fnal.gov//store/user/joyzhou/output"
 fi
 
 echo "Output directory is ${OUTPUTPATH}"
