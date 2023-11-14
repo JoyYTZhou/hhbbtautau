@@ -8,7 +8,7 @@ echo "xrdcp output for condor to "
 echo $CONDORPATH
 
 src=$OUTPUTPATH
-dest=$CONDORPATH
+dest=$CONDORPATH/$PROCESS_NAME
 
 find "$src" -type f | while read -r file; do
     relpath="${file#$src}"
