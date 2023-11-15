@@ -1,6 +1,6 @@
 universe = vanilla
 executable = /uscms/homes/j/joyzhou/work/hhbbtautau/exec/run.sh
-arguments = "WWZ"
+arguments = "WWW"
 log = $(ClusterId).$(ProcId).log
 output = $(ClusterId).$(ProcId).out
 error = $(ClusterId).$(ProcId).err

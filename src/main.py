@@ -33,7 +33,7 @@ else:
         if rs.FILE_SET_LOCAL:
             fileset = rs.FILE_SET
         else:
-            fileset = {'WZZ': data['Background']['WZZ']}
+            fileset = {rs.PROCESS_NAME: data['Background'][rs.PROCESS_NAME]}
         if rs.RUN_MODE == "iterative":
             iterative_run = processor.Runner(
                 executor=processor.IterativeExecutor(
