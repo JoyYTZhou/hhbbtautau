@@ -1,0 +1,1 @@
+eosmkdir $SHORTPATH/WWZ

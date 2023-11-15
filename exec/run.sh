@@ -3,12 +3,13 @@
 # This bash script is adapted from https://github.com/bu-cms/bucoffea/blob/master/bucoffea/execute/htcondor_wrap.sh
 
 export IS_CONDOR=true
-source lpcsetup.sh
-source scripts/venv.sh
-export PYTHONPATH=$PWD/src:$PYTHONPATH
+echo "Currently in $PWD"
 export HHBBTT=$PWD
+source $HHBBTT/lpcsetup.sh
+source $HHBBTT/scripts/venv.sh
+export PYTHONPATH=$PWD/src:$PYTHONPATH
 export PROCESS_NAME=$1
-source setup.sh $1
+source $HHBBTT/setup.sh $1
 
 if [ ! -z "${VIRTUAL_ENV}" ]; then
     echo "Found environmental variable."
@@ -17,7 +18,7 @@ else
     tar xf *tgz
     rm -rvf *tgz
     sh scripts/envsetup.sh
+fi
 
 python3 src/main.py
-sh transfer.sh $PROCESS_NAME
-
+source transfer.sh $PROCESS_NAME
