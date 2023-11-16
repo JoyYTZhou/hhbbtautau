@@ -7,8 +7,6 @@ echo "Currently in $PWD"
 source $PWD/lpcsetup.sh
 export PROCESS_NAME=$1
 source $PWD/setup.sh $1
-export PYTHONPATH=$PWD/src:$PYTHONPATH
-echo "My python path is $PYTHONPATH"
 
 if [ ! -z "${VIRTUAL_ENV}" ]; then
     echo "Found environmental variable."
@@ -21,6 +19,8 @@ if [ ! -z "${VIRTUAL_ENV}" ]; then
 else
     source scripts/envsetup.sh
 fi
+
+echo "My python path is $PYTHONPATH"
 
 python3 src/main.py
 source scripts/transfer.sh $PROCESS_NAME
