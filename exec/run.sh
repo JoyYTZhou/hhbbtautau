@@ -4,21 +4,23 @@
 
 export IS_CONDOR=true
 echo "Currently in $PWD"
-export HHBBTT=$PWD
-source $HHBBTT/lpcsetup.sh
-source $HHBBTT/scripts/venv.sh
-export PYTHONPATH=$PWD/src:$PYTHONPATH
+source $PWD/lpcsetup.sh
 export PROCESS_NAME=$1
-source $HHBBTT/setup.sh $1
+source $PWD/setup.sh $1
+export PYTHONPATH=$PWD/src:$PYTHONPATH
+echo "My python path is $PYTHONPATH"
 
 if [ ! -z "${VIRTUAL_ENV}" ]; then
     echo "Found environmental variable."
-    source ${VIRTUAL_ENV}/bin/activate
+    if [ "$VIRTUAL_ENV" == "${ENV_NAME}" ]; then
+        source ${VIRTUAL_ENV}/bin/activate
+        export PYTHONPATH=$VIRTUAL_ENV/lib/python3.9/site-packages:$PYTHONPATH
+    else
+        source scripts/envsetup.sh
+    fi
 else
-    tar xf *tgz
-    rm -rvf *tgz
-    sh scripts/envsetup.sh
+    source scripts/envsetup.sh
 fi
 
 python3 src/main.py
-source transfer.sh $PROCESS_NAME
+source scripts/transfer.sh $PROCESS_NAME

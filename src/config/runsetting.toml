@@ -14,9 +14,10 @@ TREE_NAME = "Events"
 OUTPUTDIR_PATH = "@format {env[OUTPUTPATH]}"
 
 [LPC]
-TEST_MODE = true
-SINGLE_FILE = false
 LOCAL_TEST = false
+TEST_MODE = true
+SINGLE_FILE = true
+SINGLE_PATH = "root://cmsxrootd.fnal.gov//store/mc/Run3Summer22EENanoAODv11/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/NANOAODSIM/forPOG_126X_mcRun3_2022_realistic_postEE_v1-v1/70000/53a25c82-3fe6-4604-baa5-64d452496373.root"
 RUN_MODE = "future"
 FILE_SET_LOCAL = false
 WORKERS = 1

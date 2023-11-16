@@ -11,11 +11,11 @@ else
     echo "submitting batch jobs"
     export OUTPUTPATH=$PWD/outputs
     # short path for executing eos commands locally
-    export SHORTPATH=/store/user/joyzhou/output
-    echo "shortname for condor output path is $SHORTPATH"
     export CONDORPATH="root://cmseos.fnal.gov//store/user/joyzhou/output"
 fi
 
+export SHORTPATH=/store/user/joyzhou/output
+echo "shortname for condor output path is $SHORTPATH"
 echo "Output directory is ${OUTPUTPATH}"
 
 export ENV_FOR_DYNACONF=LPC

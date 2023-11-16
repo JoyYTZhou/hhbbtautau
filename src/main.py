@@ -22,7 +22,7 @@ else:
         events = NanoEventsFactory.from_root(
             single_file,
             entry_stop=10000,
-            metadata={"dataset": "DYJets"},
+            metadata={"dataset": rs.PROCESS_NAME},
             schemaclass=BaseSchema,
         ).events()
         p = hhbbtautauProcessor()

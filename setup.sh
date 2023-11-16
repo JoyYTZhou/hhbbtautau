@@ -18,10 +18,11 @@ if [ -z "${IS_CONDOR}" ]; then
 # if using batch script
 else
     if [ ! -z "$1" ]; then
-        rm -rv $OUTPUTPATH/$1/cutflow
-        rm -rv $OUTPUTPATH/$1/object
-        mkdir -pv $OUTPUTPATH/$1/cutflow
-        mkdir -pv $OUTPUTPATH/$1/object
+        export OUTPUTPATH=$OUTPUTPATH/$1
+        rm -rv $OUTPUTPATH/cutflow
+        rm -rv $OUTPUTPATH/object
+        mkdir -pv $OUTPUTPATH/cutflow
+        mkdir -pv $OUTPUTPATH/object
         echo "full output directory on executation area is $OUTPUTPATH"
     else
         export OUTPUTPATH=$OUTPUTPATH/backup
