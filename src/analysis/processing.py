@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import coffea.processor as processor
 from config.selectionconfig import settings as cfg
-from analysis.selutility import lepton_selections, pair_selections, jet_selections
+from analysis.selutility import trigger_selections, lepton_selections, pair_selections, jet_selections
 from analysis.dsmethods import *
 from analysis.histbooker import hbbtautau_accumulate, hhtobbtautau_accumulator
 
@@ -60,8 +60,8 @@ class hhbbtautauProcessor(processor.ProcessorABC):
         self._configure(events)
 
         # Triggers
-        # TODO: Add triggers
-
+        trigger_selections(events, cfg)
+        
         # Lepton selections
         events_dict, cutflow_dict, object_dict = lepton_selections(events, cfg)
         # Pair selections
