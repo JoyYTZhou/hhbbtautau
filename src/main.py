@@ -27,7 +27,7 @@ else:
         ).events()
         p = hhbbtautauProcessor()
         out = p.process(events)
-        out = p.postprocess(out)
+        p.postprocess(out)
     # Run multiple files using executors
     else:
         if rs.FILE_SET_LOCAL:

@@ -11,6 +11,18 @@ import pandas as pd
 import uproot
 from collections import ChainMap
 
+def trigger_selections(events, cfg):
+    """ Tirgger select candidate events for a target process with major object selections.
+
+    :param events: events in a NANOAD dataset
+    :type events: coffea.nanoevents.NanoEvents.array
+    :param cfg: configuration object
+    :type cfg: DynaConf object
+    """
+    for obj_prop, value in cfg.signal.triggersel.items():
+        obj_mask = events[obj_prop] >= value
+        events = events[obj_mask]
+     
 def lepton_selections(events, cfg):
     """ Preselect candidate events for a target process with major object selections.
 
@@ -18,8 +30,6 @@ def lepton_selections(events, cfg):
     :type events: coffea.nanoevents.NanoEvents.array
     :param cfg: configuration object
     :type cfg: DynaConf object
-    :param filename: filename of the root file to be written with the filtered events
-    :type filename: string
     :return events_dict: dictionary of coffea nanoevents array with major object selections. 
              keys = channel names, values = events array
     :rtype events_dict: dict{int: coffea.nanoevents.NanoEvents.array}
