@@ -39,7 +39,8 @@ else:
                 executor=processor.IterativeExecutor(
                     desc="Executing fileset", compression=None),
                 schema=BaseSchema,
-                chunksize=rs.CHUNK_SIZE
+                chunksize=rs.CHUNK_SIZE,
+                xrootdtimeout=rs.TIMEOUT
             )
             out = iterative_run(
                 fileset,
@@ -51,12 +52,13 @@ else:
                 executor=processor.FuturesExecutor(
                     compression=None, workers=rs.WORKERS, recoverable=True, merging=(rs.N_BATCHES, rs.MIN_SIZE, rs.MAX_SIZE)),
                 schema=BaseSchema,
-                chunksize=rs.CHUNK_SIZE
+                chunksize=rs.CHUNK_SIZE,
+                xrootdtimeout=rs.TIMEOUT
             )
             out = futures_run(
                 fileset,
                 treename=rs.TREE_NAME,
-                processor_instance=hhbbtautauProcessor()
+                processor_instance=hhbbtautauProcessor(),
             )
 
 output_export(out, rs)
