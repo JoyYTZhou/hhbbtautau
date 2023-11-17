@@ -1,0 +1,57 @@
+Preprocessing  81% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━              64/79 [ 0:20:08 < 0:00:31 | 0.5   file/s ]
+      Merging   0%                                                                       0/15 [ 0:20:08 < -:--:-- | ?   merges/s ]
+concurrent.futures.process._RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/uscms/home/joyzhou/nobackup/miniconda3/envs/CMS/lib/python3.9/concurrent/futures/process.py", line 246, in _process_worker
+    r = call_item.fn(*call_item.args, **call_item.kwargs)
+  File "/uscms/home/joyzhou/.local/lib/python3.9/site-packages/coffea/processor/executor.py", line 1367, in automatic_retries
+    raise e
+  File "/uscms/home/joyzhou/.local/lib/python3.9/site-packages/coffea/processor/executor.py", line 1336, in automatic_retries
+    return func(*args, **kwargs)
+  File "/uscms/home/joyzhou/.local/lib/python3.9/site-packages/coffea/processor/executor.py", line 1419, in metadata_fetcher
+    tree = file[item.treename]
+  File "/uscms/home/joyzhou/nobackup/miniconda3/envs/CMS/lib/python3.9/site-packages/uproot/reading.py", line 2107, in __getitem__
+    return self.key(where).get()
+  File "/uscms/home/joyzhou/nobackup/miniconda3/envs/CMS/lib/python3.9/site-packages/uproot/reading.py", line 2504, in get
+    chunk, cursor = self.get_uncompressed_chunk_cursor()
+  File "/uscms/home/joyzhou/nobackup/miniconda3/envs/CMS/lib/python3.9/site-packages/uproot/reading.py", line 2556, in get_uncompressed_chunk_cursor
+    chunk = self._file.chunk(data_start, data_stop)
+  File "/uscms/home/joyzhou/nobackup/miniconda3/envs/CMS/lib/python3.9/site-packages/uproot/reading.py", line 1200, in chunk
+    return self._source.chunk(start, stop)
+  File "/uscms/home/joyzhou/nobackup/miniconda3/envs/CMS/lib/python3.9/site-packages/uproot/source/xrootd.py", line 311, in chunk
+    data = self._resource.get(start, stop)
+  File "/uscms/home/joyzhou/nobackup/miniconda3/envs/CMS/lib/python3.9/site-packages/uproot/source/xrootd.py", line 169, in get
+    self._xrd_error(status)
+  File "/uscms/home/joyzhou/nobackup/miniconda3/envs/CMS/lib/python3.9/site-packages/uproot/source/xrootd.py", line 118, in _xrd_error
+    raise OSError(
+OSError: XRootD error: [ERROR] Operation expired
+in file root://cmsxrootd.fnal.gov//store/mc/Run3Summer22EENanoAODv11/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/NANOAODSIM/forPOG_126X_mcRun3_2022_realistic_postEE_v1-v1/70000/b1d07ff6-6ece-4992-af5f-301a4d8250b7.root
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/uscms/home/joyzhou/.local/lib/python3.9/site-packages/coffea/processor/executor.py", line 786, in _processwith
+    merged = _watcher(FH, self, reducer, pool)
+  File "/uscms/home/joyzhou/.local/lib/python3.9/site-packages/coffea/processor/executor.py", line 388, in _watcher
+    batch = FH.fetch(merge_size)
+  File "/uscms/home/joyzhou/.local/lib/python3.9/site-packages/coffea/processor/executor.py", line 286, in fetch
+    raise bad_futures[0].exception()
+OSError: XRootD error: [ERROR] Operation expired
+in file root://cmsxrootd.fnal.gov//store/mc/Run3Summer22EENanoAODv11/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/NANOAODSIM/forPOG_126X_mcRun3_2022_realistic_postEE_v1-v1/70000/b1d07ff6-6ece-4992-af5f-301a4d8250b7.root
+Exception occured, recovering progress...
+Waiting for merge jobs 100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 15/15 [ 0:00:07 < 0:00:00 | 1711.1   file/s ]
+ Merging finished jobs 100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 21/21 [ 0:00:00 < 0:00:00 | 3191.9 merges/s ]
+Traceback (most recent call last):
+  File "/uscms/homes/j/joyzhou/work/hhbbtautau/src/main.py", line 58, in <module>
+    out = futures_run(
+  File "/uscms/home/joyzhou/.local/lib/python3.9/site-packages/coffea/processor/executor.py", line 1700, in __call__
+    wrapped_out = self.run(fileset, processor_instance, treename)
+  File "/uscms/home/joyzhou/.local/lib/python3.9/site-packages/coffea/processor/executor.py", line 1782, in run
+    chunks = self.preprocess(fileset, treename)
+  File "/uscms/home/joyzhou/.local/lib/python3.9/site-packages/coffea/processor/executor.py", line 1735, in preprocess
+    fileset = self._filter_badfiles(fileset)
+  File "/uscms/home/joyzhou/.local/lib/python3.9/site-packages/coffea/processor/executor.py", line 1474, in _filter_badfiles
+    raise RuntimeError(
+RuntimeError: Metadata for file root://cmsxrootd.fnal.gov//store/mc/Run3Summer22EENanoAODv11/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/NANOAODSIM/forPOG_126X_mcRun3_2022_realistic_postEE_v1-v1/70000/96094dc0-4c6f-478a-8b34-e39475c12f6d.root could not be accessed.

@@ -9,27 +9,19 @@ export HHBBTT=$PWD
 
 # MUST set the path $OUTPUTPATH to where you store the output before running this script
 
-# If not using batch script
-if [ -z "${IS_CONDOR}" ]; then
-    rm -rv $OUTPUTPATH/cutflow
-    rm -rv $OUTPUTPATH/object
-    mkdir -pv $OUTPUTPATH/cutflow
-    mkdir -pv $OUTPUTPATH/object
-# if using batch script
+if [ ! -z "$1" ]; then
+    export OUTPUTPATH=$OUTPUTPATH/$1
+    export PROCESS_NAME=$1
 else
-    if [ ! -z "$1" ]; then
-        export OUTPUTPATH=$OUTPUTPATH/$1
-        rm -rv $OUTPUTPATH/cutflow
-        rm -rv $OUTPUTPATH/object
-        mkdir -pv $OUTPUTPATH/cutflow
-        mkdir -pv $OUTPUTPATH/object
-        echo "full output directory on executation area is $OUTPUTPATH"
-    else
-        export OUTPUTPATH=$OUTPUTPATH/backup
-    fi
+    export OUTPUTPATH=$OUTPUTPATH/backup
+    export PROCESS_NAME=backup
 fi
 
-
+rm -rvf $OUTPUTPATH/cutflow
+rm -rvf $OUTPUTPATH/object
+mkdir -pv $OUTPUTPATH/cutflow
+mkdir -pv $OUTPUTPATH/object
+echo "full output directory on executation area is $OUTPUTPATH"
 
 
 

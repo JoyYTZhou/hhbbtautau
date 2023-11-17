@@ -2,10 +2,8 @@
 
 # This bash script is adapted from https://github.com/bu-cms/bucoffea/blob/master/bucoffea/execute/htcondor_wrap.sh
 
-export IS_CONDOR=true
 echo "Currently in $PWD"
-source $PWD/lpcsetup.sh
-export PROCESS_NAME=$1
+source $PWD/dirsetup.sh $1
 source $PWD/setup.sh $1
 
 if [ ! -z "${VIRTUAL_ENV}" ]; then
