@@ -4,7 +4,7 @@
 # Run this script before submitting condor jobs
 # =================================================================
 export IS_CONDOR=true
-source ../lpcsetup.sh
+source lpcsetup.sh
 export PREFIX=root://cmseos.fnal.gov
 # if receiving arguments <datasetname>
 if [ ! -z "$1" ]; then
