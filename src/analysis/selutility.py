@@ -50,7 +50,7 @@ def lepton_selections(events, cfg):
     for i in range(cfg.signal.channelno):
         keyname = "".join(["channel", str(i+1)])
         # Create lepton objects
-        muons, electrons, taus = zip_lepproperties(events)
+        muons, electrons, taus = zip_lepproperties(cfg.signal.outputs, events)
         # Create lepselection object: coffea.analysis_tool.PackedSelection
         lepselection = PackedSelection()
         lepcfgname = "signal.channel"+str(i+1)
@@ -261,7 +261,7 @@ def write_rootfiles(events_dict, cfg, filename):
     with uproot.update(filename) as rootfile:
         for i, events in events_dict.items():
             channelname = cfg["signal.channel"+str(i)+".name"]
-            muons, electrons, taus = zip_lepproperties(events)
+            muons, electrons, taus = zip_lepproperties(cfg.signal.outputs, events)
             ak4s, ak8s = jet_properties(events)
             rootfile[channelname].extend({
                 "Muon": muons,
