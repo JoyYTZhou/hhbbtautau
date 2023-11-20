@@ -119,7 +119,7 @@ default:
           mass: Electron_mass
           dxy: Electron_dxy
           dz: Electron_dz
-          bdtid: Electron_mvaIso
+          bdtid: Electron_cutBased
         int:
           charge: Electron_charge
       Muon:

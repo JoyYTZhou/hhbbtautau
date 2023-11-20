@@ -307,53 +307,62 @@ def zip_object(cfg, events, extra=None):
     
 # TODO: this is not the right way to zip properties. Require constant changes. Very inconvenient
 # TODO: use dict.update method to do this from cfg
-def zip_lepproperties(events, extra=None):
+def zip_lepproperties(propcfg, events, extra=None):
     """ Return a collection of dictionaries containing the properties of leptons.
-
+    
+    :param propcfg: a dictionary containing the properties of leptons
+    :type propcfg: dict
+        {
+            object:{
+                {datatype: {
+                    name: nanoaod name}}}
+        }
     :param events: events in a NANOAD dataset
     :type events: coffea.nanoevents.NanoEvents.array 
     :return: zipped properties properties of leptons
     :rtype: coffea.nanoevents.methods.vector.PtEtaPhiMLorentzVectorArray
     """
+    muons = zip_object(propcfg.Muon, events)
+    electrons = zip_object(propcfg.Electron, events)
+    taus = zip_object(propcfg.Tau, events)
     # A collection of dictionaries, each dictionary describing a single muon candidate property
-    muons = ak.zip({
-        "pt": events.Muon_pt,  # type events.Muon_pt: high-level awkward array
-        "eta": events.Muon_eta,
-        "phi": events.Muon_phi,
-        "mass": events.Muon_mass,
-        "charge": events.Muon_charge,
-        "dxy": events.Muon_dxy,
-        "dz": events.Muon_dz,
-        "iso": events.Muon_pfRelIso04_all,
-        "tightid": events.Muon_tightId
-    }, with_name="PtEtaPhiMLorentzVector", behavior=vector.behavior)
+    # muons = ak.zip({
+    #     "pt": events.Muon_pt,  # type events.Muon_pt: high-level awkward array
+    #     "eta": events.Muon_eta,
+    #     "phi": events.Muon_phi,
+    #     "mass": events.Muon_mass,
+    #     "charge": events.Muon_charge,
+    #     "dxy": events.Muon_dxy,
+    #     "dz": events.Muon_dz,
+    #     "iso": events.Muon_pfRelIso04_all,
+    #     "tightid": events.Muon_tightId
+    # }, with_name="PtEtaPhiMLorentzVector", behavior=vector.behavior)
 
-    # A collection of dictionaries, each dictionary describing a single electron candidate property
-    electrons = ak.zip({
-        "pt": events.Electron_pt,  # type events.Electron_pt: high-level awkward array
-        "eta": events.Electron_eta,
-        "phi": events.Electron_phi,
-        "mass": events.Electron_mass,
-        "charge": events.Electron_charge,
-        "dxy": events.Electron_dxy,
-        "dz": events.Electron_dz,
-        "bdtid": events.Electron_mvaIso,
-    }, with_name="PtEtaPhiMLorentzVector", behavior=vector.behavior)
+    # # A collection of dictionaries, each dictionary describing a single electron candidate property
+    # electrons = ak.zip({
+    #     "pt": events.Electron_pt,  # type events.Electron_pt: high-level awkward array
+    #     "eta": events.Electron_eta,
+    #     "phi": events.Electron_phi,
+    #     "mass": events.Electron_mass,
+    #     "charge": events.Electron_charge,
+    #     "dxy": events.Electron_dxy,
+    #     "dz": events.Electron_dz,
+    #     "bdtid": events.Electron_mvaIso,
+    # }, with_name="PtEtaPhiMLorentzVector", behavior=vector.behavior)
 
-    # A collection of dictionaries, each dictionary describing a single tau candidate property
-    taus = ak.zip({
-        "pt": events.Tau_pt,  # type events.Tau_pt: high-level awkward array
-        "eta": events.Tau_eta,
-        "phi": events.Tau_phi,
-        "mass": events.Tau_mass,
-        "charge": events.Tau_charge,
-        "dxy": events.Tau_dxy,
-        "dz": events.Tau_dz,
-        "idvsjet": events.Tau_idDeepTau2018v2p5VSjet,
-        "idvsmu": events.Tau_idDeepTau2018v2p5VSmu,
-        "idvse": events.Tau_idDeepTau2018v2p5VSe,
-    }, with_name="PtEtaPhiMLorentzVector", behavior=vector.behavior)
-
+    # # A collection of dictionaries, each dictionary describing a single tau candidate property
+    # taus = ak.zip({
+    #     "pt": events.Tau_pt,  # type events.Tau_pt: high-level awkward array
+    #     "eta": events.Tau_eta,
+    #     "phi": events.Tau_phi,
+    #     "mass": events.Tau_mass,
+    #     "charge": events.Tau_charge,
+    #     "dxy": events.Tau_dxy,
+    #     "dz": events.Tau_dz,
+    #     "idvsjet": events.Tau_idDeepTau2018v2p5VSjet,
+    #     "idvsmu": events.Tau_idDeepTau2018v2p5VSmu,
+    #     "idvse": events.Tau_idDeepTau2018v2p5VSe,
+    # }, with_name="PtEtaPhiMLorentzVector", behavior=vector.behavior)
     return muons, electrons, taus
 
 
