@@ -3,6 +3,7 @@
 # This bash script is adapted from https://github.com/bu-cms/bucoffea/blob/master/bucoffea/execute/htcondor_wrap.sh
 
 echo "Currently in $PWD"
+source $PWD/scripts/vomcheck.sh
 source $PWD/dirsetup.sh $1
 source $PWD/setup.sh $1
 

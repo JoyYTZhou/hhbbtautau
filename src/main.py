@@ -50,7 +50,11 @@ else:
         elif rs.RUN_MODE == "future":
             futures_run = processor.Runner(
                 executor=processor.FuturesExecutor(
-                    compression=None, workers=rs.WORKERS, recoverable=True, merging=(rs.N_BATCHES, rs.MIN_SIZE, rs.MAX_SIZE)),
+                    compression=rs.COMPRESSION,
+                    workers=rs.WORKERS,
+                    recoverable=rs.RECOVERABLE,
+                    merging=(rs.N_BATCHES, rs.MIN_SIZE, rs.MAX_SIZE)
+                ),
                 schema=BaseSchema,
                 chunksize=rs.CHUNK_SIZE,
                 xrootdtimeout=rs.TIMEOUT
