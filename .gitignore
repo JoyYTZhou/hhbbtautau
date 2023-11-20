@@ -12,3 +12,6 @@ exec/*.log
 exec/*.err
 exec/*.pem
 exec/*.out
+# Ignore all log files
+**/*.log
+.DS_Store
