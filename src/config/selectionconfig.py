@@ -2,16 +2,16 @@
 from dynaconf import Dynaconf
 import os as os
 
-cwd = os.path.dirname(os.path.realpath(__file__))
+rootdir = os.environ['HHBBTT'] 
 
 settings = Dynaconf(
-    root_path=cwd,
+    rootdir=rootdir,
     environments=True,
-    settings_files=['config/doubletau.yaml']
+    settings_files=['src/config/doubletau.yaml']
 )
 
 runsetting = Dynaconf(
-    root_path=cwd,
+    rootdir=rootdir,
     environments=True,
-    settings_files=['config/runsetting.toml']
+    settings_files=['src/config/runsetting.toml']
 )
