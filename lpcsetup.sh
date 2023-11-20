@@ -4,8 +4,7 @@
 if [ -z "${IS_CONDOR}" ]; then
     echo "Not submitting batch jobs"
     OUTPUTPATH="/uscms_data/d1/joyzhou/output"
-    export PATH=$PATH:/uscms/home/joyzhou/.local/bin
-    source /uscms_data/d1/joyzhou/miniconda3/etc/profile.d/conda.sh
+    source scripts/venv.sh
 # if submmitting batch jobs
 else
     echo "submitting batch jobs"
@@ -21,3 +20,5 @@ echo "Output directory is ${OUTPUTPATH}"
 export ENV_FOR_DYNACONF=LPC
 export VO_CMS_SW_DIR=/cvmfs/cms.cern.ch
 source $VO_CMS_SW_DIR/cmsset_default.sh
+
+source scripts/cleanpath.sh

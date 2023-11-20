@@ -7,11 +7,11 @@ cwd = os.path.dirname(os.path.realpath(__file__))
 settings = Dynaconf(
     root_path=cwd,
     environments=True,
-    settings_files=['cwd/config/doubletau.yaml']
+    settings_files=['config/doubletau.yaml']
 )
 
 runsetting = Dynaconf(
     root_path=cwd,
     environments=True,
-    settings_files=['cwd/config/runsetting.toml']
+    settings_files=['config/runsetting.toml']
 )
