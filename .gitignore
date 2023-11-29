@@ -15,3 +15,7 @@ exec/*.out
 # Ignore all log files
 **/*.log
 .DS_Store
+# Ignore test file
+src/test.py
+# Ignore tarball
+*.tar.gz
