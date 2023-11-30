@@ -80,13 +80,16 @@ def divide_samples(inputfn, outputfn, dict_size=5):
     
     complete_dict = {}
 
-    for process, itemlist in dsjson.items():
-        n_dicts = len(itemlist) // dict_size + (len(itemlist) % dict_size > 0)
+    for process, processlist in dsjson.items():
+        complete_dict.update({process: {}})
+        for dsname, itemlist in processlist.items():
+            n_dicts = len(itemlist) // dict_size + (len(itemlist) % dict_size > 0)
 
-    # Create the smaller dictionaries
-        smaller_dicts = {f"{process}{i+1}": itemlist[i*dict_size:(i+1)*dict_size] for i in range(n_dicts)}
-        complete_dict.update(smaller_dicts)
-    
+        # Create the smaller dictionaries
+            smaller_dicts = {f"{dsname}{i+1}": itemlist[i*dict_size:(i+1)*dict_size] for i in range(n_dicts)}
+            smaller_dicts = {f"{dsname}{i+1}": itemlist[i*dict_size:(i+1)*dict_size] for i in range(n_dicts)}
+            complete_dict[process].update(smaller_dicts)
+        
     with open(outputfn, 'w') as jsonfile:
         json.dump(complete_dict, jsonfile)
         
