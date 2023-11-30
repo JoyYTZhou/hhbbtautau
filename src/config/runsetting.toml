@@ -23,7 +23,7 @@ SINGLE_PATH = "root://cmsxrootd.fnal.gov//store/mc/Run3Summer22EENanoAODv11/DYJe
 FILE_SET.DYJETS = ["~/nobackup/tempinput/DYJets1.root", "~/nobackup/tempinput/DYJets3.root"] 
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
 # RUN_MODE Options: future, iterative
-RUN_MODE = "iterative"
+RUN_MODE = "future"
 # executor parameter options
 WORKERS = 2
 N_BATCHES = 5
