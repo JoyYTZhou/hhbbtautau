@@ -27,8 +27,14 @@ def xrootd_format(fpath, access):
     else:
         return f"file://{fpath}"
 
-if __name__ == "__main__":
-    with open("MCsamplepath.json", 'r') as ds:
+def query_MCsamples(dspath, outputfn):
+    """ Query xrootd to find all filepaths to a given set of dataset names.
+    :param dspath: path to json file containing dataset names
+    :type dspath: string
+    :param outputfn: path to output json file containing full dataset paths
+    :type outputfn: string
+    """
+    with open(dspath, 'r') as ds:
         dsjson = json.load(ds)
 
     complete_dict = {}
@@ -49,8 +55,43 @@ if __name__ == "__main__":
             filelist_xrootd = list(map(xrootd_format, filelist))
             complete_dict[process].update({name: filelist_xrootd})
 
-    with open("completepath.json", 'w') as jsonfile:
+    with open(outputfn, 'w') as jsonfile:
         json.dump(complete_dict, jsonfile)
+
+def divide_samples(inputfn, outputfn, dict_size=5):
+    """Divide the ds into smaller list as value per key.
+
+    :param inputfn: path to json file containing dataset names. With structure:
+        {processname: [list of filenames]}
+    :type inputfn: string
+    :param outputfn: path to output json file containing full dataset paths
+    :type outputfn: string
+        {
+            processname1: [list of 5 filenames]
+            processname2: [list of 5 filenames]
+            processname3: [list of 5 filenames]
+            ... 
+        }
+    :param dict_size: size of the list as keys
+    :type dict_size: int
+    """
+    with open(inputfn, 'r') as jsonfile:
+        dsjson = json.load(jsonfile)
+    
+    complete_dict = {}
+
+    for process, itemlist in dsjson.items():
+        n_dicts = len(itemlist) // dict_size + (len(itemlist) % dict_size > 0)
+
+    # Create the smaller dictionaries
+        smaller_dicts = {f"{process}{i+1}": itemlist[i*dict_size:(i+1)*dict_size] for i in range(n_dicts)}
+        complete_dict.update(smaller_dicts)
+    
+    with open(outputfn, 'w') as jsonfile:
+        json.dump(complete_dict, jsonfile)
+        
+if __name__ == "__main__":
+    divide_samples("completepath.json", "inputfile.json")
 
 
         
