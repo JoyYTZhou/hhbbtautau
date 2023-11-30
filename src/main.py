@@ -1,7 +1,7 @@
 # UPDATE TIME: 2023-09-15
 # FROM JOY
-import uproot
 from coffea.nanoevents import NanoEventsFactory, BaseSchema
+import uproot
 from analysis.processing import *
 from tqdm import tqdm
 import glob
@@ -21,7 +21,7 @@ else:
         single_file = uproot.open(filename)
         events = NanoEventsFactory.from_root(
             single_file,
-            entry_stop=10000,
+            entry_stop=None,
             metadata={"dataset": rs.PROCESS_NAME},
             schemaclass=BaseSchema,
         ).events()
@@ -33,14 +33,15 @@ else:
         if rs.FILE_SET_LOCAL:
             fileset = rs.FILE_SET
         else:
-            fileset = {rs.PROCESS_NAME: data['Background'][rs.PROCESS_NAME]}
+            dataset = {rs.PROCESS_NAME: data['Background'][rs.PROCESS_NAME]}
+            fileset = divide_ds(dataset, 15)
         if rs.RUN_MODE == "iterative":
             iterative_run = processor.Runner(
                 executor=processor.IterativeExecutor(
-                    desc="Executing fileset", compression=None),
+                    desc="Executing fileset", compression=rs.COMPRESSION),
                 schema=BaseSchema,
                 chunksize=rs.CHUNK_SIZE,
-                xrootdtimeout=rs.TIMEOUT
+                xrootdtimeout=rs.TIMEOUT,
             )
             out = iterative_run(
                 fileset,
