@@ -7,10 +7,12 @@ source $PWD/scripts/vomcheck.sh
 source $PWD/dirsetup.sh $1
 source $PWD/setup.sh $1
 
+export ENV_NAME=hhbbttrun
+
 if [ ! -z "${VIRTUAL_ENV}" ] && [ "$VIRTUAL_ENV" == "${ENV_NAME}" ]; then
     echo "Found environmental variable."
 else
-    tar -xzf ${ENV_NAME}.tar.gz
+    tar -xzvf ${ENV_NAME}.tar.gz
     rm -rvf *tgz
 fi
 
