@@ -12,11 +12,11 @@ export ENV_NAME=hhbbttrun
 if [ ! -z "${VIRTUAL_ENV}" ] && [ "$VIRTUAL_ENV" == "${ENV_NAME}" ]; then
     echo "Found environmental variable."
 else
-    tar -xzvf ${ENV_NAME}.tar.gz
-    rm -rvf *tgz
+    mkdir ${ENV_NAME}
+    tar -xzf ${ENV_NAME}.tar.gz -C .
 fi
 
-source ${VIRTUAL_ENV}/bin/activate
+source ${ENV_NAME}/bin/activate
 export PYTHONPATH=$VIRTUAL_ENV/lib/python3.9/site-packages:$PYTHONPATH
 
 echo "My python path is $PYTHONPATH"

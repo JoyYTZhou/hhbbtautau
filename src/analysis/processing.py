@@ -61,7 +61,7 @@ class hhbbtautauProcessor(processor.ProcessorABC):
 
         # Triggers
         trigger_selections(events, cfg)
-        
+
         # Lepton selections
         events_dict, cutflow_dict, object_dict = lepton_selections(events, cfg)
         # Pair selections
@@ -86,7 +86,7 @@ class hhbbtautauProcessor(processor.ProcessorABC):
 def output_export(acc_output, rt_cfg):
     """ Export the accumulator to csv file based on settings in the run configuration
     :param acc_output: accumulated output from coffea.processor/runner.
-        Nested as the following data structure: 
+        Nested as the following data structure:
         {
             dataset: {
                 channelname: {
@@ -137,9 +137,9 @@ def divide_ds(ds, dict_size):
     :param dict_size: size of the dictionary
     :type dict_size: int
     :return: dictionary of evenly divided files
-        {   
+        {
             datasetname1: [20 files],
-            datasetname2: [20 files], 
+            datasetname2: [20 files],
             ...
         }
     :rtype: dict
@@ -147,7 +147,7 @@ def divide_ds(ds, dict_size):
 
     # Get the list of items from the original dictionary
     items = list(ds.values())[0]
-    dsname = ds.keys()[0]
+    dsname = list(ds.keys())[0]
 
     # Calculate the number of smaller dictionaries needed
     n_dicts = len(items) // dict_size + (len(items) % dict_size > 0)

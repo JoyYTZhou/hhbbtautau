@@ -34,7 +34,7 @@ else:
             fileset = rs.FILE_SET
         else:
             dataset = {rs.PROCESS_NAME: data['Background'][rs.PROCESS_NAME]}
-            fileset = divide_ds(dataset, 15)
+            fileset = divide_ds(dataset, 10)
         if rs.RUN_MODE == "iterative":
             iterative_run = processor.Runner(
                 executor=processor.IterativeExecutor(
