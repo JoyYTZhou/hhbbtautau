@@ -128,3 +128,30 @@ def concat_output(cf_df_list, axis=0, dir_name=None, index=None):
         if dir_name is not None:
             finame = f"{channelname}.csv"
             cf_df_list[channelname].to_csv(os.path.join(dir_name, finame))
+
+def divide_ds(ds, dict_size):
+    """Divide the ds into chunks of dict_size.
+
+    :param ds: dataset with dataset name and a list of files as value
+    :type ds: dict
+    :param dict_size: size of the dictionary
+    :type dict_size: int
+    :return: dictionary of evenly divided files
+        {   
+            datasetname1: [20 files],
+            datasetname2: [20 files], 
+            ...
+        }
+    :rtype: dict
+    """
+
+    # Get the list of items from the original dictionary
+    items = list(ds.values())[0]
+    dsname = ds.keys()[0]
+
+    # Calculate the number of smaller dictionaries needed
+    n_dicts = len(items) // dict_size + (len(items) % dict_size > 0)
+
+    # Create the smaller dictionaries
+    smaller_dicts = {f"{dsname}{i+1}": items[i*dict_size:(i+1)*dict_size] for i in range(n_dicts)}
+    return smaller_dicts
