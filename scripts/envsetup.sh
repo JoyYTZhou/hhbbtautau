@@ -1,9 +1,10 @@
 #!/bin/bash
 
 source scripts/sasetup.sh
-python -m venv $1/hhbbttrun
+cd ~/nobackup
+python -m venv hhbbttrun
 echo "creating new venv..."
-source $1/hhbbttrun/bin/activate
+source hhbbttrun/bin/activate
 export ENV_NAME=hhbbttrun
 python3 -m pip install coffea --upgrade --no-cache-dir
 echo "Installed Coffea"
@@ -14,6 +15,7 @@ echo "Installed vector"
 deactivate
 
 # create tarball
-tar -czvf ${ENV_NAME}.tar.gz $1/${ENV_NAME}
+tar -czvf ~/work/hhbbtautau/${ENV_NAME}.tar.gz ${ENV_NAME}
+cd ~/work/hhbbtautau
 
 
