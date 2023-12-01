@@ -14,6 +14,19 @@ import subprocess
 from collections import defaultdict
 pjoin = os.path.join
 
+def extract_items(ds, start_string):
+    """Extract items from a dictionary where the keys start with a certain string.
+
+    :param ds: The original dictionary.
+    :type ds: dict
+    :param start_string: The string that the keys should start with.
+    :type start_string: str
+    :return: A new dictionary with the extracted items.
+    :rtype: dict
+    """
+    return {key: value for key, value in ds.items() if key.startswith(start_string)}
+
+
 def short_name(dataset):
     """Shorten name for NANOAOD datasets for better extractability.
 
