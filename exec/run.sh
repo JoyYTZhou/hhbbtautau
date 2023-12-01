@@ -16,7 +16,9 @@ else
     tar -xzf ${ENV_NAME}.tar.gz -C .
 fi
 
+ls
 source ${ENV_NAME}/bin/activate
+echo "Virtual environment is ${VIRTUAL_ENV}."
 export PYTHONPATH=$VIRTUAL_ENV/lib/python3.9/site-packages:$PYTHONPATH
 
 echo "My python path is $PYTHONPATH"
