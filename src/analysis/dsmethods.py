@@ -1,10 +1,7 @@
 # adapted from https://github.com/bu-cms/projectcoffea/blob/master/projectcoffea/helpers/dataset.py
 ###############################################################################
 # This file contains methods 
-
-
 import re
-
 import numpy as np
 import re
 from analysis.mathutility import projectcoffea_path
@@ -25,6 +22,37 @@ def extract_items(ds, start_string):
     :rtype: dict
     """
     return {key: value for key, value in ds.items() if key.startswith(start_string)}
+
+def extract_process(filename):
+    """Extract process name from a filename.
+
+    :param filename: path to the root file
+    :type filename: string
+    :return: process name
+    :rtype: string"""
+    
+    if 'DYJets' in filename:
+        return "DYJets"
+    elif 'ttto' in filename.lower():
+        return "TTbar"
+    elif 'WJetsTo' in filename:
+        return "WJets"
+    elif "WWto" in filename: 
+        return "WW"
+    elif "WWW_" in filename:
+        return "WWW"
+    elif "WZZ_" in filename:
+        return "WZZ"
+    elif "ZH_Hto2B" in filename or "ttHto2B" in filename or "VBFHToTauTau" in filename or "GluGluHToTauTau" in filename:
+        return "XH"
+    elif "ZZto" in filename:
+        return "ZZ"
+    elif "ZZZ_" in filename:
+        return "ZZZ"
+    elif "GluGlutoHHto2B2Tau" in filename:
+        return "ggF"
+    else:
+        return "UNKNOWN"
 
 
 def short_name(dataset):
