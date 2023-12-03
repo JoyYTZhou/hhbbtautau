@@ -38,7 +38,7 @@ def query_MCsamples(dspath, outputfn):
         dsjson = json.load(ds)
 
     complete_dict = {}
-    
+
     for process in dsjson.keys():
         complete_dict[process] = {}
         for name, sample_list in tqdm(dsjson[process].items(), f"finding {process} samples..."):
@@ -46,12 +46,12 @@ def query_MCsamples(dspath, outputfn):
             query_ds = lambda ds: "".join(["dataset=", ds])
             ds_query_list = list(map(query_ds, sample_list))
             to_flatten = list(map(dasgo_query, ds_query_list))
-            dslist = [item for sublist in to_flatten for item in sublist] 
+            dslist = [item for sublist in to_flatten for item in sublist]
 
             query_file = lambda ds: "".join(["file dataset=", ds])
             file_query_list = list(map(query_file, dslist))
             to_flatten = list(map(dasgo_query, file_query_list))
-            filelist = [item for sublist in to_flatten for item in sublist] 
+            filelist = [item for sublist in to_flatten for item in sublist]
             filelist_xrootd = list(map(xrootd_format, filelist))
             complete_dict[process].update({name: filelist_xrootd})
 
@@ -70,14 +70,14 @@ def divide_samples(inputfn, outputfn, dict_size=5):
             processname1: [list of 5 filenames]
             processname2: [list of 5 filenames]
             processname3: [list of 5 filenames]
-            ... 
+            ...
         }
     :param dict_size: size of the list as keys
     :type dict_size: int
     """
     with open(inputfn, 'r') as jsonfile:
         dsjson = json.load(jsonfile)
-    
+
     complete_dict = {}
 
     for process, processlist in dsjson.items():
@@ -88,12 +88,12 @@ def divide_samples(inputfn, outputfn, dict_size=5):
         # Create the smaller dictionaries
             smaller_dicts = {f"{dsname}_{i+1}": itemlist[i*dict_size:(i+1)*dict_size] for i in range(n_dicts)}
             complete_dict[process].update(smaller_dicts)
-        
+
     with open(outputfn, 'w') as jsonfile:
         json.dump(complete_dict, jsonfile)
-        
+
 if __name__ == "__main__":
-    divide_samples("completepath.json", "inputfile.json")
+    divide_samples("completepath.json", "inputfile.json", 20)
 
 
-        
+
