@@ -86,8 +86,7 @@ def divide_samples(inputfn, outputfn, dict_size=5):
             n_dicts = len(itemlist) // dict_size + (len(itemlist) % dict_size > 0)
 
         # Create the smaller dictionaries
-            smaller_dicts = {f"{dsname}{i+1}": itemlist[i*dict_size:(i+1)*dict_size] for i in range(n_dicts)}
-            smaller_dicts = {f"{dsname}{i+1}": itemlist[i*dict_size:(i+1)*dict_size] for i in range(n_dicts)}
+            smaller_dicts = {f"{dsname}_{i+1}": itemlist[i*dict_size:(i+1)*dict_size] for i in range(n_dicts)}
             complete_dict[process].update(smaller_dicts)
         
     with open(outputfn, 'w') as jsonfile:
