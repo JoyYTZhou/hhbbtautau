@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import coffea.processor as processor
 from config.selectionconfig import settings as cfg
+from coffea.nanoevents import NanoEventsFactory, BaseSchema
 from analysis.selutility import trigger_selections, lepton_selections, pair_selections, jet_selections
 from analysis.dsmethods import *
 from analysis.histbooker import hbbtautau_accumulate, hhtobbtautau_accumulator
@@ -116,11 +117,30 @@ def output_export(acc_output, rt_cfg):
 
 
 def init_output(channelnames):
+    """Initialize the output dataframe list.
+
+    :param channelnames: list of channel names
+    :type channelnames: list
+    :return: dictionary of empty dataframe lists
+    :rtype: dict
+    """
     cf_df_list = {channel: [] for channel in channelnames}
     return cf_df_list
 
 
 def concat_output(cf_df_list, axis=0, dir_name=None, index=None):
+    """Concatenate the output dataframe list.
+
+    :param cf_df_list: dictionary of dataframe lists
+    :type cf_df_list: dict
+    :param axis: axis to concatenate, defaults to 0
+    :type axis: int, optional
+    :param dir_name: directory name to export the concatenated dataframe, defaults to None
+    :type dir_name: str, optional
+    :param index: index of the dataframe, defaults to None
+    :type index: list, optional
+    :return: None
+    """
     for channelname, df_list in cf_df_list.items():
         cf_df_list[channelname] = pd.concat(df_list, axis=axis)
         if index is not None:
@@ -155,3 +175,4 @@ def divide_ds(ds, dict_size):
     # Create the smaller dictionaries
     smaller_dicts = {f"{dsname}{i+1}": items[i*dict_size:(i+1)*dict_size] for i in range(n_dicts)}
     return smaller_dicts
+
