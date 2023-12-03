@@ -18,7 +18,6 @@ else
     sed -i "s|${OLD_ENV_NAME}|${PWD}/${ENV_NAME}|g" ${ENV_NAME}/bin/*
 fi
 
-ls
 source ${ENV_NAME}/bin/activate
 echo "Virtual environment is ${VIRTUAL_ENV}."
 export PYTHONPATH=$VIRTUAL_ENV/lib/python3.9/site-packages:$PYTHONPATH
