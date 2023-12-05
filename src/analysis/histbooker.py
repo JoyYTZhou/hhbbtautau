@@ -202,6 +202,18 @@ def ak_to_colacc(var_array, sort_by=None, index=None):
         return column_accumulator(ak.to_numpy(var_array[:,index]))
     return column_accumulator(ak.to_numpy(ak.flatten(var_array)))
 
+def accumulate_dicts(dict_list):
+    """ Accumulate a list of dictionaries into one dictionary.
+    
+    :param dict_list: list of dictionaries with accumulators as values
+    :type dict_list: list
+    :return: accumulated dictionary
+    :rtype: dict
+    """
+    result = dict_accumulator()
+    for d in dict_list:
+        result.add(d)
+    return result
     
 def fitfun(x, a, b, c):
     return a * np.exp(-b * x) + c
