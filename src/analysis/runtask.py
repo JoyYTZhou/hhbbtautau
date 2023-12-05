@@ -1,10 +1,13 @@
 
 import uproot
 from coffea.nanoevents import NanoEventsFactory
+from coffea.processor import dict_accumulator, column_accumulator, defaultdict_accumulator
 from coffea.nanoevents.schemas import BaseSchema
 from coffea import processor
 from analysis.processing import hhbbtautauProcessor
 from analysis.dsmethods import extract_process
+from analysis.histbooker import accumulate_dicts
+import pandas as pd
 
 def run_single(filename, process_name):
     """Run the processor on a single file.
@@ -29,22 +32,33 @@ def run_single(filename, process_name):
     return out
 
 def rerun_exceptions(exceptions):
-    """Rerun the failed jobs.
+    """Rerun the failed jobs. For now only handles the case where the exception is an OSError with the message "XRootD error: [ERROR] Operation expired".
 
     :param exceptions: Mapping of filename : exception
     :type exceptions: dict
-    :return: None
+    :return: A dictionary accumulator containing the output of the rerun jobs
+    :rtype: dict_accumulator()
     """
-    second_out = {}
+    exception_out = dict_accumulator()
     for filename, exception in exceptions.items():
         if isinstance(exception, OSError) and "XRootD error: [ERROR] Operation expired" in str(exception):
             # Rerun the job for the failed file
-            process_name = extract_process(filename) + "_"
+            process_name = extract_process(filename)
             out = run_single(filename, process_name)
-            # export the output
+            exception_out.add(out)
+            del out
+    return exception_out
             
-
 def run_jobs(fileset, rs):
+    """Run the processor on a fileset.
+    
+    :param fileset: fileset
+    :type fileset: dict
+    :param rs: run settings
+    :type rs: DynaConf object
+    :return: output (still accumulatable)
+    :rtype: dict_accumulator
+    """
     if rs.RUN_MODE == "future":
         futures_run = processor.Runner(
             executor=processor.FuturesExecutor(
@@ -62,8 +76,7 @@ def run_jobs(fileset, rs):
             treename=rs.TREE_NAME,
             processor_instance=hhbbtautauProcessor(),
         )
-        rerun_exceptions(exceptions)
-        
+        out.add(rerun_exceptions(exceptions))
     elif rs.RUN_MODE == "iterative":
         iterative_run = processor.Runner(
             executor=processor.IterativeExecutor(
@@ -78,7 +91,7 @@ def run_jobs(fileset, rs):
             processor_instance=hhbbtautauProcessor()
         )
     elif rs.RUN_MODE == "dask":
-        pass
+        out = None
     else:
         raise TypeError("Unknown run mode: %s" % rs.RUN_MODE)
     return out
