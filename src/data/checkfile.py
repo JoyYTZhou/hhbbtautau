@@ -1,5 +1,6 @@
 import uproot as uproot
 import json
+from tqdm import tqdm
 
 def find_branches(file_path, object_list):
     # Open the root file
@@ -16,7 +17,7 @@ def find_branches(file_path, object_list):
 
     # Filter branch names that start with each object
     for object in object_list:
-        branches[object] = [name.decode() for name in branch_names if name.decode().startswith(object)]
+        branches[object] = [name for name in branch_names if name.startswith(object)]
 
     return branches
 
@@ -34,7 +35,8 @@ if __name__ == "__main__":
     inputfile = "completepath.json"
     with open (inputfile, 'r') as f:
         data = json.load(f)
-        for dataset, filelist in data['Signal'].items():
-            output_branches(filelist[0], f"{dataset}.txt", checklist)
-        for dataset, filelist in data['Background'].items():
-            output_branches(filelist[0], f"{dataset}.txt", checklist)
+        for dataset, filelist in tqdm(data['Signal'].items(), desc="Processing files"):
+            output_branches(filelist[0], f"objectchecks/{dataset}.txt", checklist)
+        for dataset, filelist in tqdm(data['Background'].items(), desc="Processing files"):
+            output_branches(filelist[0], f"objectchecks/{dataset}.txt", checklist)
+
