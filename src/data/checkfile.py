@@ -1,6 +1,7 @@
 import uproot as uproot
 import json
 from tqdm import tqdm
+from updatepath import dasgo_query
 
 def find_branches(file_path, object_list):
     # Open the root file
@@ -30,13 +31,21 @@ def output_branches(in_fipath, out_fipath, checklist):
                 f.write("%s\n" % branch)
             f.write("\n")
 
+def extract_samples(dataset):
+    sample = dasgo_query(f"dataset={dataset}")[0]
+    return sample
+
 if __name__ == "__main__":
     checklist = ['Electron_', 'Muon_', 'Tau_', 'Jet_', 'FatJet_']
-    inputfile = "completepath.json"
+    inputfile = "MCsamplepath.json"
     with open (inputfile, 'r') as f:
         data = json.load(f)
-        for dataset, filelist in tqdm(data['Signal'].items(), desc="Processing files"):
-            output_branches(filelist[0], f"objectchecks/{dataset}.txt", checklist)
-        for dataset, filelist in tqdm(data['Background'].items(), desc="Processing files"):
-            output_branches(filelist[0], f"objectchecks/{dataset}.txt", checklist)
+        for process, datasets in tqdm(data['Signal'].items(), desc="Processing files"):
+            for dataset in datasets:
+                sample = dasgo_query(f"dataset={dataset}")[0]
+                output_branches(sample, f"objectchecks/{dataset}.txt", checklist)
+        for process, datasets in tqdm(data['Background'].items(), desc="Processing files"):
+            for dataset in datasets:
+                sample = dasgo_query(f"dataset={dataset}")[0]
+                output_branches(sample, f"objectchecks/{dataset}.txt", checklist)
 
