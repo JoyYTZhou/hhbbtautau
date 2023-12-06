@@ -7,6 +7,8 @@ test/.ipynb_checkpoints/
 **/__pycache__
 # Ignore the virtual python env
 hhbbttrun/
+# Ignore datachecks
+src/data/objectchecks/
 # Ignore the exec output
 exec/*.log
 exec/*.err
