@@ -13,8 +13,8 @@ if [ ! -z "$1" ]; then
     export OUTPUTPATH=$OUTPUTPATH/$1
     export PROCESS_NAME=$1
 else
-    export OUTPUTPATH=$OUTPUTPATH/backup
-    export PROCESS_NAME=backup
+    export OUTPUTPATH=$OUTPUTPATH/all
+    export PROCESS_NAME=all
 fi
 
 rm -rvf $OUTPUTPATH/cutflow

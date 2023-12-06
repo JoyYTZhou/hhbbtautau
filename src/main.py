@@ -15,9 +15,9 @@ with open(rs.INPUTFILE_PATH, 'r') as samplepath:
 
 if rs.TEST_MODE:
     if rs.FILE_SET_LOCAL:
-        fileset = rs.FILE_SET 
+        fileset = rs.FILE_SET
     else:
-        fileset = extract_items(data['Background'], "DYJets") 
+        fileset = extract_items(data['Background'], rs.PROCESS_NAME)
 else:
     fileset = data['Background']
     fileset.update(data['Signal'])
