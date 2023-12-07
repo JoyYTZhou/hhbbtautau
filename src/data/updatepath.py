@@ -93,6 +93,7 @@ def divide_samples(inputfn, outputfn, dict_size=5):
         json.dump(complete_dict, jsonfile)
 
 if __name__ == "__main__":
+    query_MCsamples("MCsamplepath.json", "completepath.json")
     divide_samples("completepath.json", "inputfile.json", 20)
 
 
