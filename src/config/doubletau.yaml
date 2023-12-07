@@ -108,9 +108,9 @@ default:
         int:
           charge: Tau_charge
         uint:
-          idvsjet: Tau_idDeepTau2018v2p5VSjet
-          idvsmu: Tau_idDeepTau2018v2p5VSmu
-          idvse: Tau_idDeepTau2018v2p5VSe
+          idvsjet: Tau_idDeepTau2017v2p1VSjet
+          idvsmu: Tau_idDeepTau2017v2p1VSmu
+          idvse: Tau_idDeepTau2017v2p1VSe
       Electron:
         float:
           pt: Electron_pt
