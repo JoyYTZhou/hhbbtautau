@@ -4,6 +4,13 @@ from tqdm import tqdm
 from updatepath import dasgo_query, xrootd_format
 
 def find_branches(file_path, object_list):
+    """ Return a list of branches for each object in object_list
+
+    :param file_path: path to the root file
+    :param object_list: list of objects to find branches for
+    :return: dictionary of branches for each object
+    :rtype: dict
+    """
     # Open the root file
     file = uproot.open(file_path)
 
@@ -23,6 +30,12 @@ def find_branches(file_path, object_list):
     return branches
 
 def output_branches(in_fipath, out_fipath, checklist):
+    """ Write the branches to a file.
+
+    :param in_fipath: path to the root file
+    :param out_fipath: path to the output file
+    :param checklist: list of objects to find branches for
+    """
     branches = find_branches(in_fipath, checklist)
     with open(out_fipath, 'w') as f:
         for object, object_branches in branches.items():
@@ -30,10 +43,6 @@ def output_branches(in_fipath, out_fipath, checklist):
             for branch in object_branches:
                 f.write("%s\n" % branch)
             f.write("\n")
-
-def extract_samples(dataset):
-    sample = dasgo_query(f"dataset={dataset}")[0]
-    return sample
 
 if __name__ == "__main__":
     checklist = ['Electron_', 'Muon_', 'Tau_', 'Jet_', 'FatJet_']
