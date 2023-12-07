@@ -42,12 +42,14 @@ if __name__ == "__main__":
         data = json.load(f)
         for process, datasets in tqdm(data['Signal'].items(), desc="Processing files"):
             for dataset in datasets:
-                sample = dasgo_query(f"file dataset={dataset}")[0]
+                sample = dasgo_query(f"dataset={dataset}")[0]
+                sample = dasgo_query(f"file dataset={sample}")[0]
                 sample = xrootd_format(sample)
                 output_branches(sample, f"objectchecks/{dataset}.txt", checklist)
         for process, datasets in tqdm(data['Background'].items(), desc="Processing files"):
             for dataset in datasets:
-                sample = dasgo_query(f"file dataset={dataset}")[0]
+                sample = dasgo_query(f"dataset={dataset}")[0]
+                sample = dasgo_query(f"file dataset={sample}")[0]
                 sample = xrootd_format(sample)
                 output_branches(sample, f"objectchecks/{dataset}.txt", checklist)
 
