@@ -40,16 +40,15 @@ if __name__ == "__main__":
     inputfile = "MCsamplepath.json"
     with open (inputfile, 'r') as f:
         data = json.load(f)
-        for process, datasets in tqdm(data['Signal'].items(), desc="Processing files"):
+        filedicts = {}
+        filedicts.update(data['Signal'])
+        filedicts.update(data['Background'])
+        for process, datasets in tqdm(filedicts.items(), desc="Processing files"):
             for dataset in datasets:
                 sample = dasgo_query(f"dataset={dataset}")[0]
+                finame = sample.split('/')[1]
+                print(f"Writing to file {finame}.txt")
                 sample = dasgo_query(f"file dataset={sample}")[0]
                 sample = xrootd_format(sample)
-                output_branches(sample, f"objectchecks/{dataset}.txt", checklist)
-        for process, datasets in tqdm(data['Background'].items(), desc="Processing files"):
-            for dataset in datasets:
-                sample = dasgo_query(f"dataset={dataset}")[0]
-                sample = dasgo_query(f"file dataset={sample}")[0]
-                sample = xrootd_format(sample)
-                output_branches(sample, f"objectchecks/{dataset}.txt", checklist)
+                output_branches(sample, f"objectchecks/{finame}.txt", checklist)
 
