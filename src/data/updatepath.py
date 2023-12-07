@@ -18,7 +18,7 @@ def dasgo_query(query, json=False):
 
     return stdout.decode().splitlines()
 
-def xrootd_format(fpath, access):
+def xrootd_format(fpath):
     """Ensure that the file path is file:/* or xrootd"""
     if fpath.startswith("/store/"):
         return f"root://cmsxrootd.fnal.gov/{fpath}"
