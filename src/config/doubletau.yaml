@@ -16,7 +16,7 @@ default:
       selections:
         electron:
           veto: False
-          BDTLevel: 0.8
+          BDTLevel: 1
           ptLevel: 33
           absetaLevel: 2.1
           absdxyLevel: 0.045
@@ -119,7 +119,7 @@ default:
           mass: Electron_mass
           dxy: Electron_dxy
           dz: Electron_dz
-          bdtid: Electron_cutBased
+          bdtid: Electron_tightCharge
         int:
           charge: Electron_charge
       Muon:
