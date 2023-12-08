@@ -18,9 +18,9 @@ if [ ! -z "$1" ]; then
     xrdfs $PREFIX mkdir -p $SHORTPATH/$1/object
     echo "Making directory $SHORTPATH/$1/object"
 else
-    xrdfs $PREFIX rm -r $SHORTPATH/backup
-    xrdfs $PREFIX mkdir -p $SHORTPATH/backup/cutflow
-    xrdfs $PREFIX mkdir -p $SHORTPATH/backup/object
+    xrdfs $PREFIX rm -r $SHORTPATH/all
+    xrdfs $PREFIX mkdir -p $SHORTPATH/all/cutflow
+    xrdfs $PREFIX mkdir -p $SHORTPATH/all/object
 fi
 
 echo "CONDOR outputpath is $SHORTPATH"
