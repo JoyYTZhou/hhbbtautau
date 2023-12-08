@@ -87,6 +87,13 @@ def future_wrapper(fileset, rs):
                 if filename in fileset[dataset]:
                     fileset[dataset].remove(filename)
                     break
+        except FileNotFoundError as e:
+            filename = re.search(r"/store/.*\.root", str(e)).group(0)
+            print(f"An error occurred with file {filename}: {e}")
+            for dataset in fileset:
+                if filename in fileset[dataset]:
+                    fileset[dataset].remove(filename)
+                    break
     return out
 
 def run_jobs(fileset, rs):
