@@ -27,7 +27,7 @@ def xrootd_format(fpath):
     else:
         return f"file://{fpath}"
 
-def query_MCsamples(dspath, outputfn):
+def query_MCsamples(dspath, outputfn, must_include=None):
     """ Query xrootd to find all filepaths to a given set of dataset names.
     :param dspath: path to json file containing dataset names
     :type dspath: string
@@ -47,7 +47,8 @@ def query_MCsamples(dspath, outputfn):
             ds_query_list = list(map(query_ds, sample_list))
             to_flatten = list(map(dasgo_query, ds_query_list))
             dslist = [item for sublist in to_flatten for item in sublist]
-
+            if must_include is not None:
+                dslist = [ds for ds in dslist if must_include in ds]
             query_file = lambda ds: "".join(["file dataset=", ds])
             file_query_list = list(map(query_file, dslist))
             to_flatten = list(map(dasgo_query, file_query_list))
@@ -93,7 +94,7 @@ def divide_samples(inputfn, outputfn, dict_size=5):
         json.dump(complete_dict, jsonfile)
 
 if __name__ == "__main__":
-    query_MCsamples("MCsamplepath.json", "completepath.json")
+    query_MCsamples("MCsamplepath.json", "completepath.json", "Run3Summer22EE")
     divide_samples("completepath.json", "inputfile.json", 20)
 
 
