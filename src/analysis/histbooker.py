@@ -1,14 +1,7 @@
-import re
-import copy
-
 from coffea.processor import dict_accumulator, column_accumulator, defaultdict_accumulator
 import numpy as np
 import awkward as ak
-import hist
-import vector as vec
 from collections import ChainMap
-
-
 from analysis.mathutility import *
 from analysis.selutility import LV, LV_from_zipped
 from analysis.dsmethods import *

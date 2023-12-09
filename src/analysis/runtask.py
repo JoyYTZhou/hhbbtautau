@@ -73,28 +73,54 @@ def future_wrapper(fileset, rs):
         )
     while True:
         try: 
-            out, exceptions = futures_run(
+            result = futures_run(
                 fileset,
                 treename=rs.TREE_NAME,
                 processor_instance=hhbbtautauProcessor(),
             )
-            out.add(rerun_exceptions(exceptions))
+            if isinstance(result, tuple) and len(result) == 2:
+                out, exceptions = result
+                out.add(rerun_exceptions(exceptions))
+                break
+            else:
+                print("Unexpected result from futures_run. Retrying...")
+                continue
+        except (OSError, RuntimeError, FileNotFoundError) as e:
+            filename = handle_error(e, fileset)
+            if filename:
+                out.add(rerun_exceptions(filename))
+        return out
+
+def handle_error(e, fileset):
+    """Handle an error that occurred during the processing of a file.
+    
+    Apply an error-time correction to the fileset, and gracefully continue 
+    processing the remaining files.
+    
+    :param e: exception object
+    :type e: Exception
+    :param fileset: fileset
+    :type fileset: dict
+    :return: filename of the file that caused the error
+    :rtype: string
+    """
+    if isinstance(e, OSError):
+        filename = re.search(r"in file (.*\.root)", str(e)).group(1)
+        print(f"An XRootD error occurred with file {filename}: {e}")
+    elif isinstance(e, RuntimeError):
+        filename = re.search(r"Metadata for file (.*?) could not be accessed", str(e)).group(1)
+        print(f"An error occurred with file {filename}: {e}")
+    elif isinstance(e, FileNotFoundError):
+        filename = re.search(r"/store/.*\.root", str(e)).group(0)
+        print(f"An error occurred with file {filename}: {e}")
+    else:
+        return None
+
+    for dataset in fileset:
+        if filename in fileset[dataset]:
+            fileset[dataset].remove(filename)
             break
-        except RuntimeError as e:
-            filename = re.search(r"Metadata for file (.*?) could not be accessed", str(e)).group(1)
-            print(f"An error occurred with file {filename}: {e}")
-            for dataset in fileset:
-                if filename in fileset[dataset]:
-                    fileset[dataset].remove(filename)
-                    break
-        except FileNotFoundError as e:
-            filename = re.search(r"/store/.*\.root", str(e)).group(0)
-            print(f"An error occurred with file {filename}: {e}")
-            for dataset in fileset:
-                if filename in fileset[dataset]:
-                    fileset[dataset].remove(filename)
-                    break
-    return out
+    return filename
 
 def run_jobs(fileset, rs):
     """Run the processor on a fileset.
