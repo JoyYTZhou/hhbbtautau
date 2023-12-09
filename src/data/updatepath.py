@@ -95,7 +95,7 @@ def divide_samples(inputfn, outputfn, dict_size=5):
 
 if __name__ == "__main__":
     query_MCsamples("MCsamplepath.json", "completepath.json", "Run3Summer22EE")
-    divide_samples("completepath.json", "inputfile.json", 20)
+    divide_samples("completepath.json", "inputfile.json", 5)
 
 
 
