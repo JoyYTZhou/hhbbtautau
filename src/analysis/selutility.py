@@ -1,13 +1,10 @@
 #!/usr/bin/env python
 
-import numpy as np
 import awkward as ak
 from analysis.dsmethods import *
-import coffea.processor as processor
 from coffea.analysis_tools import PackedSelection
 from coffea.nanoevents.methods import vector
 import vector as vec
-import pandas as pd
 import uproot
 from collections import ChainMap
 
