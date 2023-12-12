@@ -50,8 +50,40 @@ def rerun_exceptions(exceptions):
             del out
     return exception_out
             
-def future_wrapper(fileset, rs):
-    """Wrapper around the futures executor to handle the case where the job fails due to an XRootD error.
+def future_exec(rs):
+    """Create a futures executor.
+    
+    :param rs: run settings
+    :type rs: DynaConf object
+    :return: futures executor
+    :rtype: coffea.processor.FuturesExecutor
+    """
+
+    exec = processor.FuturesExecutor(
+        compression=rs.COMPRESSION,
+        workers=rs.WORKERS,
+        recoverable=rs.RECOVERABLE,
+        merging=(rs.N_BATCHES, rs.MIN_SIZE, rs.MAX_SIZE)
+    )
+    return exec
+
+def init_out(fileset, rs):
+    """Initialize the output accumulator for further accumulation
+
+    :param fileset: fileset
+    :type fileset: dict
+    :param rs: run settings
+    :type rs: DynaConf object
+    :return: output accumulator
+    :rtype: dict_accumulator
+    """
+    dataset, filelist = next(iter(filelist.items()))
+    filename = filelist.pop(0)
+    out = run_single(filename, dataset)
+    return out
+
+def future_runner_wrapper(fileset, rs):
+    """Wrapper around the futures executor WITH RUNNER to handle the case where the job fails due to an XRootD error.
 
     :param fileset: fileset
     :type fileset: dict
@@ -60,20 +92,17 @@ def future_wrapper(fileset, rs):
     :return: output (still accumulatable)
     :rtype: dict_accumulator
     """
-    futures_run = processor.Runner(
-            executor=processor.FuturesExecutor(
-                compression=rs.COMPRESSION,
-                workers=rs.WORKERS,
-                recoverable=rs.RECOVERABLE,
-                merging=(rs.N_BATCHES, rs.MIN_SIZE, rs.MAX_SIZE)
-            ),
+    
+    run = processor.Runner(
+            future_exec(rs),
             schema=BaseSchema,
             chunksize=rs.CHUNK_SIZE,
             xrootdtimeout=rs.TIMEOUT
         )
+    out = init_out(fileset, rs)
     while True:
         try: 
-            result = futures_run(
+            result = run(
                 fileset,
                 treename=rs.TREE_NAME,
                 processor_instance=hhbbtautauProcessor(),
@@ -83,8 +112,8 @@ def future_wrapper(fileset, rs):
                 out.add(rerun_exceptions(exceptions))
                 break
             else:
-                print("Unexpected result from futures_run. Retrying...")
-                continue
+                out.add(result)
+                break
         except (OSError, RuntimeError, FileNotFoundError) as e:
             filename = handle_error(e, fileset)
             if filename:
@@ -133,7 +162,7 @@ def run_jobs(fileset, rs):
     :rtype: dict_accumulator
     """
     if rs.RUN_MODE == "future":
-       out = future_wrapper(fileset, rs) 
+       out = future_runner_wrapper(fileset, rs) 
     elif rs.RUN_MODE == "iterative":
         iterative_run = processor.Runner(
             executor=processor.IterativeExecutor(
