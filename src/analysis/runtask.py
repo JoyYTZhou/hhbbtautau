@@ -77,9 +77,18 @@ def init_out(fileset, rs):
     :return: output accumulator
     :rtype: dict_accumulator
     """
-    dataset, filelist = next(iter(filelist.items()))
+    dataset, filelist = next(iter(fileset.items()))
     filename = filelist.pop(0)
     out = run_single(filename, dataset)
+    
+    for dataset in fileset:
+        if filename in fileset[dataset]:
+            fileset[dataset].remove(filename)
+            break
+    
+    if not filelist:
+        del fileset[dataset]
+
     return out
 
 def future_runner_wrapper(fileset, rs):
