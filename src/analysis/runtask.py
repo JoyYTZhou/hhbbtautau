@@ -10,7 +10,7 @@ from analysis.histbooker import accumulate_dicts
 import pandas as pd
 import re
 
-def run_single(filename, process_name):
+def run_single(filename, process_name, post_process=True):
     """Run the processor on a single file.
 
     :param filename: path to the root file
@@ -29,7 +29,7 @@ def run_single(filename, process_name):
     ).events()
     p = hhbbtautauProcessor()
     out = p.process(events)
-    p.postprocess(out)
+    if post_process: p.postprocess(out)
     return out
 
 def rerun_exceptions(exceptions):
@@ -45,7 +45,7 @@ def rerun_exceptions(exceptions):
         if isinstance(exception, OSError) and "XRootD error: [ERROR] Operation expired" in str(exception):
             # Rerun the job for the failed file
             process_name = extract_process(filename)
-            out = run_single(filename, process_name)
+            out = run_single(filename, process_name, False)
             exception_out.add(out)
             del out
     return exception_out
@@ -79,7 +79,7 @@ def init_out(fileset, rs):
     """
     dataset, filelist = next(iter(fileset.items()))
     filename = filelist.pop(0)
-    out = run_single(filename, dataset)
+    out = run_single(filename, dataset, False)
     
     for dataset in fileset:
         if filename in fileset[dataset]:
