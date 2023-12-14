@@ -108,7 +108,7 @@ def future_runner_wrapper(fileset, rs):
             chunksize=rs.CHUNK_SIZE,
             xrootdtimeout=rs.TIMEOUT
         )
-    out = init_out(fileset, rs)
+    out = dict_accumulator()
     while True:
         try: 
             result = run(
