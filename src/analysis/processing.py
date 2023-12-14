@@ -1,6 +1,5 @@
 # adapted from https://github.com/bu-cms/projectcoffea/monojet/monojetProcessor.py
 
-import copy
 import os
 import numpy as np
 import pandas as pd
@@ -74,6 +73,8 @@ class hhbbtautauProcessor(processor.ProcessorABC):
 
         hbbtautau_accumulate(output, cfg, cutflow_dict, object_dict)
 
+        del cutflow_dict, object_dict
+
         return {self._dataset: output}
 
     def postprocess(self, acc_output):
@@ -90,6 +91,7 @@ class hhbbtautauProcessor(processor.ProcessorABC):
                 # Remove the original accumulator
                     del acc_output[dataset]
             acc_output[ds] = combined_accumulator
+
 
 def unwrap_col_acc(acc_output):
     """Unwrap the column accumulator in the acc_output.
@@ -112,7 +114,33 @@ def unwrap_col_acc(acc_output):
                                                            for kinematic, col_acc in output['Objects'].items()}
 
 
-def output_export(acc_output, rt_cfg, output=False):
+def object_export(acc_output, rt_cfg, output=False, suffix=None):
+    """ Export the object observables to csv file based on settings in the run configuration
+    :param acc_output: accumulated output from coffea.processor/runner.
+    :rtype acc_output: coffea.processor.dict_accumulator
+    :param rt_cfg: run time configuration object
+    :rtype rt_cfg: dynaconf object
+    :param output: whether to output
+    :rtype output: bool
+    :return: object observables dataframe
+    :rtype: dict, dict
+    """
+    obj_df = init_output(cfg.signal.channelnames)
+    for dataset, output_item in acc_output.items():
+        for channelname, acc in output_item.items():
+            temp_df = pd.DataFrame.from_dict(
+                acc['Objects'], orient='index').transpose()
+            temp_df['Dataset'] = dataset
+            obj_df[channelname].append(temp_df)
+    dirname = None if not output else rt_cfg.OUTPUTDIR_PATH
+    obj_df = concat_output(
+        obj_df, axis=0, suffix=suffix, dir_name=os.path.join(dirname, "object"))
+    if output:
+        return None
+    else:
+        return obj_df
+
+def cutflow_export(acc_output, rt_cfg, output=False, suffix=None):
     """ Export the accumulator to csv file based on settings in the run configuration
     :param acc_output: accumulated output from coffea.processor/runner.
         Nested as the following data structure:
@@ -129,26 +157,20 @@ def output_export(acc_output, rt_cfg, output=False):
     :rtype rt_cfg: dynaconf object
     :param output: whether to output
     :rtype output: bool
-    :return: cutflow and object dataframes
+    :return: cutflow dataframe
     :rtype: dict, dict
     """
     cf_df = init_output(cfg.signal.channelnames)
-    obj_df = init_output(cfg.signal.channelnames)
-    for dataset, output in acc_output.items():
-        for channelname, acc in output.items():
+    for dataset, output_item in acc_output.items():
+        for channelname, acc in output_item.items():
             cf_df[channelname].append(pd.DataFrame.from_dict(
                 acc['Cutflow'], orient='index', columns=[dataset]))
-            obj_df = pd.DataFrame.from_dict(
-                acc['Objects'], orient='index').transpose()
-            obj_df['Dataset'] = dataset
-            obj_df[channelname].append(obj_df)
-    dirname = None if not output else rt_cfg.OUTPUTDIR_PATH
-    cf_df = concat_output(
-        cf_df, axis=1, dir_name=os.path.join(dirname, "cutflow"))
-    obj_df = concat_output(
-        obj_df, axis=0, dir_name=os.path.join(dirname, "object"))
-    if output: return None
-    else: return cf_df, obj_df
+    dirname = None if not output else os.path.join(rt_cfg.OUTPUTDIR_PATH, "cutflow")
+    cf_df = concat_output(cf_df, axis=1, suffix=suffix, dir_name=dirname)
+    if output:
+        return None
+    else:
+        return cf_df
 
 
 def init_output(channelnames):
@@ -163,13 +185,15 @@ def init_output(channelnames):
     return cf_df_list
 
 
-def concat_output(cf_df_list, axis=0, dir_name=None, index=None):
-    """Concatenate the output dataframe list.
+def concat_output(df_list, axis=0, suffix=None, dir_name=None, index=None):
+    """Concatenate the output dataframe list based on selection channel.
 
-    :param cf_df_list: dictionary of dataframe lists
-    :type cf_df_list: dict
+    :param df_list: dictionary of dataframe lists
+    :type df_list: dict
     :param axis: axis to concatenate, defaults to 0
     :type axis: int, optional
+    :param suffix: suffix to add to the datapath, defaults to None
+    :type suffix: str, optional
     :param dir_name: directory name to export the concatenated dataframe, defaults to None
     :type dir_name: str, optional
     :param index: index of the dataframe, defaults to None
@@ -177,15 +201,16 @@ def concat_output(cf_df_list, axis=0, dir_name=None, index=None):
     :return: dictionary of concatenated dataframes, with channels as keys
     :rtype: dict
     """
-    for channelname, df_list in cf_df_list.items():
-        cf_df_list[channelname] = pd.concat(df_list, axis=axis)
+    result = {}
+    for channelname, df_list in df_list.items():
+        result[channelname] = pd.concat(df_list, axis=axis)
         if index is not None:
-            cf_df_list[channelname].index = index
+            result[channelname].index = index
         if dir_name is not None:
-            finame = f"{channelname}.csv"
-            cf_df_list[channelname].to_csv(os.path.join(dir_name, finame))
-    return cf_df_list
-
+            finame = f"{channelname}_{suffix}.csv" if suffix is not None else f"{channelname}.csv"
+            result[channelname].to_csv(
+                os.path.join(dir_name, finame), mode='a')
+    return result
 
 def divide_ds(ds, dict_size):
     """Divide the ds into chunks of dict_size.

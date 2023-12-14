@@ -4,10 +4,9 @@ from coffea.nanoevents import NanoEventsFactory
 from coffea.processor import dict_accumulator, column_accumulator, defaultdict_accumulator
 from coffea.nanoevents.schemas import BaseSchema
 from coffea import processor
-from analysis.processing import hhbbtautauProcessor
 from analysis.dsmethods import extract_process
 from analysis.histbooker import accumulate_dicts
-import pandas as pd
+from analysis.processing import *
 import re
 
 def run_single(filename, process_name, post_process=True):
@@ -29,12 +28,14 @@ def run_single(filename, process_name, post_process=True):
     ).events()
     p = hhbbtautauProcessor()
     out = p.process(events)
-    if post_process: p.postprocess(out)
+    if post_process:
+        p.postprocess(out)
     return out
-            
+
+
 def future_exec(rs):
     """Create a futures executor.
-    
+
     :param rs: run settings
     :type rs: DynaConf object
     :return: futures executor
@@ -49,6 +50,7 @@ def future_exec(rs):
     )
     return exec
 
+
 def future_runner_wrapper(fileset, rs, handle_error=False):
     """Wrapper around the futures executor WITH RUNNER to handle the case where the job fails due to an XRootD error.
 
@@ -59,17 +61,17 @@ def future_runner_wrapper(fileset, rs, handle_error=False):
     :return: output (still accumulatable)
     :rtype: dict_accumulator
     """
-    
+
     run = processor.Runner(
-            future_exec(rs),
-            schema=BaseSchema,
-            chunksize=rs.CHUNK_SIZE,
-            xrootdtimeout=rs.TIMEOUT
-        )
+        future_exec(rs),
+        schema=BaseSchema,
+        chunksize=rs.CHUNK_SIZE,
+        xrootdtimeout=rs.TIMEOUT
+    )
     out = dict_accumulator()
     if handle_error:
         while True:
-            try: 
+            try:
                 result = run(
                     fileset,
                     treename=rs.TREE_NAME,
@@ -78,7 +80,8 @@ def future_runner_wrapper(fileset, rs, handle_error=False):
                 if isinstance(result, tuple) and len(result) == 2:
                     out, exceptions = result
                     filename, process_name = handle_error(exceptions, fileset)
-                    if filename: out.add((run_single(filename, process_name)))
+                    if filename:
+                        out.add((run_single(filename, process_name)))
                     break
                 else:
                     out.add(result)
@@ -95,12 +98,13 @@ def future_runner_wrapper(fileset, rs, handle_error=False):
         )
     return out
 
+
 def handle_error(e, fileset):
     """Handle an error that occurred during the processing of a file.
-    
+
     Apply an error-time correction to the fileset, and gracefully continue 
     processing the remaining files.
-    
+
     :param e: exception object
     :type e: Exception
     :param fileset: fileset
@@ -112,14 +116,15 @@ def handle_error(e, fileset):
         filename = re.search(r"in file (.*\.root)", str(e)).group(1)
         print(f"An XRootD error occurred with file {filename}: {e}")
     elif isinstance(e, RuntimeError):
-        filename = re.search(r"Metadata for file (.*?) could not be accessed", str(e)).group(1)
+        filename = re.search(
+            r"Metadata for file (.*?) could not be accessed", str(e)).group(1)
         print(f"An error occurred with file {filename}: {e}")
     elif isinstance(e, FileNotFoundError):
         filename = re.search(r"/store/.*\.root", str(e)).group(0)
         print(f"An error occurred with file {filename}: {e}")
     else:
         return None
-    
+
     for dataset in fileset:
         if filename in fileset[dataset]:
             fileset[dataset].remove(filename)
@@ -127,9 +132,35 @@ def handle_error(e, fileset):
             break
     return filename, process_name
 
+def iterative_runner_wrapper(fileset, rs):
+    """Wrapper around the iterative executor WITH RUNNER.
+
+    :param fileset: fileset
+    :type fileset: dict
+    :param rs: run settings
+    :type rs: DynaConf object
+    :return: output (still accumulatable)
+    :rtype: dict_accumulator
+    """
+    iterative_run = processor.Runner(
+        executor=processor.IterativeExecutor(
+            desc="Executing fileset with iterative executor", compression=rs.COMPRESSION),
+        schema=BaseSchema,
+        chunksize=rs.CHUNK_SIZE,
+        xrootdtimeout=rs.TIMEOUT,
+    )
+    
+    out = iterative_run(
+        fileset,
+        treename=rs.TREE_NAME,
+        processor_instance=hhbbtautauProcessor()
+    )
+
+    return out
+
 def run_jobs(fileset, rs):
     """Run the processor on a fileset.
-    
+
     :param fileset: fileset
     :type fileset: dict
     :param rs: run settings
@@ -138,23 +169,25 @@ def run_jobs(fileset, rs):
     :rtype: dict_accumulator
     """
     if rs.RUN_MODE == "future":
-       out = future_runner_wrapper(fileset, rs) 
+        out = future_runner_wrapper(fileset, rs)
     elif rs.RUN_MODE == "iterative":
-        iterative_run = processor.Runner(
-            executor=processor.IterativeExecutor(
-                desc="Executing fileset", compression=rs.COMPRESSION),
-            schema=BaseSchema,
-            chunksize=rs.CHUNK_SIZE,
-            xrootdtimeout=rs.TIMEOUT,
-        )
-        out = iterative_run(
-            fileset,
-            treename=rs.TREE_NAME,
-            processor_instance=hhbbtautauProcessor()
-        )
+        out = iterative_runner_wrapper(fileset, rs)
     elif rs.RUN_MODE == "dask":
         out = None
     else:
         raise TypeError("Unknown run mode: %s" % rs.RUN_MODE)
-
     return out
+
+def chunk_dict(input_dict, chunk_size):
+    items = list(input_dict.items())
+    for i in range(0, len(items), chunk_size):
+        yield dict(items[i:i+chunk_size])
+
+def line_jobs(complete_fs, rs, chunk_size=2):
+    for chunk in chunk_dict(complete_fs, chunk_size):
+        out = run_jobs(chunk, rs)
+        unwrap_col_acc(out)
+        object_export(out, rs, output=True, suffix=None)
+        cutflow_export(out, rs, output=True, suffix=None)
+    
+    
