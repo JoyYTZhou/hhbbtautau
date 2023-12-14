@@ -129,7 +129,7 @@ def object_export(acc_output, rt_cfg, output=False, suffix=None):
     :return: object observables dataframe
     :rtype: dict, dict
     """
-    obj_df = init_output(cfg.signal.channelnames)
+    obj_df = init_output()
     for dataset, output_item in acc_output.items():
         for channelname, acc in output_item.items():
             temp_df = pd.DataFrame.from_dict(
