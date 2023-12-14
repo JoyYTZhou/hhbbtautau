@@ -22,6 +22,8 @@ else:
     fileset = data['Background']
     fileset.update(data['Signal'])
 
+del data
+
 out = run_jobs(fileset, rs)
 unwrap_col_acc(out)
 output_export(out, rs, output=True)
