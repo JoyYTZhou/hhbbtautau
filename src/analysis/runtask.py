@@ -49,7 +49,7 @@ def future_exec(rs):
     )
     return exec
 
-def future_runner_wrapper(fileset, rs):
+def future_runner_wrapper(fileset, rs, handle_error=False):
     """Wrapper around the futures executor WITH RUNNER to handle the case where the job fails due to an XRootD error.
 
     :param fileset: fileset
@@ -67,26 +67,33 @@ def future_runner_wrapper(fileset, rs):
             xrootdtimeout=rs.TIMEOUT
         )
     out = dict_accumulator()
-    while True:
-        try: 
-            result = run(
-                fileset,
-                treename=rs.TREE_NAME,
-                processor_instance=hhbbtautauProcessor(),
-            )
-            if isinstance(result, tuple) and len(result) == 2:
-                out, exceptions = result
-                filename, process_name = handle_error(exceptions, fileset)
-                if filename: out.add((run_single(filename, process_name)))
-                break
-            else:
-                out.add(result)
-                break
-        except (OSError, RuntimeError, FileNotFoundError) as e:
-            filename, process_name = handle_error(e, fileset)
-            if filename:
-                out.add(run_single(filename, process_name))
-        return out
+    if handle_error:
+        while True:
+            try: 
+                result = run(
+                    fileset,
+                    treename=rs.TREE_NAME,
+                    processor_instance=hhbbtautauProcessor(),
+                )
+                if isinstance(result, tuple) and len(result) == 2:
+                    out, exceptions = result
+                    filename, process_name = handle_error(exceptions, fileset)
+                    if filename: out.add((run_single(filename, process_name)))
+                    break
+                else:
+                    out.add(result)
+                    break
+            except (OSError, RuntimeError, FileNotFoundError) as e:
+                filename, process_name = handle_error(e, fileset)
+                if filename:
+                    out.add(run_single(filename, process_name))
+    else:
+        out = run(
+            fileset,
+            treename=rs.TREE_NAME,
+            processor_instance=hhbbtautauProcessor(),
+        )
+    return out
 
 def handle_error(e, fileset):
     """Handle an error that occurred during the processing of a file.
