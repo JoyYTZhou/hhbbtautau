@@ -184,10 +184,14 @@ def chunk_dict(input_dict, chunk_size):
         yield dict(items[i:i+chunk_size])
 
 def line_jobs(complete_fs, rs, chunk_size=2):
+    cutflow = init_output()
     for chunk in chunk_dict(complete_fs, chunk_size):
         out = run_jobs(chunk, rs)
         unwrap_col_acc(out)
+        combine_cutflow(cutflow, out)
         object_export(out, rs, output=True, suffix=None)
-        cutflow_export(out, rs, output=True, suffix=None)
+        del out
+    concat_output(cutflow, axis=0, sum_col=True, dir_name=os.path.join(rs.OUTPUTDIR_PATH, "cutflow"))
+
     
     
