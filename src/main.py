@@ -1,7 +1,6 @@
 # UPDATE TIME: 2023-09-15
 # FROM JOY
 from coffea.nanoevents import NanoEventsFactory, BaseSchema
-from tqdm import tqdm
 import glob
 import json
 import argparse
@@ -23,4 +22,4 @@ else:
 
 del data
 
-line_jobs(fileset, rs, 2)
+line_jobs(fileset, rs, 1)

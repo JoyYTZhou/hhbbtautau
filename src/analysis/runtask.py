@@ -7,6 +7,7 @@ from coffea import processor
 from analysis.dsmethods import extract_process
 from analysis.histbooker import accumulate_dicts
 from analysis.processing import *
+from tqdm import tqdm
 import re
 
 def run_single(filename, process_name, post_process=True):
@@ -102,7 +103,7 @@ def future_runner_wrapper(fileset, rs, handle_error=False):
 def handle_error(e, fileset):
     """Handle an error that occurred during the processing of a file.
 
-    Apply an error-time correction to the fileset, and gracefully continue 
+    Apply an error-time correction to the fileset, and gracefully continue
     processing the remaining files.
 
     :param e: exception object
@@ -149,7 +150,7 @@ def iterative_runner_wrapper(fileset, rs):
         chunksize=rs.CHUNK_SIZE,
         xrootdtimeout=rs.TIMEOUT,
     )
-    
+
     out = iterative_run(
         fileset,
         treename=rs.TREE_NAME,
@@ -185,7 +186,8 @@ def chunk_dict(input_dict, chunk_size):
 
 def line_jobs(complete_fs, rs, chunk_size=2):
     cutflow = init_output()
-    for chunk in chunk_dict(complete_fs, chunk_size):
+    total_chunks = len(complete_fs) // chunk_size + (len(complete_fs) % chunk_size > 0)
+    for chunk in tqdm(chunk_dict(complete_fs, chunk_size), total=total_chunks):
         out = run_jobs(chunk, rs)
         unwrap_col_acc(out)
         combine_cutflow(cutflow, out)
@@ -193,5 +195,5 @@ def line_jobs(complete_fs, rs, chunk_size=2):
         del out
     concat_output(cutflow, axis=0, sum_col=True, dir_name=os.path.join(rs.OUTPUTDIR_PATH, "cutflow"))
 
-    
-    
+
+
