@@ -67,30 +67,6 @@ def future_exec(rs):
     )
     return exec
 
-def init_out(fileset, rs):
-    """Initialize the output accumulator for further accumulation
-
-    :param fileset: fileset
-    :type fileset: dict
-    :param rs: run settings
-    :type rs: DynaConf object
-    :return: output accumulator
-    :rtype: dict_accumulator
-    """
-    dataset, filelist = next(iter(fileset.items()))
-    filename = filelist.pop(0)
-    out = run_single(filename, dataset, False)
-    
-    for dataset in fileset:
-        if filename in fileset[dataset]:
-            fileset[dataset].remove(filename)
-            break
-    
-    if not filelist:
-        del fileset[dataset]
-
-    return out
-
 def future_runner_wrapper(fileset, rs):
     """Wrapper around the futures executor WITH RUNNER to handle the case where the job fails due to an XRootD error.
 
@@ -189,6 +165,5 @@ def run_jobs(fileset, rs):
         out = None
     else:
         raise TypeError("Unknown run mode: %s" % rs.RUN_MODE)
-
 
     return out
