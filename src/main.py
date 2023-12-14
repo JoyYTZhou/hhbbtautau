@@ -23,5 +23,4 @@ else:
 
 del data
 
-out = run_jobs(fileset, rs)
-unwrap_col_acc(out)
+line_jobs(fileset, rs, 2)
