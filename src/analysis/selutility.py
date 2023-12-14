@@ -146,32 +146,23 @@ def pair_selections(events_dict, cutflow_dict, object_dict, cfg):
         if lepselname.pair is not None:
             pairselect = lepselname.pair
             pairname = pairselect.name
-            if pairname.find("M") != -1 and pairname.find("T") != -1:
-                dR = (filter_muons[:, 0].delta_r(
-                    filter_taus) >= pairselect.dRLevel)
-                if pairselect.OS == True:
-                    # TODO: OS can be changed for simplicity
-                    OS = (filter_muons[:, 0]["charge"]
-                          * filter_taus["charge"] < 0)
-                    pairmask = OS & dR
-                else:
-                    SS = (filter_muons[:, 0]["charge"]
-                          * filter_taus["charge"] > 0)
-                    pairmask = SS & dR
-            elif pairname.find("E") != -1 and pairname.find("T") != -1:
-                dR = (filter_electrons[:, 0].delta_r(
-                    filter_taus) >= pairselect.dRLevel)
-                if pairselect.OS == True:
-                    OS = (filter_electrons[:, 0]["charge"]
-                          * filter_taus["charge"] < 0)
-                    pairmask = dR & OS
-                else:
-                    SS = (filter_electrons[:, 0]["charge"]
-                          * filter_taus["charge"] > 0)
-                    pairmask = dR & SS
+            is_M = "M" in pairname
+            is_T = "T" in pairname
+            is_E = "E" in pairname
+            if is_M and is_T:
+                dR = (filter_muons[:, 0].delta_r(filter_taus) >= pairselect.dRLevel)
+                OS = (filter_muons[:, 0]["charge"] * filter_taus["charge"] < 0)
+                SS = (filter_muons[:, 0]["charge"] * filter_taus["charge"] > 0)
+            elif is_E and is_T:
+                dR = (filter_electrons[:, 0].delta_r(filter_taus) >= pairselect.dRLevel)
+                OS = (filter_electrons[:, 0]["charge"] * filter_taus["charge"] < 0)
+                SS = (filter_electrons[:, 0]["charge"] * filter_taus["charge"] > 0)
             elif pairname.count("T") == 2:
                 # TODO: place holder for now for this channel
-                pairmask = ak.ones_like(filter_taus['charge'])
+                dR = ak.ones_like(filter_taus['charge'])
+                OS = ak.ones_like(filter_taus['charge'])
+                SS = ak.ones_like(filter_taus['charge'])
+            pairmask = dR & (OS if pairselect.OS else SS)
             filter_taus = filter_taus[pairmask]
             object_dict[keyname].update({"Tau": filter_taus})
             apply_mask_on_all(object_dict[keyname], ak.any(pairmask, axis=1))

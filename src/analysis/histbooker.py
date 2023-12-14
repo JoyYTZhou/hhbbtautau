@@ -88,7 +88,8 @@ def hbbtautau_accumulate(output, cfg, cutflow_dict, object_dict):
         lepselname = cfg.signal[keyname]["selections"]
         object_accu_dict = output[channelname]["Objects"]
         for particle in ["Electron", "Muon"]:
-            if not getattr(lepselname, particle.lower()).veto and getattr(lepselname, particle.lower()).veto is not None:
+            particle_attr = getattr(lepselname, particle.lower())
+            if not particle_attr.veto and particle_attr.veto is not None:
                 write_single_col_accu(outputscfg[particle], particle, object_dict[keyname], object_accu_dict)
         if not lepselname.tau.veto and (lepselname.tau.veto is not None):
             if lepselname.tau.count==1:
@@ -101,19 +102,20 @@ def hbbtautau_accumulate(output, cfg, cutflow_dict, object_dict):
                               object_dict[keyname], object_accu_dict, ptsortmask, j, str(j+1))
         if lepselname.pair is not None:
             pairname = lepselname.pair.name
-            if pairname.find("M") != -1 and pairname.find("T") != -1:
+            is_M = "M" in pairname
+            is_T = "T" in pairname
+            is_E = "E" in pairname
+            count_T = pairname.count("T")
+            tau_LV = LV_from_zipped(object_dict[keyname]["Tau"])
+            if is_M and is_T:
                 # Select the most energetic tauh candidate
-                tau_LV = LV_from_zipped(object_dict[keyname]["Tau"])[:,0]
                 muon_LV = LV_from_zipped(object_dict[keyname]["Muon"])[:,0]
-                write_mergedLV(object_accu_dict, tau_LV, muon_LV)
-            elif pairname.find("E") != -1 and pairname.find("T") != -1:
-                tau_LV = LV_from_zipped(object_dict[keyname]["Tau"])[:,0]
+                write_mergedLV(object_accu_dict, tau_LV[:,0], muon_LV)
+            elif is_E and is_T:
                 electron_LV = LV_from_zipped(object_dict[keyname]["Electron"])[:,0]
-                write_mergedLV(object_accu_dict, tau_LV, electron_LV)
-            elif pairname.count("T") == 2:
-                tau1_LV = LV_from_zipped(object_dict[keyname]["Tau"])[:,0]
-                tau2_LV = LV_from_zipped(object_dict[keyname]["Tau"])[:,1]
-                write_mergedLV(object_accu_dict, tau1_LV, tau2_LV)
+                write_mergedLV(object_accu_dict, tau_LV[:,0], electron_LV)
+            elif count_T == 2:
+                write_mergedLV(object_accu_dict, tau_LV[:,0], tau_LV[:,1])
         output[channelname]["Cutflow"] += cutflow_dict[keyname]
 
 def book_single_col_accu(object_cfg, object_name, object_accs, subfix=""):
