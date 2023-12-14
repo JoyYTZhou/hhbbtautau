@@ -77,7 +77,7 @@ class hhbbtautauProcessor(processor.ProcessorABC):
         return {self._dataset: output}
 
     def postprocess(self, acc_output):
-        # TODO: Simplify this acc_output
+        # output still accumulatable
         uniqueds = set(ds.split('_')[0] for ds in acc_output.keys())
         for ds in uniqueds:
             # Initialize a new accumulator for the combined process

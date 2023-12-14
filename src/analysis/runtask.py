@@ -31,24 +31,6 @@ def run_single(filename, process_name, post_process=True):
     out = p.process(events)
     if post_process: p.postprocess(out)
     return out
-
-def rerun_exceptions(exceptions):
-    """Rerun the failed jobs. For now only handles the case where the exception is an OSError with the message "XRootD error: [ERROR] Operation expired".
-
-    :param exceptions: Mapping of filename : exception
-    :type exceptions: dict
-    :return: A dictionary accumulator containing the output of the rerun jobs
-    :rtype: dict_accumulator()
-    """
-    exception_out = dict_accumulator()
-    for filename, exception in exceptions.items():
-        if isinstance(exception, OSError) and "XRootD error: [ERROR] Operation expired" in str(exception):
-            # Rerun the job for the failed file
-            process_name = extract_process(filename)
-            out = run_single(filename, process_name, False)
-            exception_out.add(out)
-            del out
-    return exception_out
             
 def future_exec(rs):
     """Create a futures executor.
@@ -94,15 +76,16 @@ def future_runner_wrapper(fileset, rs):
             )
             if isinstance(result, tuple) and len(result) == 2:
                 out, exceptions = result
-                out.add(rerun_exceptions(exceptions))
+                filename, process_name = handle_error(exceptions, fileset)
+                if filename: out.add((run_single(filename, process_name)))
                 break
             else:
                 out.add(result)
                 break
         except (OSError, RuntimeError, FileNotFoundError) as e:
-            filename = handle_error(e, fileset)
+            filename, process_name = handle_error(e, fileset)
             if filename:
-                out.add(rerun_exceptions(filename))
+                out.add(run_single(filename, process_name))
         return out
 
 def handle_error(e, fileset):
@@ -115,8 +98,8 @@ def handle_error(e, fileset):
     :type e: Exception
     :param fileset: fileset
     :type fileset: dict
-    :return: filename of the file that caused the error
-    :rtype: string
+    :return: filename of the file that caused the error, and the process of that file
+    :rtype: tuple of strings
     """
     if isinstance(e, OSError):
         filename = re.search(r"in file (.*\.root)", str(e)).group(1)
@@ -129,12 +112,13 @@ def handle_error(e, fileset):
         print(f"An error occurred with file {filename}: {e}")
     else:
         return None
-
+    
     for dataset in fileset:
         if filename in fileset[dataset]:
             fileset[dataset].remove(filename)
+            process_name = dataset
             break
-    return filename
+    return filename, process_name
 
 def run_jobs(fileset, rs):
     """Run the processor on a fileset.
