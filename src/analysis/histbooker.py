@@ -87,12 +87,9 @@ def hbbtautau_accumulate(output, cfg, cutflow_dict, object_dict):
         channelname = cfg.signal[keyname]["name"]
         lepselname = cfg.signal[keyname]["selections"]
         object_accu_dict = output[channelname]["Objects"]
-        if not lepselname.electron.veto and (lepselname.electron.veto is not None):
-            write_single_col_accu(outputscfg["Electron"], "Electron", 
-                              object_dict[keyname], object_accu_dict)
-        if not lepselname.muon.veto and (lepselname.muon.veto is not None):
-            write_single_col_accu(outputscfg["Muon"], "Muon", 
-                              object_dict[keyname], object_accu_dict)
+        for particle in ["Electron", "Muon"]:
+            if not getattr(lepselname, particle.lower()).veto and getattr(lepselname, particle.lower()).veto is not None:
+                write_single_col_accu(outputscfg[particle], particle, object_dict[keyname], object_accu_dict)
         if not lepselname.tau.veto and (lepselname.tau.veto is not None):
             if lepselname.tau.count==1:
                 write_single_col_accu(outputscfg["Tau"], "Tau", 

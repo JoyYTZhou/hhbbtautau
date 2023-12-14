@@ -6,7 +6,6 @@ import glob
 import json
 import argparse
 from config.selectionconfig import runsetting as rs
-from analysis.processing import *
 from analysis.dsmethods import extract_items
 from analysis.runtask import *
 
@@ -26,4 +25,3 @@ del data
 
 out = run_jobs(fileset, rs)
 unwrap_col_acc(out)
-output_export(out, rs, output=True)
