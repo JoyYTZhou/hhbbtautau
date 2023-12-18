@@ -184,10 +184,21 @@ def chunk_dict(input_dict, chunk_size):
     for i in range(0, len(items), chunk_size):
         yield dict(items[i:i+chunk_size])
 
-def line_jobs(complete_fs, rs, chunk_size=2):
+def lineup_jobs(complete_fs, rs, chunk_size=2):
+    """Run the processor on a fileset by lining up executor jobs in a queue.
+
+    :param complete_fs: fileset
+    :type complete_fs: dict
+    :param rs: run settings
+    :type rs: DynaConf object
+    :param chunk_size: number of chopped up dataset chunks to process at once
+    :type chunk_size: int
+    :return: output (still accumulatable)
+    :rtype: dict_accumulator
+    """
     cutflow = init_output()
     total_chunks = len(complete_fs) // chunk_size + (len(complete_fs) % chunk_size > 0)
-    for chunk in tqdm(chunk_dict(complete_fs, chunk_size), total=total_chunks):
+    for chunk in tqdm(chunk_dict(complete_fs, chunk_size), total=total_chunks, desc=f"Processing chunk f{chunk} of {total_chunks}"):
         out = run_jobs(chunk, rs)
         unwrap_col_acc(out)
         combine_cutflow(cutflow, out)
