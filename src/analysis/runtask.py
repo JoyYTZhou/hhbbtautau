@@ -198,13 +198,15 @@ def lineup_jobs(complete_fs, rs, chunk_size=2):
     """
     cutflow = init_output()
     total_chunks = len(complete_fs) // chunk_size + (len(complete_fs) % chunk_size > 0)
-    for chunk in tqdm(chunk_dict(complete_fs, chunk_size), total=total_chunks, desc=f"Processing chunk f{chunk} of {total_chunks}"):
-        out = run_jobs(chunk, rs)
-        unwrap_col_acc(out)
-        combine_cutflow(cutflow, out)
-        object_export(out, rs, output=True, suffix=None)
-        del out
-    concat_output(cutflow, axis=0, sum_col=True, dir_name=os.path.join(rs.OUTPUTDIR_PATH, "cutflow"))
+    with tqdm(total=total_chunks) as pbar:
+        for i, chunk in enumerate(chunk_dict(complete_fs, chunk_size)):
+            pbar.set_description(f"Processing chunk {i+1} of {total_chunks}")
+            out = run_jobs(chunk, rs)
+            unwrap_col_acc(out)
+            combine_cutflow(cutflow, out)
+            object_export(out, rs, output=True, suffix=None)
+            del out
+        concat_output(cutflow, axis=0, sum_col=True, dir_name=os.path.join(rs.OUTPUTDIR_PATH, "cutflow"))
 
 
 
