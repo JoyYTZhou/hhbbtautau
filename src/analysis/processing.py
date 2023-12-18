@@ -96,7 +96,6 @@ class hhbbtautauProcessor(processor.ProcessorABC):
                     del acc_output[dataset]
             acc_output[ds] = combined_accumulator
 
-
 def unwrap_col_acc(acc_output):
     """Unwrap the column accumulator in the acc_output['Objects'] to a list of numpy arrays.
     :param acc_output: accumulated output from coffea.processor/runner.
@@ -191,6 +190,8 @@ def concat_output(df_list, axis=0, sum_col=False, suffix=None, dir_name=None, in
         df_concat = pd.concat(df_list, axis=axis)
         if sum_col:
             result[channelname] = df_concat.groupby(df_concat.columns, axis=1).sum()
+        else:
+            result[channelname] = df_concat
         if index is not None:
             result[channelname].index = index
         if dir_name is not None:
