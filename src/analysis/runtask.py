@@ -7,7 +7,6 @@ from coffea import processor
 from analysis.dsmethods import extract_process
 from analysis.histbooker import accumulate_dicts
 from analysis.processing import *
-from tqdm import tqdm
 import re
 
 def run_single(filename, process_name, post_process=True):
@@ -198,15 +197,13 @@ def lineup_jobs(complete_fs, rs, chunk_size=2):
     """
     cutflow = init_output()
     total_chunks = len(complete_fs) // chunk_size + (len(complete_fs) % chunk_size > 0)
-    with tqdm(total=total_chunks) as pbar:
-        for i, chunk in enumerate(chunk_dict(complete_fs, chunk_size)):
-            pbar.set_description(f"Processing chunk {i+1} of {total_chunks}")
-            out = run_jobs(chunk, rs)
-            unwrap_col_acc(out)
-            combine_cutflow(cutflow, out)
-            object_export(out, rs, output=True, suffix=None)
-            del out
-        concat_output(cutflow, axis=0, sum_col=True, dir_name=os.path.join(rs.OUTPUTDIR_PATH, "cutflow"))
+    for i, chunk in enumerate(chunk_dict(complete_fs, chunk_size)):
+        out = run_jobs(chunk, rs)
+        unwrap_col_acc(out)
+        combine_cutflow(cutflow, out)
+        object_export(out, rs, output=True, suffix=None)
+        del out
+    concat_output(cutflow, axis=0, sum_col=True, dir_name=os.path.join(rs.OUTPUTDIR_PATH, "cutflow"))
 
 
 
