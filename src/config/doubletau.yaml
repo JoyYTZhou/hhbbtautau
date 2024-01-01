@@ -142,7 +142,6 @@ default:
           phi: Jet_phi
           mass: Jet_mass
           deepJetbtagger: Jet_btagDeepFlavB
-          deepCSVbtagger: Jet_btagDeepB
           deepJetCvsB: Jet_btagDeepFlavCvB
         uint:
           jetID: Jet_jetId

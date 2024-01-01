@@ -190,7 +190,7 @@ def jet_selections(events_dict, cutflow_dict, object_dict, cfg):
         lepselname = cfg[lepcfgname+".selections"]
         comselname = cfg["signal.commonsel"]
         if comselname.ak4jet is not None:
-            ak4s, ak8s = jet_properties(events)
+            ak4s, ak8s = zip_jetproperties(events)
             jetselect = comselname.ak4jet
             # Basic jet check
             ak4mask = (ak4s.pt > jetselect.ptLevel) & \
@@ -250,7 +250,7 @@ def write_rootfiles(events_dict, cfg, filename):
         for i, events in events_dict.items():
             channelname = cfg["signal.channel"+str(i)+".name"]
             muons, electrons, taus = zip_lepproperties(cfg.signal.outputs, events)
-            ak4s, ak8s = jet_properties(events)
+            ak4s, ak8s = zip_jetproperties(events)
             rootfile[channelname].extend({
                 "Muon": muons,
                 "Electron": electrons,
@@ -313,44 +313,27 @@ def zip_lepproperties(propcfg, events, extra=None):
     taus = zip_object(propcfg.Tau, events)
     return muons, electrons, taus
 
-def jet_properties(events, extra=None):
+def zip_jetproperties(propcfg, events, extra=None):
     """ Returns the selected jet properties
 
     :param events: events
     :type events: coffea.nanoevents.methods.base.NanoEventsArray
-    :param cfg: configuration file with the next level directly point to jet properties
-    :type cfg: DynaConf object
+    :param propcfg: a dictionary containing the properties of leptons
+    :type propcfg: dict
+        {
+            object:{
+                {datatype: {
+                    name: nanoaod name}}}
+        }
     :return: AK4 and AK8 jets
     :rtype: ak.array
     """
-
-    # A collection of dictionaries, each dictionary describing a single muon candidate property
-    ak4s = ak.zip({
-        "pt": events.Jet_pt,  # type events.Muon_pt: high-level awkward array
-        "eta": events.Jet_eta,
-        "phi": events.Jet_phi,
-        "mass": events.Jet_mass,
-        "deepJetbtagger": events.Jet_btagDeepFlavB,
-        "deepCSVbtagger": events.Jet_btagDeepB,
-        "jetID": events.Jet_jetId,
-        "deepJetCvsB": events.Jet_btagDeepFlavCvB
-    }, with_name="PtEtaPhiMCandidate", behavior=vector.behavior)
-
-    ak8s = ak.zip({
-        "pt": events.FatJet_pt,
-        "eta": events.FatJet_eta,
-        "phi": events.FatJet_phi,
-        "mass": events.FatJet_mass,
-        "jetID": events.FatJet_jetId,
-        "QCD": events.FatJet_particleNetMD_QCD,
-        "Xbb": events.FatJet_particleNetMD_Xbb,
-        "Xcc": events.FatJet_particleNetMD_Xcc,
-        "Xqq": events.FatJet_particleNetMD_Xqq,
-        "Hbb": events.FatJet_btagHbb
-    }, with_name="PtEtaPhiMCandidate", behavior=vector.behavior)
-
-    return ak4s, ak8s
-
+    
+    jet = zip_object(propcfg.Jet, events)
+    fatjet = zip_object(propcfg.FatJet, events)
+    
+    return jet, fatjet
+    
 # TODO: combine the two methods
 def LV_from_zipped(zippedLep, sortbypt=True):
     object_ak = ak.zip({
