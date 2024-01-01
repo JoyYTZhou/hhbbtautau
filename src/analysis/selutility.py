@@ -313,7 +313,6 @@ def zip_lepproperties(propcfg, events, extra=None):
     taus = zip_object(propcfg.Tau, events)
     return muons, electrons, taus
 
-
 def jet_properties(events, extra=None):
     """ Returns the selected jet properties
 
