@@ -151,11 +151,6 @@ default:
           eta: FatJet_eta
           phi: FatJet_phi
           mass: FatJet_mass
-          QCD: FatJet_particleNetMD_QCD
-          Xbb: FatJet_particleNetMD_Xbb
-          Xcc: FatJet_particleNetMD_Xcc
-          Xqq: FatJet_particleNetMD_Xqq
-          Hbb: FatJet_btagHbb
         uint:
           jetID: FatJet_jetId
 

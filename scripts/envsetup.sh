@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd ~/work/hhbbtautau
+rm -r *.tar.gz
 source scripts/sasetup.sh
 cd ~/nobackup
 python -m venv hhbbttrun
@@ -15,7 +17,5 @@ echo "Installed vector"
 deactivate
 
 # create tarball
-tar -czvf ~/work/hhbbtautau/${ENV_NAME}.tar.gz ${ENV_NAME}
+tar -czf ~/work/hhbbtautau/${ENV_NAME}.tar.gz ${ENV_NAME}
 cd ~/work/hhbbtautau
-
-
