@@ -19,7 +19,7 @@ def trigger_selections(events, cfg):
     for obj_prop, value in cfg.signal.triggersel.items():
         obj_mask = events[obj_prop] >= value
         events = events[obj_mask]
-     
+
 def lepton_selections(events, cfg):
     """ Preselect candidate events for a target process with major object selections.
 
@@ -27,10 +27,10 @@ def lepton_selections(events, cfg):
     :type events: coffea.nanoevents.NanoEvents.array
     :param cfg: configuration object
     :type cfg: DynaConf object
-    :return events_dict: dictionary of coffea nanoevents array with major object selections. 
+    :return events_dict: dictionary of coffea nanoevents array with major object selections.
              keys = channel names, values = events array
     :rtype events_dict: dict{int: coffea.nanoevents.NanoEvents.array}
-    :return cutflow_dict: cutflow dictionary. 
+    :return cutflow_dict: cutflow dictionary.
              Keys = Channel names, values = {
                  Keys = Selection name, Values = Event number
              }
@@ -172,7 +172,7 @@ def pair_selections(events_dict, cutflow_dict, object_dict, cfg):
 
 
 def jet_selections(events_dict, cutflow_dict, object_dict, cfg):
-    """ Place jet selections on candidate events belonging to parallel target processes.   
+    """ Place jet selections on candidate events belonging to parallel target processes.
 
     :param events_dict: dictionary of coffea nanoevents array with major object selections and pair selections
     :type events_dict: dict{coffea.nanoevents.NanoEvents.array}
@@ -190,7 +190,7 @@ def jet_selections(events_dict, cutflow_dict, object_dict, cfg):
         lepselname = cfg[lepcfgname+".selections"]
         comselname = cfg["signal.commonsel"]
         if comselname.ak4jet is not None:
-            ak4s, ak8s = zip_jetproperties(events)
+            ak4s, ak8s = zip_jetproperties(cfg.signal.outputs, events)
             jetselect = comselname.ak4jet
             # Basic jet check
             ak4mask = (ak4s.pt > jetselect.ptLevel) & \
@@ -204,7 +204,7 @@ def jet_selections(events_dict, cutflow_dict, object_dict, cfg):
             # Overlap check
             if not lepselname.electron.veto and (lepselname.electron.veto is not None):
                 electronLV = LV_from_zipped(object_dict[keyname]['Electron'])
-                dRmask = (ak.sum(electronLV[:, 0].deltaR(LV_from_zipped(ak4s)) > jetselect.dRLevel, 
+                dRmask = (ak.sum(electronLV[:, 0].deltaR(LV_from_zipped(ak4s)) > jetselect.dRLevel,
                              axis=1) > jetselect.count)
                 events = events[dRmask]
                 ak4s = ak4s[dRmask]
@@ -229,7 +229,7 @@ def jet_selections(events_dict, cutflow_dict, object_dict, cfg):
         # TODO: Fill in fatjet selection
         events_dict[keyname] = events
         cutflow_dict[keyname]["Jet selections"] = len(events)
-        object_dict[keyname].update({"Jet": ak4s, 
+        object_dict[keyname].update({"Jet": ak4s,
                                      "FatJet": ak8s})
 
 
@@ -250,7 +250,7 @@ def write_rootfiles(events_dict, cfg, filename):
         for i, events in events_dict.items():
             channelname = cfg["signal.channel"+str(i)+".name"]
             muons, electrons, taus = zip_lepproperties(cfg.signal.outputs, events)
-            ak4s, ak8s = zip_jetproperties(events)
+            ak4s, ak8s = zip_jetproperties(cfg.signal.outputs, events)
             rootfile[channelname].extend({
                 "Muon": muons,
                 "Electron": electrons,
@@ -275,11 +275,11 @@ def apply_mask_on_all(object_dict, mask):
 
 def zip_object(cfg, events, extra=None):
     """ Return a zipped object with the provided configuration
-    
+
     :param cfg: configuration dictionary of an object {datatype: {name: nanoaod name}}
     :type cfg: configuration
     :param events: events in a NANOAD dataset
-    :type events: coffea.nanoevents.NanoEvents.array 
+    :type events: coffea.nanoevents.NanoEvents.array
     :param extra: extra configuration dictionary
     :type extra: dict/None
     :return: zipped properties properties of an object
@@ -292,10 +292,10 @@ def zip_object(cfg, events, extra=None):
         zipped_dict.update({name: events[nanoaodname]})
     zipped_object = ak.zip(zipped_dict, with_name="PtEtaPhiMLorentzVector", behavior=vector.behavior)
     return zipped_object
-    
+
 def zip_lepproperties(propcfg, events, extra=None):
     """ Return a collection of dictionaries containing the properties of leptons.
-    
+
     :param propcfg: a dictionary containing the properties of leptons
     :type propcfg: dict
         {
@@ -304,7 +304,7 @@ def zip_lepproperties(propcfg, events, extra=None):
                     name: nanoaod name}}}
         }
     :param events: events in a NANOAD dataset
-    :type events: coffea.nanoevents.NanoEvents.array 
+    :type events: coffea.nanoevents.NanoEvents.array
     :return: zipped properties properties of leptons
     :rtype: coffea.nanoevents.methods.vector.PtEtaPhiMLorentzVectorArray
     """
@@ -328,12 +328,12 @@ def zip_jetproperties(propcfg, events, extra=None):
     :return: AK4 and AK8 jets
     :rtype: ak.array
     """
-    
+
     jet = zip_object(propcfg.Jet, events)
     fatjet = zip_object(propcfg.FatJet, events)
-    
+
     return jet, fatjet
-    
+
 # TODO: combine the two methods
 def LV_from_zipped(zippedLep, sortbypt=True):
     object_ak = ak.zip({
@@ -344,9 +344,9 @@ def LV_from_zipped(zippedLep, sortbypt=True):
     })
     if sortbypt:
         object_ak = object_ak[ak.argsort(object_ak.pt, ascending=False)]
-    object_LV = vec.Array(object_ak) 
+    object_LV = vec.Array(object_ak)
     return object_LV
-    
+
 def LV(field_name, events, sortbypt=True):
     """ Extract four-momentum vectors of an object from NANOAOD file with methods in vector.
 
@@ -373,7 +373,7 @@ def LV(field_name, events, sortbypt=True):
 
 def overlap_check(object1, object2):
     """
-    Check overlap between two objects. Note: Object 1 should only contain one item per event. 
+    Check overlap between two objects. Note: Object 1 should only contain one item per event.
 
     :param object1: Contains ID of the leptons
     :type object1: coffea.nanoevents.methods.vector.PtEtaPhiMLorentzVectorArray

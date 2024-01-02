@@ -25,7 +25,7 @@ PROCESS_NAME = "@format {env[PROCESS_NAME]}"
 # RUN_MODE Options: future, iterative
 RUN_MODE = "future"
 # executor parameter options
-WORKERS = 1
+WORKERS = 2
 N_BATCHES = 5
 MIN_SIZE = 4
 MAX_SIZE = 100

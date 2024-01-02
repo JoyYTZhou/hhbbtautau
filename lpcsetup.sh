@@ -14,10 +14,9 @@ else
     echo "submitting batch jobs"
     export OUTPUTPATH=$PWD/outputs
     source scripts/sasetup.sh
-    # short path for executing eos commands locally
-    export CONDORPATH="root://cmseos.fnal.gov//store/user/joyzhou/output"
 fi
 
+export CONDORPATH="root://cmseos.fnal.gov//store/user/joyzhou/output"
 export SHORTPATH=/store/user/joyzhou/output
 echo "shortname for condor output path is $SHORTPATH"
 echo "Output directory is ${OUTPUTPATH}"
