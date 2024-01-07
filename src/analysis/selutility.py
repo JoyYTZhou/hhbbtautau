@@ -1,24 +1,74 @@
 #!/usr/bin/env python
 
 import awkward as ak
+import dask_awkward as dak
 from analysis.dsmethods import *
 from coffea.analysis_tools import PackedSelection
+from coffea.nanoevents import NanoEventsFactory
+from coffea.nanoevents.schemas import BaseSchema
 from coffea.nanoevents.methods import vector
 import vector as vec
 import uproot
+import json as json
+import operator
 from collections import ChainMap
 
-def trigger_selections(events, cfg):
-    """ Tirgger select candidate events for a target process with major object selections.
+dak.num()
+class Processor:
+    def __init__(self):
+        self._selseq = None
+        self._data = None
+        self._cutflow = 0
+    
+    @property
+    def data(self):
+        return self._data
+    
+    @data.setter
+    def data(self, rt_cfg):
+        with open(rt_cfg.INPUTFILE_PATH, 'r') as samplepath:
+            fileset = json.load(samplepath)
+        value = fileset['Background']
+        value.update(fileset['Signal']) 
+        self._data = value
+        
+    @property
+    def selseq(self):
+        return self._selseq
+    
+    @selseq.setter
+    def selseq(self, value):
+        self._selseq = value
+        
+    def evalute(self, events, leftover=True):
+        pass
+    
+    def loadfile(self, filename, dsname, rt_cfg):
+        events = NanoEventsFactory.from_root(
+            file=f"{filename}:{rt_cfg.TREE_NAME}",
+            steps_per_file= rt_cfg.CHUNK_NO,
+            uproot_options={"timeout": 100},
+            delayed=True,
+            metadata={"dataset": dsname},
+            schemaclass=BaseSchema,
+        ).events()
+        return events
+        
+    def testrun(self, rt_cfg):
+        """Run test selections on a single file.
 
-    :param events: events in a NANOAD dataset
-    :type events: coffea.nanoevents.NanoEvents.array
-    :param cfg: configuration object
-    :type cfg: DynaConf object
-    """
-    for obj_prop, value in cfg.signal.triggersel.items():
-        obj_mask = events[obj_prop] >= value
-        events = events[obj_mask]
+        :return: output
+        """
+        self.data = rt_cfg
+        filename = f"{self.data['Background']['DYJets_1']}:Events"
+        events = NanoEventsFactory.from_root(
+            filename,
+            entry_stop=None,
+            metadata={"dataset": "DYJets"},
+            schemaclass=BaseSchema,
+        ).events()
+        return out        
+    
 
 def lepton_selections(events, cfg):
     """ Preselect candidate events for a target process with major object selections.
@@ -273,66 +323,62 @@ def apply_mask_on_all(object_dict, mask):
     for name, zipped in object_dict.items():
         object_dict[name] = zipped[mask]
 
-def zip_object(cfg, events, extra=None):
-    """ Return a zipped object with the provided configuration
 
-    :param cfg: configuration dictionary of an object {datatype: {name: nanoaod name}}
-    :type cfg: configuration
-    :param events: events in a NANOAD dataset
-    :type events: coffea.nanoevents.NanoEvents.array
-    :param extra: extra configuration dictionary
-    :type extra: dict/None
-    :return: zipped properties properties of an object
-    :rtype: coffea.nanoevents.methods.vector.PtEtaPhiMLorentzVectorArray
-    """
+class Object():
+    def __init__(self, name, events, objcfg, selcfg):
+        self._name = name
+        self.objcfg = objcfg 
+        self.selcfg = selcfg
+        self.set_dakzipped(events)
+    
+    @property
+    def name(self):
+        return self._name
+    @name.setter
+    def name(self, value):
+        self._name = value
+    
+    @property
+    def dakzipped(self):
+        return self._dakzipped
+    def set_dakzipped(self, events):
+        vars_dict = dict(ChainMap(*(self.objcfg.values())))
+        zipped_dict = {}
+        for name, nanoaodname in vars_dict.items():
+            zipped_dict.update({name: events[nanoaodname]})
+        zipped_object = dak.zip(zipped_dict)
+        self._dakzipped = zipped_object
 
-    vars_dict = dict(ChainMap(*cfg.values()))
-    zipped_dict = {}
-    for name, nanoaodname in vars_dict.items():
-        zipped_dict.update({name: events[nanoaodname]})
-    zipped_object = ak.zip(zipped_dict, with_name="PtEtaPhiMLorentzVector", behavior=vector.behavior)
-    return zipped_object
+    def fourvector(self, events, sortbypt=True):
+        object_ak = ak.zip({
+        "pt": events[self.name+"_pt"],
+        "eta": events[self.name+"_eta"],
+        "phi": events[self.name+"_phi"],
+        "M": events[self.name+"_mass"]
+        })
+        if sortbypt:
+            object_ak = object_ak[ak.argsort(object_ak.pt, ascending=False)]
+        object_LV = vec.Array(object_ak)
+        return object_LV
+    
+    def numselmask(self, op):
+        return op(dak.num(self.dakzipped), self.selcfg.count)
+    
+    def ptmask(self, op):
+        return (self.dakzipped.pt, self.selcfg.ptLevel, op)
+    
+    def etamask(self, op):
+        return op(abs(self.dakzipped.eta), self.selcfg.absetaLevel)
+    
+    def dxymask(self, op):
+        return op(abs(self.dakzipped.dxy), self.selcfg.absdxyLevel)
+    
+    def dzmask(self, op):
+        return op(abs(self.dakzipped.dz), self.selcfg.absdzLevel)
+    
+    def bdtmask(self, op):
+        return op(self.dakzipped.bdtid, self.selcfg.BDTLevel)
 
-def zip_lepproperties(propcfg, events, extra=None):
-    """ Return a collection of dictionaries containing the properties of leptons.
-
-    :param propcfg: a dictionary containing the properties of leptons
-    :type propcfg: dict
-        {
-            object:{
-                {datatype: {
-                    name: nanoaod name}}}
-        }
-    :param events: events in a NANOAD dataset
-    :type events: coffea.nanoevents.NanoEvents.array
-    :return: zipped properties properties of leptons
-    :rtype: coffea.nanoevents.methods.vector.PtEtaPhiMLorentzVectorArray
-    """
-    muons = zip_object(propcfg.Muon, events)
-    electrons = zip_object(propcfg.Electron, events)
-    taus = zip_object(propcfg.Tau, events)
-    return muons, electrons, taus
-
-def zip_jetproperties(propcfg, events, extra=None):
-    """ Returns the selected jet properties
-
-    :param events: events
-    :type events: coffea.nanoevents.methods.base.NanoEventsArray
-    :param propcfg: a dictionary containing the properties of leptons
-    :type propcfg: dict
-        {
-            object:{
-                {datatype: {
-                    name: nanoaod name}}}
-        }
-    :return: AK4 and AK8 jets
-    :rtype: ak.array
-    """
-
-    jet = zip_object(propcfg.Jet, events)
-    fatjet = zip_object(propcfg.FatJet, events)
-
-    return jet, fatjet
 
 # TODO: combine the two methods
 def LV_from_zipped(zippedLep, sortbypt=True):
@@ -346,31 +392,7 @@ def LV_from_zipped(zippedLep, sortbypt=True):
         object_ak = object_ak[ak.argsort(object_ak.pt, ascending=False)]
     object_LV = vec.Array(object_ak)
     return object_LV
-
-def LV(field_name, events, sortbypt=True):
-    """ Extract four-momentum vectors of an object from NANOAOD file with methods in vector.
-
-    :param field_name: the name of the object in NANOAOD format (the prefix)
-    :type field_name: string
-    :param events: events
-    :type events: coffea.nanoevents.methods.base.NanoEventsArray
-    :param sortbypt: whether sort the Lorentz vectors in each event by pt
-    :type sortbypt: bool
-    :return: unflattened PtEtaPhiM four vector for events
-    :rtype: vector.backends.awkward.MomentumArray4D
-    """
-    object_ak = ak.zip({
-        "pt": events[field_name+"_pt"],
-        "eta": events[field_name+"_eta"],
-        "phi": events[field_name+"_phi"],
-        "M": events[field_name+"_mass"]
-    })
-    if sortbypt:
-        object_ak = object_ak[ak.argsort(object_ak.pt, ascending=False)]
-    object_LV = vec.Array(object_ak)
-    return object_LV
-
-
+    
 def overlap_check(object1, object2):
     """
     Check overlap between two objects. Note: Object 1 should only contain one item per event.

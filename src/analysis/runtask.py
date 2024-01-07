@@ -1,16 +1,13 @@
-
 import uproot
 from coffea.nanoevents import NanoEventsFactory
-from coffea.processor import dict_accumulator, column_accumulator, defaultdict_accumulator
 from coffea.nanoevents.schemas import BaseSchema
-from coffea import processor
 from analysis.dsmethods import extract_process
 from analysis.histbooker import accumulate_dicts
 from analysis.processing import *
 import re
 
 def run_single(filename, process_name, post_process=True):
-    """Run the processor on a single file.
+    """
 
     :param filename: path to the root file
     :type filename: string
