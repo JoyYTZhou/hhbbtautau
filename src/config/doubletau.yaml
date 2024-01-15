@@ -14,7 +14,7 @@ default:
         muon: null
         tau: null
       selections:
-        electron:
+        Electron:
           veto: False
           BDTLevel: 1
           ptLevel: 33
