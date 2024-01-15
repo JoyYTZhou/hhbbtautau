@@ -32,7 +32,7 @@ MAX_SIZE = 100
 RECOVERABLE = true
 COMPRESSION = 5
 # runner parameter options
-CHUNK_SIZE = 50000
+CHUNK_NO = 10
 TIMEOUT = 600
 CHANNELNAMES = ["tauetauh", "taumtauh", "tauhtauh"]
 INPUTFILE_NAME = "src/data/inputfile.json"
