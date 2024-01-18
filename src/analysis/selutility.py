@@ -75,11 +75,11 @@ class Processor:
 class EventSelections:
     def __init__(self) -> None:
         self._channelname = None
-        self._selcfg = None
+        self._lepselcfg = None
+        self._jetselcfg = None
         self._filtersel = None
         self._leptonsel = None
-        self._ak4jetsel = None
-        self._ak8jetsel = None
+        self._jetsel = None
         self._cutflow = None
     
     @property
@@ -90,12 +90,19 @@ class EventSelections:
         self._channelname = value
 
     @property
-    def selcfg(self):
-        return self._selcfg
-    @selcfg.setter
-    def selcfg(self, value):
-        self._selcfg = value
+    def lepselcfg(self):
+        return self._lepselcfg
+    @lepselcfg.setter
+    def lepselcfg(self, value):
+        self._lepselcfg = value
 
+    @property
+    def jetselcfg(self):
+        return self._jetselcfg
+    @jetselcfg.setter
+    def jetselcfg(self, value):
+        self._jetselcfg = value
+        
     @property
     def filtersel(self):
         return self._filtersel
@@ -111,24 +118,22 @@ class EventSelections:
         self._leptonsel = value
 
     @property
-    def ak4jetsel(self):
-        return self._ak4jetsel
-    @ak4jetsel.setter
-    def ak4jetsel(self, value):
-        self._ak4jetsel = value
+    def jetsel(self):
+        return self._jetsel
+    @jetsel.setter
+    def jetsel(self, value):
+        self._jetsel = value
  
     def lepselsetter(self, events):
         """Custom function to set the lepton selections for a given channel.
         :param events: events loaded from a .root file
         :type events: dask_awkward.lib.core.Array
-        :return: Packed Lepton Selections
-        :rtype: PackedSelection
         """
         packedlepsel = PackedSelection()
         
-        electron = Object(events, "Electron", output_cfg.Electron, self.selcfg.electron)
-        muon = Object(events, "Muon", output_cfg.Muon, self.selcfg.muon)
-        tau = Object(events, "Tau", output_cfg.Tau, self.selcfg.tau)
+        electron = Object(events, "Electron", output_cfg.Electron, self.lepselcfg.electron)
+        muon = Object(events, "Muon", output_cfg.Muon, self.lepselcfg.muon)
+        tau = Object(events, "Tau", output_cfg.Tau, self.lepselcfg.tau)
         
         electron_mask = (electron.ptmask(opr.ge) & \
                         electron.absetamask(opr.le) & \
@@ -149,22 +154,34 @@ class EventSelections:
         packedlepsel.add_multiple({"ElectronSelection": elec_nummask,
                                "MuonSelection": muon_nummask,
                                "TauSelection": tau_nummask})
-        return packedlepsel
+        self.leptonsel = packedlepsel
+        return None
         
     def lepcaller(self, events):
-        """Call the lepton selection function for a given channel."""
+        """Call the lepton selection for a given channel."""
         pass
         
-    def ak4selsetter(self, events):
+    def jetselsetter(self, events):
+        """Custom function to select jet selections for a given channel."""
+        packedjetsel = PackedSelection()
         
-   
-    @property
-    def ak8jetsel(self):
-        return self._ak8jetsel
-    @ak8jetsel.setter
-    def ak8jetsel(self, value):
-        self._ak8jetsel = value
-    
+        jet = Object("Jet", events, output_cfg.Jet, self.jetselcfg.Jet)
+        jet_mask = (jet.ptmask(opr.ge) & \
+                    jet.absetamask(opr.le))
+        jet_nummask = jet.numselmask(opr.ge)
+        
+        fatjet = Object("FatJet", events, output_cfg.FatJet, self.jetselcfg.FatJet)
+        fatjet_mask = (fatjet.custommask("mass", opr.ge))
+        fatjet_nummask = fatjet.numselmask(opr.ge)
+        
+        packedjetsel.add_multiple_events({"JetSelections": jet_nummask,
+                                          "FatJetSelections": fatjet_mask})
+        jetsel = packedjetsel
+        return None
+
+    def jetcaller(self, events):
+        """Call the jet selection for a given channel."""
+        pass
 
 def pair_selections(events_dict, cutflow_dict, object_dict, cfg):
     """ Place pair selections on candidate events belonging to parallel target processes.
@@ -176,14 +193,6 @@ def pair_selections(events_dict, cutflow_dict, object_dict, cfg):
     :return: dictionary of coffea nanoevents array with major object selections
     :rtype: dict{int: coffea.nanoevents.NanoEvents.array}
     """
-
-    for keyname, events in events_dict.items():
-        lepcfgname = f"signal.{keyname}"
-        lepselname = cfg[lepcfgname+".selections"]
-        filter_muons = object_dict[keyname]['Muon']
-        filter_electrons = object_dict[keyname]['Electron']
-        filter_taus = object_dict[keyname]["Tau"]
-
         # select pair properties
         if lepselname.pair is not None:
             pairselect = lepselname.pair
@@ -213,37 +222,7 @@ def pair_selections(events_dict, cutflow_dict, object_dict, cfg):
         cutflow_dict[keyname]["Pair Selection"] = len(events)
 
 
-def jet_selections(events_dict, cutflow_dict, object_dict, cfg):
-    """ Place jet selections on candidate events belonging to parallel target processes.
-
-    :param events_dict: dictionary of coffea nanoevents array with major object selections and pair selections
-    :type events_dict: dict{coffea.nanoevents.NanoEvents.array}
-    :param cutflow_dict: dictionary of cutflows in different channels
-    :type cutflow_dict: dict{keyname:{
-            selection: int
-            }
-    :param object_dict: dictionary of zipped lepton objects
-    :type object_dict: dict{object name: coffea.nanoevents.methods.vector.PtEtaPhiMLorentzVectorArray}
-    :param cfg: configuration object
-    :type cfg: DynaConf object
-    """
-    for keyname, events in events_dict.items():
-        lepcfgname = f"signal.{keyname}"
-        lepselname = cfg[lepcfgname+".selections"]
-        comselname = cfg["signal.commonsel"]
-        if comselname.ak4jet is not None:
-            ak4s, ak8s = zip_jetproperties(cfg.signal.outputs, events)
-            jetselect = comselname.ak4jet
-            # Basic jet check
-            ak4mask = (ak4s.pt > jetselect.ptLevel) & \
-                (abs(ak4s.eta) < jetselect.absetaLevel)
-            ak4s = ak4s[ak4mask]
-            ak4mask = (ak.num(ak4s) >= jetselect.count)
-            events = events[ak4mask]
-            ak4s = ak4s[ak4mask]
-            ak8s = ak8s[ak4mask]
-            apply_mask_on_all(object_dict[keyname], ak4mask)
-            # Overlap check
+           # Overlap check
             if not lepselname.electron.veto and (lepselname.electron.veto is not None):
                 electronLV = LV_from_zipped(object_dict[keyname]['Electron'])
                 dRmask = (ak.sum(electronLV[:, 0].deltaR(LV_from_zipped(ak4s)) > jetselect.dRLevel,
@@ -268,11 +247,6 @@ def jet_selections(events_dict, cutflow_dict, object_dict, cfg):
                     ak4s = ak4s[dRmask]
                     ak8s = ak8s[dRmask]
                     apply_mask_on_all(object_dict[keyname], dRmask)
-        # TODO: Fill in fatjet selection
-        events_dict[keyname] = events
-        cutflow_dict[keyname]["Jet selections"] = len(events)
-        object_dict[keyname].update({"Jet": ak4s,
-                                     "FatJet": ak8s})
 
 
 def apply_mask_on_all(object_dict, mask):
@@ -385,6 +359,10 @@ class Object():
             object_ak = object_ak[ak.argsort(object_ak[sortname], ascending=False)]
         object_LV = vec.Array(object_ak)
         return object_LV
+    
+    def overlap(self, altobject):
+        pass
+    
 
 def overlap_check(object1, object2):
     """
@@ -399,16 +377,3 @@ def overlap_check(object1, object2):
 
     return 0
 
-
-def events_todf(events, objects):
-    """
-    Converts filtered events array (after object selections, preferably) into pandas dataframe.
-    This can be useful for applying combinatorial selections
-
-    :param events: filtered events array
-    :type events: coffea.nanoevents.methods.base.NanoEventsArray
-    :param objects: selected objects
-    :type objects: list
-    :return df: filtered events dataframe
-    :type df: pandas.DataFrame
-    """
