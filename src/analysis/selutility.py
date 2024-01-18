@@ -13,7 +13,6 @@ import json as json
 import operator
 from collections import ChainMap
 
-dak.num()
 class Processor:
     def __init__(self):
         self._selseq = None
