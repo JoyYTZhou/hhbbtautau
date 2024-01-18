@@ -7,38 +7,7 @@ default:
       nJet: 2
     channelnames: ["tauetauh", "taumtauh", "tauhtauh"]
     channelno: 3
-    channel2:
-      name: "tauetauh"
-      triggers:
-        electron: ["HLT_Ele24_eta2p1_WPTight_Gsf_TightChargedIsoPFTauHPS30_eta2p1_CrossL1","HLT_Ele32_WPTight_Gsf"]
-        muon: null
-        tau: null
-      selections:
-        Electron:
-          veto: False
-          BDTLevel: 1
-          ptLevel: 33
-          absetaLevel: 2.1
-          absdxyLevel: 0.045
-          absdzLevel: 0.2
-          count: 1
-        muon:
-          veto: True
-          ptLevel: 25
-        tau: 
-          veto: False
-          ptLevel: 35
-          absetaLevel: 2.3
-          IDvsjetLevel: 5
-          IDvsmuLevel: 4
-          IDvseLevel: 3 
-          absdzLevel: 0.2
-          count: 1
-        pair:
-          name: "ET"
-          OS: True
-          dRLevel: 0.5
-    channel1:
+   channel1:
       name: "taumtauh"
       triggers:
         electron: null
@@ -50,26 +19,56 @@ default:
           ptLevel: 25
         muon: 
           veto: False
-          ptLevel: 25
-          absetaLevel: 2.1
-          IDLevel: True
-          isoLevel: 0.15
+          pt: 25
+          eta: 2.1
+          iso: 0.15
           count: 1
-          absdxyLevel: 0.045
-          absdzLevel: 0.2
+          dxy: 0.045
+          dz: 0.2
         tau:
           veto: False
-          ptLevel: 35
-          absetaLevel: 2.3
+          pt: 35
+          eta: 2.3
           IDvsjetLevel: 5
           IDvsmuLevel: 4
           IDvseLevel: 3 
-          absdzLevel: 0.2
+          dz: 0.2
           count: 1
         pair:
           name: "MT" 
           OS: True
           dRLevel: 0.5
+    channel2:
+      name: "tauetauh"
+      triggers:
+        electron: ["HLT_Ele24_eta2p1_WPTight_Gsf_TightChargedIsoPFTauHPS30_eta2p1_CrossL1","HLT_Ele32_WPTight_Gsf"]
+        muon: null
+        tau: null
+      selections:
+        electron:
+          veto: False
+          bdtid: 1
+          pt: 33
+          eta: 2.1
+          dxy: 0.045
+          dz: 0.2
+          count: 1
+        muon:
+          veto: True
+          pt: 25
+        tau: 
+          veto: False
+          pt: 35
+          eta: 2.3
+          IDvsmuLevel: 4
+          IDvseLevel: 3 
+          dz: 0.2
+          count: 1
+        pair:
+          name: "ET"
+          OS: True
+          dRLevel: 0.5
+ 
     channel3:
       name: "tauhtauh"
       selections:
@@ -79,8 +78,8 @@ default:
           veto: null
         tau:
           veto: False
-          ptLevel: 40
-          absetaLevel: 2.3
+          pt: 40
+          etaLevel: 2.3
           IDvsjetLevel: 5
           IdvsmuLevel: 1
           IDvseLevel: 2

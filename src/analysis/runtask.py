@@ -3,7 +3,7 @@ from coffea.nanoevents import NanoEventsFactory
 from coffea.nanoevents.schemas import BaseSchema
 from analysis.dsmethods import extract_process
 from analysis.histbooker import accumulate_dicts
-from analysis.processing import *
+from analysis.custom import *
 import re
 
 def run_single(filename, process_name, post_process=True):
