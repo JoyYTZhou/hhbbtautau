@@ -10,10 +10,11 @@ from coffea.nanoevents.methods import vector
 import vector as vec
 import uproot
 import json as json
-import operator
+import operator as opr 
 from collections import ChainMap
+from config.selectionconfig import settings as sel_cfg
 
-dak.num()
+output_cfg = sel_cfg.signal.outputs
 class Processor:
     def __init__(self):
         self._selseq = None
@@ -41,7 +42,9 @@ class Processor:
         self._selseq = value
         
     def evalute(self, events, leftover=True):
-        pass
+        if self.selseq is None:
+            raise ValueError("Selection sequence is not set.")
+        # for name, sel in self.selseq.items():
     
     def loadfile(self, filename, dsname, rt_cfg):
         events = NanoEventsFactory.from_root(
@@ -67,112 +70,101 @@ class Processor:
             metadata={"dataset": "DYJets"},
             schemaclass=BaseSchema,
         ).events()
-        return out        
+
+
+class EventSelections:
+    def __init__(self) -> None:
+        self._channelname = None
+        self._selcfg = None
+        self._filtersel = None
+        self._leptonsel = None
+        self._ak4jetsel = None
+        self._ak8jetsel = None
+        self._cutflow = None
     
+    @property
+    def channelname(self):
+        return self._channelname
+    @channelname.setter
+    def channelname(self, value):
+        self._channelname = value
 
-def lepton_selections(events, cfg):
-    """ Preselect candidate events for a target process with major object selections.
+    @property
+    def selcfg(self):
+        return self._selcfg
+    @selcfg.setter
+    def selcfg(self, value):
+        self._selcfg = value
 
-    :param events: events in a NANOAD dataset
-    :type events: coffea.nanoevents.NanoEvents.array
-    :param cfg: configuration object
-    :type cfg: DynaConf object
-    :return events_dict: dictionary of coffea nanoevents array with major object selections.
-             keys = channel names, values = events array
-    :rtype events_dict: dict{int: coffea.nanoevents.NanoEvents.array}
-    :return cutflow_dict: cutflow dictionary.
-             Keys = Channel names, values = {
-                 Keys = Selection name, Values = Event number
-             }
-    :rtype cutflow_dict: dict{dict: int}
-    :return object_dict: dictionary of zipped objects
-    :rtype object_dict: dict{object name: coffea.nanoevents.methods.vector.PtEtaPhiMLorentzVectorArray}
-    """
+    @property
+    def filtersel(self):
+        return self._filtersel
+    @filtersel.setter
+    def filtersel(self, value):
+        self._filtersel = value
 
-    events_dict = {}
-    cutflow_dict = {}
-    object_dict = {}
+    @property
+    def leptonsel(self):
+        return self._leptonsel
+    @leptonsel.setter
+    def leptonsel(self, value):
+        self._leptonsel = value
 
-    # Set up selections for the major candidates
-    for i in range(cfg.signal.channelno):
-        keyname = "".join(["channel", str(i+1)])
-        # Create lepton objects
-        muons, electrons, taus = zip_lepproperties(cfg.signal.outputs, events)
-        # Create lepselection object: coffea.analysis_tool.PackedSelection
-        lepselection = PackedSelection()
-        lepcfgname = "signal.channel"+str(i+1)
-        lepselname = cfg[lepcfgname+".selections"]
-        # select electrons
-        eselect = lepselname.electron
-        if eselect.veto is not None:
-            if not eselect.veto:
-                electronmask = (electrons.pt > eselect.ptLevel) & \
-                               (abs(electrons.eta) < eselect.absetaLevel) & \
-                               (electrons.bdtid >= eselect.BDTLevel) & \
-                               (abs(electrons.dxy) < eselect.absdxyLevel) & \
-                               (abs(electrons.dz) < eselect.absdzLevel)
-                electrons = electrons[electronmask]
-                lepselection.add("ElectronSelection", ak.to_numpy(
-                    ak.num(electrons) == eselect.count))
-            # apply vetos
-            else:
-                electronmask = (electrons.pt > eselect.ptLevel)
-                electrons = electrons[electronmask]
-                lepselection.add("ElectronSelection",
-                                 ak.to_numpy(ak.num(electrons) == 0))
-
-        # select muons
-        mselect = lepselname.muon
-        if (mselect.veto is not None):
-            if not mselect.veto:
-                # TODO: figure out a way to construct the filtered muons quickly from fields
-                muonmask = (muons.pt > mselect.ptLevel) & \
-                           (abs(muons.eta) < mselect.absetaLevel) & \
-                           (abs(muons.dxy) < mselect.absdxyLevel) & \
-                           (abs(muons.dz) < mselect.absdzLevel) & \
-                           (muons.iso < mselect.isoLevel) & \
-                           (muons.tightid == mselect.IDLevel)
-                muons = muons[muonmask]
-                lepselection.add("MuonSelection", ak.to_numpy(
-                    ak.num(muons) == mselect.count))
-            else:
-                muonmask = (muons.pt > mselect.ptLevel)
-                muons = muons[muonmask]
-                lepselection.add(
-                    "MuonSelection", ak.to_numpy(ak.num(muons) == 0))
-
-        # select taus
-        tselect = lepselname.tau
-        if tselect.veto is not None:
-            if not tselect.veto:
-                taumask = (taus.pt > tselect.ptLevel) & \
-                    (abs(taus.eta) < tselect.absetaLevel) & \
-                    (taus.idvsjet >= tselect.IDvsjetLevel) & \
-                    (taus.idvsmu >= tselect.IDvsmuLevel) & \
-                    (taus.idvse >= tselect.IDvseLevel) & \
-                    (abs(taus.dz) < tselect.absdzLevel)
-                taus = taus[taumask]
-                lepselection.add("TauSelection", ak.to_numpy(
-                    ak.num(taus) == tselect.count))
-            else:
-                # TODO: for now a placeholder
-                pass
-
-        # Evaluate the selection collections at this point to identify individual leptons selected
-        cutflow_dict[keyname] = {}
-        cutflow_dict[keyname]["Total"] = len(events)
-        for i, sel in enumerate(lepselection.names):
-            cutflow_dict[keyname][sel] = lepselection.all(
-                *(lepselection.names[:i+1])).sum()
-        all_lep_mask = lepselection.all(*(lepselection.names))
-        events_dict[keyname] = events[all_lep_mask]
-        object_dict[keyname] = {"Electron": electrons[all_lep_mask],
-                                "Muon": muons[all_lep_mask],
-                                "Tau": taus[all_lep_mask]}
-        events = events[~(lepselection.all(*(lepselection.names)))]
-
-    return events_dict, cutflow_dict, object_dict
-
+    @property
+    def ak4jetsel(self):
+        return self._ak4jetsel
+    @ak4jetsel.setter
+    def ak4jetsel(self, value):
+        self._ak4jetsel = value
+ 
+    def lepselsetter(self, events):
+        """Custom function to set the lepton selections for a given channel.
+        :param events: events loaded from a .root file
+        :type events: dask_awkward.lib.core.Array
+        :return: Packed Lepton Selections
+        :rtype: PackedSelection
+        """
+        packedlepsel = PackedSelection()
+        
+        electron = Object(events, "Electron", output_cfg.Electron, self.selcfg.electron)
+        muon = Object(events, "Muon", output_cfg.Muon, self.selcfg.muon)
+        tau = Object(events, "Tau", output_cfg.Tau, self.selcfg.tau)
+        
+        electron_mask = (electron.ptmask(opr.ge) & \
+                        electron.absetamask(opr.le) & \
+                        electron.absbdtmask(opr.ge)) if not electron.veto else electron.vetomask()
+        electron.filter_dakzipped(electron_mask)
+        elec_nummask = electron.numselmask(opr.eq)
+        
+        muon_mask = (muon.ptmask(opr.ge) & \
+                    muon.absetamask(opr.le) & \
+                    muon.custommask('iso', opr.le)) if not muon.veto else muon.vetomask()
+        muon.filter_dakzipped(muon_mask)
+        muon_nummask = muon.numselmask(opr.eq)
+        
+        tau_mask = (tau.ptmask(opr.ge) & \
+                    tau.absetamask(opr.le)) if not tau.veto else tau.vetomask()
+        tau_nummask = tau.numselmask(opr.eq)
+       
+        packedlepsel.add_multiple({"ElectronSelection": elec_nummask,
+                               "MuonSelection": muon_nummask,
+                               "TauSelection": tau_nummask})
+        return packedlepsel
+        
+    def lepcaller(self, events):
+        """Call the lepton selection function for a given channel."""
+        pass
+        
+    def ak4selsetter(self, events):
+        
+   
+    @property
+    def ak8jetsel(self):
+        return self._ak8jetsel
+    @ak8jetsel.setter
+    def ak8jetsel(self, value):
+        self._ak8jetsel = value
+    
 
 def pair_selections(events_dict, cutflow_dict, object_dict, cfg):
     """ Place pair selections on candidate events belonging to parallel target processes.
@@ -283,35 +275,6 @@ def jet_selections(events_dict, cutflow_dict, object_dict, cfg):
                                      "FatJet": ak8s})
 
 
-def write_rootfiles(events_dict, cfg, filename):
-    """ Write dictionary of events in Coffea array to rootfile with a given filename.
-
-    :param events_dict: dictionary of coffea nanoevents array with major object selections and pair selections
-    :type events_dict: dict{coffea.nanoevents.NanoEvents.array}
-    :param cfg: configuration object
-    :type cfg: DynaConf object
-    :param filename: filename of the root file to write events to
-    :type filename: str
-    :return: message about writing # events to a particular file
-    :rtype: str
-
-    """
-    with uproot.update(filename) as rootfile:
-        for i, events in events_dict.items():
-            channelname = cfg["signal.channel"+str(i)+".name"]
-            muons, electrons, taus = zip_lepproperties(cfg.signal.outputs, events)
-            ak4s, ak8s = zip_jetproperties(cfg.signal.outputs, events)
-            rootfile[channelname].extend({
-                "Muon": muons,
-                "Electron": electrons,
-                "Tau": taus,
-                "Jet": ak4s,
-                "FatJet": ak8s
-            })
-    msg = f"Writing {len(events)} to {filename}"
-
-    return msg
-
 def apply_mask_on_all(object_dict, mask):
     """Apply mask on all the objects in a dict
 
@@ -326,10 +289,22 @@ def apply_mask_on_all(object_dict, mask):
 
 class Object():
     def __init__(self, name, events, objcfg, selcfg):
+        """Construct an object from provided events with given selection configuration.
+        :param name: name of the object
+        :type name: str
+        :param events: events loaded from a .root file
+        :type events: dask_awkward.lib.core.Array
+        :param objcfg: object properties configuration
+        :type objcfg: dynaconf
+        :param selcfg: object selection configuration
+        :type selcfg: dynaconf
+        """
         self._name = name
-        self.objcfg = objcfg 
+        self._veto = objcfg.get('veto', None)
+        self.objcfg = objcfg
         self.selcfg = selcfg
         self.set_dakzipped(events)
+        self.selection = PackedSelection()
     
     @property
     def name(self):
@@ -339,60 +314,78 @@ class Object():
         self._name = value
     
     @property
+    def veto(self):
+        return self._veto
+    @veto.setter
+    def veto(self, value):
+        self._veto = value
+    
+    @property
     def dakzipped(self):
         return self._dakzipped
+    @dakzipped.setter
+    def dakzipped(self, value):
+        self._dakzipped = value
+
     def set_dakzipped(self, events):
         vars_dict = dict(ChainMap(*(self.objcfg.values())))
         zipped_dict = {}
         for name, nanoaodname in vars_dict.items():
             zipped_dict.update({name: events[nanoaodname]})
         zipped_object = dak.zip(zipped_dict)
-        self._dakzipped = zipped_object
+        self.dakzipped = zipped_object
+        
+    def filter_dakzipped(self, mask):
+        """Filter the object based on a mask.
+        :param mask: mask to filter the object
+        :type mask: ak.array
+        """
+        self.dakzipped = self.dakzipped[mask]
 
-    def fourvector(self, events, sortbypt=True):
+    def vetomask(self):
+        self.filter_dakzipped(self.ptmask(opr.ge))
+        veto_mask = dak.num(self.dakzipped)==0
+        return veto_mask
+    
+    def numselmask(self, op):
+        return op(dak.num(self.dakzipped), self.selcfg.count)
+    
+    def custommask(self, name, op, func=None):
+        """Create custom mask based on input"""
+        if self.selcfg.get(name, None) is None:
+            raise ValueError(f"threshold value {name} is not given for object {self.name}")
+        if func is not None: 
+            return op(func(self.dakzipped[name]), self.selcfg[name])
+        else:
+            return op(self.dakzipped[name], self.selcfg[name])
+    
+    def ptmask(self, op):
+        return op(self.dakzipped.pt, self.selcfg.pt)
+    
+    def absetamask(self, op):
+        return self.custommask('eta', op, abs)
+    
+    def absdxymask(self, op):
+        return self.custommask('dxy', op, abs)
+    
+    def absdzmask(self, op):
+        return self.custommask('dz', op, abs)
+    
+    def bdtidmask(self, op):
+        return self.custommask("bdtid", op)
+    
+    def fourvector(self, events, sort=True, sortname='pt'):
         object_ak = ak.zip({
         "pt": events[self.name+"_pt"],
         "eta": events[self.name+"_eta"],
         "phi": events[self.name+"_phi"],
         "M": events[self.name+"_mass"]
         })
-        if sortbypt:
-            object_ak = object_ak[ak.argsort(object_ak.pt, ascending=False)]
+        if sort:
+            object_ak = object_ak[ak.argsort(object_ak[sortname], ascending=False)]
         object_LV = vec.Array(object_ak)
         return object_LV
-    
-    def numselmask(self, op):
-        return op(dak.num(self.dakzipped), self.selcfg.count)
-    
-    def ptmask(self, op):
-        return (self.dakzipped.pt, self.selcfg.ptLevel, op)
-    
-    def etamask(self, op):
-        return op(abs(self.dakzipped.eta), self.selcfg.absetaLevel)
-    
-    def dxymask(self, op):
-        return op(abs(self.dakzipped.dxy), self.selcfg.absdxyLevel)
-    
-    def dzmask(self, op):
-        return op(abs(self.dakzipped.dz), self.selcfg.absdzLevel)
-    
-    def bdtmask(self, op):
-        return op(self.dakzipped.bdtid, self.selcfg.BDTLevel)
 
-
-# TODO: combine the two methods
-def LV_from_zipped(zippedLep, sortbypt=True):
-    object_ak = ak.zip({
-        "pt": zippedLep.pt,
-        "eta": zippedLep.eta,
-        "phi": zippedLep.phi,
-        "M": zippedLep.mass,
-    })
-    if sortbypt:
-        object_ak = object_ak[ak.argsort(object_ak.pt, ascending=False)]
-    object_LV = vec.Array(object_ak)
-    return object_LV
-    
 def overlap_check(object1, object2):
     """
     Check overlap between two objects. Note: Object 1 should only contain one item per event.

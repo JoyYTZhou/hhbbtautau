@@ -3,15 +3,23 @@
 import os
 import numpy as np
 import pandas as pd
-import coffea.processor as processor
-from config.selectionconfig import settings as cfg
-from coffea.nanoevents import NanoEventsFactory, BaseSchema
-from analysis.selutility import trigger_selections, lepton_selections, pair_selections, jet_selections
+from analysis.selutility import Object
 from analysis.dsmethods import *
-from analysis.histbooker import hbbtautau_accumulate, hhtobbtautau_accumulator
+from config.selectionconfig import settings as sel_cfg
+import operator as opr
 
+output_cfg = sel_cfg.signal.outputs
+
+def lepton_selection(events, channelname):
+    channel_cfg = sel_cfg.signal[channelname].selections
+    electron = Object(events, "Electron", output_cfg.Electron, channel_cfg.electron)
+    muon = Object(events, "Muon", output_cfg.Muon, channel_cfg.muon)
+    tau = Object(events, "Tau", output_cfg.Tau, channel_cfg.tau)
+    electron_mask = electron.ptmask(opr.ge)
+    
 
 def trigger_selection(selection, events, cfg):
+
     """Add trigger selections to coffea processor selection.
 
     :param events: events from root NANOAOD files
@@ -24,77 +32,6 @@ def trigger_selection(selection, events, cfg):
     :rtype: coffea.processor.PackedSelection (https://coffeateam.github.io/coffea/api/coffea.processor.PackedSelection.html)
     """
     return 0
-
-
-class hhbbtautauProcessor(processor.ProcessorABC):
-    def __init__(self, blind=True):
-        self._year = None
-        self._blind = False
-        self._configure()
-        self._accumulator = hhtobbtautau_accumulator(cfg)
-        self._dataset = None
-
-    @property
-    def accumulator(self):
-        return self._accumulator
-
-    def _configure(self, events=None):
-        """Configure the processor."""
-
-        cfg.DYNACONF_WORKS = "merge_configs"
-        cfg.MERGE_ENABLED_FOR_DYNACONF = True
-
-        if events is not None:
-            self._dataset = events.metadata['dataset']
-
-    def process(self, events):
-        """Process events.
-        :return: selected_events[channelname] = dict_accumulator({
-            "Cutflow": accu_int(),
-            "Objects": dict_accumulator(object_accs)
-        })
-        """
-
-        if not cfg.size:
-            return self.accumulator.identity()
-        self._configure(events)
-
-        # Triggers
-        trigger_selections(events, cfg)
-
-        # Lepton selections
-        events_dict, cutflow_dict, object_dict = lepton_selections(events, cfg)
-        # Pair selections
-        pair_selections(events_dict, cutflow_dict, object_dict, cfg)
-        # Jet selections
-        jet_selections(events_dict, cutflow_dict, object_dict, cfg)
-        # Fill histograms
-        output = self.accumulator.identity()
-
-        hbbtautau_accumulate(output, cfg, cutflow_dict, object_dict)
-
-        del cutflow_dict, object_dict
-
-        return {self._dataset: output}
-
-    def postprocess(self, acc_output): 
-        """Postprocess the output dataset names with the output still accumulatable.
-        Instead of having "DYJets_1", "DYJets_2" etc. as dataset names, the output would instead
-        have "DYJets" with a single output accumulator.
-
-        :param acc_output: accumulated output from coffea.processor/runner. 
-        :type acc_output: coffea.processor.dict_accumulator
-        :return: None 
-        """
-
-        uniqueds = set(ds.split('_')[0] for ds in acc_output.keys())
-        for ds in uniqueds:
-            combined_accumulator = self.accumulator.identity()
-            for dataset in list(acc_output.keys()):
-                if dataset.startswith(ds):
-                    combined_accumulator.add(acc_output[dataset])
-                    del acc_output[dataset]
-            acc_output[ds] = combined_accumulator
 
 def unwrap_col_acc(acc_output):
     """Unwrap the column accumulator in the acc_output['Objects'] to a list of numpy arrays.
