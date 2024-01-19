@@ -5,6 +5,7 @@ import subprocess
 import json
 import os
 from tqdm import tqdm
+import uproot
 
 def dasgo_query(query, json=False):
     cmd = ["dasgoclient", "--query", query]
@@ -40,26 +41,65 @@ def query_MCsamples(dspath, outputfn, must_include=None, prefix='local'):
 
     complete_dict = {}
 
-    for process in dsjson.keys():
-        complete_dict[process] = {}
-        for name, sample_list in tqdm(dsjson[process].items(), f"finding {process} samples..."):
-            # make dataset query for a list of dataset in one process
-            query_ds = lambda ds: "".join(["dataset=", ds])
-            ds_query_list = list(map(query_ds, sample_list))
-            to_flatten = list(map(dasgo_query, ds_query_list))
-            dslist = [item for sublist in to_flatten for item in sublist]
-            if must_include is not None:
-                dslist = [ds for ds in dslist if must_include in ds]
-            query_file = lambda ds: "".join(["file dataset=", ds])
-            file_query_list = list(map(query_file, dslist))
-            to_flatten = list(map(dasgo_query, file_query_list))
-            filelist = [item for sublist in to_flatten for item in sublist]
-            filelist_xrootd = list(map(xrootd_format, filelist, prefix))
-            complete_dict[process].update({name: filelist_xrootd})
+    for name, sample_list in tqdm(dsjson.items(), f"finding samples ..."):
+        # make dataset query for a list of dataset in one process
+        query_ds = lambda ds: "".join(["dataset=", ds])
+        ds_query_list = list(map(query_ds, sample_list))
+        to_flatten = list(map(dasgo_query, ds_query_list))
+        dslist = [item for sublist in to_flatten for item in sublist]
+        if must_include is not None:
+            dslist = [ds for ds in dslist if must_include in ds]
+        query_file = lambda ds: "".join(["file dataset=", ds])
+        file_query_list = list(map(query_file, dslist))
+        to_flatten = list(map(dasgo_query, file_query_list))
+        filelist = [item for sublist in to_flatten for item in sublist]
+        filelist_xrootd = list(map(xrootd_format, filelist, prefix))
+        complete_dict.update({name: filelist_xrootd})
 
     with open(outputfn, 'w') as jsonfile:
         json.dump(complete_dict, jsonfile)
 
+def preprocess_files(inputfn, outputfn, step_size=10000, tree_name="Events", errorfn="failedpath.json"):
+    def generate_dict(file_path, tree_name, step_size):
+    # Open the ROOT file and access the tree
+        with uproot.open(file_path) as file:
+            tree = file[tree_name]
+            # Get the number of events
+            n_events = tree.num_entries
+            # Create steps based on the number of events
+            steps = [[i, min(i + step_size, n_events)] for i in range(0, n_events, step_size)]
+            # Construct the dictionary
+            result_dict = {
+                file_path: {
+                    "object_path": tree_name,
+                    "steps": steps
+                }
+            }
+        return result_dict
+    with open(inputfn, 'r') as ds:
+        dsjson = json.load(ds)
+        
+    input_dict = {}
+    failed_dict = {}
+    for ds, pathlist in tqdm(dsjson.items(), desc="Accessing datasets..."):
+        result = {}
+        for path in tqdm(pathlist, desc=f"Finding sample {ds}"):
+            try:
+                result.update(generate_dict(path, tree_name, step_size))
+            except Exception as e:
+                print(f"Failed to find {path}: {e}")
+                failed_dict.update({ds: path})
+        if result != {}: input_dict.update({ds: result})
+    
+    with open(outputfn, 'w') as jsonfile:
+        json.dump(input_dict, jsonfile)
+    
+    if failed_dict != {}:
+        with open(errorfn, 'w') as errorfile:
+            json.dump(failed_dict, errorfile)
+    
+    return None        
+ 
 def divide_samples(inputfn, outputfn, dict_size=5):
     """Divide the ds into smaller list as value per key.
 
@@ -95,8 +135,8 @@ def divide_samples(inputfn, outputfn, dict_size=5):
         json.dump(complete_dict, jsonfile)
 
 if __name__ == "__main__":
-    query_MCsamples("MCsamplepath.json", "completepath.json", "Run3Summer22EE", prefix='global')
-    divide_samples("completepath.json", "inputfile.json", 5)
+    # query_MCsamples("querystring.json", "datasets_local.json", "Run3Summer22EE", prefix='local')
+    preprocess_files("datasets_local.json", "chunked_local.json")
 
 
 
