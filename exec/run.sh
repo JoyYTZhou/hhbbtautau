@@ -7,8 +7,8 @@ source $PWD/scripts/vomcheck.sh
 source $PWD/dirsetup.sh $1
 source $PWD/setup.sh $1
 
-export ENV_NAME=hhbbttrun
-OLD_ENV_NAME=/uscms_data/d3/joyzhou/hhbbttrun
+export ENV_NAME=newcoffea
+OLD_ENV_NAME=/uscms_data/d3/joyzhou/${ENV_NAME}
 if [ ! -z "${VIRTUAL_ENV}" ] && [ "$VIRTUAL_ENV" == "${ENV_NAME}" ]; then
     echo "Found environmental variable."
 else
