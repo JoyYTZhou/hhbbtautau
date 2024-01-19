@@ -4,10 +4,10 @@ cd ~/work/hhbbtautau
 rm -r *.tar.gz
 source scripts/sasetup.sh
 cd ~/nobackup
-python -m venv newcoffea
+export ENV_NAME=newcoffea
+python -m venv ${ENV_NAME}
 echo "creating new venv..."
 source newcoffea/bin/activate
-export ENV_NAME=newcoffea
 python3 -m pip install coffea
 echo "Installed Coffea"
 python3 -m pip install dynaconf --no-cache-dir
