@@ -6,7 +6,6 @@ from analysis.dsmethods import *
 from coffea.analysis_tools import PackedSelection
 from coffea.nanoevents import NanoEventsFactory
 from coffea.nanoevents.schemas import BaseSchema
-from coffea.nanoevents.methods import vector
 import vector as vec
 import uproot
 import json as json
@@ -71,7 +70,6 @@ class Processor:
             schemaclass=BaseSchema,
         ).events()
 
-
 class EventSelections:
     def __init__(self) -> None:
         self._channelname = None
@@ -131,25 +129,32 @@ class EventSelections:
         """
         packedlepsel = PackedSelection()
         
-        electron = Object(events, "Electron", output_cfg.Electron, self.lepselcfg.electron)
-        muon = Object(events, "Muon", output_cfg.Muon, self.lepselcfg.muon)
-        tau = Object(events, "Tau", output_cfg.Tau, self.lepselcfg.tau)
+        electron = Object("Electron", events, output_cfg.Electron, self.lepselcfg.electron)
+        muon = Object("Muon", events, output_cfg.Muon, self.lepselcfg.muon)
+        tau = Object("Tau", events, output_cfg.Tau, self.lepselcfg.tau)
         
-        electron_mask = (electron.ptmask(opr.ge) & \
+        if not electron.veto:  
+            electron_mask = (electron.ptmask(opr.ge) & \
                         electron.absetamask(opr.le) & \
-                        electron.absbdtmask(opr.ge)) if not electron.veto else electron.vetomask()
-        electron.filter_dakzipped(electron_mask)
-        elec_nummask = electron.numselmask(opr.eq)
+                        electron.absbdtmask(opr.ge))
+            electron.filter_dakzipped(electron_mask)
+            elec_nummask = electron.numselmask(opr.eq)
+        else: elec_nummask = electron.vetomask()
         
-        muon_mask = (muon.ptmask(opr.ge) & \
-                    muon.absetamask(opr.le) & \
-                    muon.custommask('iso', opr.le)) if not muon.veto else muon.vetomask()
-        muon.filter_dakzipped(muon_mask)
-        muon_nummask = muon.numselmask(opr.eq)
-        
-        tau_mask = (tau.ptmask(opr.ge) & \
-                    tau.absetamask(opr.le)) if not tau.veto else tau.vetomask()
-        tau_nummask = tau.numselmask(opr.eq)
+        if not muon.veto:
+            muon_mask = (muon.ptmask(opr.ge) & \
+                        muon.absetamask(opr.le) & \
+                        muon.custommask('iso', opr.le)) 
+            muon.filter_dakzipped(muon_mask)
+            muon_nummask = muon.numselmask(opr.eq)
+        else: muon_nummask = muon.vetomask()
+       
+        if not tau.veto: 
+            tau_mask = (tau.ptmask(opr.ge) & \
+                        tau.absetamask(opr.le)) 
+            tau.filter_dakzipped(tau_mask)
+            tau_nummask = tau.numselmask(opr.eq)
+        else: tau_nummask = tau.vetomask()
        
         packedlepsel.add_multiple({"ElectronSelection": elec_nummask,
                                "MuonSelection": muon_nummask,
@@ -183,83 +188,6 @@ class EventSelections:
         """Call the jet selection for a given channel."""
         pass
 
-def pair_selections(events_dict, cutflow_dict, object_dict, cfg):
-    """ Place pair selections on candidate events belonging to parallel target processes.
-
-    :param events_dict: events with object preselections in different channels organized by a dictionary.
-    :type events_dict: dict{coffea.nanoevents.NanoEvents.array}
-    :param cfg: configuration object
-    :type cfg: DynaConf object
-    :return: dictionary of coffea nanoevents array with major object selections
-    :rtype: dict{int: coffea.nanoevents.NanoEvents.array}
-    """
-        # select pair properties
-        if lepselname.pair is not None:
-            pairselect = lepselname.pair
-            pairname = pairselect.name
-            is_M = "M" in pairname
-            is_T = "T" in pairname
-            is_E = "E" in pairname
-            if is_M and is_T:
-                dR = (filter_muons[:, 0].delta_r(filter_taus) >= pairselect.dRLevel)
-                OS = (filter_muons[:, 0]["charge"] * filter_taus["charge"] < 0)
-                SS = (filter_muons[:, 0]["charge"] * filter_taus["charge"] > 0)
-            elif is_E and is_T:
-                dR = (filter_electrons[:, 0].delta_r(filter_taus) >= pairselect.dRLevel)
-                OS = (filter_electrons[:, 0]["charge"] * filter_taus["charge"] < 0)
-                SS = (filter_electrons[:, 0]["charge"] * filter_taus["charge"] > 0)
-            elif pairname.count("T") == 2:
-                # TODO: place holder for now for this channel
-                dR = ak.ones_like(filter_taus['charge'])
-                OS = ak.ones_like(filter_taus['charge'])
-                SS = ak.ones_like(filter_taus['charge'])
-            pairmask = dR & (OS if pairselect.OS else SS)
-            filter_taus = filter_taus[pairmask]
-            object_dict[keyname].update({"Tau": filter_taus})
-            apply_mask_on_all(object_dict[keyname], ak.any(pairmask, axis=1))
-            events = events[ak.any(pairmask, axis=1)]
-        events_dict[keyname] = events
-        cutflow_dict[keyname]["Pair Selection"] = len(events)
-
-
-           # Overlap check
-            if not lepselname.electron.veto and (lepselname.electron.veto is not None):
-                electronLV = LV_from_zipped(object_dict[keyname]['Electron'])
-                dRmask = (ak.sum(electronLV[:, 0].deltaR(LV_from_zipped(ak4s)) > jetselect.dRLevel,
-                             axis=1) > jetselect.count)
-                events = events[dRmask]
-                ak4s = ak4s[dRmask]
-                ak8s = ak8s[dRmask]
-                apply_mask_on_all(object_dict[keyname], dRmask)
-            if not lepselname.muon.veto and (lepselname.muon.veto is not None):
-                muonLV = LV_from_zipped(object_dict[keyname]['Muon'])
-                dRmask = (ak.sum(muonLV[:, 0].deltaR(LV_from_zipped(ak4s)) > jetselect.dRLevel,
-                                 axis=1) > jetselect.count)
-                events = events[dRmask]
-                ak4s = ak4s[dRmask]
-                ak8s = ak8s[dRmask]
-                apply_mask_on_all(object_dict[keyname], dRmask)
-            if not lepselname.tau.veto and (lepselname.tau.veto is not None):
-                for i in range(lepselname.tau.count):
-                    tauLV = LV_from_zipped(object_dict[keyname]['Tau'])
-                    dRmask = (ak.sum(tauLV[:, i].deltaR(LV_from_zipped(ak4s)) > jetselect.dRLevel, axis=1) > jetselect.count)
-                    events = events[dRmask]
-                    ak4s = ak4s[dRmask]
-                    ak8s = ak8s[dRmask]
-                    apply_mask_on_all(object_dict[keyname], dRmask)
-
-
-def apply_mask_on_all(object_dict, mask):
-    """Apply mask on all the objects in a dict
-
-    :param object_dict: {object_name: zipped object}
-    :type object_dict: dict
-    :param mask: mask to apply selections
-    :type mask: ak.array
-    """
-    for name, zipped in object_dict.items():
-        object_dict[name] = zipped[mask]
-
 
 class Object():
     def __init__(self, name, events, objcfg, selcfg):
@@ -274,7 +202,7 @@ class Object():
         :type selcfg: dynaconf
         """
         self._name = name
-        self._veto = objcfg.get('veto', None)
+        self._veto = selcfg.get('veto', None)
         self.objcfg = objcfg
         self.selcfg = selcfg
         self.set_dakzipped(events)
@@ -360,20 +288,5 @@ class Object():
         object_LV = vec.Array(object_ak)
         return object_LV
     
-    def overlap(self, altobject):
+    def dRoverlap(self, altobject):
         pass
-    
-
-def overlap_check(object1, object2):
-    """
-    Check overlap between two objects. Note: Object 1 should only contain one item per event.
-
-    :param object1: Contains ID of the leptons
-    :type object1: coffea.nanoevents.methods.vector.PtEtaPhiMLorentzVectorArray
-    :param object2: Contains ID of the jet
-    :type object2: coffea.nanoevents.methods.vector.PtEtaPhiMLorentzVectorArray
-
-    """
-
-    return 0
-

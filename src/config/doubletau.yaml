@@ -7,7 +7,7 @@ default:
       nJet: 2
     channelnames: ["tauetauh", "taumtauh", "tauhtauh"]
     channelno: 3
-   channel1:
+    channel1:
       name: "taumtauh"
       triggers:
         electron: null
@@ -16,7 +16,7 @@ default:
       selections:
         electron:
           veto: True
-          ptLevel: 25
+          pt: 25
         muon: 
           veto: False
           pt: 25
@@ -29,9 +29,9 @@ default:
           veto: False
           pt: 35
           eta: 2.3
-          IDvsjetLevel: 5
-          IDvsmuLevel: 4
-          IDvseLevel: 3 
+          idvsjet: 5
+          idvsmu: 4
+          idvse: 3
           dz: 0.2
           count: 1
         pair:
@@ -60,8 +60,8 @@ default:
           veto: False
           pt: 35
           eta: 2.3
-          IDvsmuLevel: 4
-          IDvseLevel: 3 
+          idvsmu: 4
+          idvse: 3
           dz: 0.2
           count: 1
         pair:
@@ -78,11 +78,11 @@ default:
         tau:
           veto: False
           pt: 40
-          etaLevel: 2.3
-          IDvsjetLevel: 5
-          IdvsmuLevel: 1
-          IDvseLevel: 2
-          absdzLevel: 0.2
+          eta: 2.3
+          idvsjet: 5
+          idvsmu: 1
+          idvse: 2
+          dz: 0.2
           count: 2
         pair:
           name: "TT"
