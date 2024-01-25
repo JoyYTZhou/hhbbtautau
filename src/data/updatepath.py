@@ -21,7 +21,7 @@ def dasgo_query(query, json=False):
 
 def xrootd_format(fpath, prefix):
     """Ensure that the file path is file:/* or xrootd"""
-    file_prefix = "root://cmsxrootd.fnal.gov/" if prefix=="local" else "root://cms-xrd-global.cern.ch/"
+    file_prefix = "root://cmsxrootd.fnal.gov/" if prefix == 'local' else "root://cms-xrd-global.cern.ch/"
     if fpath.startswith("/store/"):
         return f"{file_prefix}{fpath}"
     elif fpath.startswith("file:") or fpath.startswith("root:"):
@@ -53,13 +53,13 @@ def query_MCsamples(dspath, outputfn, must_include=None, prefix='local'):
         file_query_list = list(map(query_file, dslist))
         to_flatten = list(map(dasgo_query, file_query_list))
         filelist = [item for sublist in to_flatten for item in sublist]
-        filelist_xrootd = list(map(xrootd_format, filelist, prefix))
+        filelist_xrootd = list(map(lambda file_name: xrootd_format(file_name, prefix), filelist))
         complete_dict.update({name: filelist_xrootd})
 
     with open(outputfn, 'w') as jsonfile:
         json.dump(complete_dict, jsonfile)
 
-def preprocess_files(inputfn, outputfn, step_size=10000, tree_name="Events", errorfn="failedpath.json"):
+def preprocess_files(inputfn, step_size=10000, tree_name="Events", process_name = "DYJets"):
     def generate_dict(file_path, tree_name, step_size):
     # Open the ROOT file and access the tree
         with uproot.open(file_path) as file:
@@ -81,19 +81,22 @@ def preprocess_files(inputfn, outputfn, step_size=10000, tree_name="Events", err
         
     input_dict = {}
     failed_dict = {}
-    for ds, pathlist in tqdm(dsjson.items(), desc="Accessing datasets..."):
-        result = {}
-        for path in tqdm(pathlist, desc=f"Finding sample {ds}"):
-            try:
-                result.update(generate_dict(path, tree_name, step_size))
-            except Exception as e:
-                print(f"Failed to find {path}: {e}")
-                failed_dict.update({ds: path})
-        if result != {}: input_dict.update({ds: result})
+    ds = process_name
+    pathlist = dsjson[process_name]
+    result = {}
+    for path in tqdm(pathlist, desc=f"Finding sample {ds}"):
+        try:
+            result.update(generate_dict(path, tree_name, step_size))
+        except Exception as e:
+            print(f"Failed to find {path}: {e}")
+            failed_dict.update({ds: path})
+    if result != {}: input_dict.update({ds: result})
     
+    outputfn = f"chunked/{process_name}.json"
     with open(outputfn, 'w') as jsonfile:
         json.dump(input_dict, jsonfile)
     
+    errorfn = f"chunked/{process_name}_failed.json"
     if failed_dict != {}:
         with open(errorfn, 'w') as errorfile:
             json.dump(failed_dict, errorfile)
@@ -135,8 +138,8 @@ def divide_samples(inputfn, outputfn, dict_size=5):
         json.dump(complete_dict, jsonfile)
 
 if __name__ == "__main__":
-    # query_MCsamples("querystring.json", "datasets_local.json", "Run3Summer22EE", prefix='local')
-    preprocess_files("datasets_local.json", "chunked_local.json")
+    # query_MCsamples("querystring.json", "datasets_global.json", "Run3Summer22EE", prefix='global')
+    preprocess_files("datasets_local.json", process_name="ZZZ")
 
 
 
