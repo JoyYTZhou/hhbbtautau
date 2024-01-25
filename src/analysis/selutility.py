@@ -16,7 +16,9 @@ from config.selectionconfig import settings as sel_cfg
 output_cfg = sel_cfg.signal.outputs
 class Processor:
     def __init__(self, rt_cfg):
+    def __init__(self, rt_cfg):
         self._selseq = None
+        self._data = rt_cfg
         self._data = rt_cfg
         self._cutflow = 0
 
@@ -29,7 +31,7 @@ class Processor:
         with open(rt_cfg.INPUTFILE_PATH, 'r') as samplepath:
             fileset = json.load(samplepath)
             self._data = fileset
-
+        
     @property
     def selseq(self):
         return self._selseq
@@ -46,7 +48,6 @@ class Processor:
     def loadfile(self, filename, dsname, rt_cfg):
         events = NanoEventsFactory.from_root(
             file=f"{filename}:{rt_cfg.TREE_NAME}",
-            steps_per_file= rt_cfg.CHUNK_NO,
             uproot_options={"timeout": 100},
             delayed=True,
             metadata={"dataset": dsname},
