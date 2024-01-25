@@ -15,9 +15,9 @@ from config.selectionconfig import settings as sel_cfg
 
 output_cfg = sel_cfg.signal.outputs
 class Processor:
-    def __init__(self):
+    def __init__(self, rt_cfg):
         self._selseq = None
-        self._data = None
+        self._data = rt_cfg
         self._cutflow = 0
 
     @property
@@ -28,9 +28,7 @@ class Processor:
     def data(self, rt_cfg):
         with open(rt_cfg.INPUTFILE_PATH, 'r') as samplepath:
             fileset = json.load(samplepath)
-        value = fileset['Background']
-        value.update(fileset['Signal'])
-        self._data = value
+            self._data = fileset
 
     @property
     def selseq(self):
