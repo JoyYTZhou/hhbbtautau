@@ -16,7 +16,6 @@ from config.selectionconfig import settings as sel_cfg
 output_cfg = sel_cfg.signal.outputs
 class Processor:
     def __init__(self, rt_cfg):
-    def __init__(self, rt_cfg):
         self._selseq = None
         self._data = rt_cfg
         self._data = rt_cfg
