@@ -25,14 +25,7 @@ PROCESS_NAME = "@format {env[PROCESS_NAME]}"
 # RUN_MODE Options: future, iterative
 RUN_MODE = "future"
 # executor parameter options
-WORKERS = 2
-N_BATCHES = 5
-MIN_SIZE = 4
-MAX_SIZE = 100
-RECOVERABLE = true
-COMPRESSION = 5
-# runner parameter options
-CHUNK_NO = 10
+CHANNEL_NO = 3
 CHANNELNAMES = ["tauetauh", "taumtauh", "tauhtauh"]
 INPUTFILE_NAME = "src/data/inputfile.json"
 INPUTFILE_PATH = "@format {env[HHBBTT]}/{this.INPUTFILE_NAME}"

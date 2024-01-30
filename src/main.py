@@ -1,25 +1,18 @@
 # UPDATE TIME: 2023-09-15
 # FROM JOY
-from coffea.nanoevents import NanoEventsFactory, BaseSchema
 import glob
-import json
-import argparse
 from config.selectionconfig import runsetting as rs
-from analysis.dsmethods import extract_items
-from analysis.runtask import *
-
-with open(rs.INPUTFILE_PATH, 'r') as samplepath:
-    data = json.load(samplepath)
-
-fileset = data['Background']
-fileset.update(data['Signal'])
+from analysis.selutility import *
 
 if rs.TEST_MODE:
-    if rs.FILE_SET_LOCAL:
-        fileset = rs.FILE_SET
-    else:
-        fileset = extract_items(fileset, rs.PROCESS_NAME)
-
-del data
-
-lineup_jobs(fileset, rs, 2)
+    proc = Processor(rs)
+    filename, partitions = proc.data.items()[0]
+    print("processing filename, partitions: ", filename, partitions)
+    passed, cf = proc.singlerun({filename: partitions})
+    print("computing...")
+    cf_np, cf_lab = proc.res_to_np(cf)
+    cf_df = pd.DataFrame(data=cf_np, columns=proc.channelseq, index=cf_lab)
+    print("writing to csv...")
+    cf_df.to_csv(pjoin(proc.outdir, "cutflow.csv"))
+else:
+    pass
