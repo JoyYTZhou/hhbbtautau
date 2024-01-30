@@ -1,11 +1,10 @@
 default:
   size: 1
-  test: False
   signal:
     triggersel: 
       nFatJet: 1
       nJet: 2
-    channelnames: ["tauetauh", "taumtauh", "tauhtauh"]
+    channelnames: ["taumtauh", "tauetauh", "tauhtauh"]
     channelno: 3
     channel1:
       name: "taumtauh"
