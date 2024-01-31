@@ -29,9 +29,10 @@ class Processor:
     """
     def __init__(self, rt_cfg):
         self._channelseq = sel_cfg.signal.channelnames
-        self._data = rt_cfg
-        self._dsname = rt_cfg
-        self._channelnum = rt_cfg
+        self._data = None
+        self.setdata(rt_cfg)
+        self._dsname = rt_cfg.PROCESS_NAME
+        self._channelnum = rt_cfg.CHANNEL_NO
         self._channelsel = [sel_cfg.signal[f'channel{i+1}'] for i in range(self.channelnum)]
         self._commonsel = sel_cfg.signal.commonsel
         self._obj = None
@@ -41,8 +42,7 @@ class Processor:
     def data(self):
         return self._data
 
-    @data.setter
-    def data(self, rt_cfg):
+    def setdata(self, rt_cfg):
         with open(rt_cfg.INPUTFILE_PATH, 'r') as samplepath:
             fileset = json.load(samplepath)
             self._data = fileset[rt_cfg.PROCESS_NAME]
@@ -51,17 +51,9 @@ class Processor:
     def dsname(self):
         return self._dsname
     
-    @dsname.setter
-    def dsname(self, rt_cfg):
-        self._dsname = rt_cfg.PROCESS_NAME
-    
     @property
     def channelnum(self):
         return self._channelnum
-
-    @channelnum.setter
-    def channelnum(self, rt_cfg):
-        self._channelnum = rt_cfg.CHANNEL_NO
     
     @property
     def channelsel(self):
@@ -85,7 +77,6 @@ class Processor:
     def loadfile(self, filename):
         events = NanoEventsFactory.from_root(
             file=filename,
-            uproot_options={"timeout": 100},
             delayed=True,
             metadata={"dataset": self.dsname},
             schemaclass=BaseSchema,
@@ -154,7 +145,7 @@ class Processor:
         cf_acc = None
         cf_lab = None
         for i, (filename, partitions) in enumerate(self.data.items()):
-            passed, cf = self.singlerun({filename: partitions})
+            passed, cf = self.singlerun({filename: partitions}, suffix=i)
             cf_np = self.res_to_np(cf)[0]
             if i == 0:
                 cf_acc = np.zeros(cf_np.shape)
@@ -212,7 +203,7 @@ class EventSelections:
         if not electron.veto:
             electron_mask = (electron.ptmask(opr.ge) & \
                         electron.absetamask(opr.le) & \
-                        electron.absbdtmask(opr.ge))
+                        electron.bdtidmask(opr.ge))
             electron.filter_dakzipped(electron_mask)
             elec_nummask = electron.numselmask(opr.eq)
         else: elec_nummask = electron.vetomask()

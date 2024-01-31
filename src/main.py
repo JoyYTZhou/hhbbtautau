@@ -6,9 +6,9 @@ from analysis.selutility import *
 
 if rs.TEST_MODE:
     proc = Processor(rs)
-    filename, partitions = proc.data.items()[0]
+    filename, partitions = list(proc.data.items())[0]
     print("processing filename, partitions: ", filename, partitions)
-    passed, cf = proc.singlerun({filename: partitions})
+    passed, cf = proc.singlerun({filename: partitions}, suffix="")
     print("computing...")
     cf_np, cf_lab = proc.res_to_np(cf)
     cf_df = pd.DataFrame(data=cf_np, columns=proc.channelseq, index=cf_lab)
