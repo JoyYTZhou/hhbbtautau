@@ -138,8 +138,8 @@ def divide_samples(inputfn, outputfn, dict_size=5):
         json.dump(complete_dict, jsonfile)
 
 if __name__ == "__main__":
-    # query_MCsamples("querystring.json", "datasets_global.json", "Run3Summer22EE", prefix='global')
-    preprocess_files("datasets_local.json", process_name="ZZZ")
+    query_MCsamples("querystring.json", "datasets_global.json", "Run3Summer22EE", prefix='global')
+    # preprocess_files("datasets_local.json", process_name="ZZZ")
 
 
 
