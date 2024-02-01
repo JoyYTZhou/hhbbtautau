@@ -17,11 +17,12 @@ else
     export PROCESS_NAME=all
 fi
 
-rm -rvf $OUTPUTPATH/cutflow
-rm -rvf $OUTPUTPATH/object
-mkdir -pv $OUTPUTPATH/cutflow
-mkdir -pv $OUTPUTPATH/object
-echo "full output directory on executation area is $OUTPUTPATH"
+if [ -d "$OUTPUTPATH" ]; then
+    echo "the directory $OUTPUTPATH exists."
+else
+    echo "the directory $OUTPUTPATH does not exist."
+    mkdir -pv $OUTPUTPATH
+fi
 
 
 

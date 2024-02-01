@@ -31,16 +31,16 @@ class Processor:
         self._channelseq = sel_cfg.signal.channelnames
         self._data = None
         self._rtcfg = rt_cfg
-        self._dsname = rt_cfg.PROCESS_NAME
-        self._channelnum = rt_cfg.CHANNEL_NO
+        self._dsname = self.rtcfg.PROCESS_NAME
+        self._channelnum = self.rtcfg.CHANNEL_NO
         self._channelsel = [sel_cfg.signal[f'channel{i+1}'] for i in range(self.channelnum)]
         self._commonsel = sel_cfg.signal.commonsel
-        self.outdir = rt_cfg.OUTPUTDIR_PATH
-        
+        self.outdir = self.rtcfg.OUTPUTDIR_PATH
+
     @property
     def data(self):
         return self._data
-    
+
     @property
     def rtcfg(self):
         return self._rtcfg
@@ -48,28 +48,28 @@ class Processor:
     def setdata(self):
         with open(self.rtcfg.INPUTFILE_PATH, 'r') as samplepath:
             fileset = json.load(samplepath)
-            self._data = fileset[self.rt_cfg.PROCESS_NAME]
-    
+            self._data = fileset[self.rtcfg.PROCESS_NAME]
+
     @property
     def dsname(self):
         return self._dsname
-    
+
     @property
     def channelnum(self):
         return self._channelnum
-    
+
     @property
     def channelsel(self):
         return self._channelsel
-    
+
     @property
     def channelseq(self):
         return self._channelseq
 
     @channelseq.setter
     def channelseq(self, value):
-        self._channelseq = value 
-    
+        self._channelseq = value
+
     @property
     def commonsel(self):
         return self._commonsel
@@ -94,7 +94,7 @@ class Processor:
             print(f"Running selection for channel {self.channelseq[i]}")
             lepcfg = self.channelsel[i].selections
             jetcfg = self.commonsel
-            cfgname = self.channelseq[i] 
+            cfgname = self.channelseq[i]
             evtsel = EventSelections(lepcfg, jetcfg, cfgname)
             evtsel.lepselsetter(events)
             passed, vetoed = evtsel.objselcaller(events)
@@ -103,21 +103,21 @@ class Processor:
             cf_list[i] = evtsel.cutflow
             events = vetoed
         return passed_list, cf_list
-    
+
     def writeobj(self, passed, index, suffix):
         """This can be customized further"""
         chcfg = self.channelsel[index]
         electron = Object("Electron", passed, output_cfg.Electron, chcfg.selections.electron)
         muon = Object("Muon", passed, output_cfg.Muon, chcfg.selections.muon)
         tau = Object("Tau", passed, output_cfg.Tau, chcfg.selections.tau)
-        
+
         edf = electron.to_daskdf()
         mdf = muon.to_daskdf()
         tdf = tau.to_daskdf()
-        
+
         obj_df = pd.concat([edf, mdf, tdf], axis=1)
         obj_df.to_csv(pjoin(self.outdir,f"{chcfg.name}{suffix}.csv"), index=False)
-    
+
     def res_to_df(self, cutflow_list):
         """Return a df (N cuts x K channels) with cutflow numbers"""
         df_list = [None] * len(cutflow_list)
@@ -130,7 +130,7 @@ class Processor:
         df_concat = df.concat(df_list, axis=1)
         df_concat.index = row_names
         return df_concat
-    
+
     def res_to_np(self, cutflow_list):
         """Return a np (N cuts x K channels) with cutflow numbers"""
         row_names = None
@@ -140,12 +140,12 @@ class Processor:
             np_list[i] = number
             row_names = cfres.labels
         return np.array(np_list).transpose(), row_names
-        
+
     def runall(self):
         """Run all files"""
         cf_acc = None
         cf_lab = None
-        self.setdata(self._rtcfg)
+        self.setdata()
         for i, (filename, partitions) in enumerate(self.data.items()):
             passed, cf = self.singlerun({filename: partitions}, suffix=i)
             cf_np = self.res_to_np(cf)[0]
@@ -159,7 +159,7 @@ class Processor:
 class EventSelections:
     def __init__(self, lepcfg, jetcfg, cfgname) -> None:
         self._channelname = cfgname
-        self._lepselcfg = lepcfg 
+        self._lepselcfg = lepcfg
         self._jetselcfg = jetcfg
         self._filtersel = None
         self.objsel = PackedSelection()
@@ -192,7 +192,7 @@ class EventSelections:
     @filtersel.setter
     def filtersel(self, value):
         self._filtersel = value
-   
+
     def lepselsetter(self, events):
         """Custom function to set the lepton selections for a given channel.
         :param events: events loaded from a .root file
@@ -249,7 +249,7 @@ class EventSelections:
     def objselcaller(self, events):
         """Call the lepton selection for a given channel.
         :return: passed events, vetoed events
-        :rtype: dask_awkward.lib.core.Array 
+        :rtype: dask_awkward.lib.core.Array
         """
         passed = events[self.objsel.all()]
         vetoed = events[~(self.objsel.all())]
@@ -261,7 +261,7 @@ class EventSelections:
         self.jetselsetter(passed)
         passed, vetoed = self.objselcaller(passed)
         return passed, vetoed
-    
+
 class Object():
     def __init__(self, name, events, objcfg, selcfg):
         """Construct an object from provided events with given selection configuration.
@@ -327,10 +327,10 @@ class Object():
             dakarr_dict.update({colname: ak.to_list(computed[field][:, index])})
         objdf = pd.DataFrame(dakarr_dict)
         return objdf
-    
+
     def output_df(self, objdf, outfn):
         objdf.to_csv(outfn, index=False)
-                
+
     def filter_dakzipped(self, mask):
         """Filter the object based on a mask.
         :param mask: mask to filter the object
@@ -396,7 +396,7 @@ class OutputHist():
         self._type = typeval
         self._objname = obj_name
         self._hist = None
-        
+
     @property
     def channelname(self):
         return self._channelname
@@ -426,11 +426,11 @@ class OutputHist():
         output_dict = output_cfg[self.objname][self.type]
         output_names = list(output_dict.keys())
         nanoaod_names = list(output_dict.values())
-        
-        
-        
-        
-    
-        
-    
-        
+
+
+
+
+
+
+
+
