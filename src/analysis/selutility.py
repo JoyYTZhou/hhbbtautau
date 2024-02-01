@@ -21,31 +21,34 @@ output_cfg = sel_cfg.signal.outputs
 class Processor:
     """Process individual file or filesets given strings/dicts belonging to one dataset.
     Attributes:
-        _channelseq (list): list of channel names in order of selection preference
-        _data (dict): dictionary of files
-        _channelnum (int): number of channels
-        _channelsel (list): list of selection configurations specific to channels
-        _commonsel (dict): dictionary of common selection configurations
+        channelseq (list): list of channel names in order of selection preference
+        data (dict): dictionary of files
+        channelnum (int): number of channels
+        channelsel (list): list of selection configurations specific to channels
+        commonsel (dict): dictionary of common selection configurations
     """
     def __init__(self, rt_cfg):
         self._channelseq = sel_cfg.signal.channelnames
         self._data = None
-        self.setdata(rt_cfg)
+        self._rtcfg = rt_cfg
         self._dsname = rt_cfg.PROCESS_NAME
         self._channelnum = rt_cfg.CHANNEL_NO
         self._channelsel = [sel_cfg.signal[f'channel{i+1}'] for i in range(self.channelnum)]
         self._commonsel = sel_cfg.signal.commonsel
-        self._obj = None
         self.outdir = rt_cfg.OUTPUTDIR_PATH
         
     @property
     def data(self):
         return self._data
+    
+    @property
+    def rtcfg(self):
+        return self._rtcfg
 
-    def setdata(self, rt_cfg):
-        with open(rt_cfg.INPUTFILE_PATH, 'r') as samplepath:
+    def setdata(self):
+        with open(self.rtcfg.INPUTFILE_PATH, 'r') as samplepath:
             fileset = json.load(samplepath)
-            self._data = fileset[rt_cfg.PROCESS_NAME]
+            self._data = fileset[self.rt_cfg.PROCESS_NAME]
     
     @property
     def dsname(self):
@@ -68,11 +71,8 @@ class Processor:
         self._channelseq = value 
     
     @property
-    def obj(self):
-        return self._obj
-    @obj.setter
-    def obj(self, value):
-        self._obj = value
+    def commonsel(self):
+        return self._commonsel
 
     def loadfile(self, filename):
         events = NanoEventsFactory.from_root(
@@ -91,9 +91,10 @@ class Processor:
         passed_list = [None] * self.channelnum
         events = self.loadfile(filename)
         for i in range(self.channelnum):
-            lepcfg = sel_cfg.signal[f'channel{i+1}'].selections
-            jetcfg = sel_cfg.signal.commonsel
-            cfgname = sel_cfg.signal[f'channel{i+1}'].name
+            print(f"Running selection for channel {self.channelseq[i]}")
+            lepcfg = self.channelsel[i].selections
+            jetcfg = self.commonsel
+            cfgname = self.channelseq[i] 
             evtsel = EventSelections(lepcfg, jetcfg, cfgname)
             evtsel.lepselsetter(events)
             passed, vetoed = evtsel.objselcaller(events)
@@ -144,6 +145,7 @@ class Processor:
         """Run all files"""
         cf_acc = None
         cf_lab = None
+        self.setdata(self._rtcfg)
         for i, (filename, partitions) in enumerate(self.data.items()):
             passed, cf = self.singlerun({filename: partitions}, suffix=i)
             cf_np = self.res_to_np(cf)[0]
@@ -316,7 +318,7 @@ class Object():
         """Take the object, unzip it, compute it, flatten it into a dataframe
         """
         if self.veto is True:
-            print("Veto set for this object.")
+            print(f"Veto set for {self.name}.")
             return None
         computed, = dask.compute(self.dakzipped[dak.argsort(self.dakzipped[sortname], ascending=ascending)])
         dakarr_dict = {}

@@ -71,9 +71,11 @@ default:
       name: "tauhtauh"
       selections:
         electron: 
-          veto: null
+          veto: True
+          pt: 25
         muon: 
-          veto: null
+          veto: True
+          pt: 25
         tau:
           veto: False
           pt: 40
