@@ -16,10 +16,11 @@ else
     tar -xzf ${ENV_NAME}.tar.gz -C .
     sed -i "s|${OLD_ENV_NAME}|${PWD}/${ENV_NAME}|g" ${ENV_NAME}/bin/activate
     sed -i "s|${OLD_ENV_NAME}|${PWD}/${ENV_NAME}|g" ${ENV_NAME}/bin/*
+    export VIRTUAL_ENV=newcoffea
 fi
 
 source ${ENV_NAME}/bin/activate
-echo "Virtual environment is ${VIRTUAL_ENV}."
+echo "Virtual environment is ${ENV_NAME}."
 export PYTHONPATH=$VIRTUAL_ENV/lib/python3.9/site-packages:$PYTHONPATH
 
 echo "My python path is $PYTHONPATH"

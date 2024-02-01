@@ -63,6 +63,7 @@ def preprocess_files(inputfn, step_size=10000, tree_name="Events", process_name 
     def generate_dict(file_path, tree_name, step_size):
     # Open the ROOT file and access the tree
         with uproot.open(file_path) as file:
+            print("=============", file_path, "=============")
             tree = file[tree_name]
             # Get the number of events
             n_events = tree.num_entries
@@ -78,7 +79,7 @@ def preprocess_files(inputfn, step_size=10000, tree_name="Events", process_name 
         return result_dict
     with open(inputfn, 'r') as ds:
         dsjson = json.load(ds)
-        
+
     input_dict = {}
     failed_dict = {}
     ds = process_name
@@ -91,18 +92,18 @@ def preprocess_files(inputfn, step_size=10000, tree_name="Events", process_name 
             print(f"Failed to find {path}: {e}")
             failed_dict.update({ds: path})
     if result != {}: input_dict.update({ds: result})
-    
+
     outputfn = f"chunked/{process_name}.json"
     with open(outputfn, 'w') as jsonfile:
         json.dump(input_dict, jsonfile)
-    
+
     errorfn = f"chunked/{process_name}_failed.json"
     if failed_dict != {}:
         with open(errorfn, 'w') as errorfile:
             json.dump(failed_dict, errorfile)
-    
-    return None        
- 
+
+    return None
+
 def divide_samples(inputfn, outputfn, dict_size=5):
     """Divide the ds into smaller list as value per key.
 
@@ -138,8 +139,8 @@ def divide_samples(inputfn, outputfn, dict_size=5):
         json.dump(complete_dict, jsonfile)
 
 if __name__ == "__main__":
-    query_MCsamples("querystring.json", "datasets_global.json", "Run3Summer22EE", prefix='global')
-    # preprocess_files("datasets_local.json", process_name="ZZZ")
+    # query_MCsamples("querystring.json", "datasets_global.json", "Run3Summer22EE", prefix='global')
+    preprocess_files("datasets_local.json", step_size=200000, process_name="DYJets")
 
 
 
