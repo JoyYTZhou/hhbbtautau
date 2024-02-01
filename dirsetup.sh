@@ -19,5 +19,6 @@ if xrdfs $PREFIX stat $DIRNAME >/dev/null 2>&1; then
 else
     echo "creating directory $DIRNAME."
     xrdfs $PREFIX mkdir -p $DIRNAME
+fi
 
 echo "CONDOR outputpath is $DIRNAME"

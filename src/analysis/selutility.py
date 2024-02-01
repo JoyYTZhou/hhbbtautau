@@ -147,6 +147,7 @@ class Processor:
         cf_lab = None
         self.setdata()
         for i, (filename, partitions) in enumerate(self.data.items()):
+            print(f"Running {filename} ===================")
             passed, cf = self.singlerun({filename: partitions}, suffix=i)
             cf_np = self.res_to_np(cf)[0]
             if i == 0:
