@@ -125,9 +125,9 @@ class Processor:
             header = self.channelseq[i]
             row_names = cfres.labels
             number = dask.compute(cfres.nevcutflow)[0]
-            df = pd.DataFrame(data = number, column = [header])
+            df = pd.DataFrame(data = number, columns = [header])
             df_list[i] = df
-        df_concat = df.concat(df_list, axis=1)
+        df_concat = pd.concat(df_list, axis=1)
         df_concat.index = row_names
         return df_concat
 
@@ -143,19 +143,12 @@ class Processor:
 
     def runall(self):
         """Run all files"""
-        cf_acc = None
-        cf_lab = None
         self.setdata()
         for i, (filename, partitions) in enumerate(self.data.items()):
             print(f"Running {filename} ===================")
             passed, cf = self.singlerun({filename: partitions}, suffix=i)
-            cf_np = self.res_to_np(cf)[0]
-            if i == 0:
-                cf_acc = np.zeros(cf_np.shape)
-                cf_lab = self.res_to_np(cf)[1]
-            cf_acc += cf_np
-        cf_df = pd.DataFrame(data=cf_acc, columns=self.channelseq, index=cf_lab)
-        cf_df.to_csv(pjoin(self.outdir, "cutflow.csv"))
+            cf_df = self.res_to_df(cf)
+            cf_df.to_csv(pjoin(self.outdir, f"cutflow_{i}.csv"))
 
 class EventSelections:
     def __init__(self, lepcfg, jetcfg, cfgname) -> None:
