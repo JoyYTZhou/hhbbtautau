@@ -140,7 +140,7 @@ def divide_samples(inputfn, outputfn, dict_size=5):
 
 if __name__ == "__main__":
     # query_MCsamples("querystring.json", "datasets_global.json", "Run3Summer22EE", prefix='global')
-    preprocess_files("datasets_local.json", step_size=200000, process_name="ggF")
+    preprocess_files("datasets_local.json", step_size=200000, process_name="WW")
 
 
 
