@@ -1,19 +1,20 @@
 #!/bin/bash
 
 # =================================================================
-# Run this script before submitting condor jobs
+# Set up condor output directory
 # =================================================================
 export IS_CONDOR=true
 source lpcsetup.sh
 export PREFIX=root://cmseos.fnal.gov
+
 # if receiving arguments <datasetname>
+# check if condor directory exists
 if [ ! -z "$1" ]; then
     DIRNAME=$SHORTPATH/$1
 else
     DIRNAME=$SHORTPATH/all
 fi
 
-# check if directory already exists
 if xrdfs $PREFIX stat $DIRNAME >/dev/null 2>&1; then
     echo "the directory $DIRNAME already exists"
 else

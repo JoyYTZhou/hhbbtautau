@@ -152,22 +152,36 @@ class Processor:
         self.setdata()
         for i, (filename, partitions) in enumerate(self.data.items()):
             print(f"Running {filename} ===================")
-            passed, cf = self.singlerun({filename: partitions}, suffix=i)
-            cf_df = self.res_to_df(cf)
-            cf_df.to_csv(pjoin(self.outdir, f"cutflow_{i}.csv"))
+            try:
+                passed, cf = self.singlerun({filename: partitions}, suffix=i)
+                cf_df = self.res_to_df(cf)
+                cf_df.to_csv(pjoin(self.outdir, f"cutflow_{i}.csv"))
+            except OSError as e:
+                print(f"Caught an OSError while processing {filename}: {e}")
+                with open(pjoin(self.outdir, "error_files.txt"), 'a') as ef:
+                    ef.write(f"{filename}\n")
+                continue
     
-    def resume(self, index):
+    def resume(self, indexi, indexf=None):
         """Run failed files"""
         self.setdata()
         enumerated_items = enumerate(self.data.items())
-        start_index = index
-        sliced_items = itertools.islice(enumerated_items, start_index, None) 
+        start_index = indexi
+        sliced_items = itertools.islice(enumerated_items, start_index, indexf) 
 
         for original_index, (filename, partitions) in sliced_items:
-            print(f"Original Index: {original_index}, Running {filename} ===================")
-            passed, cf = self.singlerun({filename: partitions}, suffix=original_index)
-            cf_df = self.res_to_df(cf)
-            cf_df.to_csv(pjoin(self.outdir, f"cutflow_{original_index}.csv"))
+            print(f"Original indexi: {original_index}, Running {filename} ===================")
+            try:
+                passed, cf = self.singlerun({filename: partitions}, suffix=original_index)
+                cf_df = self.res_to_df(cf)
+                cf_df.to_csv(pjoin(self.outdir, f"cutflow_{original_index}.csv"))
+            except OSError as e:
+                print(f"Caught an OSError while processing {filename}: {e}")
+                with open(pjoin(self.outdir, "error_files.txt"), 'a') as ef:
+                    ef.write(f"{filename}\n")
+                continue
+    
+
 
 
 class EventSelections:
