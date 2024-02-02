@@ -13,6 +13,7 @@ import vector as vec
 import json as json
 import operator as opr
 import numpy as np
+import itertools
 import pandas as pd
 from collections import ChainMap
 from config.selectionconfig import settings as sel_cfg
@@ -102,6 +103,7 @@ class Processor:
             passed_list[i] = passed
             cf_list[i] = evtsel.cutflow
             events = vetoed
+            del(evtsel)
         return passed_list, cf_list
 
     def writeobj(self, passed, index, suffix):
@@ -114,6 +116,10 @@ class Processor:
         edf = electron.to_daskdf()
         mdf = muon.to_daskdf()
         tdf = tau.to_daskdf()
+
+        del(electron)
+        del(muon)
+        del(tau)
 
         obj_df = pd.concat([edf, mdf, tdf], axis=1)
         obj_df.to_csv(pjoin(self.outdir,f"{chcfg.name}{suffix}.csv"), index=False)
@@ -149,6 +155,20 @@ class Processor:
             passed, cf = self.singlerun({filename: partitions}, suffix=i)
             cf_df = self.res_to_df(cf)
             cf_df.to_csv(pjoin(self.outdir, f"cutflow_{i}.csv"))
+    
+    def resume(self, index):
+        """Run failed files"""
+        self.setdata()
+        enumerated_items = enumerate(self.data.items())
+        start_index = index
+        sliced_items = itertools.islice(enumerated_items, start_index, None) 
+
+        for original_index, (filename, partitions) in sliced_items:
+            print(f"Original Index: {original_index}, Running {filename} ===================")
+            passed, cf = self.singlerun({filename: partitions}, suffix=original_index)
+            cf_df = self.res_to_df(cf)
+            cf_df.to_csv(pjoin(self.outdir, f"cutflow_{original_index}.csv"))
+
 
 class EventSelections:
     def __init__(self, lepcfg, jetcfg, cfgname) -> None:
