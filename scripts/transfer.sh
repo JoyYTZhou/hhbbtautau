@@ -11,7 +11,7 @@ dest=$CONDORPATH/$PROCESS_NAME
 
 find "$src" -type f | while read -r file; do
     relpath="${file#$src}"
-    xrdcp "$file" "$dest$relpath"
+    xrdcp -f "$file" "$dest$relpath"
 done
 
 rm -r $OUTPUTPATH
