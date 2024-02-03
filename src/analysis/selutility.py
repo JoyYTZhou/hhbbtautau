@@ -16,7 +16,6 @@ import itertools
 import pandas as pd
 from collections import ChainMap
 from config.selectionconfig import settings as sel_cfg
-from memory_profiler import profile
 
 output_cfg = sel_cfg.signal.outputs
 class Processor:
@@ -89,7 +88,6 @@ class Processor:
         :return: output list, cutflow object list
         """
         cf_list = [None] * self.channelnum
-        passed_list = [None] * self.channelnum
         events = self.loadfile(filename)
         for i in range(self.channelnum):
             print(f"Running selection for channel {self.channelseq[i]}")
@@ -100,11 +98,10 @@ class Processor:
             evtsel.lepselsetter(events)
             passed, vetoed = evtsel.objselcaller(events)
             self.writeobj(passed, i, suffix)
-            passed_list[i] = passed
             cf_list[i] = evtsel.cutflow
             events = vetoed
-            del(evtsel)
-        return passed_list, cf_list
+            gc.collect()
+        return cf_list
 
     def writeobj(self, passed, index, suffix):
         """This can be customized further"""
@@ -117,12 +114,10 @@ class Processor:
         mdf = muon.to_daskdf()
         tdf = tau.to_daskdf()
 
-        del(electron)
-        del(muon)
-        del(tau)
-
         obj_df = pd.concat([edf, mdf, tdf], axis=1)
         obj_df.to_csv(pjoin(self.outdir,f"{chcfg.name}{suffix}.csv"), index=False)
+
+        gc.collect()
 
     def res_to_df(self, cutflow_list):
         """Return a df (N cuts x K channels) with cutflow numbers"""
@@ -135,6 +130,7 @@ class Processor:
             df_list[i] = df
         df_concat = pd.concat(df_list, axis=1)
         df_concat.index = row_names
+        gc.collect()
         return df_concat
 
     def res_to_np(self, cutflow_list):
@@ -147,7 +143,6 @@ class Processor:
             row_names = cfres.labels
         return np.array(np_list).transpose(), row_names
 
-    @profile
     def runmultiple(self, indexi=0, indexf=None):
         """Run all files"""
         self.setdata()
@@ -160,7 +155,7 @@ class Processor:
         for i, (filename, partitions) in runitems:
             print(f"Running {filename} ===================")
             try:
-                passed, cf = self.singlerun({filename: partitions}, suffix=i)
+                cf = self.singlerun({filename: partitions}, suffix=i)
                 cf_df = self.res_to_df(cf)
                 cf_df.to_csv(pjoin(self.outdir, f"cutflow_{i}.csv"))
                 gc.collect()

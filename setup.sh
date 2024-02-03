@@ -16,11 +16,6 @@ else
     source scripts/sasetup.sh
 fi
 
-export CONDORPATH="root://cmseos.fnal.gov//store/user/joyzhou/output"
-export SHORTPATH=/store/user/joyzhou/output
-echo "shortname for condor output path is $SHORTPATH"
-echo "Output directory is ${OUTPUTPATH}"
-
 source scripts/cleanpath.sh
 export PYTHONPATH=$PWD/src:$PYTHONPATH
 export HHBBTT=$PWD
