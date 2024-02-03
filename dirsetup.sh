@@ -7,6 +7,12 @@ export IS_CONDOR=true
 source lpcsetup.sh
 export PREFIX=root://cmseos.fnal.gov
 
+export CONDORPATH="root://cmseos.fnal.gov//store/user/joyzhou/output"
+export SHORTPATH=/store/user/joyzhou/output
+echo "shortname for condor output path is $SHORTPATH"
+echo "Output directory is ${OUTPUTPATH}"
+
+
 # if receiving arguments <datasetname>
 # check if condor directory exists
 if [ ! -z "$1" ]; then
