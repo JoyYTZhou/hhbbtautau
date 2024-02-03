@@ -17,6 +17,6 @@ if rs.TEST_MODE:
     print("writing to csv...")
     cf_df.to_csv(pjoin(proc.outdir, "cutflow.csv"))
 else:
-    proc.runall()
+    proc.runmultiple()
 
 

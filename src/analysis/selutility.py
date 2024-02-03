@@ -3,8 +3,6 @@
 import awkward as ak
 import dask_awkward as dak
 import dask as dask
-import dask.dataframe as dd
-import dask.array as da
 from analysis.dsmethods import *
 from coffea.analysis_tools import PackedSelection
 from coffea.nanoevents import NanoEventsFactory
@@ -12,11 +10,13 @@ from coffea.nanoevents.schemas import BaseSchema
 import vector as vec
 import json as json
 import operator as opr
+import gc
 import numpy as np
 import itertools
 import pandas as pd
 from collections import ChainMap
 from config.selectionconfig import settings as sel_cfg
+from memory_profiler import profile
 
 output_cfg = sel_cfg.signal.outputs
 class Processor:
@@ -147,42 +147,28 @@ class Processor:
             row_names = cfres.labels
         return np.array(np_list).transpose(), row_names
 
-    def runall(self):
+    @profile
+    def runmultiple(self, indexi=0, indexf=None):
         """Run all files"""
         self.setdata()
-        for i, (filename, partitions) in enumerate(self.data.items()):
+        if (indexi==0 and indexf is None):
+            runitems = enumerate(self.data.items())
+        else:
+            enumerated_items = enumerate(self.data.items())
+            runitems = itertools.islice(enumerated_items, indexi, indexf) 
+   
+        for i, (filename, partitions) in runitems:
             print(f"Running {filename} ===================")
             try:
                 passed, cf = self.singlerun({filename: partitions}, suffix=i)
                 cf_df = self.res_to_df(cf)
                 cf_df.to_csv(pjoin(self.outdir, f"cutflow_{i}.csv"))
+                gc.collect()
             except OSError as e:
                 print(f"Caught an OSError while processing {filename}: {e}")
                 with open(pjoin(self.outdir, "error_files.txt"), 'a') as ef:
                     ef.write(f"{filename}\n")
                 continue
-    
-    def resume(self, indexi, indexf=None):
-        """Run failed files"""
-        self.setdata()
-        enumerated_items = enumerate(self.data.items())
-        start_index = indexi
-        sliced_items = itertools.islice(enumerated_items, start_index, indexf) 
-
-        for original_index, (filename, partitions) in sliced_items:
-            print(f"Original indexi: {original_index}, Running {filename} ===================")
-            try:
-                passed, cf = self.singlerun({filename: partitions}, suffix=original_index)
-                cf_df = self.res_to_df(cf)
-                cf_df.to_csv(pjoin(self.outdir, f"cutflow_{original_index}.csv"))
-            except OSError as e:
-                print(f"Caught an OSError while processing {filename}: {e}")
-                with open(pjoin(self.outdir, "error_files.txt"), 'a') as ef:
-                    ef.write(f"{filename}\n")
-                continue
-    
-
-
 
 class EventSelections:
     def __init__(self, lepcfg, jetcfg, cfgname) -> None:
