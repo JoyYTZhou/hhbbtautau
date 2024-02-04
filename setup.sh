@@ -19,6 +19,7 @@ fi
 source scripts/cleanpath.sh
 export PYTHONPATH=$PWD/src:$PYTHONPATH
 export HHBBTT=$PWD
+echo "HHBBTT has been set to: ${HHBBTT}"
 
 if [ ! -z "$1" ]; then
     export OUTPUTPATH=$OUTPUTPATH/$1
@@ -27,6 +28,9 @@ else
     export OUTPUTPATH=$OUTPUTPATH/all
     export PROCESS_NAME=all
 fi
+
+echo "OUTPUTPATH has been set to: ${OUTPUTPATH}"
+echo "PROCESS_NAME has been set to: ${PROCESS_PATH}"
 
 if [ -d "$OUTPUTPATH" ]; then
     echo "the directory $OUTPUTPATH exists."

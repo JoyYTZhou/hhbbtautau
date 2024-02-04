@@ -3,15 +3,20 @@
 # =================================================================
 # Set up condor output directory
 # =================================================================
+print_env_variable() { var="$1"; [ -z "${!var}" ] && echo "$var is not set" || echo "$var has been set to ${!var}"; }
+
 export IS_CONDOR=true
+print_env_variable "IS_CONDOR"
+
 source lpcsetup.sh
 export PREFIX=root://cmseos.fnal.gov
+print_env_variable "PREFIX"
 
 export CONDORPATH="root://cmseos.fnal.gov//store/user/joyzhou/output"
-export SHORTPATH=/store/user/joyzhou/output
-echo "shortname for condor output path is $SHORTPATH"
-echo "Output directory is ${OUTPUTPATH}"
+print_env_variable "CONDORPATH"
 
+export SHORTPATH=/store/user/joyzhou/output
+print_env_variable "SHORTPATH"
 
 # if receiving arguments <datasetname>
 # check if condor directory exists
@@ -28,4 +33,4 @@ else
     xrdfs $PREFIX mkdir -p $DIRNAME
 fi
 
-echo "CONDOR outputpath is $DIRNAME"
+echo "CONDOR outputpath will be $DIRNAME"
