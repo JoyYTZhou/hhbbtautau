@@ -6,8 +6,6 @@ import os
 
 pjoin = os.path.join
 
-def projectcoffea_path(path_in_repo):
-    return pjoin(HHtobbtautau.__path__[0], path_in_repo)
 
 def evaluator_from_config(cfg):
     """Initiates the SF evaluator and populates it with the right values

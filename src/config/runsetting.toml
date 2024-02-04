@@ -20,6 +20,7 @@ CHANNELNAMES = ["tauetauh", "taumtauh", "tauhtauh"]
 INPUTFILE_NAME = "@format src/data/chunked/{this.PROCESS_NAME}.json"
 INPUTFILE_PATH = "@format {env[HHBBTT]}/{this.INPUTFILE_NAME}"
 OUTPUTDIR_PATH = "@format {env[OUTPUTPATH]}"
+TRANSFER_PATH = "@format {env[CONDORPATH]}/{this.PROCESS_NAME}"
 
 [LXPLUS]
 TEST_MODE = true
