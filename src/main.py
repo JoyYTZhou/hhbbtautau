@@ -3,8 +3,10 @@
 import glob
 from config.selectionconfig import runsetting as rs
 from analysis.selutility import *
+import os
 
 proc = Processor(rs)
+
 
 if rs.TEST_MODE:
     proc.runmultiple(0,1)

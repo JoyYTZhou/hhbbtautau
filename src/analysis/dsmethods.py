@@ -3,8 +3,6 @@
 # This file contains methods 
 import re
 import numpy as np
-import re
-from analysis.mathutility import projectcoffea_path
 import os
 import socket
 import subprocess
@@ -224,42 +222,6 @@ def files_from_eos(regex):
         fileset = find_files_eos(pjoin(topdir, tag), regex)
 
     return fileset
-
-def is_lo_znunu(dataset):
-    return bool(re.match(r'Z(\d*)Jet.*(mg|MLM|madgraph).*', dataset))
-
-def is_lo_z(dataset):
-    return bool(re.match(r'(DY|Z)(\d*)Jet.*(mg|MLM|madgraph).*', dataset))
-
-def is_lo_z_ewk(dataset):
-    return bool(re.match(r'EWKZ2Jets_ZTo.', dataset))
-
-def is_lo_w(dataset):
-    return bool(re.match(r'W(\d*)Jet.*(mg|MLM).*', dataset))
-
-def is_lo_w_ewk(dataset):
-    return bool(re.match(r'EWKW(Minus|Plus)2Jets_WToLNu.', dataset))
-
-def is_lo_g(dataset):
-    return bool(re.match(r'GJets.*HT.*', dataset))
-
-def is_lo_g_ewk(dataset):
-    return bool(re.match(r'GJets.*EWK.*', dataset))
-
-def is_nlo_g(dataset):
-    return bool(re.match(r'G(\d)*Jet.*(amc|NLO).*', dataset))
-
-def is_nlo_g_ewk(dataset):
-    return bool(re.match(r'AJJ.*amc.*', dataset))
-
-def is_nlo_z(dataset):
-    return bool(re.match(r'(DY|Z)(\d*)Jet.*FXFX.*', dataset))
-
-def is_nlo_w(dataset):
-    return bool(re.match(r'W(\d*)Jet.*FXFX.*', dataset))
-
-def has_v_jet(dataset):
-    return bool(re.match(r'(WW|WZ|ZZ|TTJets|TTToHadronic|.*WToQQ|.*ZToQQ).*', dataset))
 
 def is_data(dataset):
     tags = ['EGamma','MET','SingleElectron','SingleMuon','SinglePhoton','JetHT']

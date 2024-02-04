@@ -3,7 +3,6 @@
 import awkward as ak
 import dask_awkward as dak
 import dask as dask
-from analysis.dsmethods import *
 from coffea.analysis_tools import PackedSelection
 from coffea.nanoevents import NanoEventsFactory
 from coffea.nanoevents.schemas import BaseSchema
@@ -14,10 +13,14 @@ import gc
 import numpy as np
 import itertools
 import pandas as pd
+import os
 from collections import ChainMap
 from config.selectionconfig import settings as sel_cfg
+import subprocess
 
 output_cfg = sel_cfg.signal.outputs
+pjoin = os.path.join
+
 class Processor:
     """Process individual file or filesets given strings/dicts belonging to one dataset.
     Attributes:
@@ -36,6 +39,9 @@ class Processor:
         self._channelsel = [sel_cfg.signal[f'channel{i+1}'] for i in range(self.channelnum)]
         self._commonsel = sel_cfg.signal.commonsel
         self.outdir = self.rtcfg.OUTPUTDIR_PATH
+        self.fileno = 0
+        self.transfer = os.environ.get('IS_CONDOR', False)
+        if self.transfer: print("File transfer in real time!")
 
     @property
     def data(self):
@@ -49,6 +55,7 @@ class Processor:
         with open(self.rtcfg.INPUTFILE_PATH, 'r') as samplepath:
             fileset = json.load(samplepath)
             self._data = fileset[self.rtcfg.PROCESS_NAME]
+            self.fileno = len(fileset)
 
     @property
     def dsname(self):
@@ -87,7 +94,7 @@ class Processor:
         """Run test selections on a single file.
         :return: output list, cutflow object list
         """
-        cf_list = [None] * self.channelnum
+        df_list = [None] * self.channelnum
         events = self.loadfile(filename)
         for i in range(self.channelnum):
             print(f"Running selection for channel {self.channelseq[i]}")
@@ -97,11 +104,15 @@ class Processor:
             evtsel = EventSelections(lepcfg, jetcfg, cfgname)
             evtsel.lepselsetter(events)
             passed, vetoed = evtsel.objselcaller(events)
+            row_names = evtsel.cutflow.labels
             self.writeobj(passed, i, suffix)
-            cf_list[i] = evtsel.cutflow
+            df_list[i] = evtsel.cf_to_df()
             events = vetoed
             gc.collect()
-        return cf_list
+        df_concat = pd.concat(df_list, axis=1)
+        df_concat.index = row_names
+
+        return df_concat
 
     def writeobj(self, passed, index, suffix):
         """This can be customized further"""
@@ -115,8 +126,17 @@ class Processor:
         tdf = tau.to_daskdf()
 
         obj_df = pd.concat([edf, mdf, tdf], axis=1)
-        obj_df.to_csv(pjoin(self.outdir,f"{chcfg.name}{suffix}.csv"), index=False)
+        obj_path = pjoin(self.outdir, f"{chcfg.name}{suffix}.csv")
+        obj_df.to_csv(obj_path, index=False)
 
+        if self.transfer: 
+            dest_path = pjoin(self.rtcfg.TRANSFER_PATH, f"{chcfg.name}{suffix}.csv")
+            com = f"xrdcp -f {obj_path} {dest_path}"
+            result = subprocess.run(com, shell=True, capture_output=True, text=True)
+            if result.returncode==0: print("Transfer object file successful!")
+            else: 
+                print("Transfer not successful! Here's the error message =========================")
+                print(result.stderr)
         gc.collect()
 
     def res_to_df(self, cutflow_list):
@@ -124,6 +144,7 @@ class Processor:
         df_list = [None] * len(cutflow_list)
         for i, cfres in enumerate(cutflow_list):
             header = self.channelseq[i]
+            df_list[i] = self.cf_to_df()
             row_names = cfres.labels
             number = dask.compute(cfres.nevcutflow)[0]
             df = pd.DataFrame(data = number, columns = [header])
@@ -132,16 +153,6 @@ class Processor:
         df_concat.index = row_names
         gc.collect()
         return df_concat
-
-    def res_to_np(self, cutflow_list):
-        """Return a np (N cuts x K channels) with cutflow numbers"""
-        row_names = None
-        np_list = [None] * len(cutflow_list)
-        for i, cfres in enumerate(cutflow_list):
-            number = dask.compute(cfres.nevcutflow)[0]
-            np_list[i] = number
-            row_names = cfres.labels
-        return np.array(np_list).transpose(), row_names
 
     def runmultiple(self, indexi=0, indexf=None):
         """Run all files"""
@@ -157,7 +168,17 @@ class Processor:
             try:
                 cf = self.singlerun({filename: partitions}, suffix=i)
                 cf_df = self.res_to_df(cf)
-                cf_df.to_csv(pjoin(self.outdir, f"cutflow_{i}.csv"))
+                cfpath = pjoin(self.outdir, f"cutflow_{i}.csv")
+                cf_df.to_csv(cfpath)
+                if self.transfer:
+                    dest_path = pjoin(self.rtcfg.TRANSFER_PATH, f"cutflow_{i}.csv")
+                    com = f"xrdcp -f {cfpath} {dest_path}"
+                    result = subprocess.run(com, shell=True, capture_output=True, text=True)
+                    if result.returncode==0: 
+                        print("Transfer object file successful!")
+                    else: 
+                        print("Transfer not successful! Here's the error message =========================")
+                        print(result.stderr)
                 gc.collect()
             except OSError as e:
                 print(f"Caught an OSError while processing {filename}: {e}")
@@ -270,6 +291,15 @@ class EventSelections:
         self.jetselsetter(passed)
         passed, vetoed = self.objselcaller(passed)
         return passed, vetoed
+
+    def cf_to_df(self):
+        "Return a dataframe for a single EventSelections.cutflow object"
+        row_names = self.cutflow.labels
+        number = dask.compute(self.cutflow.nevcutflow)[0]
+        df_cf = pd.DataFrame(data = number, columns = [self.channelname])
+        return df_cf
+
+
 
 class Object():
     def __init__(self, name, events, objcfg, selcfg):
