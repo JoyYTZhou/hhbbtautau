@@ -21,3 +21,4 @@ exec/*.out
 src/test.py
 # Ignore tarball
 *.tar.gz
+*.dat

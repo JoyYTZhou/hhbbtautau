@@ -13,7 +13,7 @@ OUTPUTDIR_PATH = "@format {env[OUTPUTPATH]}"
 
 [LPC]
 LOCAL_TEST = false
-TEST_MODE = false
+TEST_MODE = true
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
 CHANNEL_NO = 3
 CHANNELNAMES = ["tauetauh", "taumtauh", "tauhtauh"]

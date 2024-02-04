@@ -17,6 +17,7 @@ import os
 from collections import ChainMap
 from config.selectionconfig import settings as sel_cfg
 import subprocess
+from memory_profiler import profile
 
 output_cfg = sel_cfg.signal.outputs
 pjoin = os.path.join
@@ -92,7 +93,7 @@ class Processor:
 
     def singlerun(self, filename, suffix):
         """Run test selections on a single file.
-        :return: output list, cutflow object list
+        :return: cutflow dataframe 
         """
         df_list = [None] * self.channelnum
         events = self.loadfile(filename)
@@ -154,6 +155,7 @@ class Processor:
         gc.collect()
         return df_concat
 
+    @profile
     def runmultiple(self, indexi=0, indexf=None):
         """Run all files"""
         self.setdata()
@@ -166,8 +168,7 @@ class Processor:
         for i, (filename, partitions) in runitems:
             print(f"Running {filename} ===================")
             try:
-                cf = self.singlerun({filename: partitions}, suffix=i)
-                cf_df = self.res_to_df(cf)
+                cf_df = self.singlerun({filename: partitions}, suffix=i)
                 cfpath = pjoin(self.outdir, f"cutflow_{i}.csv")
                 cf_df.to_csv(cfpath)
                 if self.transfer:
