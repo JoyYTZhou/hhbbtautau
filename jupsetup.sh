@@ -35,7 +35,9 @@ echo "HHBBTT has been set to: ${HHBBTT}"
 
 source scripts/cleanpath.sh
 
-jupyter notebook --no-browser --port=2001
+export ENV_FOR_DYNACONF=LPC
+
+alias jup='jupyter notebook --no-browser --port=2001'
 
 
 

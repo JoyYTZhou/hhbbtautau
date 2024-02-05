@@ -14,6 +14,8 @@ python3 -m pip install dynaconf --no-cache-dir
 echo "Installed dyanconf"
 python3 -m pip install vector --upgrade --no-cache-dir
 echo "Installed vector"
+python3 -m pip install dask --no-cache-dir
+echo "Installed dask"
 deactivate
 
 # create tarball
