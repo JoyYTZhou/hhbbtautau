@@ -17,8 +17,8 @@ else
 fi
 
 source scripts/cleanpath.sh
-export PYTHONPATH=$PWD/src:$PYTHONPATH
 export HHBBTT=$PWD
+export PYTHONPATH=$HHBBTT/src:$PYTHONPATH
 echo "HHBBTT has been set to: ${HHBBTT}"
 
 if [ ! -z "$1" ]; then

@@ -8,8 +8,6 @@ import os
 proc = Processor(rs)
 
 if rs.TEST_MODE:
-    proc.runmultiple(6,7)
+    proc.runmultiple(0,9)
 else:
     proc.runmultiple()
-
-

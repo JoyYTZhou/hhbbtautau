@@ -17,7 +17,6 @@ import os
 from collections import ChainMap
 from config.selectionconfig import settings as sel_cfg
 import subprocess
-from memory_profiler import profile
 
 output_cfg = sel_cfg.signal.outputs
 pjoin = os.path.join
@@ -56,7 +55,8 @@ class Processor:
         with open(self.rtcfg.INPUTFILE_PATH, 'r') as samplepath:
             fileset = json.load(samplepath)
             self._data = fileset[self.rtcfg.PROCESS_NAME]
-            self.fileno = len(fileset)
+            self.fileno = len(self.data)
+            print(f"There are {self.fileno} files to process in this dataset")
 
     @property
     def dsname(self):
@@ -155,7 +155,6 @@ class Processor:
         gc.collect()
         return df_concat
 
-    @profile
     def runmultiple(self, indexi=0, indexf=None):
         """Run all files"""
         self.setdata()
