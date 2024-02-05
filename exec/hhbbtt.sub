@@ -16,6 +16,6 @@ request_cpus = 1
 request_memory = 8GB
 transfer_input_files = $(MY_PATH)/src, $(MY_PATH)/setup.sh, $(MY_PATH)/lpcsetup.sh, $(MY_PATH)/scripts, $(MY_PATH)/dirsetup.sh, $(MY_PATH)/newcoffea.tar.gz
 queue arg1 from (
-    WZ
+    XH
 )
 

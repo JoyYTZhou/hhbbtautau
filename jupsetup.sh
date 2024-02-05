@@ -1,25 +1,10 @@
-#! /bin/bash
+#!/usr/bin/bash
 # =================================================================
-# This script sets up the environment in any execution machine
+# This script sets up the environment for jupyter notebook
 # Takes one argument: Process name
 # =================================================================
 
-# if not submitting batch jobs
-if [ -z "${IS_CONDOR}" ]; then
-    echo "Not submitting batch jobs"
-    OUTPUTPATH="/uscms_data/d1/joyzhou/output"
-    source scripts/venv.sh
-# if submmitting batch jobs
-else
-    echo "submitting batch jobs"
-    export OUTPUTPATH=$PWD/outputs
-    source scripts/sasetup.sh
-fi
-
-source scripts/cleanpath.sh
-export HHBBTT=$PWD
-export PYTHONPATH=$HHBBTT/src:$PYTHONPATH
-echo "HHBBTT has been set to: ${HHBBTT}"
+OUTPUTPATH="/uscms_data/d1/joyzhou/output"
 
 if [ ! -z "$1" ]; then
     export OUTPUTPATH=$OUTPUTPATH/$1
@@ -38,6 +23,20 @@ else
     echo "the directory $OUTPUTPATH does not exist."
     mkdir -pv $OUTPUTPATH
 fi
+
+export ENV_NAME=coffeajup
+source /cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-centos7-gcc11-opt/setup.sh
+source ~/nobackup/${ENV_NAME}/bin/activate
+
+export HHBBTT=$PWD
+export PYTHONPATH=~/nobackup/${ENV_NAME}/lib/python3.9/site-packages:$PYTHONPATH
+export PYTHONPATH=$HHBBTT/src:$PYTHONPATH
+echo "HHBBTT has been set to: ${HHBBTT}"
+
+source scripts/cleanpath.sh
+
+jupyter notebook --no-browser --port=2001
+
 
 
 
