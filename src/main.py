@@ -8,7 +8,7 @@ from analysis.selutility import *
 
 def main():
     if not os.getenv("IS_CONDOR", False): 
-        cluster = LocalCluster(n_workers=3, threads_per_worker=8)
+        cluster = LocalCluster(n_workers=2, threads_per_worker=8)
         client = Client(cluster)
         print("successfully created a dask client!")
         print("===================================")
@@ -19,7 +19,7 @@ def main():
     proc = Processor(rs)
 
     if rs.TEST_MODE:
-        proc.runmultiple(1,2)
+        proc.runmultiple(3,5)
     else:
         proc.runmultiple()
         
