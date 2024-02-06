@@ -9,11 +9,11 @@ from coffea.nanoevents.schemas import BaseSchema
 import vector as vec
 import json as json
 import operator as opr
-import gc
 import numpy as np
 import itertools
 import pandas as pd
 import os
+import gc
 from collections import ChainMap
 from config.selectionconfig import settings as sel_cfg
 import subprocess
@@ -109,7 +109,7 @@ class Processor:
             self.writeobj(passed, i, suffix)
             df_list[i] = evtsel.cf_to_df()
             events = vetoed
-            gc.collect()
+        gc.collect()
         df_concat = pd.concat(df_list, axis=1)
         df_concat.index = row_names
 
@@ -138,7 +138,6 @@ class Processor:
             else: 
                 print("Transfer not successful! Here's the error message =========================")
                 print(result.stderr)
-        gc.collect()
 
     def res_to_df(self, cutflow_list):
         """Return a df (N cuts x K channels) with cutflow numbers"""
@@ -152,7 +151,6 @@ class Processor:
             df_list[i] = df
         df_concat = pd.concat(df_list, axis=1)
         df_concat.index = row_names
-        gc.collect()
         return df_concat
 
     def runmultiple(self, indexi=0, indexf=None):
@@ -179,7 +177,6 @@ class Processor:
                     else: 
                         print("Transfer not successful! Here's the error message =========================")
                         print(result.stderr)
-                gc.collect()
             except OSError as e:
                 print(f"Caught an OSError while processing {filename}: {e}")
                 with open(pjoin(self.outdir, "error_files.txt"), 'a') as ef:
@@ -293,7 +290,11 @@ class EventSelections:
         return passed, vetoed
 
     def cf_to_df(self):
-        "Return a dataframe for a single EventSelections.cutflow object"
+        """Return a dataframe for a single EventSelections.cutflow object.
+        DASK GETS COMPUTED!
+        :return: cutflow df
+        :rtype: pandas.DataFrame
+        """
         row_names = self.cutflow.labels
         number = dask.compute(self.cutflow.nevcutflow)[0]
         df_cf = pd.DataFrame(data = number, columns = [self.channelname])
