@@ -127,6 +127,8 @@ class Processor:
         tdf = tau.to_daskdf()
 
         obj_df = pd.concat([edf, mdf, tdf], axis=1)
+        del edf, mdf, tdf
+
         obj_path = pjoin(self.outdir, f"{chcfg.name}{suffix}.csv")
         obj_df.to_csv(obj_path, index=False)
 
@@ -162,6 +164,9 @@ class Processor:
             enumerated_items = enumerate(self.data.items())
             runitems = itertools.islice(enumerated_items, indexi, indexf) 
    
+        success = 0 
+        failed_files = {}
+        last_file = 0
         for i, (filename, partitions) in runitems:
             print(f"Running {filename} ===================")
             try:
@@ -169,19 +174,46 @@ class Processor:
                 cfpath = pjoin(self.outdir, f"cutflow_{i}.csv")
                 cf_df.to_csv(cfpath)
                 if self.transfer:
-                    dest_path = pjoin(self.rtcfg.TRANSFER_PATH, f"cutflow_{i}.csv")
-                    com = f"xrdcp -f {cfpath} {dest_path}"
-                    result = subprocess.run(com, shell=True, capture_output=True, text=True)
+                    result = self.transferfile(f"cutflow_{i}.csv")
                     if result.returncode==0: 
-                        print("Transfer object file successful!")
+                        print(f"Transfer object file for file {i} successful!")
+                        success += 1
+                        last_file = i
                     else: 
-                        print("Transfer not successful! Here's the error message =========================")
+                        print(f"Transfer object file for file {i} not successful! Here's the error message =========================")
                         print(result.stderr)
+                        failed_files.update({filename: result.stderr})
             except OSError as e:
-                print(f"Caught an OSError while processing {filename}: {e}")
-                with open(pjoin(self.outdir, "error_files.txt"), 'a') as ef:
-                    ef.write(f"{filename}\n")
+                failed_files.update({filename: e.strerror})
+                print(f"Caught an OSError while processing file {i} \n /
+                      ========================== \n /
+                      {filename} \n /
+                      ========================== \n /
+                      {e.strerror}")
                 continue
+                
+        if len(failed_files) > 0: 
+            with open(pjoin((self.outdir, "error_files.json"), 'w')) as ef:
+                json.dump(failed_files, ef, indent=4)
+        
+        with open(pjoin(self.outdir, "process.log"), 'w') as outf:
+            messages = [f"Total file to process in this dataset: {self.fileno} \n",
+                        f"Successfully processed and wrote {success} files \n", 
+                        f"Last written file index is {last_file} \n"]
+            outf.writelines(messages)
+        
+        self.transferfile("process.log")
+        self.transferfile("error_files.json")
+        
+    def transferfile(self, fn):
+        """Transfer output by a processor to a final destination."""
+        dest_path = pjoin(self.rtcfg.TRANSFER_PATH, fn)
+        init_path = pjoin(self.outdir, fn)
+        com = f"xrdcp -f {init_path} {dest_path}" 
+        result = subprocess.run(com, shell=True, capture_output=True, text=True) 
+        
+        return result
+        
 
 class EventSelections:
     def __init__(self, lepcfg, jetcfg, cfgname) -> None:

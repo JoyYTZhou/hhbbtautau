@@ -7,26 +7,27 @@ from dask.distributed import Client, LocalCluster
 from analysis.selutility import *
 
 def main():
-    if not os.getenv("IS_CONDOR", False): 
-        cluster = LocalCluster(n_workers=2, threads_per_worker=8)
-        client = Client(cluster)
-        print("successfully created a dask client!")
-        print("===================================")
-        print(client)
+    # if not os.getenv("IS_CONDOR", False): 
+    #     cluster = LocalCluster()
+    #     # cluster.adapt(minimum=0, maximum=6)
+    #     client = Client(cluster)
+    #     print("successfully created a dask client!")
+    #     print("===================================")
+    #     print(client)
 
     start_time = time.time()
 
     proc = Processor(rs)
 
     if rs.TEST_MODE:
-        proc.runmultiple(3,5)
+        proc.runmultiple(1,3)
     else:
         proc.runmultiple()
         
     end_time = time.time()
     print(f"Execution time is {end_time - start_time} seconds")
 
-    client.close()
+    # client.close()
 
 if __name__ == '__main__':
     main()
