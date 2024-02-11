@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =================================================================
-# Set up condor output directory
+# Set up condor output directory for I/O to condor directory
 # =================================================================
 print_env_variable() { var="$1"; [ -z "${!var}" ] && echo "$var is not set" || echo "$var has been set to ${!var}"; }
 
