@@ -16,9 +16,7 @@ from dask_jobqueue.htcondor import (
     quote_environment,
 )
 from distributed.core import Status
-import patch  # noqa: F401
-
-from schedd import SCHEDD, SCHEDD_POOL, htcondor
+from condor.schedd import SCHEDD, SCHEDD_POOL, htcondor
 
 logger = logging.getLogger(__name__)
 fn = os.path.join(os.path.dirname(__file__), "config.yaml")
@@ -36,7 +34,6 @@ def is_venv():
 
 class LPCCondorJob(HTCondorJob):
     executable = os.path.dirname(os.path.abspath(__file__)) + '/condor_exec.exe'
-    container_prefix = "/cvmfs/unpacked.cern.ch/registry.hub.docker.com/"
     config_name = "lpccondor"
     known_jobs = set()
     env_name = os.path.basename(os.getenv('VIRTUAL_ENV', '.env'))
@@ -47,16 +44,13 @@ class LPCCondorJob(HTCondorJob):
         name=None,
         *,
         ship_env,
-        image,
         **base_class_kwargs,
     ):
-        image = self.container_prefix + image
         if ship_env:
             base_class_kwargs["python"] = f"{self.env_name}/bin/python"
             base_class_kwargs.setdefault(
                 "worker_extra_args", list(dask.config.get("jobqueue.%s.worker_extra_args" % self.config_name))
             )
-            base_class_kwargs["worker_extra_args"].extend(["--preload", "lpcjobqueue.patch"])
         else:
             base_class_kwargs["python"] = "python"
         super().__init__(scheduler=scheduler, name=name, **base_class_kwargs)
@@ -73,8 +67,6 @@ class LPCCondorJob(HTCondorJob):
             {
                 "use_x509userproxy": "true",
                 "when_to_transfer_output": "ON_EXIT_OR_EVICT",
-                "transfer_output_files": "",
-                "+SingularityImage": f'"{image}"',
             }
         )
 
@@ -228,7 +220,7 @@ class LPCCondorCluster(HTCondorCluster):
         self._port = random.randint(10000, 10100)
         kwargs.setdefault("scheduler_options", {})
         kwargs["scheduler_options"].setdefault("host", f"{hostname}:{self._port}")
-        kwargs.setdefault("ship_env", True)
+        kwargs.setdefault("ship_env", False)
         self._ship_env = kwargs["ship_env"]
         infiles = kwargs.pop("transfer_input_files", [])
         if not isinstance(infiles, list):

@@ -6,9 +6,9 @@ jobqueue:
     cores: 1                # Total number of cores per job
     memory: 5GB                # Total amount of memory per job
     processes: 1                # Number of Python processes per job
+    submit-command: "/usr/local/bin/condor_submit"
     interface: null             # Network interface to use like eth0 or ib0
     death-timeout: 60           # Number of seconds to wait if a worker can not find a scheduler
-    local-directory: /srv       # Location of fast local storage like /scratch or $TMPDIR
     shared-temp-directory: null
     extra: null
     worker-extra-args: ["--worker-port 10000:10070", "--nanny-port 10070:10100", "--no-dashboard"]
@@ -25,7 +25,8 @@ jobqueue:
     submit-command-extra: []    # Extra condor_submit arguments
     cancel-command-extra: []    # Extra condor_rm arguments
     log-directory: null
-    shebang: "#!/usr/bin/env condor_submit" # doesn't matter
+    shebang: "#!/usr/bin/env condor_submit"
+
     
     # Scheduler options
     scheduler-options: {}

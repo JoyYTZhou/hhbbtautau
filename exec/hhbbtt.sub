@@ -12,10 +12,11 @@ stream_error = True
 stream_output = True
 should_transfer_files = YES
 when_to_transfer_output = ON_EXIT
-request_cpus = 1
-request_memory = 8GB
+request_cpus = 2
+request_memory = 10GB
 transfer_input_files = $(MY_PATH)/src, $(MY_PATH)/setup.sh, $(MY_PATH)/lpcsetup.sh, $(MY_PATH)/scripts, $(MY_PATH)/dirsetup.sh, $(MY_PATH)/newcoffea.tar.gz
 queue arg1 from (
-    XH
+    ZZ
+    ZZZ
 )
 
