@@ -7,7 +7,6 @@ import socket
 import sys
 import tempfile
 import weakref
-
 import dask
 import yaml
 from dask_jobqueue.htcondor import (
@@ -17,10 +16,9 @@ from dask_jobqueue.htcondor import (
     quote_environment,
 )
 from distributed.core import Status
-
 import patch  # noqa: F401
 
-from .schedd import SCHEDD, SCHEDD_POOL, htcondor
+from schedd import SCHEDD, SCHEDD_POOL, htcondor
 
 logger = logging.getLogger(__name__)
 fn = os.path.join(os.path.dirname(__file__), "config.yaml")
@@ -30,12 +28,11 @@ with open(fn) as f:
 
 dask.config.update(dask.config.config, defaults, priority="new")
 
-
 def is_venv():
+    """Check if currently in python virtual environments"""
     return hasattr(sys, "real_prefix") or (
         hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix
     )
-
 
 class LPCCondorJob(HTCondorJob):
     executable = os.path.dirname(os.path.abspath(__file__)) + '/condor_exec.exe'
@@ -210,8 +207,6 @@ class LPCCondorCluster(HTCondorCluster):
         If True (default False), ship the ``/srv/.env`` virtualenv with the job and
         run workers from that environent. This allows user-installed packages
         to be available on the worker
-    image: str
-        Name of the apptainer image to use (default: $COFFEA_IMAGE)
     transfer_input_files: str, List[str]
         Files to be shipped along with the job. They will be placed in the
         working directory of the workers, as usual for HTCondor. Any paths
@@ -233,10 +228,7 @@ class LPCCondorCluster(HTCondorCluster):
         self._port = random.randint(10000, 10100)
         kwargs.setdefault("scheduler_options", {})
         kwargs["scheduler_options"].setdefault("host", f"{hostname}:{self._port}")
-        kwargs.setdefault("ship_env", False)
-        kwargs.setdefault(
-            "image", os.environ.get("COFFEA_IMAGE", "coffeateam/coffea-dask:latest")
-        )
+        kwargs.setdefault("ship_env", True)
         self._ship_env = kwargs["ship_env"]
         infiles = kwargs.pop("transfer_input_files", [])
         if not isinstance(infiles, list):
@@ -252,7 +244,7 @@ class LPCCondorCluster(HTCondorCluster):
         self.scratch_area = tempfile.TemporaryDirectory(dir=tmproot)
         infiles = []
         if self._ship_env:
-            env_path = os.getenv('VIRTUAL_ENV', '/srv/.env')
+            env_path = os.getenv('VIRTUAL_ENV', '~/nobackup/')
             shutil.copytree(env_path, os.path.join(self.scratch_area.name, os.path.basename(env_path)))
             infiles.append(os.path.basename(env_path))
         for fn in self._transfer_input_files:

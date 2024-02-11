@@ -2,7 +2,7 @@
 
 import awkward as ak
 import dask_awkward as dak
-import dask as dask
+import dask
 from coffea.analysis_tools import PackedSelection
 from coffea.nanoevents import NanoEventsFactory
 from coffea.nanoevents.schemas import BaseSchema
@@ -185,11 +185,11 @@ class Processor:
                         failed_files.update({filename: result.stderr})
             except OSError as e:
                 failed_files.update({filename: e.strerror})
-                print(f"Caught an OSError while processing file {i} \n /
-                      ========================== \n /
-                      {filename} \n /
-                      ========================== \n /
-                      {e.strerror}")
+                print(f"Caught an OSError while processing file {i}")
+                print("==========================")
+                print(filename)
+                print("==========================")
+                print(e.strerror)
                 continue
                 
         if len(failed_files) > 0: 
