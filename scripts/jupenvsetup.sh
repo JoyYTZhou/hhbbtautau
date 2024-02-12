@@ -1,4 +1,7 @@
 #!/usr/bin/bash
+# ===========================================================================================================
+# This script sets up a proper virtual environment for jupyter notebook in the ~/nobackup area
+# ===========================================================================================================
 source /cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-centos7-gcc11-opt/setup.sh
 cd ~/nobackup
 export ENV_NAME=coffeajup

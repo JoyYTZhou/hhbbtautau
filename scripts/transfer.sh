@@ -1,4 +1,5 @@
-#! transfer all files
+#!/bin/bash
+
 pwd
 echo "List all files in $OUTPUTPATH"
 ls -lR $OUTPUTPATH

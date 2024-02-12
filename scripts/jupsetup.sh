@@ -1,8 +1,10 @@
 #!/usr/bin/bash
-# =================================================================
-# This script sets up the environment for jupyter notebook
+# ===========================================================================================================
+# This script sets up the environment for jupyter notebook for testing, provided that the virtual environment
+# containing with the proper packages installed is available
 # Takes one argument: Process name
-# =================================================================
+# Run this script only to open jupyter notebook 
+# ===========================================================================================================
 
 OUTPUTPATH="/uscms_data/d1/joyzhou/output"
 

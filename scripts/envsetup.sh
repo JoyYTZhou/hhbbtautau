@@ -1,4 +1,8 @@
 #!/bin/bash
+# ===========================================================================================================
+# This script sets up a proper virtual environment to run this repository and create a tarball
+# in the ~/nobackup area
+# ===========================================================================================================
 
 cd ~/work/hhbbtautau
 rm -r *.tar.gz
