@@ -1,0 +1,7 @@
+[LPC]
+CONDOR_SOURCE = "@format {env[CONDORPATH]}"
+LOCAL_SOURCE = "/uscms/home/joyzhou/nobackup/output/"
+TRANSFER_LOCAL = true
+LOCAL_OUTPUT = "/uscms/home/joyzhou/nobackup/plots"
+CONDOR_TRANSFER = false
+
