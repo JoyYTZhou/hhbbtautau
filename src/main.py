@@ -82,7 +82,7 @@ def main():
 if __name__ == '__main__':
     use_dask = os.environ.get('SPAWN_CLIENT', False)
     if use_dask:
-        client = spawnclient
+        client = spawnclient()
     main()
 
 

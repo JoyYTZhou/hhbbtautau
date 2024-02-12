@@ -1,16 +1,2 @@
-
-parent_path: /uscms/homes/j/joyzhou/work/hhbbtautau
-
-  job-extra-directives:
-    transfer_input_files: > 
-      ${parent_path}/src, 
-      ${parent_path}/setup.sh, 
-      ${parent_path}/lpcsetup.sh,
-      ${parent_path}/dirsetup.sh, 
-      ${parent_path}/newcoffea.tar.gz, 
-      ${parent_path}/scripts
-    stream_error: true
-    stream_output: true
-    log: trial.log
-    output: trial.out
-    error: trial.err
+[DEFAULT]
+SPAWN_CLIENT = true

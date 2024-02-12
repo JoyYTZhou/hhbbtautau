@@ -9,6 +9,8 @@ if [ -z "${IS_CONDOR}" ]; then
     echo "Not submitting batch jobs"
     OUTPUTPATH="/uscms_data/d1/joyzhou/output"
     source scripts/venv.sh
+    export SPAWN_CLIENT=true
+    echo "Will spawn dask client!"
 # if submmitting batch jobs
 else
     echo "submitting batch jobs"

@@ -14,3 +14,9 @@ runsetting = Dynaconf(
     environments=True,
     settings_files=['src/config/runsetting.toml']
 )
+
+dasksetting = Dynaconf(
+    root_path = root_path,
+    environments=True,
+    settings_file=['src/config/jobconfig.toml']
+)
