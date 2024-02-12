@@ -193,7 +193,7 @@ class Processor:
                 continue
                 
         if len(failed_files) > 0: 
-            with open(pjoin((self.outdir, "error_files.json"), 'w')) as ef:
+            with open(pjoin(self.outdir, "error_files.json"), 'w') as ef:
                 json.dump(failed_files, ef, indent=4)
         
         with open(pjoin(self.outdir, "process.log"), 'w') as outf:
