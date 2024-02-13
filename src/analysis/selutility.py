@@ -17,9 +17,9 @@ import gc
 from collections import ChainMap
 from config.selectionconfig import settings as sel_cfg
 import subprocess
+from analysis.helper import *
 
 output_cfg = sel_cfg.signal.outputs
-pjoin = os.path.join
 
 class Processor:
     """Process individual file or filesets given strings/dicts belonging to one dataset.
@@ -91,7 +91,7 @@ class Processor:
         ).events()
         return events
 
-    def singlerun(self, filename, suffix):
+    def singlerun(self, filename, suffix, write_npz=False):
         """Run test selections on a single file.
         :return: cutflow dataframe 
         """
@@ -134,12 +134,7 @@ class Processor:
 
         if self.transfer: 
             dest_path = pjoin(self.rtcfg.TRANSFER_PATH, f"{chcfg.name}{suffix}.csv")
-            com = f"xrdcp -f {obj_path} {dest_path}"
-            result = subprocess.run(com, shell=True, capture_output=True, text=True)
-            if result.returncode==0: print("Transfer object file successful!")
-            else: 
-                print("Transfer not successful! Here's the error message =========================")
-                print(result.stderr)
+            result = cpcondor(obj_path, dest_path, is_file=True)
 
     def res_to_df(self, cutflow_list):
         """Return a df (N cuts x K channels) with cutflow numbers"""
@@ -223,6 +218,7 @@ class EventSelections:
         self._filtersel = None
         self.objsel = PackedSelection()
         self.cutflow = None
+        self.cfobj = None
 
     @property
     def channelname(self):
@@ -312,7 +308,8 @@ class EventSelections:
         """
         passed = events[self.objsel.all()]
         vetoed = events[~(self.objsel.all())]
-        self.cutflow = self.objsel.cutflow(*self.objsel.names).result()
+        self.cfobj = self.cutflow(*self.objsel.names)
+        self.cutflow = self.cfobj.result()
         return passed, vetoed
 
     def setall(self, events):
@@ -331,6 +328,9 @@ class EventSelections:
         number = dask.compute(self.cutflow.nevcutflow)[0]
         df_cf = pd.DataFrame(data = number, columns = [self.channelname])
         return df_cf
+    
+    def cfobj_to_npz(self):
+        pass
 
 
 
