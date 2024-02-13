@@ -3,9 +3,8 @@
 # This script sets up the environment for jupyter notebook for testing, provided that the virtual environment
 # containing with the proper packages installed is available
 # Takes one argument: Process name
-# Run this script only to open jupyter notebook 
+# Run this script only to open jupyter notebook
 # ===========================================================================================================
-
 OUTPUTPATH="/uscms_data/d1/joyzhou/output"
 
 if [ ! -z "$1" ]; then
@@ -35,9 +34,9 @@ export PYTHONPATH=~/nobackup/${ENV_NAME}/lib/python3.9/site-packages:$PYTHONPATH
 export PYTHONPATH=$HHBBTT/src:$PYTHONPATH
 echo "HHBBTT has been set to: ${HHBBTT}"
 
+
 source scripts/cleanpath.sh
 
-export ENV_FOR_DYNACONF=LPC
 
 alias jup='jupyter notebook --no-browser --port=2001'
 

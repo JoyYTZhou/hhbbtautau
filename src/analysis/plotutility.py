@@ -36,15 +36,14 @@ class Visualizer():
     def beautify_cf(self, cfdf):
         pass
 
-
-
-
-    def sort_cf(self, srcdir, ds_list, save=True):
+   
+    def sort_cf(self, srcdir, save=True):
         """Create a multi index table that contains all channel cutflows for all datasets.
         :param ds_list: list of strings of dataset
         :param srcdir: output cutflow source directory
         """
         multi_indx = []
+        ds_list = self.pltcfg.DATASETS
         df_list = [None]*len(ds_list)
         for i, ds in enumerate(ds_list):
             ds_dir = os.path.join(srcdir, ds)
@@ -62,9 +61,60 @@ class Visualizer():
 
         return allds_cf
 
+    def plot_var(self, name, range, df):
+        fig, ax = plt.subplots(figsize=(10, 5))
+        hep.histplot(
+            zz,
+            bins=bins,
+            histtype="fill",
+            color="b",
+            alpha=0.5,
+            edgecolor="black",
+            label=r"ZZ $\rightarrow$ 4l",
+            ax=ax,
+        )
+
+        ax.set_xlabel("4l invariant mass (GeV)", fontsize=15)
+        ax.set_ylabel("Events / 3 GeV", fontsize=15)
+        ax.set_xlim(rmin, rmax)
+        ax.legend()
+        fig.show()
+    
+    def concat_obj(self, srcdir, dsname, save=True):
+        """Take a src dir and one dataset name to concat all observables.csv output in one channel""" 
+        df_dict = {}
+        channel_list = self.pltcfg.CHANNELS
+        for j, channelname in enumerate(channel_list):
+            pattern = f'{srcdir}/{dsname}/{channelname}*.csv' 
+            files = glob.glob(pattern)
+            dfs = [pd.read_csv(file_name, header=0) for file_name in files]
+            concat_df = pd.concat(dfs)
+            if save:
+                outfiname = os.path.join(self.pltcfg.LOCAL_OUTPUT, f'{dsname}_{channelname}.csv')
+                concat_df.to_csv(outfiname)
+            df_dict.update({channelname: concat_df})
+            
+        return df_dict
+    
+    def load_allds(self):
+        srcdir = self.pltcfg.LOCAL_OUTPUT
+        pass
+        
+        
+        
+
+            
+            
+            
+            
+            
+        
+        
     
             
-            
+def jupyter_display():
+    
+    pass 
             
         
     # from https://github.com/aminnj/yahist/blob/master/yahist/utils.py#L133 
@@ -87,7 +137,6 @@ def simplifyError(passed,total,level=0.6827):
 
 # style a dataframe table
 def makePretty(styler,color_code):
-    styler.hide(axis='index')
     styler.format(precision=3)
     css_indexes=f'background-color: {color_code}; color: white;'
     styler.applymap_index(lambda _: css_indexes, axis=1)
