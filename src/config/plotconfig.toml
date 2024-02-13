@@ -1,7 +1,9 @@
 [LPC]
 CONDOR_SOURCE = "@format {env[CONDORPATH]}"
-LOCAL_SOURCE = "/uscms/home/joyzhou/nobackup/output/"
+LOCAL_SOURCE = "/uscms/home/joyzhou/nobackup/condor_copy"
 TRANSFER_LOCAL = true
 LOCAL_OUTPUT = "/uscms/home/joyzhou/nobackup/plots"
 CONDOR_TRANSFER = false
+CHANNELS = ["tauetauh", "taumtauh", "tauhtauh"]
+DATASETS = ["DYJets", "ggF", "TTbar", "XH", "ZZ"]
 
