@@ -1,7 +1,6 @@
-source lpcsetup.sh
-source scripts/venv.sh
 export IS_CONDOR=true
-export PROCESS_NAME=$1 
 export SUBMIT_DASK=true
+export SPAWN_CLIENT=true
+export ENV_FOR_DYNACONF=LPC
 
 python3 src/main.py
