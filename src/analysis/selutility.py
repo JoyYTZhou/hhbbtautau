@@ -308,7 +308,7 @@ class EventSelections:
         """
         passed = events[self.objsel.all()]
         vetoed = events[~(self.objsel.all())]
-        self.cfobj = self.cutflow(*self.objsel.names)
+        self.cfobj = self.objsel.cutflow(*self.objsel.names)
         self.cutflow = self.cfobj.result()
         return passed, vetoed
 

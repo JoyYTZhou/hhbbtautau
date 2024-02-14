@@ -3,27 +3,46 @@
 # Takes one argument: Process name
 # ==========================================================================
 
+export SUBMIT_DASK=true
 echo "Currently in $PWD"
 source $PWD/scripts/vomcheck.sh
-source $PWD/scripts/dirsetup.sh $1
-source $PWD/setup.sh $1
 
-export SUBMIT_DASK=true
+print_env_variable() { var="$1"; [ -z "${!var}" ] && echo "$var is not set" || echo "$var has been set to ${!var}"; }
 
-export ENV_NAME=newcoffea
-print_env_variable "ENV_NAME"
+export IS_CONDOR=true
+print_env_variable "IS_CONDOR"
 
-OLD_ENV_NAME=/uscms_data/d3/joyzhou/${ENV_NAME}
-if [ ! -z "${VIRTUAL_ENV}" ] && [ "$VIRTUAL_ENV" == "${ENV_NAME}" ]; then
-    echo "Found environmental variable."
+export ENV_FOR_DYNACONF=LPC
+export PREFIX=root://cmseos.fnal.gov
+print_env_variable "PREFIX"
+
+export CONDORPATH="root://cmseos.fnal.gov//store/user/joyzhou/output"
+print_env_variable "CONDORPATH"
+
+export SHORTPATH=/store/user/joyzhou/output
+print_env_variable "SHORTPATH"
+
+if [ ! -z "$1" ]; then
+    DIRNAME=$SHORTPATH/$1
 else
-    mkdir ${ENV_NAME}
-    tar -xzf ${ENV_NAME}.tar.gz -C .
-    sed -i "s|${OLD_ENV_NAME}|${PWD}/${ENV_NAME}|g" ${ENV_NAME}/bin/activate
-    sed -i "s|${OLD_ENV_NAME}|${PWD}/${ENV_NAME}|g" ${ENV_NAME}/bin/*
-    export VIRTUAL_ENV=newcoffea
+    DIRNAME=$SHORTPATH/all
 fi
 
-source ${ENV_NAME}/bin/activate
-export PYTHONPATH=$VIRTUAL_ENV/lib/python3.9/site-packages:$PYTHONPATH
+if xrdfs $PREFIX stat $DIRNAME >/dev/null 2>&1; then
+    echo "the directory $DIRNAME already exists"
+else
+    echo "creating directory $DIRNAME."
+    xrdfs $PREFIX mkdir -p $DIRNAME
+fi
+echo "CONDOR outputpath will be $DIRNAME"
 
+export OUTPUTPATH=$PWD/outputs
+export HHBBTT=$PWD
+
+if [ ! -z "$1" ]; then
+    export OUTPUTPATH=$OUTPUTPATH/$1
+    export PROCESS_NAME=$1
+else
+    export OUTPUTPATH=$OUTPUTPATH/all
+    export PROCESS_NAME=all
+fi

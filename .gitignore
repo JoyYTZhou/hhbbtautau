@@ -22,3 +22,5 @@ src/test.py
 # Ignore tarball
 *.tar.gz
 *.dat
+# Ignore all hidden files
+.*
