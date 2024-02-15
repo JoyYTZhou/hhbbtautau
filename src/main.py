@@ -18,19 +18,6 @@ files_needed = f"""{pjoin(parent_dir, 'src')},
     {pjoin(parent_dir, 'dirsetup.sh')}
 """
 
-def spawnclient():
-    if not rs.IS_CONDOR:
-        cluster = LocalCluster(processes=False, threads_per_worker=2)
-        cluster.adapt(minimum=0, maximum=6)
-        client = Client(cluster)
-        print("successfully created a dask client!")
-        print("===================================")
-        print(client)
-    else:
-        process=rs.PROCESS_NAME
-        if rs.SUBMIT_DASK: client = spawnCondor()
-    return client 
-
 def main():
     start_time = time.time()
 
