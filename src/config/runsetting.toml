@@ -11,7 +11,7 @@ INPUTFILE_PATH = "@format {this.INPUTFILE_NAME}"
 TREE_NAME = "Events"
 OUTPUTDIR_PATH = "@format {env[OUTPUTPATH]}"
 
-[LPC]
+[LPCLOCAL]
 LOCAL_TEST = false
 TEST_MODE = true
 PROCESS_NAME = "DYJets"
@@ -21,6 +21,14 @@ CONDOR_PATH = "root://cmseos.fnal.gov//store/user/joyzhou/output"
 INPUTFILE_NAME = "@format src/data/chunked/{this.PROCESS_NAME}.json"
 INPUTFILE_PATH = "@format {this.INPUTFILE_NAME}"
 OUTPUTDIR_PATH = "outputs/{this.PROCESS_NAME}"
+TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
+
+[LPCCONDOR]
+TEST_MODE = false
+PROCESS_NAME = "all"
+CHANNEL_NO = 1
+CONDOR_PATH = "root://cmseos.fnal.gov//store/user/joyzhou/output"
+CHANNELNAMES = ["tauhtauh"]
 TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
 IS_CONDOR = true
 SUBMIT_DASK = true
