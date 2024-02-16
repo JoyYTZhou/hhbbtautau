@@ -38,7 +38,7 @@ MEMORY = '10GB'
 OUTPUTDIR_PATH = "/uscms_data/d1/joyzhou/output/test"
 PROCESS_NAME = "DYJets"
 CHANNEL_NO = 1
-INPUTFILE_PATH = "@format src/data/chunked/{this.PROCESS_NAME}.json"
+INPUTFILE_PATH = "@format {env[PARENT_DIR]}/src/data/chunked/{this.PROCESS_NAME}.json"
 CHANNELNAMES = ["tauhtauh"]
 
 [LXPLUS]

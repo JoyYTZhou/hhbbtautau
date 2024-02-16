@@ -3,20 +3,12 @@
 import os
 import time
 from dask.distributed import Client, LocalCluster
-from dask_jobqueue.htcondor import HTCondorCluster
-from lpcjobqueue import LPCCondorCluster
 import yaml
-import dask.config
+
+os.environ['PARENT_DIR'] = os.path.dirname(__file__) 
+
 from analysis.helper import *
 from analysis.spawndask import *
-
-parent_dir = os.path.dirname(__file__)
-files_needed = f"""{pjoin(parent_dir, 'src')}, 
-    {pjoin(parent_dir, 'lpcsetup.sh')},
-    {pjoin(parent_dir, 'setup.sh')},
-    {pjoin(parent_dir, 'scripts')},
-    {pjoin(parent_dir, 'dirsetup.sh')}
-"""
 
 def main():
     start_time = time.time()
