@@ -12,11 +12,10 @@ import operator as opr
 import numpy as np
 import itertools
 import pandas as pd
-import os
 import gc
 from collections import ChainMap
+import uproot
 from config.selectionconfig import settings as sel_cfg
-import subprocess
 from analysis.helper import *
 
 output_cfg = sel_cfg.signal.outputs
@@ -40,8 +39,8 @@ class Processor:
         self._commonsel = sel_cfg.signal.commonsel
         self.outdir = self.rtcfg.OUTPUTDIR_PATH
         self.fileno = 0
-        self.transfer = os.environ.get('IS_CONDOR', False)
-        if self.transfer: print("File transfer in real time!")
+        self.treename = "Events"
+        if self.rtcfg.TRANSFER: print("File transfer in real time!")
 
     @property
     def data(self):
@@ -52,11 +51,22 @@ class Processor:
         return self._rtcfg
 
     def setdata(self):
+        """Generate chunked input to uproot.dask()"""
         with open(self.rtcfg.INPUTFILE_PATH, 'r') as samplepath:
             fileset = json.load(samplepath)
-            self._data = fileset[self.rtcfg.PROCESS_NAME]
-            self.fileno = len(self.data)
-            print(f"There are {self.fileno} files to process in this dataset")
+            if self.rtcfg.MODE == "unchunked":
+                self._data = fileset[self.rtcfg.PROCESS_NAME]
+                self.fileno = len(self.data)
+            else:
+                def chunker(iterable, size):
+                    iterator = iter(iterable)
+                    for first in iterator:  # stops when iterator is depleted
+                        yield itertools.chain([first], itertools.islice(iterator, size - 1))
+                filelist = list(fileset.keys())
+                self.fileno = len(self.filelist)
+                list_of_dicts = [{file_name: self.treename for file_name in chunk} for chunk in chunker(filelist, self.rtcfg.FILELENGTH)]
+        print(f"There are {self.fileno} files to process in this dataset")
+                
 
     @property
     def dsname(self):
@@ -85,7 +95,11 @@ class Processor:
     def loadfile(self, filename, **kwargs):
         """This is a wrapper function around a coffea load file from root function,
         which is in itself yet another wrapper function of uproot._dask. 
-        I am writing this doc to humiliate myself in the future."""
+        I am writing this doc to humiliate myself in the future.
+        
+        :return: The loaded file dict
+        :rtype: dask_awkward.lib.core.Array
+        """
         events = NanoEventsFactory.from_root(
             file=filename,
             delayed=True,
@@ -94,9 +108,10 @@ class Processor:
             **kwargs
         ).events()
         return events
-
-    def singlerun(self, filename, suffix, write_npz=False):
-        """Run test selections on a single file.
+ 
+    def singlerun(self, filename, suffix, write_method = 'dask', write_npz=False):
+        """Run test selections on a single file dict.
+        :param write_method: method to write the output
         :return: cutflow dataframe 
         """
         df_list = [None] * self.channelnum
@@ -110,17 +125,43 @@ class Processor:
             evtsel.lepselsetter(events)
             passed, vetoed = evtsel.objselcaller(events)
             row_names = evtsel.cutflow.labels
-            self.writeobj(passed, i, suffix)
+            if write_method == 'dask':
+                self.writedask(passed, i, suffix)
+            elif write_method == 'dataframe':
+                self.writeobj(passed, i, suffix)
+            else:
+                pass
             df_list[i] = evtsel.cf_to_df()
             events = vetoed
         gc.collect()
         df_concat = pd.concat(df_list, axis=1)
         df_concat.index = row_names
 
-        return df_concat
+        localpath = pjoin(self.outdir, f'cutflow_{suffix}.csv')
+        df_concat.to_csv(localpath)
 
+        if self.rtcfg.TRANSFER:
+            condorpath = f'{self.rtcfg.TRANSFER_PATH}/cutflow_{suffix}.csv'
+            result = cpcondor(localpath, condorpath, is_file=True)
+            return result
+
+
+    def writedask(self, passed, index, suffix, fields=None):
+        """Wrapper around uproot.dask_write()"""
+        chcfg = self.channelsel[index]
+        if fields is None:
+            dir_name = pjoin(self.outdir, chcfg.name, suffix)
+            dir_name.mkdir(parents=True, exist_ok=True)
+            uproot.dask_write(passed, destination=dir_name, compute=True, prefix=f'{self.dsname}_{suffix}_{chcfg.name}')
+        else:
+            pass
+        
+        if self.rtcfg.TRANSFER:
+            transferfiles(dir_name, self.TRANSFER_PATH)
+        
     def writeobj(self, passed, index, suffix):
-        """This can be customized further"""
+        """This can be further simplified.I do not like this function...
+        Write computed awk array selected in sel_cfg to csv files."""
         chcfg = self.channelsel[index]
         electron = Object("Electron", passed, output_cfg.Electron, chcfg.selections.electron)
         muon = Object("Muon", passed, output_cfg.Muon, chcfg.selections.muon)
@@ -136,7 +177,7 @@ class Processor:
         obj_path = pjoin(self.outdir, f"{chcfg.name}{suffix}.csv")
         obj_df.to_csv(obj_path, index=False)
 
-        if self.transfer: 
+        if self.rtcfg.TRANSFER:
             dest_path = pjoin(self.rtcfg.TRANSFER_PATH, f"{chcfg.name}{suffix}.csv")
             result = cpcondor(obj_path, dest_path, is_file=True)
 
@@ -154,7 +195,7 @@ class Processor:
         df_concat.index = row_names
         return df_concat
 
-    def runmultiple(self, indexi=0, indexf=None):
+    def runpartitioned(self, indexi=0, indexf=None):
         """Run all files"""
         self.setdata()
         if (indexi==0 and indexf is None):
@@ -170,18 +211,6 @@ class Processor:
             print(f"Running {filename} ===================")
             try:
                 cf_df = self.singlerun({filename: partitions}, suffix=i)
-                cfpath = pjoin(self.outdir, f"cutflow_{i}.csv")
-                cf_df.to_csv(cfpath)
-                if self.transfer:
-                    result = self.transferfile(f"cutflow_{i}.csv")
-                    if result.returncode==0: 
-                        print(f"Transfer object file for file {i} successful!")
-                        success += 1
-                        last_file = i
-                    else: 
-                        print(f"Transfer object file for file {i} not successful! Here's the error message =========================")
-                        print(result.stderr)
-                        failed_files.update({filename: result.stderr})
             except OSError as e:
                 failed_files.update({filename: e.strerror})
                 print(f"Caught an OSError while processing file {i}")
@@ -209,7 +238,7 @@ class Processor:
         dest_path = pjoin(self.rtcfg.TRANSFER_PATH, fn)
         init_path = pjoin(self.outdir, fn)
         com = f"xrdcp -f {init_path} {dest_path}" 
-        result = subprocess.run(com, shell=True, capture_output=True, text=True) 
+        result = runcom(com, shell=True, capture_output=True, text=True)
         
         return result
         
@@ -391,7 +420,7 @@ class Object():
         self.fields = list(vars_dict.keys())
 
     def to_daskdf(self, sortname='pt', ascending=False, index=0):
-        """Take the object, unzip it, compute it, flatten it into a dataframe
+        """Take a dask zipped object, unzip it, compute it, flatten it into a dataframe
         """
         if self.veto is True:
             print(f"Veto set for {self.name}.")
