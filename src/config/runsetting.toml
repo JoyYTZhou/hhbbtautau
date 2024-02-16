@@ -5,9 +5,8 @@ LOCAL_TEST = true
 SINGLE_PATH = "/Users/yuntongzhou/Desktop/Dihiggszztt/sample1.root"
 PROCESS_NAME = "DYJets"
 CHANNELNAMES = ["tauetauh", "taumtauh", "tauhtauh"]
-CHANNEL_NO = 3
-INPUTFILE_NAME = "src/data/completepath.json"
-INPUTFILE_PATH = "@format {this.INPUTFILE_NAME}"
+CHANNEL_NO = 1
+INPUTFILE_PATH = "@format {env[PARENT_DIR]}/src/data/chunked/{this.PROCESS_NAME}.json"
 TREE_NAME = "Events"
 OUTPUTDIR_PATH = "@format {env[OUTPUTPATH]}"
 
