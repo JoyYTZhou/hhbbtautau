@@ -82,12 +82,16 @@ class Processor:
     def commonsel(self):
         return self._commonsel
 
-    def loadfile(self, filename):
+    def loadfile(self, filename, **kwargs):
+        """This is a wrapper function around a coffea load file from root function,
+        which is in itself yet another wrapper function of uproot._dask. 
+        I am writing this doc to humiliate myself in the future."""
         events = NanoEventsFactory.from_root(
             file=filename,
             delayed=True,
             metadata={"dataset": self.dsname},
             schemaclass=BaseSchema,
+            **kwargs
         ).events()
         return events
 
