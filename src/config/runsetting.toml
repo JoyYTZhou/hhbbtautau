@@ -6,9 +6,10 @@ SINGLE_PATH = "/Users/yuntongzhou/Desktop/Dihiggszztt/sample1.root"
 PROCESS_NAME = "DYJets"
 CHANNELNAMES = ["tauetauh", "taumtauh", "tauhtauh"]
 CHANNEL_NO = 1
-INPUTFILE_PATH = "@format {env[PARENT_DIR]}/src/data/chunked/{this.PROCESS_NAME}.json"
+INPUTFILE_PATH = "@format /Users/yuntongzhou/Desktop/Dihiggszztt/HHtobbtautau/src/data/chunked/{this.PROCESS_NAME}.json"
 TREE_NAME = "Events"
 OUTPUTDIR_PATH = "@format {env[OUTPUTPATH]}"
+TRANSFER = false
 
 [LPCLOCAL]
 LOCAL_TEST = false
@@ -19,19 +20,24 @@ CHANNELNAMES = ["tauhtauh"]
 CONDOR_PATH = "root://cmseos.fnal.gov//store/user/joyzhou/output"
 INPUTFILE_PATH = "@format src/data/chunked/{this.PROCESS_NAME}.json"
 OUTPUTDIR_PATH = "outputs/{this.PROCESS_NAME}"
+TRANSFER = false
 TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
+MODE = "unchunked"
+FILELENGTH = 5
 
 [LPCCONDOR]
 TEST_MODE = false
-PROCESS_NAME = "all"
+PROCESS_NAME = "DYJets"
 CHANNEL_NO = 1
 CONDOR_PATH = "root://cmseos.fnal.gov//store/user/joyzhou/output"
 CHANNELNAMES = ["tauhtauh"]
 TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
+OUTPUTDIR_PATH = "outputs/{this.PROCESS_NAME}"
 SPAWN_CLIENT = true
 MIN_WORKER = 1
 MAX_WORKER = 10
 MEMORY = '10GB'
+TRANSFER = true
 
 [LPCJUPYTER]
 OUTPUTDIR_PATH = "/uscms_data/d1/joyzhou/output/test"
@@ -39,6 +45,7 @@ PROCESS_NAME = "DYJets"
 CHANNEL_NO = 1
 INPUTFILE_PATH = "@format {env[PARENT_DIR]}/src/data/chunked/{this.PROCESS_NAME}.json"
 CHANNELNAMES = ["tauhtauh"]
+TRANSFER = true
 
 [LXPLUS]
 TEST_MODE = true
