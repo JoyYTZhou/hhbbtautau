@@ -3,6 +3,8 @@
 import awkward as ak
 import dask_awkward as dak
 import dask
+from dask import delayed
+from dask.distributed import Client, as_completed
 from coffea.analysis_tools import PackedSelection
 from coffea.nanoevents import NanoEventsFactory
 from coffea.nanoevents.schemas import BaseSchema
@@ -64,7 +66,7 @@ class Processor:
                         yield itertools.chain([first], itertools.islice(iterator, size - 1))
                 filelist = list(fileset.keys())
                 self.fileno = len(self.filelist)
-                list_of_dicts = [{file_name: self.treename for file_name in chunk} for chunk in chunker(filelist, self.rtcfg.FILELENGTH)]
+                self._data = [{file_name: self.treename for file_name in chunk} for chunk in chunker(filelist, self.rtcfg.FILELENGTH)]
         print(f"There are {self.fileno} files to process in this dataset")
                 
 
@@ -109,7 +111,8 @@ class Processor:
         ).events()
         return events
  
-    def singlerun(self, filename, suffix, write_method = 'dask', write_npz=False):
+    @delayed
+    def runfile(self, filename, suffix, write_method='dask', write_npz=False):
         """Run test selections on a single file dict.
         :param write_method: method to write the output
         :return: cutflow dataframe 
@@ -144,7 +147,6 @@ class Processor:
             condorpath = f'{self.rtcfg.TRANSFER_PATH}/cutflow_{suffix}.csv'
             result = cpcondor(localpath, condorpath, is_file=True)
             return result
-
 
     def writedask(self, passed, index, suffix, fields=None):
         """Wrapper around uproot.dask_write()"""
@@ -194,20 +196,22 @@ class Processor:
         df_concat = pd.concat(df_list, axis=1)
         df_concat.index = row_names
         return df_concat
-
-    def runpartitioned(self, indexi=0, indexf=None):
-        """Run all files"""
+    
+    def pickupfailed(self, indexi, indexf):
         self.setdata()
-        if (indexi==0 and indexf is None):
-            runitems = enumerate(self.data.items())
-        else:
-            enumerated_items = enumerate(self.data.items())
-            runitems = itertools.islice(enumerated_items, indexi, indexf) 
-   
+        if isinstance(self.data, list):
+            runitems = self.data
+        elif isinstance(self.data, dict):
+            if (indexi==0 and indexf is None):
+                runitems = enumerate(self.data.items())
+            else:
+                enumerated_items = enumerate(self.data.items())
+                runitems = itertools.islice(enumerated_items, indexi, indexf) 
+
         success = 0 
         failed_files = {}
         last_file = 0
-        for i, (filename, partitions) in runitems:
+        for i, (filename, partitions) in enumerate(runitems):
             print(f"Running {filename} ===================")
             try:
                 cf_df = self.singlerun({filename: partitions}, suffix=i)
@@ -219,7 +223,26 @@ class Processor:
                 print("==========================")
                 print(e.strerror)
                 continue
-                
+ 
+        pass
+ 
+    def dasklineup(self, client):
+        """Run all files from data"""
+        futures = [client.submit(self.runfile(), fn, i) for i, fn in enumerate(self.data)]
+        
+        results = [None] * len(futures)
+        errors = [None] * len(futures)
+
+        for future in as_completed(futures):
+            try:
+                result = future.result()
+                print(f"Files ")
+            except Exception as e:
+                resul
+        
+        
+        return futures
+               
         if len(failed_files) > 0: 
             with open(pjoin(self.outdir, "error_files.json"), 'w') as ef:
                 json.dump(failed_files, ef, indent=4)
@@ -242,7 +265,6 @@ class Processor:
         
         return result
         
-
 class EventSelections:
     def __init__(self, lepcfg, jetcfg, cfgname) -> None:
         self._channelname = cfgname

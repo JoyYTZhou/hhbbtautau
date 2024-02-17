@@ -2,7 +2,7 @@
 # FROM JOY
 import os
 import time
-from dask.distributed import Client, LocalCluster
+from dask.distributed import LocalCluster, Client
 import yaml
 
 os.environ['PARENT_DIR'] = os.path.dirname(__file__) 
