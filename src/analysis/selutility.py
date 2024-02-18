@@ -227,34 +227,27 @@ class Processor:
         pass
  
     def dasklineup(self, client):
-        """Run all files from data"""
+        """Run all files from data through creating task submissions, with errors handled and collected.
+        print statements from runfile() are centrally collected here into one file."""
         futures = [client.submit(self.runfile(), fn, i) for i, fn in enumerate(self.data)]
         
-        results = [None] * len(futures)
-        errors = [None] * len(futures)
+        results = []
+        errors = []
+        for future, result in as_completed(futures, with_results=True, raise_errors=False):
+            if isinstance(result, Exception):
+                print(f"Task failed with exception: {result}")
+                errors.append(result)
+            else:
+                print(f"Task succeeded with result: {result}")
+                results.append(result)
 
-        for future in as_completed(futures):
-            try:
-                result = future.result()
-                print(f"Files ")
-            except Exception as e:
-                resul
-        
-        
-        return futures
-               
-        if len(failed_files) > 0: 
-            with open(pjoin(self.outdir, "error_files.json"), 'w') as ef:
-                json.dump(failed_files, ef, indent=4)
-        
-        with open(pjoin(self.outdir, "process.log"), 'w') as outf:
-            messages = [f"Total file to process in this dataset: {self.fileno} \n",
-                        f"Successfully processed and wrote {success} files \n", 
-                        f"Last written file index is {last_file} \n"]
-            outf.writelines(messages)
-        
-        self.transferfile("process.log")
-        self.transferfile("error_files.json")
+        if self.rtcfg.LOG_OUTPUT: 
+            outputpath = pjoin(self.outdir, 'daskjob.out')
+            with open(outputpath, 'a') as fi:
+                for result in results: fi.write(str(result)+"\n")
+            if self.rtcfg.TRANSFER:
+                self.transferfile('daskjob.out')
+        return results, errors
         
     def transferfile(self, fn):
         """Transfer output by a processor to a final destination."""

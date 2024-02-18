@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 # adapted from: https://github.com/bu-cms/bucoffea/blob/83daf25146d883df5131d0b50a51c0a6512d7c5f/bucoffea/helpers/dasgowrapper.py
 
-import subprocess
-import json
-import os
+import json, os, sys, subprocess
 from tqdm import tqdm
 import uproot
+import ROOT
 
 def dasgo_query(query, json=False):
     cmd = ["dasgoclient", "--query", query]
@@ -30,7 +29,7 @@ def xrootd_format(fpath, prefix):
         return f"file://{fpath}"
 
 def query_MCsamples(dspath, outputfn, must_include=None, prefix='local'):
-    """ Query xrootd to find all filepaths to a given set of dataset names.
+    """ Query xrootd to find all filepaths to a given set of dataset names and find corresponding xsection for the dataset.
     :param dspath: path to json file containing dataset names
     :type dspath: string
     :param outputfn: path to output json file containing full dataset paths
@@ -40,13 +39,16 @@ def query_MCsamples(dspath, outputfn, must_include=None, prefix='local'):
         dsjson = json.load(ds)
 
     complete_dict = {}
+    query_dsstr = lambda ds: "".join(["dataset=", ds])
+    query_fistr = lambda ds: "".join(["file dataset=", ds])
 
-    for name, sample_list in tqdm(dsjson.items(), f"finding samples ..."):
-        # make dataset query for a list of dataset in one process
-        query_ds = lambda ds: "".join(["dataset=", ds])
-        ds_query_list = list(map(query_ds, sample_list))
-        to_flatten = list(map(dasgo_query, ds_query_list))
-        dslist = [item for sublist in to_flatten for item in sublist]
+    for name, dataset_list in tqdm(dsjson.items(), f"finding samples ..."):
+        for dataset in dataset_list:
+            dsnames = dasgo_query(query_dsstr(dataset))
+            filelist = []
+            for ds in dsnames:
+                filelist += dasgo_query(query_dsstr(ds))
+
         if must_include is not None:
             dslist = [ds for ds in dslist if must_include in ds]
         query_file = lambda ds: "".join(["file dataset=", ds])
@@ -59,17 +61,29 @@ def query_MCsamples(dspath, outputfn, must_include=None, prefix='local'):
     with open(outputfn, 'w') as jsonfile:
         json.dump(complete_dict, jsonfile)
 
+def info_dict(file_path, tree_name):
+    """Return the number of raw events and weighted events of a file in a json dictionary"""
+    nevents_wgt = 0
+    nevents_raw = 0
+    with uproot.open(file_path) as f:
+        t = f.get("Runs")
+        nevents_wgt = t["genEventSumw"].array(library="np").sum()
+        nevents_raw = f.get("Events").num_entries
+        result_dict = {
+            file_path: {
+                "weighted_events": nevents_wgt,
+                "raw_events": nevents_raw
+            }
+        }
+    return result_dict
+
 def preprocess_files(inputfn, step_size=10000, tree_name="Events", process_name = "DYJets"):
-    def generate_dict(file_path, tree_name, step_size):
-    # Open the ROOT file and access the tree
+    def chunkfile_dict(file_path, tree_name, step_size):
         with uproot.open(file_path) as file:
             print("=============", file_path, "=============")
             tree = file[tree_name]
-            # Get the number of events
             n_events = tree.num_entries
-            # Create steps based on the number of events
             steps = [[i, min(i + step_size, n_events)] for i in range(0, n_events, step_size)]
-            # Construct the dictionary
             result_dict = {
                 file_path: {
                     "object_path": tree_name,
