@@ -1,7 +1,7 @@
 import uproot as uproot
 import json
 from tqdm import tqdm
-from updatepath import dasgo_query, xrootd_format
+from data.datacollect import dasgo_query, xrootd_format
 
 def find_branches(file_path, object_list):
     """ Return a list of branches for each object in object_list

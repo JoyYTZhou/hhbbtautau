@@ -8,7 +8,7 @@ print_env_variable() { var="$1"; [ -z "${!var}" ] && echo "$var is not set" || e
 export IS_CONDOR=true
 print_env_variable "IS_CONDOR"
 
-source lpcsetup.sh
+source scripts/lpcsetup.sh
 
 # if receiving arguments <datasetname>
 # check if condor directory exists
