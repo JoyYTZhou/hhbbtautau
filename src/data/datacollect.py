@@ -4,7 +4,7 @@
 import json, os, sys, subprocess
 from tqdm import tqdm
 import uproot
-import ROOT
+from itertools import chain
 
 def dasgo_query(query, json=False):
     cmd = ["dasgoclient", "--query", query]
@@ -28,8 +28,9 @@ def xrootd_format(fpath, prefix):
     else:
         return f"file://{fpath}"
 
-def query_MCsamples(dspath, outputfn, must_include=None, prefix='local'):
-    """ Query xrootd to find all filepaths to a given set of dataset names and find corresponding xsection for the dataset.
+def query_MCsamples(dspath, outputfn):
+    """ Query xrootd to find all filepaths to a given set of dataset names.
+    the result is saved to a new file.
     :param dspath: path to json file containing dataset names
     :type dspath: string
     :param outputfn: path to output json file containing full dataset paths
@@ -38,44 +39,71 @@ def query_MCsamples(dspath, outputfn, must_include=None, prefix='local'):
     with open(dspath, 'r') as ds:
         dsjson = json.load(ds)
 
-    complete_dict = {}
-    query_dsstr = lambda ds: "".join(["dataset=", ds])
     query_fistr = lambda ds: "".join(["file dataset=", ds])
 
-    for name, dataset_list in tqdm(dsjson.items(), f"finding samples ..."):
-        for dataset in dataset_list:
-            dsnames = dasgo_query(query_dsstr(dataset))
-            filelist = []
-            for ds in dsnames:
-                filelist += dasgo_query(query_dsstr(ds))
-
-        if must_include is not None:
-            dslist = [ds for ds in dslist if must_include in ds]
-        query_file = lambda ds: "".join(["file dataset=", ds])
-        file_query_list = list(map(query_file, dslist))
-        to_flatten = list(map(dasgo_query, file_query_list))
-        filelist = [item for sublist in to_flatten for item in sublist]
-        filelist_xrootd = list(map(lambda file_name: xrootd_format(file_name, prefix), filelist))
-        complete_dict.update({name: filelist_xrootd})
+    for name, dataset_dict in tqdm(dsjson.items(), f"finding samples ..."):
+        for ds, ds_dict in dataset_dict.items():
+            filelist = list(chain.from_iterable(dasgo_query(query_fistr(s)) for s in ds_dict["string"]))
+            print(filelist)
+            ds_dict["filelist"] = filelist
 
     with open(outputfn, 'w') as jsonfile:
-        json.dump(complete_dict, jsonfile)
+        json.dump(dsjson, jsonfile, indent=4)
 
-def info_dict(file_path, tree_name):
-    """Return the number of raw events and weighted events of a file in a json dictionary"""
+def add_weight(dspath, outputdir, dsname=None):
+
+    with open(dspath, 'r') as ds:
+        dsjson = json.load(ds)
+
+    os.makedirs(outputdir, exist_ok=True)
+    if dsname is None:
+        searchitems = dsjson
+    elif isinstance(dsjson, str):
+        searchitems = {dsname: dsjson[str]}
+    else: 
+        raise ValueError("Needs to pass a dataset name!")
+
+    for name, dataset_dict in tqdm(searchitems.items(), f"finding samples ..."):
+        for ds, ds_dict in dataset_dict.items():
+            print(f"locating {ds}")
+            wgt_tot = 0
+            raw_tot = 0
+            success_list = []
+            failed_list = []
+            for file in tqdm(ds_dict['filelist']):
+                xrd_file = xrootd_format(file, 'local')
+                result = info_file(xrd_file)
+                if isinstance(result, str): 
+                    failed_list.append(xrd_file)
+                    continue
+                n_raw, n_wgt = result
+                wgt_tot += n_wgt
+                raw_tot += n_raw
+                success_list.append(xrd_file)
+            ds_dict['filelist'] = success_list
+            ds_dict['failedlist'] = failed_list
+            ds_dict["Raw Events"] = raw_tot
+            ds_dict["Wgt Events"] = wgt_tot
+            ds_dict["Per Event"] = ds_dict['xsection']/wgt_tot
+        fipath = os.path.join(outputdir, f'{name}.json')
+        with open(fipath, 'w') as jsonfile:
+            json.dump(dataset_dict, jsonfile, indent=4)
+
+    
+def info_file(file):
+    """Return the number of raw events and weighted events of a file in a json dictionary
+    with error handled."""
     nevents_wgt = 0
     nevents_raw = 0
-    with uproot.open(file_path) as f:
-        t = f.get("Runs")
-        nevents_wgt = t["genEventSumw"].array(library="np").sum()
-        nevents_raw = f.get("Events").num_entries
-        result_dict = {
-            file_path: {
-                "weighted_events": nevents_wgt,
-                "raw_events": nevents_raw
-            }
-        }
-    return result_dict
+    try: 
+        with uproot.open(file) as f:
+            t = f.get("Runs")
+            nevents_wgt = t["genEventSumw"].array(library="np").sum()
+            nevents_raw = f.get("Events").num_entries
+        return nevents_raw, nevents_wgt
+    except Exception as e:
+        message = f"Failed to find {file}: {e}"
+        return message
 
 def preprocess_files(inputfn, step_size=10000, tree_name="Events", process_name = "DYJets"):
     def chunkfile_dict(file_path, tree_name, step_size):
@@ -101,7 +129,7 @@ def preprocess_files(inputfn, step_size=10000, tree_name="Events", process_name 
     result = {}
     for path in tqdm(pathlist, desc=f"Finding sample {ds}"):
         try:
-            result.update(generate_dict(path, tree_name, step_size))
+            result.update(chunkfile_dict(path, tree_name, step_size))
         except Exception as e:
             print(f"Failed to find {path}: {e}")
             failed_dict.update({ds: path})
@@ -153,9 +181,9 @@ def divide_samples(inputfn, outputfn, dict_size=5):
         json.dump(complete_dict, jsonfile)
 
 if __name__ == "__main__":
-    # query_MCsamples("querystring.json", "datasets_global.json", "Run3Summer22EE", prefix='global')
-    preprocess_files("datasets_local.json", step_size=200000, process_name="WZZ")
-    print("Jobs finished!")
+    # query_MCsamples("data.json", "data_file.json")
+    add_weight("data_file.json", "preprocessed")
+    # print("Jobs finished!")
 
 
 
