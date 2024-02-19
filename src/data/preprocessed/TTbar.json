@@ -1,0 +1,31 @@
+{
+    "TTToSemiLeptonic": {
+        "string": [
+            "/TTToSemiLeptonic_TuneCP5_13p6TeV-powheg-pythia8/Run3Winter22NanoAOD-FlatPU0to70_pilot_122X_mcRun3_2021_realistic_v9-v1/NANOAODSIM"
+        ],
+        "xsection": 365.34,
+        "filelist": [
+            "root://cmsxrootd.fnal.gov//store/mc/Run3Winter22NanoAOD/TTToSemiLeptonic_TuneCP5_13p6TeV-powheg-pythia8/NANOAODSIM/FlatPU0to70_pilot_122X_mcRun3_2021_realistic_v9-v1/30000/c22f8dff-49d2-465e-9d21-5f6179305d0b.root",
+            "root://cmsxrootd.fnal.gov//store/mc/Run3Winter22NanoAOD/TTToSemiLeptonic_TuneCP5_13p6TeV-powheg-pythia8/NANOAODSIM/FlatPU0to70_pilot_122X_mcRun3_2021_realistic_v9-v1/30000/00e3592d-cbca-449b-b6ef-7e7563ae02cd.root",
+            "root://cmsxrootd.fnal.gov//store/mc/Run3Winter22NanoAOD/TTToSemiLeptonic_TuneCP5_13p6TeV-powheg-pythia8/NANOAODSIM/FlatPU0to70_pilot_122X_mcRun3_2021_realistic_v9-v1/30000/1fa8ebbc-f09a-4244-b41f-5125c5ed9f48.root",
+            "root://cmsxrootd.fnal.gov//store/mc/Run3Winter22NanoAOD/TTToSemiLeptonic_TuneCP5_13p6TeV-powheg-pythia8/NANOAODSIM/FlatPU0to70_pilot_122X_mcRun3_2021_realistic_v9-v1/30000/5b15d099-e4e9-4d00-946e-e8ab14c85114.root",
+            "root://cmsxrootd.fnal.gov//store/mc/Run3Winter22NanoAOD/TTToSemiLeptonic_TuneCP5_13p6TeV-powheg-pythia8/NANOAODSIM/FlatPU0to70_pilot_122X_mcRun3_2021_realistic_v9-v1/30000/98dec374-b9cb-4725-9838-422a5968c486.root",
+            "root://cmsxrootd.fnal.gov//store/mc/Run3Winter22NanoAOD/TTToSemiLeptonic_TuneCP5_13p6TeV-powheg-pythia8/NANOAODSIM/FlatPU0to70_pilot_122X_mcRun3_2021_realistic_v9-v1/30000/c0b2b9d8-3d33-4525-9d13-d6eef63e6fd4.root",
+            "root://cmsxrootd.fnal.gov//store/mc/Run3Winter22NanoAOD/TTToSemiLeptonic_TuneCP5_13p6TeV-powheg-pythia8/NANOAODSIM/FlatPU0to70_pilot_122X_mcRun3_2021_realistic_v9-v1/30000/0ae57904-ccf5-423a-8e4c-fb0bfb3332e3.root",
+            "root://cmsxrootd.fnal.gov//store/mc/Run3Winter22NanoAOD/TTToSemiLeptonic_TuneCP5_13p6TeV-powheg-pythia8/NANOAODSIM/FlatPU0to70_pilot_122X_mcRun3_2021_realistic_v9-v1/30000/65df87f4-cf78-49cb-bd6f-db64c47212e8.root",
+            "root://cmsxrootd.fnal.gov//store/mc/Run3Winter22NanoAOD/TTToSemiLeptonic_TuneCP5_13p6TeV-powheg-pythia8/NANOAODSIM/FlatPU0to70_pilot_122X_mcRun3_2021_realistic_v9-v1/30000/b04e86ee-d29f-4df1-a1cd-085b2c441f9c.root",
+            "root://cmsxrootd.fnal.gov//store/mc/Run3Winter22NanoAOD/TTToSemiLeptonic_TuneCP5_13p6TeV-powheg-pythia8/NANOAODSIM/FlatPU0to70_pilot_122X_mcRun3_2021_realistic_v9-v1/2550000/2aaa46f2-f6a3-49be-a3e8-8b989b54a623.root",
+            "root://cmsxrootd.fnal.gov//store/mc/Run3Winter22NanoAOD/TTToSemiLeptonic_TuneCP5_13p6TeV-powheg-pythia8/NANOAODSIM/FlatPU0to70_pilot_122X_mcRun3_2021_realistic_v9-v1/2550000/8eafced7-427c-40e4-9c14-a6c0209cb1e9.root",
+            "root://cmsxrootd.fnal.gov//store/mc/Run3Winter22NanoAOD/TTToSemiLeptonic_TuneCP5_13p6TeV-powheg-pythia8/NANOAODSIM/FlatPU0to70_pilot_122X_mcRun3_2021_realistic_v9-v1/2550000/cb7631a5-50a2-42f7-a7a7-0172add826ef.root",
+            "root://cmsxrootd.fnal.gov//store/mc/Run3Winter22NanoAOD/TTToSemiLeptonic_TuneCP5_13p6TeV-powheg-pythia8/NANOAODSIM/FlatPU0to70_pilot_122X_mcRun3_2021_realistic_v9-v1/2550000/3f56ee9b-8cb3-47b5-87a6-e11526ff691b.root",
+            "root://cmsxrootd.fnal.gov//store/mc/Run3Winter22NanoAOD/TTToSemiLeptonic_TuneCP5_13p6TeV-powheg-pythia8/NANOAODSIM/FlatPU0to70_pilot_122X_mcRun3_2021_realistic_v9-v1/2550000/3a867217-160b-497a-b10a-280cc9984590.root",
+            "root://cmsxrootd.fnal.gov//store/mc/Run3Winter22NanoAOD/TTToSemiLeptonic_TuneCP5_13p6TeV-powheg-pythia8/NANOAODSIM/FlatPU0to70_pilot_122X_mcRun3_2021_realistic_v9-v1/2550000/b88292eb-09c5-4572-8795-9addb636d2b3.root",
+            "root://cmsxrootd.fnal.gov//store/mc/Run3Winter22NanoAOD/TTToSemiLeptonic_TuneCP5_13p6TeV-powheg-pythia8/NANOAODSIM/FlatPU0to70_pilot_122X_mcRun3_2021_realistic_v9-v1/2550000/5ff7ea7b-4fd6-4daf-b34e-c0fd6591a5b8.root",
+            "root://cmsxrootd.fnal.gov//store/mc/Run3Winter22NanoAOD/TTToSemiLeptonic_TuneCP5_13p6TeV-powheg-pythia8/NANOAODSIM/FlatPU0to70_pilot_122X_mcRun3_2021_realistic_v9-v1/2550000/5e09b678-90fb-4743-90e4-a976d0dd3323.root"
+        ],
+        "failedlist": [],
+        "Raw Events": 9406668,
+        "Wgt Events": 3139257047.736,
+        "Per Event": 1.1637785451926576e-07
+    }
+}
