@@ -56,8 +56,8 @@ class Processor:
         for dataset, info in self.metadata.items():
             logging.info(f"Processing {dataset}...")
             self.dsname = dataset
-            # self.dasklineup(info['filelist'], client)
-            self.runfile(info['filelist'][0], 0)
+            self.dasklineup(info['filelist'], client)
+            logging.info("Execution finished!")
         
     def setdata(self):
         with open(self.rtcfg.INPUTFILE_PATH, 'r') as samplepath:
@@ -186,7 +186,7 @@ class Processor:
     def dasklineup(self, filelist, client):
         """Run all files for one dataset through creating task submissions, with errors handled and collected.
         logging statements from runfile() are centrally collected here into one file.""" 
-        futures = [client.submit(self.runfile(), fn, i) for i, fn in enumerate(filelist)]
+        futures = [client.submit(self.runfile, fn, i) for i, fn in enumerate(filelist)]
 
         for future, result in as_completed(futures, with_results=True, raise_errors=False):
             if isinstance(result, Exception):
