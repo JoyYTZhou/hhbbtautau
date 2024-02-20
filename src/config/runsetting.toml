@@ -11,7 +11,6 @@ TRANSFER = false
 
 [LPCLOCAL]
 IS_CONDOR = false
-TEST_MODE = true
 PROCESS_NAME = "ggF"
 CHANNEL_INDX = 3
 CONDORPATH = "root://cmseos.fnal.gov//store/user/joyzhou/output"
@@ -23,13 +22,12 @@ TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
 
 [LPCCONDOR]
 IS_CONDOR = true
-TEST_MODE = false
 PROCESS_NAME = "ggF"
 CHANNEL_INDX = 3
 CONDORPATH = "root://cmseos.fnal.gov//store/user/joyzhou/output"
 INPUTFILE_PATH = "@format src/data/preprocessed/{this.PROCESS_NAME}.json"
 TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
-OUTPUTDIR_PATH = "outputs/{this.PROCESS_NAME}"
+OUTPUTDIR_PATH = "@format outputs/{this.PROCESS_NAME}"
 SPAWN_CLIENT = true
 MIN_WORKER = 1
 MAX_WORKER = 10
