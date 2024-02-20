@@ -18,21 +18,17 @@ def main():
     print("successfully imported everything!")
 
     proc = Processor(rs)
-
-    if rs.TEST_MODE:
-        proc.runmultiple(20,21)
-    # else:
-    #     proc.runmultiple()
-        
+    
+    if rs.SPAWN_CLIENT:
+        client = spawnclient()
+        proc.rundata(client)
 
     end_time = time.time()
     print(f"Execution time is {end_time - start_time} seconds")
+    if rs.SPAWN_CLIENT: client.close()
 
 if __name__ == '__main__':
-    if rs.SPAWN_CLIENT:
-        client = spawnclient()
     main()
-    if rs.SPAWN_CLIENT: client.close()
 
 
 

@@ -33,46 +33,34 @@ class Processor:
     """
     def __init__(self, rt_cfg):
         self._channelseq = sel_cfg.signal.channelnames
-        self._data = None
+        self._metadata = None
         self._rtcfg = rt_cfg
-        self._dsname = self.rtcfg.PROCESS_NAME
         self._channelnum = self.rtcfg.CHANNEL_NO
         self._channelsel = [sel_cfg.signal[f'channel{i+1}'] for i in range(self.channelnum)]
         self._commonsel = sel_cfg.signal.commonsel
-        self.outdir = self.rtcfg.OUTPUTDIR_PATH
-        self.fileno = 0
         self.treename = "Events"
+        self.dsname = None
+        self.outdir = self.rtcfg.OUTPUTDIR_PATH
         if self.rtcfg.TRANSFER: print("File transfer in real time!")
-
+    
     @property
-    def data(self):
-        return self._data
+    def metadata(self):
+        return self._metadata
 
     @property
     def rtcfg(self):
         return self._rtcfg
 
+    def rundata(self, client):
+        self.setdata()
+        for dataset, info in self.metadata.items():
+            print(f"Processing {dataset}...")
+            self.dsname = dataset
+            self.dasklineup(info['filelist'], client)
+        
     def setdata(self):
-        """Generate chunked input to uproot.dask()"""
         with open(self.rtcfg.INPUTFILE_PATH, 'r') as samplepath:
-            fileset = json.load(samplepath)
-            if self.rtcfg.MODE == "unchunked":
-                self._data = fileset[self.rtcfg.PROCESS_NAME]
-                self.fileno = len(self.data)
-            else:
-                def chunker(iterable, size):
-                    iterator = iter(iterable)
-                    for first in iterator:  # stops when iterator is depleted
-                        yield itertools.chain([first], itertools.islice(iterator, size - 1))
-                filelist = list(fileset.keys())
-                self.fileno = len(self.filelist)
-                self._data = [{file_name: self.treename for file_name in chunk} for chunk in chunker(filelist, self.rtcfg.FILELENGTH)]
-        print(f"There are {self.fileno} files to process in this dataset")
-                
-
-    @property
-    def dsname(self):
-        return self._dsname
+            self._metadata = json.load(samplepath)
 
     @property
     def channelnum(self):
@@ -127,6 +115,9 @@ class Processor:
             evtsel = EventSelections(lepcfg, jetcfg, cfgname)
             evtsel.lepselsetter(events)
             passed, vetoed = evtsel.objselcaller(events)
+            if write_npz:
+                npzname = pjoin(self.outdir, f'cutflow_{suffix}_{cfgname}.npz')
+                evtsel.cfobj.to_npz(npzname)
             row_names = evtsel.cutflow.labels
             if write_method == 'dask':
                 self.writedask(passed, i, suffix)
@@ -182,21 +173,7 @@ class Processor:
         if self.rtcfg.TRANSFER:
             dest_path = pjoin(self.rtcfg.TRANSFER_PATH, f"{chcfg.name}{suffix}.csv")
             result = cpcondor(obj_path, dest_path, is_file=True)
-
-    def res_to_df(self, cutflow_list):
-        """Return a df (N cuts x K channels) with cutflow numbers"""
-        df_list = [None] * len(cutflow_list)
-        for i, cfres in enumerate(cutflow_list):
-            header = self.channelseq[i]
-            df_list[i] = self.cf_to_df()
-            row_names = cfres.labels
-            number = dask.compute(cfres.nevcutflow)[0]
-            df = pd.DataFrame(data = number, columns = [header])
-            df_list[i] = df
-        df_concat = pd.concat(df_list, axis=1)
-        df_concat.index = row_names
-        return df_concat
-    
+   
     def pickupfailed(self, indexi, indexf):
         self.setdata()
         if isinstance(self.data, list):
@@ -226,10 +203,10 @@ class Processor:
  
         pass
  
-    def dasklineup(self, client):
-        """Run all files from data through creating task submissions, with errors handled and collected.
-        print statements from runfile() are centrally collected here into one file."""
-        futures = [client.submit(self.runfile(), fn, i) for i, fn in enumerate(self.data)]
+    def dasklineup(self, filelist, client):
+        """Run all files for one dataset through creating task submissions, with errors handled and collected.
+        print statements from runfile() are centrally collected here into one file.""" 
+        futures = [client.submit(self.runfile(), fn, i) for i, fn in enumerate(filelist)]
         
         results = []
         errors = []
@@ -323,7 +300,8 @@ class EventSelections:
 
         if not tau.veto:
             tau_mask = (tau.ptmask(opr.ge) & \
-                        tau.absetamask(opr.le))
+                        tau.absetamask(opr.le) & \
+                        tau.osmask())
             tau.filter_dakzipped(tau_mask)
             tau_nummask = tau.numselmask(opr.eq)
         else: tau_nummask = tau.vetomask()
@@ -376,11 +354,6 @@ class EventSelections:
         number = dask.compute(self.cutflow.nevcutflow)[0]
         df_cf = pd.DataFrame(data = number, columns = [self.channelname])
         return df_cf
-    
-    def cfobj_to_npz(self):
-        pass
-
-
 
 class Object():
     def __init__(self, name, events, objcfg, selcfg):
@@ -489,6 +462,9 @@ class Object():
 
     def bdtidmask(self, op):
         return self.custommask("bdtid", op)
+    
+    def osmask(self):
+        return dak.prod(self.dakzipped['charge'], axis=1) < 0 
 
     def fourvector(self, events, sort=True, sortname='pt'):
         object_ak = ak.zip({
@@ -504,7 +480,6 @@ class Object():
 
     def overlap(self, altobject):
         pass
-
 
     def dRoverlap(self, altobject):
         pass

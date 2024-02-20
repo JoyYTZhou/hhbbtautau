@@ -85,9 +85,7 @@ default:
           idvse: 2
           dz: 0.2
           count: 2
-        pair:
-          name: "TT"
-          OS: True
+          OS: true
     commonsel:
       Jet:
         pt: 20
