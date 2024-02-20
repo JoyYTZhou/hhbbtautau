@@ -26,16 +26,12 @@ class Processor:
     Attributes:
         channelseq (list): list of channel names in order of selection preference
         data (dict): dictionary of files
-        channelnum (int): number of channels
-        channelsel (list): list of selection configurations specific to channels
         commonsel (dict): dictionary of common selection configurations
     """
     def __init__(self, rt_cfg):
-        self._channelseq = sel_cfg.signal.channelnames
-        self._metadata = None
         self._rtcfg = rt_cfg
-        self._channelnum = self.rtcfg.CHANNEL_NO
-        self._channelsel = [sel_cfg.signal[f'channel{i+1}'] for i in range(self.channelnum)]
+        self._metadata = None
+        self._channelsel = sel_cfg.signal[f'channel{rt_cfg.CHANNEL_INDX}']
         self._commonsel = sel_cfg.signal.commonsel
         self.treename = "Events"
         self.dsname = None
@@ -66,10 +62,6 @@ class Processor:
     def setdata(self):
         with open(self.rtcfg.INPUTFILE_PATH, 'r') as samplepath:
             self._metadata = json.load(samplepath)
-
-    @property
-    def channelnum(self):
-        return self._channelnum
 
     @property
     def channelsel(self):
@@ -110,48 +102,40 @@ class Processor:
         :return: cutflow dataframe 
         """
         logging.info("Starting task for file: %s", filename)
-        df_list = [None] * self.channelnum
         events = self.loadfile({filename: self.treename})
         output = []
-        for i in range(self.channelnum):
-            lepcfg = self.channelsel[i].selections
-            jetcfg = self.commonsel
-            cfgname = self.channelseq[i]
-            evtsel = EventSelections(lepcfg, jetcfg, cfgname)
-            passed, vetoed = evtsel.select(events)
-            if write_npz:
-                npzname = pjoin(self.outdir, f'cutflow_{suffix}_{cfgname}.npz')
-                evtsel.cfobj.to_npz(npzname)
-            row_names = evtsel.cutflow.labels
-            if write_method == 'dask':
-                self.writedask(passed, i, suffix)
-            elif write_method == 'dataframe':
-                self.writeobj(passed, i, suffix)
-            else:
-                pass
-            df_list[i] = evtsel.cf_to_df()
-            events = vetoed
-        gc.collect()
-        df_concat = pd.concat(df_list, axis=1)
-        df_concat.index = row_names
+        lepcfg = self.channelsel.selections
+        jetcfg = self.commonsel
+        channelname = self.channelsel.name
+        evtsel = EventSelections(lepcfg, jetcfg, channelname)
+        passed, vetoed = evtsel.select(events)
+        if write_npz:
+            npzname = pjoin(self.outdir, f'cutflow_{suffix}_{channelname}.npz')
+            evtsel.cfobj.to_npz(npzname)
+        row_names = evtsel.cutflow.labels
+        if write_method == 'dask':
+            self.writedask(passed, channelname, suffix)
+        elif write_method == 'dataframe':
+            self.writeobj(passed, channelname, suffix)
+        else:
+            pass
 
         localpath = pjoin(self.outdir, f'cutflow_{suffix}.csv')
-        df_concat.to_csv(localpath)
+        evtsel.cf_to_df().to_csv(localpath)
 
         if self.rtcfg.TRANSFER:
             condorpath = f'{self.rtcfg.TRANSFER_PATH}/cutflow_{suffix}.csv'
             result = cpcondor(localpath, condorpath, is_file=True)
             return result
 
-    def writedask(self, passed, index, suffix, fields=None):
+    def writedask(self, passed, prefix, suffix, fields=None):
         """Wrapper around uproot.dask_write(),
         transfer all root files generated to a destination location."""
         logging.info("Writing results.....")
-        chcfg = self.channelsel[index]
         if fields is None:
-            dir_name = pjoin(self.outdir, chcfg.name, suffix)
-            dir_name.mkdir(parents=True, exist_ok=True)
-            uproot.dask_write(passed, destination=dir_name, compute=True, prefix=f'{self.dsname}_{suffix}_{chcfg.name}')
+            dir_name = pjoin(self.outdir, prefix)
+            checkpath(dir_name)
+            uproot.dask_write(passed, destination=dir_name, compute=True, prefix=f'{self.dsname}_{prefix}_{suffix}')
         else:
             pass
         
@@ -328,7 +312,7 @@ class EventSelections:
         """
         row_names = self.cutflow.labels
         number = dask.compute(self.cutflow.nevcutflow)[0]
-        df_cf = pd.DataFrame(data = number, columns = [self.channelname])
+        df_cf = pd.DataFrame(data = number, columns = [self.channelname], index=row_names)
         return df_cf
 
 class Object():
