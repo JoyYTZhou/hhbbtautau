@@ -299,11 +299,11 @@ class EventSelections:
         fatjet_mask = (fatjet.custommask("mass", opr.ge))
         fatjet_nummask = fatjet.numselmask(opr.ge)
 
-        self.objsel.add_multiple_events({"JetSelections": jet_nummask,
+        self.objsel.add_multiple({"JetSelections": jet_nummask,
                                           "FatJetSelections": fatjet_mask})
         return None
 
-    def objselcaller(self, events):
+    def callobjsel(self, events):
         """Apply all the selections in line on the events
         :return: passed events, vetoed events
         """
@@ -316,8 +316,8 @@ class EventSelections:
     def select(self, events):
         """Apply all selections in selection config object on the events."""
         self.selectlep(events)
-        self.selectjet(events)
-        passed, vetoed = self.objselcaller(passed)
+        # self.selectjet(events)
+        passed, vetoed = self.callobjsel(events)
         return passed, vetoed
 
     def cf_to_df(self):
