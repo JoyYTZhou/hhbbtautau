@@ -3,7 +3,6 @@
 import awkward as ak
 import dask_awkward as dak
 import dask
-from dask import delayed
 from dask.distributed import Client, as_completed
 from coffea.analysis_tools import PackedSelection
 from coffea.nanoevents import NanoEventsFactory
@@ -11,7 +10,7 @@ from coffea.nanoevents.schemas import BaseSchema
 import vector as vec
 import json as json
 import operator as opr
-import numpy as np
+import logging
 import itertools
 import pandas as pd
 import gc
@@ -41,7 +40,12 @@ class Processor:
         self.treename = "Events"
         self.dsname = None
         self.outdir = self.rtcfg.OUTPUTDIR_PATH
-        if self.rtcfg.TRANSFER: print("File transfer in real time!")
+        checkpath(self.outdir)
+        if self.rtcfg.TRANSFER: logging.info("File transfer in real time!")
+        logging.basicConfig(filename=f"{rt_cfg.OUTPUTDIR_PATH}/daskworker.log", 
+                            filemode='a', 
+                            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', 
+                            level=logging.INFO)
     
     @property
     def metadata(self):
@@ -54,9 +58,10 @@ class Processor:
     def rundata(self, client):
         self.setdata()
         for dataset, info in self.metadata.items():
-            print(f"Processing {dataset}...")
+            logging.info(f"Processing {dataset}...")
             self.dsname = dataset
-            self.dasklineup(info['filelist'], client)
+            # self.dasklineup(info['filelist'], client)
+            self.runfile(info['filelist'][0], 0)
         
     def setdata(self):
         with open(self.rtcfg.INPUTFILE_PATH, 'r') as samplepath:
@@ -98,23 +103,22 @@ class Processor:
             **kwargs
         ).events()
         return events
- 
-    @delayed
+    
     def runfile(self, filename, suffix, write_method='dask', write_npz=False):
         """Run test selections on a single file dict.
         :param write_method: method to write the output
         :return: cutflow dataframe 
         """
+        logging.info("Starting task for file: %s", filename)
         df_list = [None] * self.channelnum
-        events = self.loadfile(filename)
+        events = self.loadfile({filename: self.treename})
+        output = []
         for i in range(self.channelnum):
-            print(f"Running selection for channel {self.channelseq[i]}")
             lepcfg = self.channelsel[i].selections
             jetcfg = self.commonsel
             cfgname = self.channelseq[i]
             evtsel = EventSelections(lepcfg, jetcfg, cfgname)
-            evtsel.lepselsetter(events)
-            passed, vetoed = evtsel.objselcaller(events)
+            passed, vetoed = evtsel.select(events)
             if write_npz:
                 npzname = pjoin(self.outdir, f'cutflow_{suffix}_{cfgname}.npz')
                 evtsel.cfobj.to_npz(npzname)
@@ -140,7 +144,9 @@ class Processor:
             return result
 
     def writedask(self, passed, index, suffix, fields=None):
-        """Wrapper around uproot.dask_write()"""
+        """Wrapper around uproot.dask_write(),
+        transfer all root files generated to a destination location."""
+        logging.info("Writing results.....")
         chcfg = self.channelsel[index]
         if fields is None:
             dir_name = pjoin(self.outdir, chcfg.name, suffix)
@@ -175,27 +181,17 @@ class Processor:
             result = cpcondor(obj_path, dest_path, is_file=True)
    
     def pickupfailed(self, indexi, indexf):
-        self.setdata()
-        if isinstance(self.data, list):
-            runitems = self.data
-        elif isinstance(self.data, dict):
-            if (indexi==0 and indexf is None):
-                runitems = enumerate(self.data.items())
-            else:
-                enumerated_items = enumerate(self.data.items())
-                runitems = itertools.islice(enumerated_items, indexi, indexf) 
-
         success = 0 
         failed_files = {}
         last_file = 0
-        for i, (filename, partitions) in enumerate(runitems):
-            print(f"Running {filename} ===================")
+        for i, (filename, partitions) in enumerate(self.data):
+            logging.info(f"Running {filename} ===================")
             try:
                 cf_df = self.singlerun({filename: partitions}, suffix=i)
             except OSError as e:
                 failed_files.update({filename: e.strerror})
-                print(f"Caught an OSError while processing file {i}")
-                print("==========================")
+                logging.info(f"Caught an OSError while processing file {i}")
+                logging.info("==========================")
                 print(filename)
                 print("==========================")
                 print(e.strerror)
@@ -205,26 +201,14 @@ class Processor:
  
     def dasklineup(self, filelist, client):
         """Run all files for one dataset through creating task submissions, with errors handled and collected.
-        print statements from runfile() are centrally collected here into one file.""" 
+        logging statements from runfile() are centrally collected here into one file.""" 
         futures = [client.submit(self.runfile(), fn, i) for i, fn in enumerate(filelist)]
-        
-        results = []
-        errors = []
+
         for future, result in as_completed(futures, with_results=True, raise_errors=False):
             if isinstance(result, Exception):
-                print(f"Task failed with exception: {result}")
-                errors.append(result)
+                logging.error(f"Task failed with exception: {result}", exc_info=True)
             else:
-                print(f"Task succeeded with result: {result}")
-                results.append(result)
-
-        if self.rtcfg.LOG_OUTPUT: 
-            outputpath = pjoin(self.outdir, 'daskjob.out')
-            with open(outputpath, 'a') as fi:
-                for result in results: fi.write(str(result)+"\n")
-            if self.rtcfg.TRANSFER:
-                self.transferfile('daskjob.out')
-        return results, errors
+                logging.info(f"Task succeeded with result: {result}")
         
     def transferfile(self, fn):
         """Transfer output by a processor to a final destination."""
@@ -240,7 +224,6 @@ class EventSelections:
         self._channelname = cfgname
         self._lepselcfg = lepcfg
         self._jetselcfg = jetcfg
-        self._filtersel = None
         self.objsel = PackedSelection()
         self.cutflow = None
         self.cfobj = None
@@ -266,17 +249,10 @@ class EventSelections:
     def jetselcfg(self, value):
         self._jetselcfg = value
 
-    @property
-    def filtersel(self):
-        return self._filtersel
-    @filtersel.setter
-    def filtersel(self, value):
-        self._filtersel = value
 
-    def lepselsetter(self, events):
-        """Custom function to set the lepton selections for a given channel.
+    def selectlep(self, events):
+        """Custom function to set the lepton selections based on config.
         :param events: events loaded from a .root file
-        :type events: dask_awkward.lib.core.Array
         """
         electron = Object("Electron", events, output_cfg.Electron, self.lepselcfg.electron)
         muon = Object("Muon", events, output_cfg.Muon, self.lepselcfg.muon)
@@ -300,8 +276,7 @@ class EventSelections:
 
         if not tau.veto:
             tau_mask = (tau.ptmask(opr.ge) & \
-                        tau.absetamask(opr.le) & \
-                        tau.osmask())
+                        tau.absetamask(opr.le))
             tau.filter_dakzipped(tau_mask)
             tau_nummask = tau.numselmask(opr.eq)
         else: tau_nummask = tau.vetomask()
@@ -312,8 +287,9 @@ class EventSelections:
 
         return None
 
-    def jetselsetter(self, events):
-        """Custom function to select jet selections for a given channel."""
+    def selectjet(self, events):
+        """Jet selections based on configuration object. 
+        Create selections on jet objects alone."""
         jet = Object("Jet", events, output_cfg.Jet, self.jetselcfg.Jet)
         jet_mask = (jet.ptmask(opr.ge) & \
                     jet.absetamask(opr.le))
@@ -328,9 +304,8 @@ class EventSelections:
         return None
 
     def objselcaller(self, events):
-        """Call the lepton selection for a given channel.
+        """Apply all the selections in line on the events
         :return: passed events, vetoed events
-        :rtype: dask_awkward.lib.core.Array
         """
         passed = events[self.objsel.all()]
         vetoed = events[~(self.objsel.all())]
@@ -338,9 +313,10 @@ class EventSelections:
         self.cutflow = self.cfobj.result()
         return passed, vetoed
 
-    def setall(self, events):
-        self.lepselsetter(events)
-        self.jetselsetter(passed)
+    def select(self, events):
+        """Apply all selections in selection config object on the events."""
+        self.selectlep(events)
+        self.selectjet(events)
         passed, vetoed = self.objselcaller(passed)
         return passed, vetoed
 
@@ -411,7 +387,7 @@ class Object():
         """Take a dask zipped object, unzip it, compute it, flatten it into a dataframe
         """
         if self.veto is True:
-            print(f"Veto set for {self.name}.")
+            logging.info(f"Veto set for {self.name}.")
             return None
         computed, = dask.compute(self.dakzipped[dak.argsort(self.dakzipped[sortname], ascending=ascending)])
         dakarr_dict = {}

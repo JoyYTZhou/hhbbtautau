@@ -7,32 +7,6 @@ import os
 pjoin = os.path.join
 
 
-def evaluator_from_config(cfg):
-    """Initiates the SF evaluator and populates it with the right values
-
-    :param cfg: Configuration
-    :type cfg: DynaConf object
-    :return: Ready-to-use SF evaluator
-    :rtype: coffea.lookup_tools.evaluator
-    """
-    ext = extractor()
-
-    for sfname, definition in cfg.SF.items():
-        if not 'file' in definition:
-            continue
-        fpath = projectcoffea_path(definition['file'])
-
-        if fpath.endswith(".root"):
-            ext.add_weight_sets([f"{sfname} {definition['histogram']} {fpath}"])
-            ext.add_weight_sets([f"{sfname}_error {definition['histogram']}_error {fpath}"])
-        else:
-            continue
-
-    ext.finalize()
-
-    evaluator = ext.make_evaluator()
-    return evaluator
-
 def dphi(phi1, phi2):
     """Calculates delta phi between objects"""
     x = np.abs(phi1 - phi2)
@@ -51,12 +25,8 @@ def min_dphi_jet_met(jets, met_phi, njet=4, ptmin=30, etamax=2.4):
     :type njet: int, optional
     """
 
-    # Make sure that met_phi is not just a single float
-    # which can happen accidentally, but is not what
-    # we want.
     assert(met_phi.shape!=())
 
-    # Use the first njet jets with pT > ptmin
     jets=jets[(jets.pt>ptmin)&(jets.abseta < etamax)]
     jets = jets[:,:njet]
 
