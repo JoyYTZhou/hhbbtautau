@@ -11,7 +11,7 @@ logging.basicConfig(filename="daskworker.log",
                     level=logging.DEBUG)
 
 from analysis.helper import *
-from analysis.spawndask import *
+from config.selectionconfig import runsetting as rs
 
 def main():
     start_time = time.time()
@@ -24,6 +24,7 @@ def main():
     client = None 
 
     if rs.SPAWN_CLIENT:
+        from analysis.spawndask import spawnclient
         client = spawnclient()
 
     proc.rundata(client)
