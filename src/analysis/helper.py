@@ -2,6 +2,7 @@ import os
 import glob
 import subprocess
 from pathlib import Path
+import logging
 
 runcom = subprocess.run
 pjoin = os.path.join
@@ -12,11 +13,10 @@ def cpcondor(srcpath, destpath, is_file=True):
 
     comstr = f'xrdcp -f {srcpath} {destpath}' if is_file else f'xrdcp -r {srcpath} {destpath}'
     result = runcom(comstr, shell=True, capture_output=True, text=True)
-    if result.returncode==0: print("Transfer objects successful!")
+    if result.returncode==0: logging.debug("Transfer objects successful!")
     else: 
-        print("Transfer not successful! Here's the error message =========================")
-        print(result.stderr)
-    
+        logging.info(f"Transfer from {srcpath} to {destpath} not successful! Here's the error message =========================")
+        logging.info(result.stderr)
     return result
 
 def transferfiles(srcpath, destpath):
@@ -35,9 +35,9 @@ def checkcondorpath(dirname):
     proc = subprocess.run(check_dir_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     if proc.returncode == 0:
-        print(f"The directory {dirname} already exists.")
+        logging.debug(f"The directory {dirname} already exists.")
     else:
-        print(f"Creating directory {dirname}.")
+        logging.info(f"Creating directory {dirname}.")
         subprocess.run(create_dir_cmd, shell=True)
     
 def checkpath(pathstr):
@@ -45,8 +45,8 @@ def checkpath(pathstr):
     path = Path(pathstr) 
     if not path.exists():
         path.mkdir(parents=True, exist_ok=True)
-        print(f"Created directory: {path}")
+        logging.info(f"Created directory: {path}")
     else:
-        print(f"Directory already exists: {path}")
+        logging.debug(f"Directory already exists: {path}")
 
 

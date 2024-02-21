@@ -25,7 +25,7 @@ def spawnCondor():
     }
     cluster.adapt(minimum=rs.MIN_WORKER, maximum=rs.MAX_WORKER)
     client = Client(cluster)
-    print("One client created!")
+    print("One client created in LPC Condor!")
     print("===================================")
     print(client)
     return client
@@ -35,7 +35,7 @@ def spawnLocal():
     cluster = LocalCluster(processes=False, threads_per_worker=2)
     cluster.adapt(minimum=0, maximum=6)
     client = Client(cluster)
-    print("successfully created a dask client!")
+    print("successfully created a dask client in local cluster!")
     print("===================================")
     print(client)
     return client

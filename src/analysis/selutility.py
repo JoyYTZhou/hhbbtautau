@@ -37,12 +37,12 @@ class Processor:
         self.dsname = None
         self.outdir = self.rtcfg.OUTPUTDIR_PATH
         checkpath(self.outdir)
-        if self.rtcfg.TRANSFER: logging.info("File transfer in real time!")
         logging.basicConfig(filename=f"{rt_cfg.OUTPUTDIR_PATH}/daskworker.log", 
                             filemode='a', 
                             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', 
-                            level=logging.INFO)
-    
+                            level=logging.DEBUG)
+        if self.rtcfg.TRANSFER: logging.info("File transfer in real time!")
+        
     @property
     def metadata(self):
         return self._metadata
@@ -51,33 +51,28 @@ class Processor:
     def rtcfg(self):
         return self._rtcfg
 
-    def rundata(self, client):
-        self.setdata()
-        for dataset, info in self.metadata.items():
-            logging.info(f"Processing {dataset}...")
-            self.dsname = dataset
-            self.dasklineup(info['filelist'], client)
-            logging.info("Execution finished!")
-        
-    def setdata(self):
-        with open(self.rtcfg.INPUTFILE_PATH, 'r') as samplepath:
-            self._metadata = json.load(samplepath)
-
     @property
     def channelsel(self):
         return self._channelsel
 
     @property
-    def channelseq(self):
-        return self._channelseq
-
-    @channelseq.setter
-    def channelseq(self, value):
-        self._channelseq = value
-
-    @property
     def commonsel(self):
         return self._commonsel
+
+    def rundata(self, client):
+        self.setdata()
+        for dataset, info in self.metadata.items():
+            logging.info(f"Processing {dataset}...")
+            self.dsname = dataset
+            # if client==None:
+            #     self.runfile(info['filelist'][0], 0)
+            # else:
+            #     self.dasklineup(info['filelist'], client)
+        logging.info("Execution finished!")
+        
+    def setdata(self):
+        with open(self.rtcfg.INPUTFILE_PATH, 'r') as samplepath:
+            self._metadata = json.load(samplepath)
 
     def loadfile(self, filename, **kwargs):
         """This is a wrapper function around a coffea load file from root function,
@@ -101,7 +96,7 @@ class Processor:
         :param write_method: method to write the output
         :return: cutflow dataframe 
         """
-        logging.info("Starting task for file: %s", filename)
+        logging.debug("Starting task for file: ", filename)
         events = self.loadfile({filename: self.treename})
         output = []
         lepcfg = self.channelsel.selections
@@ -114,6 +109,7 @@ class Processor:
             evtsel.cfobj.to_npz(npzname)
         row_names = evtsel.cutflow.labels
         if write_method == 'dask':
+            print("Writing to dask")
             self.writedask(passed, channelname, suffix)
         elif write_method == 'dataframe':
             self.writeobj(passed, channelname, suffix)
@@ -131,7 +127,7 @@ class Processor:
     def writedask(self, passed, prefix, suffix, fields=None):
         """Wrapper around uproot.dask_write(),
         transfer all root files generated to a destination location."""
-        logging.info("Writing results.....")
+        logging.debug("Writing results.....")
         if fields is None:
             dir_name = pjoin(self.outdir, prefix)
             checkpath(dir_name)
@@ -140,7 +136,7 @@ class Processor:
             pass
         
         if self.rtcfg.TRANSFER:
-            transferfiles(dir_name, self.TRANSFER_PATH)
+            transferfiles(dir_name, self.rtcfg.TRANSFER_PATH)
         
     def writeobj(self, passed, index, suffix):
         """This can be further simplified.I do not like this function...
@@ -180,9 +176,12 @@ class Processor:
                 print("==========================")
                 print(e.strerror)
                 continue
- 
         pass
  
+    def runonebyone(self, filelist):
+        for i, file in enumerate(filelist):
+            self.runfile(file)
+            
     def dasklineup(self, filelist, client):
         """Run all files for one dataset through creating task submissions, with errors handled and collected.
         logging statements from runfile() are centrally collected here into one file.""" 
