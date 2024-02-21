@@ -11,7 +11,7 @@ PREFIX = "root://cmseos.fnal.gov"
 def cpcondor(srcpath, destpath, is_file=True):
     """Copy srcpath (file/directory) FROM local to condor destpath"""
 
-    comstr = f'xrdcp -f {srcpath} {destpath}' if is_file else f'xrdcp -r {srcpath} {destpath}'
+    comstr = f'xrdcp -f {srcpath} {PREFIX}/{destpath}' if is_file else f'xrdcp -r {srcpath} {destpath}'
     result = runcom(comstr, shell=True, capture_output=True, text=True)
     if result.returncode == 0: logging.debug("Transfer objects successful!")
     else: 
@@ -23,9 +23,9 @@ def transferfiles(srcpath, destpath):
     """Copy all files FROM one local directory to a condor directory. 
     If destpath does not exist, will create one."""
     checkcondorpath(destpath)
-    for srcfile in srcpath.iterdir():
+    for srcfile in Path(srcpath).iterdir():
         if srcfile.is_file():
-            cpcondor(str(srcfile), str(destpath/srcfile.name), is_file=True)
+            cpcondor(str(srcfile), f"{destpath}/{srcfile.name}", is_file=True)
 
 def checkcondorpath(dirname):
     """Check if a condor path exists. If not will create one."""
