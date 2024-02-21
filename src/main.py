@@ -20,12 +20,16 @@ def main():
 
     proc = Processor(rs)
     
+    client = None 
+
     if rs.SPAWN_CLIENT:
         client = spawnclient()
-        proc.rundata(client)
+
+    proc.rundata(client)
 
     end_time = time.time()
     print(f"Execution time is {end_time - start_time} seconds")
+
     if rs.SPAWN_CLIENT: client.close()
 
 if __name__ == '__main__':
