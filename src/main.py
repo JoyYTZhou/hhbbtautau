@@ -1,11 +1,14 @@
-# UPDATE TIME: 2024-02-01
+# UPDATE TIME: 2024-02-18
 # FROM JOY
 import os
 import time
-from dask.distributed import LocalCluster, Client
-import yaml
+import logging
 
-os.environ['PARENT_DIR'] = os.path.dirname(__file__) 
+PARENT_DIR = os.path.dirname(__file__) 
+logging.basicConfig(filename="daskworker.log", 
+                    filemode='w', 
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', 
+                    level=logging.DEBUG)
 
 from analysis.helper import *
 from analysis.spawndask import *
@@ -14,8 +17,6 @@ def main():
     start_time = time.time()
 
     from analysis.selutility import Processor
-    
-    
     print("successfully imported everything!")
 
     proc = Processor(rs)
