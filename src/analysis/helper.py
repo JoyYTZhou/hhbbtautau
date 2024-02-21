@@ -13,7 +13,7 @@ def cpcondor(srcpath, destpath, is_file=True):
 
     comstr = f'xrdcp -f {srcpath} {destpath}' if is_file else f'xrdcp -r {srcpath} {destpath}'
     result = runcom(comstr, shell=True, capture_output=True, text=True)
-    if result.returncode==0: logging.debug("Transfer objects successful!")
+    if result.returncode == 0: logging.debug("Transfer objects successful!")
     else: 
         logging.info(f"Transfer from {srcpath} to {destpath} not successful! Here's the error message =========================")
         logging.info(result.stderr)
@@ -28,17 +28,17 @@ def transferfiles(srcpath, destpath):
             cpcondor(str(srcfile), str(destpath/srcfile.name), is_file=True)
 
 def checkcondorpath(dirname):
-    """Check if a condor path exists. Ifnot will create one."""
+    """Check if a condor path exists. If not will create one."""
     check_dir_cmd = f"xrdfs {PREFIX} stat {dirname}"
     create_dir_cmd = f"xrdfs {PREFIX} mkdir -p {dirname}"
 
-    proc = subprocess.run(check_dir_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    proc = runcom(check_dir_cmd, shell=True, capture_output=True, text=True) 
 
     if proc.returncode == 0:
         logging.debug(f"The directory {dirname} already exists.")
     else:
         logging.info(f"Creating directory {dirname}.")
-        subprocess.run(create_dir_cmd, shell=True)
+        runcom(create_dir_cmd, shell=True)
     
 def checkpath(pathstr):
     """Check if a local path exists. If not will create one."""
