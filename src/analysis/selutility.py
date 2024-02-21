@@ -111,10 +111,15 @@ class Processor:
         elif write_method == 'dataframe':
             self.writeobj(passed, channelname, suffix)
         else:
-            pass
+            raise ValueError("Write method not supported")
 
         localpath = pjoin(self.outdir, f'cutflow_{suffix}.csv')
-        evtsel.cf_to_df().to_csv(localpath)
+        logging.debug(f"Writing to localpath: {localpath}")
+
+        cutflow_df = evtsel.cf_to_df() 
+        cutflow_df.to_csv(localpath)
+
+        logging.debug(f"transfer cutflows: {self.rtcfg.TRANSFER}")
 
         if self.rtcfg.TRANSFER:
             logging.debug(f"Transfer path is {self.rtcfg.TRANSFER_PATH}")

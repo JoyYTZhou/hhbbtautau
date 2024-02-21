@@ -1,11 +1,8 @@
 [LOCAL]
-TEST_MODE = true
-SINGLE_FILE = true
 LOCAL_TEST = true
 SINGLE_PATH = "/Users/yuntongzhou/Desktop/Dihiggszztt/sample1.root"
 PROCESS_NAME = "DYJets"
-CHANNEL_NO = 1
-INPUTFILE_PATH = "@format /Users/yuntongzhou/Desktop/Dihiggszztt/HHtobbtautau/src/data/preprocessed/{this.PROCESS_NAME}.json"
+CHANNEL_INDX = 3
 OUTPUTDIR_PATH = "@format {env[OUTPUTPATH]}"
 TRANSFER = false
 
