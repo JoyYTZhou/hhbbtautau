@@ -37,10 +37,6 @@ class Processor:
         self.dsname = None
         self.outdir = self.rtcfg.OUTPUTDIR_PATH
         checkpath(self.outdir)
-        logging.basicConfig(filename=f"{rt_cfg.OUTPUTDIR_PATH}/daskworker.log", 
-                            filemode='a', 
-                            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', 
-                            level=logging.DEBUG)
         if self.rtcfg.TRANSFER: logging.info("File transfer in real time!")
         
     @property
@@ -64,10 +60,11 @@ class Processor:
         for dataset, info in self.metadata.items():
             logging.info(f"Processing {dataset}...")
             self.dsname = dataset
-            # if client==None:
-            #     self.runfile(info['filelist'][0], 0)
-            # else:
-            #     self.dasklineup(info['filelist'], client)
+            if client==None:
+                logging.debug("No client spawned! In test mode.")
+                self.runfile(info['filelist'][0], 0)
+            else:
+                self.dasklineup(info['filelist'], client)
         logging.info("Execution finished!")
         
     def setdata(self):
@@ -96,7 +93,7 @@ class Processor:
         :param write_method: method to write the output
         :return: cutflow dataframe 
         """
-        logging.debug("Starting task for file: ", filename)
+        logging.debug(f"Starting task for file: {filename}")
         events = self.loadfile({filename: self.treename})
         output = []
         lepcfg = self.channelsel.selections
@@ -109,7 +106,7 @@ class Processor:
             evtsel.cfobj.to_npz(npzname)
         row_names = evtsel.cutflow.labels
         if write_method == 'dask':
-            print("Writing to dask")
+            logging.debug("Writing to dask")
             self.writedask(passed, channelname, suffix)
         elif write_method == 'dataframe':
             self.writeobj(passed, channelname, suffix)
@@ -120,6 +117,7 @@ class Processor:
         evtsel.cf_to_df().to_csv(localpath)
 
         if self.rtcfg.TRANSFER:
+            logging.debug(f"Transfer path is {self.rtcfg.TRANSFER_PATH}")
             condorpath = f'{self.rtcfg.TRANSFER_PATH}/cutflow_{suffix}.csv'
             result = cpcondor(localpath, condorpath, is_file=True)
             return result
@@ -136,6 +134,7 @@ class Processor:
             pass
         
         if self.rtcfg.TRANSFER:
+            logging.debug(f"Transfer results to {self.rtcfg.TRANSFER_PATH}")
             transferfiles(dir_name, self.rtcfg.TRANSFER_PATH)
         
     def writeobj(self, passed, index, suffix):
