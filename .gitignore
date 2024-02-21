@@ -9,6 +9,8 @@ test/.ipynb_checkpoints/
 hhbbttrun/
 # Ignore datachecks
 src/data/objectchecks/
+# Ignore outputs
+outputs/
 # Ignore the exec output
 exec/*.log
 exec/*.err
