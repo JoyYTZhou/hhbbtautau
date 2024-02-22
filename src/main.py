@@ -5,12 +5,12 @@ import time
 import logging
 
 PARENT_DIR = os.path.dirname(__file__) 
+
 logging.basicConfig(filename="daskworker.log", 
                     filemode='w', 
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', 
-                    level=logging.DEBUG)
+                    level=logging.INFO)
 
-from analysis.helper import *
 from config.selectionconfig import runsetting as rs
 
 def main():

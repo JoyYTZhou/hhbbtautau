@@ -17,7 +17,7 @@ import gc
 from collections import ChainMap
 import uproot
 from config.selectionconfig import settings as sel_cfg
-from analysis.helper import *
+from .helper import *
 
 output_cfg = sel_cfg.signal.outputs
 
@@ -61,7 +61,7 @@ class Processor:
             logging.info(f"Processing {dataset}...")
             self.dsname = dataset
             if client==None:
-                logging.debug("No client spawned! In test mode.")
+                logging.info("No client spawned! In test mode.")
                 self.runfile(info['filelist'][0], 0)
             else:
                 self.dasklineup(info['filelist'], client)
@@ -93,9 +93,9 @@ class Processor:
         :param write_method: method to write the output
         :return: cutflow dataframe 
         """
-        logging.debug(f"Starting task for file: {filename}")
+        msg = []
+        msg.append(f'start processing {filename}!')
         events = self.loadfile({filename: self.treename})
-        output = []
         lepcfg = self.channelsel.selections
         jetcfg = self.commonsel
         channelname = self.channelsel.name
@@ -106,31 +106,28 @@ class Processor:
             evtsel.cfobj.to_npz(npzname)
         row_names = evtsel.cutflow.labels
         if write_method == 'dask':
-            logging.debug("Writing to dask")
             self.writedask(passed, channelname, suffix)
+            msg.append(f'computing {filename} finished!')
         elif write_method == 'dataframe':
             self.writeobj(passed, channelname, suffix)
         else:
             raise ValueError("Write method not supported")
 
         localpath = pjoin(self.outdir, f'cutflow_{suffix}.csv')
-        logging.debug(f"Writing to localpath: {localpath}")
 
         cutflow_df = evtsel.cf_to_df() 
         cutflow_df.to_csv(localpath)
 
-        logging.debug(f"transfer cutflows: {self.rtcfg.TRANSFER}")
-
         if self.rtcfg.TRANSFER:
-            logging.debug(f"Transfer path is {self.rtcfg.TRANSFER_PATH}")
             condorpath = f'{self.rtcfg.TRANSFER_PATH}/cutflow_{suffix}.csv'
             result = cpcondor(localpath, condorpath, is_file=True)
-            return result
+        
+        msg.append(f"file {filename} processed successfully!")
+        return '\n'.join(msg)
 
     def writedask(self, passed, prefix, suffix, fields=None):
         """Wrapper around uproot.dask_write(),
         transfer all root files generated to a destination location."""
-        logging.debug("Writing results.....")
         if fields is None:
             dir_name = pjoin(self.outdir, prefix)
             checkpath(dir_name)
@@ -139,7 +136,6 @@ class Processor:
             pass
         
         if self.rtcfg.TRANSFER:
-            logging.debug(f"Transfer results to {self.rtcfg.TRANSFER_PATH}")
             transferfiles(dir_name, self.rtcfg.TRANSFER_PATH)
         
     def writeobj(self, passed, index, suffix):
@@ -163,29 +159,7 @@ class Processor:
         if self.rtcfg.TRANSFER:
             dest_path = pjoin(self.rtcfg.TRANSFER_PATH, f"{chcfg.name}{suffix}.csv")
             result = cpcondor(obj_path, dest_path, is_file=True)
-   
-    def pickupfailed(self, indexi, indexf):
-        success = 0 
-        failed_files = {}
-        last_file = 0
-        for i, (filename, partitions) in enumerate(self.data):
-            logging.info(f"Running {filename} ===================")
-            try:
-                cf_df = self.singlerun({filename: partitions}, suffix=i)
-            except OSError as e:
-                failed_files.update({filename: e.strerror})
-                logging.info(f"Caught an OSError while processing file {i}")
-                logging.info("==========================")
-                print(filename)
-                print("==========================")
-                print(e.strerror)
-                continue
-        pass
- 
-    def runonebyone(self, filelist):
-        for i, file in enumerate(filelist):
-            self.runfile(file)
-            
+           
     def dasklineup(self, filelist, client):
         """Run all files for one dataset through creating task submissions, with errors handled and collected.
         logging statements from runfile() are centrally collected here into one file.""" 
@@ -195,16 +169,7 @@ class Processor:
             if isinstance(result, Exception):
                 logging.error(f"Task failed with exception: {result}", exc_info=True)
             else:
-                logging.info(f"Task succeeded with result: {result}")
-        
-    def transferfile(self, fn):
-        """Transfer output by a processor to a final destination."""
-        dest_path = pjoin(self.rtcfg.TRANSFER_PATH, fn)
-        init_path = pjoin(self.outdir, fn)
-        com = f"xrdcp -f {init_path} {dest_path}" 
-        result = runcom(com, shell=True, capture_output=True, text=True)
-        
-        return result
+                logging.info(result)
         
 class EventSelections:
     def __init__(self, lepcfg, jetcfg, cfgname) -> None:
