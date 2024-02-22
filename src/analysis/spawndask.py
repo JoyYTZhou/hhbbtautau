@@ -20,8 +20,6 @@ def spawnCondor():
         'output': 'dask_output.$(ClusterId).$(ProcId).out',
         'error': 'daskr_error.$(ClusterId).$(ProcId).err',
         'log': 'dask_log.$(ClusterId).log',
-        'should_transfer_files': 'YES',
-        'when_to_transfer_output': 'ON_EXIT_OR_EVICT'
     }
     cluster.adapt(minimum=rs.MIN_WORKER, maximum=rs.MAX_WORKER)
     client = Client(cluster)
