@@ -71,7 +71,7 @@ class Processor:
         with open(self.rtcfg.INPUTFILE_PATH, 'r') as samplepath:
             self._metadata = json.load(samplepath)
 
-    def loadfile(self, filename, **kwargs):
+    def loadfile(self, filename):
         """This is a wrapper function around a coffea load file from root function,
         which is in itself yet another wrapper function of uproot._dask. 
         I am writing this doc to humiliate myself in the future.
@@ -84,7 +84,6 @@ class Processor:
             delayed=True,
             metadata={"dataset": self.dsname},
             schemaclass=BaseSchema,
-            **kwargs
         ).events()
         return events
     
@@ -100,11 +99,10 @@ class Processor:
         jetcfg = self.commonsel
         channelname = self.channelsel.name
         evtsel = EventSelections(lepcfg, jetcfg, channelname)
-        passed, vetoed = evtsel.select(events)
+        passed = evtsel.select(events)
         if write_npz:
             npzname = pjoin(self.outdir, f'cutflow_{suffix}_{channelname}.npz')
             evtsel.cfobj.to_npz(npzname)
-        row_names = evtsel.cutflow.labels
         if write_method == 'dask':
             self.writedask(passed, channelname, suffix)
             msg.append(f'computing {filename} finished!')
@@ -201,7 +199,6 @@ class EventSelections:
     def jetselcfg(self, value):
         self._jetselcfg = value
 
-
     def selectlep(self, events):
         """Custom function to set the lepton selections based on config.
         :param events: events loaded from a .root file
@@ -255,22 +252,26 @@ class EventSelections:
                                           "FatJetSelections": fatjet_mask})
         return None
 
-    def callobjsel(self, events):
+    def callobjsel(self, events, compute_veto=False):
         """Apply all the selections in line on the events
         :return: passed events, vetoed events
         """
         passed = events[self.objsel.all()]
-        vetoed = events[~(self.objsel.all())]
         self.cfobj = self.objsel.cutflow(*self.objsel.names)
         self.cutflow = self.cfobj.result()
-        return passed, vetoed
+        if compute_veto: 
+            vetoed = events[~(self.objsel.all())]
+            return passed, vetoed
+        else:
+            return passed
 
-    def select(self, events):
+    def select(self, events, return_veto=False):
         """Apply all selections in selection config object on the events."""
         self.selectlep(events)
         # self.selectjet(events)
-        passed, vetoed = self.callobjsel(events)
-        return passed, vetoed
+        passed, vetoed = self.callobjsel(events, return_veto)
+        if return_veto: return passed, vetoed
+        else: return passed
 
     def cf_to_df(self):
         """Return a dataframe for a single EventSelections.cutflow object.

@@ -5,6 +5,7 @@ from config.selectionconfig import runsetting as rs
 import dask.config
 
 def spawnclient():
+    """Spawn appropriate client based on runsetting."""
     if not rs.IS_CONDOR:
         client = spawnLocal()
     else:
@@ -13,19 +14,26 @@ def spawnclient():
 
 def spawnCondor():
     """Spawn dask client for condor cluster"""
-
     print("Trying to submit jobs to condor via dask!")
-    cluster = LPCCondorCluster(ship_env=True)
+
+    condor_args = {"ship_env": True, 
+                   "processes": rs.PROCESS_NO,
+                   "cores": rs.CORE_NO,
+                   "memory": rs.MEMORY
+                   }
+    cluster = LPCCondorCluster(**condor_args)
     cluster.job_extra_directives = {
         'output': 'dask_output.$(ClusterId).$(ProcId).out',
         'error': 'daskr_error.$(ClusterId).$(ProcId).err',
         'log': 'dask_log.$(ClusterId).log',
     }
     cluster.adapt(minimum=rs.MIN_WORKER, maximum=rs.MAX_WORKER)
+
     client = Client(cluster)
     print("One client created in LPC Condor!")
     print("===================================")
     print(client)
+
     return client
 
 def spawnLocal():

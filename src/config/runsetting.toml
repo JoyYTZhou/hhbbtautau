@@ -8,7 +8,7 @@ TRANSFER = false
 
 [LPCLOCAL]
 IS_CONDOR = false
-PROCESS_NAME = "ggF"
+PROCESS_NAME = "DYJets"
 CHANNEL_INDX = 3
 CONDORPATH = "/store/user/joyzhou/output"
 INPUTFILE_PATH = "@format src/data/preprocessed/{this.PROCESS_NAME}.json"
@@ -19,7 +19,7 @@ TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
 
 [LPCCONDOR]
 IS_CONDOR = true
-PROCESS_NAME = "ggF"
+PROCESS_NAME = "ZH"
 CHANNEL_INDX = 3
 CONDORPATH = "root://cmseos.fnal.gov//store/user/joyzhou/output"
 INPUTFILE_PATH = "@format src/data/preprocessed/{this.PROCESS_NAME}.json"
@@ -27,8 +27,10 @@ TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
 OUTPUTDIR_PATH = "@format outputs/{this.PROCESS_NAME}"
 SPAWN_CLIENT = true
 MIN_WORKER = 1
-MAX_WORKER = 10
+MAX_WORKER = 5
 MEMORY = '20GB'
+CORE_NO = 2
+PROCESS_NO = 2
 TRANSFER = true
 
 [LPCJUPYTER]
