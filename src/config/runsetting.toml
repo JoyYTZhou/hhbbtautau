@@ -8,7 +8,7 @@ TRANSFER = false
 
 [LPCLOCAL]
 IS_CONDOR = false
-PROCESS_NAME = "DYJets"
+PROCESS_NAME = "ZH"
 CHANNEL_INDX = 3
 CONDORPATH = "/store/user/joyzhou/output"
 INPUTFILE_PATH = "@format src/data/preprocessed/{this.PROCESS_NAME}.json"
