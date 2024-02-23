@@ -62,6 +62,7 @@ class Processor:
             self.dsname = dataset
             if client==None:
                 logging.info("No client spawned! In test mode.")
+                logging.info(f"Processing filename {info['filelist'][0]}")
                 self.runfile(info['filelist'][0], 0)
             else:
                 self.dasklineup(info['filelist'], client)
@@ -99,7 +100,7 @@ class Processor:
         jetcfg = self.commonsel
         channelname = self.channelsel.name
         evtsel = EventSelections(lepcfg, jetcfg, channelname)
-        passed = evtsel.select(events)
+        passed = evtsel.select(events, return_veto=False)
         if write_npz:
             npzname = pjoin(self.outdir, f'cutflow_{suffix}_{channelname}.npz')
             evtsel.cfobj.to_npz(npzname)
@@ -261,17 +262,17 @@ class EventSelections:
         self.cutflow = self.cfobj.result()
         if compute_veto: 
             vetoed = events[~(self.objsel.all())]
-            return passed, vetoed
+            result = (passed, vetoed)
         else:
-            return passed
+            result = passed
+        return result
 
     def select(self, events, return_veto=False):
         """Apply all selections in selection config object on the events."""
         self.selectlep(events)
         # self.selectjet(events)
-        passed, vetoed = self.callobjsel(events, return_veto)
-        if return_veto: return passed, vetoed
-        else: return passed
+        result = self.callobjsel(events, return_veto)
+        return result
 
     def cf_to_df(self):
         """Return a dataframe for a single EventSelections.cutflow object.
