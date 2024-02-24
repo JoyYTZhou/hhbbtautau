@@ -8,14 +8,17 @@ TRANSFER = false
 
 [LPCLOCAL]
 IS_CONDOR = false
-PROCESS_NAME = "ZH"
+PROCESS_NAME = "WW"
 CHANNEL_INDX = 3
 CONDORPATH = "/store/user/joyzhou/output"
 INPUTFILE_PATH = "@format src/data/preprocessed/{this.PROCESS_NAME}.json"
-OUTPUTDIR_PATH = "@format outputs/{this.PROCESS_NAME}"
-TRANSFER = true
+OUTPUTDIR_PATH = "@format /uscms/home/joyzhou/nobackup/{this.PROCESS_NAME}"
+TRANSFER = false
 SPAWN_CLIENT = false
 TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
+COPY_LOCAL = true
+STEP_SIZE = '800MB'
+COPY_DIR = "/uscms/home/joyzhou/nobackup"
 
 [LPCCONDOR]
 IS_CONDOR = true

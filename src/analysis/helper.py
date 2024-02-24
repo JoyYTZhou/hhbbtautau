@@ -8,15 +8,38 @@ runcom = subprocess.run
 pjoin = os.path.join
 PREFIX = "root://cmseos.fnal.gov"
 
+
+def logresult(result, success_msg):
+    if result.returncode == 0:
+        logging.debug(success_msg)
+    else:
+        # Ensure stderr is a string. Decode if it's bytes.
+        stderr_message = result.stderr.decode('utf-8') if isinstance(result.stderr, bytes) else result.stderr
+        # Check if stderr is empty or None
+        if not stderr_message:
+            stderr_message = "No error message available."
+        logging.info(f"Operation not successful! Return code: {result.returncode}. Here's the error message =========================\n{stderr_message}")
+
+def cproot(srcpath, localpath):
+    """Copy a root file FROM condor to LOCAL."""
+    
+    comstr = f'xrdcp {srcpath} {localpath}'
+    result = runcom(comstr, shell=True, capture_output=True, text=True)
+    logresult(result, "Transfer file from condor successful!")
+    return result
+
+def delroot(filepath):
+    comstr = f'rm filepath'
+    result = runcom(comstr, shell=True, capture_output=True, text=True)
+    logresult(result, "Delete file successful!") 
+    return result
+
 def cpcondor(srcpath, destpath, is_file=True):
     """Copy srcpath (file/directory) FROM local to condor destpath"""
 
     comstr = f'xrdcp -f {srcpath} {PREFIX}/{destpath}' if is_file else f'xrdcp -r {srcpath} {destpath}'
     result = runcom(comstr, shell=True, capture_output=True, text=True)
-    if result.returncode == 0: logging.debug("Transfer objects successful!")
-    else: 
-        logging.info(f"Transfer from {srcpath} to {destpath} not successful! Here's the error message =========================")
-        logging.info(result.stderr)
+    logresult(result, "Transfer files/directories successful!")
     return result
 
 def transferfiles(srcpath, destpath):
