@@ -5,13 +5,10 @@ import dask_awkward as dak
 import dask
 from dask.distributed import Client, as_completed
 from coffea.analysis_tools import PackedSelection
-from coffea.nanoevents import NanoEventsFactory
-from coffea.nanoevents.schemas import BaseSchema
 import vector as vec
 import json as json
 import operator as opr
 import logging
-import itertools
 import pandas as pd
 import gc
 from collections import ChainMap
@@ -31,13 +28,12 @@ class Processor:
     def __init__(self, rt_cfg):
         self._rtcfg = rt_cfg
         self._metadata = None
-        self._channelsel = sel_cfg.signal[f'channel{rt_cfg.CHANNEL_INDX}']
-        self._commonsel = sel_cfg.signal.commonsel
         self.treename = "Events"
         self.dsname = None
         self.outdir = self.rtcfg.OUTPUTDIR_PATH
         checkpath(self.outdir)
         if self.rtcfg.TRANSFER: logging.info("File transfer in real time!")
+        self.defselections()
         
     @property
     def metadata(self):
@@ -46,14 +42,6 @@ class Processor:
     @property
     def rtcfg(self):
         return self._rtcfg
-
-    @property
-    def channelsel(self):
-        return self._channelsel
-
-    @property
-    def commonsel(self):
-        return self._commonsel
 
     def rundata(self, client):
         self.setdata()
@@ -72,20 +60,22 @@ class Processor:
         with open(self.rtcfg.INPUTFILE_PATH, 'r') as samplepath:
             self._metadata = json.load(samplepath)
 
+    def defselections(self):
+        self.lepcfg = sel_cfg.signal[f'channel{self.rtcfg.CHANNEL_INDX}'].selections
+        self.jetcfg = sel_cfg.signal.commonsel
+        self.channelname = sel_cfg.signal[f'channel{self.rtcfg.CHANNEL_INDX}'].name
+        
     def loadfile(self, filename):
-        """This is a wrapper function around a coffea load file from root function,
-        which is in itself yet another wrapper function of uproot._dask. 
+        """This is a wrapper function around uproot._dask. 
         I am writing this doc to humiliate myself in the future.
         
         :return: The loaded file dict
         :rtype: dask_awkward.lib.core.Array
         """
-        events = NanoEventsFactory.from_root(
-            file=filename,
-            delayed=True,
-            metadata={"dataset": self.dsname},
-            schemaclass=BaseSchema,
-        ).events()
+        events = uproot.dask(
+            files=filename,
+            step_size=self.rtcfg.STEP_SIZE
+        )
         return events
     
     def runfile(self, filename, suffix, write_method='dask', write_npz=False):
@@ -95,20 +85,25 @@ class Processor:
         """
         msg = []
         msg.append(f'start processing {filename}!')
-        events = self.loadfile({filename: self.treename})
-        lepcfg = self.channelsel.selections
-        jetcfg = self.commonsel
-        channelname = self.channelsel.name
-        evtsel = EventSelections(lepcfg, jetcfg, channelname)
+
+        openpath = filename
+        if self.rtcfg.COPY_LOCAL:
+            msg.append('copying file ...')
+            destpath = pjoin(self.rtcfg.COPY_DIR, f"{self.dsname}_{suffix}.root" )
+            cproot(filename, destpath)
+            openpath = destpath
+        events = self.loadfile({openpath: self.treename})
+
+        evtsel = EventSelections(self.lepcfg, self.jetcfg, self.channelname)
         passed = evtsel.select(events, return_veto=False)
         if write_npz:
-            npzname = pjoin(self.outdir, f'cutflow_{suffix}_{channelname}.npz')
+            npzname = pjoin(self.outdir, f'cutflow_{suffix}_{self.channelname}.npz')
             evtsel.cfobj.to_npz(npzname)
         if write_method == 'dask':
-            self.writedask(passed, channelname, suffix)
+            self.writedask(passed, self.channelname, suffix)
             msg.append(f'computing {filename} finished!')
         elif write_method == 'dataframe':
-            self.writeobj(passed, channelname, suffix)
+            self.writeobj(passed, self.channelname, suffix)
         else:
             raise ValueError("Write method not supported")
 
@@ -122,6 +117,8 @@ class Processor:
             result = cpcondor(localpath, condorpath, is_file=True)
         
         msg.append(f"file {filename} processed successfully!")
+        if self.rtcfg.COPY_LOCAL: delroot(openpath)
+
         return '\n'.join(msg)
 
     def writedask(self, passed, prefix, suffix, fields=None):
