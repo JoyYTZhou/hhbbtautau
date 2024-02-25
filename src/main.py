@@ -9,7 +9,7 @@ PARENT_DIR = os.path.dirname(__file__)
 logging.basicConfig(filename="daskworker.log", 
                     filemode='w', 
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', 
-                    level=logging.INFO)
+                    level=logging.DEBUG)
 
 from config.selectionconfig import runsetting as rs
 
@@ -19,12 +19,13 @@ def main():
     from analysis.spawndask import runfutures
 
     if rs.SPAWN_CLIENT:
-        from analysis.spawndask import spawnclient
-        client = spawnclient()
+        from analysis.spawndask import spawnclient, testsubmit
+        # client = spawnclient()
     else:
         client = None
     
-    runfutures(client)
+    # runfutures(client)
+    client = testsubmit()
 
     end_time = time.time()
     print(f"Execution time is {end_time - start_time} seconds")

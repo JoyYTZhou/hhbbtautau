@@ -17,6 +17,7 @@ def runfutures(client):
     if futures is not None: process_futures(futures)
     
 def submitfutures(client):
+    """Submit future concurrent tasks to client across a set of distributed workers."""
     with open(rs.INPUTFILE_PATH, 'r') as samplepath:
         metadata = json.load(samplepath)
     for dataset, info in metadata.items():
@@ -31,6 +32,15 @@ def submitfutures(client):
             futures = [client.submit(job, fn, i, dataset) for i, fn in enumerate(info['filelist'])]
             logging.info("Futures submitted!")
             return futures
+
+def testsubmit():
+    client = spawnCondor(default=True)
+    with open(rs.INPUTFILE_PATH, 'r') as samplepath:
+        metadata = json.load(samplepath)
+    for dataset, info in metadata.items():
+        logging.info(f"Processing {dataset}...")
+        client.submit(job, info['filelist'][0], 0, dataset)
+    return client
 
 def process_futures(futures, results_file='futureresult.txt', errors_file='futureerror.txt'):
     """Process a list of Dask futures.
@@ -69,22 +79,27 @@ def spawnclient():
         client = spawnCondor()
     return client 
 
-def spawnCondor():
+def spawnCondor(default=False):
     """Spawn dask client for condor cluster"""
     print("Trying to submit jobs to condor via dask!")
 
-    condor_args = {"ship_env": True, 
-                   "processes": rs.PROCESS_NO,
-                   "cores": rs.CORE_NO,
-                   "memory": rs.MEMORY
-                   }
-    cluster = LPCCondorCluster(**condor_args)
-    cluster.job_extra_directives = {
-        'output': 'dask_output.$(ClusterId).$(ProcId).out',
-        'error': 'daskr_error.$(ClusterId).$(ProcId).err',
-        'log': 'dask_log.$(ClusterId).log',
-    }
-    cluster.adapt(minimum=rs.MIN_WORKER, maximum=rs.MAX_WORKER)
+    if default:
+        cluster = LPCCondorCluster(ship_env=True)
+        cluster.adapt(minimum=1)
+        print(cluster.job_script())
+    else:
+        condor_args = {"ship_env": True, 
+                    "processes": rs.PROCESS_NO,
+                    "cores": rs.CORE_NO,
+                    "memory": rs.MEMORY
+                    }
+        cluster = LPCCondorCluster(**condor_args)
+        cluster.job_extra_directives = {
+            'output': 'dask_output.$(ClusterId).$(ProcId).out',
+            'error': 'daskr_error.$(ClusterId).$(ProcId).err',
+            'log': 'dask_log.$(ClusterId).log',
+        }
+        cluster.adapt(minimum=rs.MIN_WORKER, maximum=rs.MAX_WORKER)
 
     client = Client(cluster)
     print("One client created in LPC Condor!")
