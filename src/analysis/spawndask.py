@@ -73,7 +73,7 @@ def process_futures(futures, results_file='futureresult.txt', errors_file='futur
 
 def spawnclient(default=False):
     """Spawn appropriate client based on runsetting."""
-    if not rs.IS_CONDOR:
+    if not rs.SPAWN_CONDOR:
         client = spawnLocal()
     else:
         client = spawnCondor(default)
@@ -110,8 +110,8 @@ def spawnCondor(default=False):
 
 def spawnLocal():
     """Spawn dask client for local cluster"""
-    cluster = LocalCluster(processes=False, threads_per_worker=2)
-    cluster.adapt(minimum=0, maximum=6)
+    cluster = LocalCluster(processes=True, threads_per_worker=2)
+    cluster.adapt(minimum=0, maximum=3)
     client = Client(cluster)
     print("successfully created a dask client in local cluster!")
     print("===================================")

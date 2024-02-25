@@ -27,4 +27,6 @@ export PYTHONPATH=$PWD/src:$PYTHONPATH
 
 export ENV_FOR_DYNACONF=LPCCONDOR
 
+export CONDOR_CONFIG=.condor_config
+
 python3 src/main.py
