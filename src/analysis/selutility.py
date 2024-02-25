@@ -6,7 +6,6 @@ import dask
 from dask.distributed import Client, as_completed
 from coffea.analysis_tools import PackedSelection
 import vector as vec
-import json as json
 import operator as opr
 import logging
 import pandas as pd
@@ -25,40 +24,19 @@ class Processor:
         data (dict): dictionary of files
         commonsel (dict): dictionary of common selection configurations
     """
-    def __init__(self, rt_cfg):
+    def __init__(self, rt_cfg, dataset):
         self._rtcfg = rt_cfg
-        self._metadata = None
-        self.treename = "Events"
-        self.dsname = None
+        self.treename = self.rtcfg.TREE_NAME
         self.outdir = self.rtcfg.OUTPUTDIR_PATH
-        checkpath(self.outdir)
+        self.dataset = dataset
+        if self.rtcfg.COPY_LOCAL: checkpath(self.rtcfg.COYP_DIR)
         if self.rtcfg.TRANSFER: logging.info("File transfer in real time!")
+        checkpath(self.rtcfg.OUTPUTDIR_PATH)
         self.defselections()
-        
-    @property
-    def metadata(self):
-        return self._metadata
 
     @property
     def rtcfg(self):
         return self._rtcfg
-
-    def rundata(self, client):
-        self.setdata()
-        for dataset, info in self.metadata.items():
-            logging.info(f"Processing {dataset}...")
-            self.dsname = dataset
-            if client==None:
-                logging.info("No client spawned! In test mode.")
-                logging.info(f"Processing filename {info['filelist'][0]}")
-                self.runfile(info['filelist'][0], 0)
-            else:
-                self.dasklineup(info['filelist'], client)
-        logging.info("Execution finished!")
-        
-    def setdata(self):
-        with open(self.rtcfg.INPUTFILE_PATH, 'r') as samplepath:
-            self._metadata = json.load(samplepath)
 
     def defselections(self):
         self.lepcfg = sel_cfg.signal[f'channel{self.rtcfg.CHANNEL_INDX}'].selections
@@ -89,7 +67,7 @@ class Processor:
         openpath = filename
         if self.rtcfg.COPY_LOCAL:
             msg.append('copying file ...')
-            destpath = pjoin(self.rtcfg.COPY_DIR, f"{self.dsname}_{suffix}.root" )
+            destpath = pjoin(self.rtcfg.COPY_DIR, f"{self.dataset}_{suffix}.root" )
             cproot(filename, destpath)
             openpath = destpath
         events = self.loadfile({openpath: self.treename})
@@ -114,10 +92,10 @@ class Processor:
 
         if self.rtcfg.TRANSFER:
             condorpath = f'{self.rtcfg.TRANSFER_PATH}/cutflow_{suffix}.csv'
-            result = cpcondor(localpath, condorpath, is_file=True)
+            cpcondor(localpath, condorpath, is_file=True)
         
         msg.append(f"file {filename} processed successfully!")
-        if self.rtcfg.COPY_LOCAL: delroot(openpath)
+        if self.rtcfg.COPY_LOCAL: os.remove(openpath)
 
         return '\n'.join(msg)
 
@@ -127,12 +105,13 @@ class Processor:
         if fields is None:
             dir_name = pjoin(self.outdir, prefix)
             checkpath(dir_name)
-            uproot.dask_write(passed, destination=dir_name, compute=True, prefix=f'{self.dsname}_{prefix}_{suffix}')
+            uproot.dask_write(passed, destination=dir_name, compute=True, prefix=f'{self.dataset}_{prefix}_{suffix}')
         else:
             pass
         
         if self.rtcfg.TRANSFER:
             transferfiles(dir_name, self.rtcfg.TRANSFER_PATH)
+            shutil.rmtree(dir_name)
         
     def writeobj(self, passed, index, suffix):
         """This can be further simplified.I do not like this function...
@@ -154,18 +133,7 @@ class Processor:
 
         if self.rtcfg.TRANSFER:
             dest_path = pjoin(self.rtcfg.TRANSFER_PATH, f"{chcfg.name}{suffix}.csv")
-            result = cpcondor(obj_path, dest_path, is_file=True)
-           
-    def dasklineup(self, filelist, client):
-        """Run all files for one dataset through creating task submissions, with errors handled and collected.
-        logging statements from runfile() are centrally collected here into one file.""" 
-        futures = [client.submit(self.runfile, fn, i) for i, fn in enumerate(filelist)]
-
-        for future, result in as_completed(futures, with_results=True, raise_errors=False):
-            if isinstance(result, Exception):
-                logging.error(f"Task failed with exception: {result}", exc_info=True)
-            else:
-                logging.info(result)
+            cpcondor(obj_path, dest_path, is_file=True)
         
 class EventSelections:
     def __init__(self, lepcfg, jetcfg, cfgname) -> None:
