@@ -34,7 +34,7 @@ def submitfutures(client):
             return futures
 
 def testsubmit():
-    client = spawnCondor(default=True)
+    client = spawnclient()
     with open(rs.INPUTFILE_PATH, 'r') as samplepath:
         metadata = json.load(samplepath)
     for dataset, info in metadata.items():
@@ -71,12 +71,12 @@ def process_futures(futures, results_file='futureresult.txt', errors_file='futur
                 f.write(error + '\n')
     return processed_results, errors
 
-def spawnclient():
+def spawnclient(default=False):
     """Spawn appropriate client based on runsetting."""
     if not rs.IS_CONDOR:
         client = spawnLocal()
     else:
-        client = spawnCondor()
+        client = spawnCondor(default)
     return client 
 
 def spawnCondor(default=False):
