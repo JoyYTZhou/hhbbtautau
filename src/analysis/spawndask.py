@@ -3,7 +3,30 @@ from dask_jobqueue.htcondor import HTCondorCluster
 from lpcjobqueue import LPCCondorCluster
 from config.selectionconfig import runsetting as rs
 import dask.config
+from .selutility import Processor
+import json as json
+import logging
+from .helper import *
 
+def job(fn, i, dataset):
+    proc = Processor(rs, dataset)
+    proc.runfile(fn, i)
+
+def submitfutures(client):
+    with open(rs.INPUTFILE_PATH, 'r') as samplepath:
+        metadata = json.load(samplepath)
+    for dataset, info in metadata.items():
+        logging.info(f"Processing {dataset}...")
+        if client==None:
+            logging.info("No client spawned! In test mode.")
+            logging.info(f"Processing filename {info['filelist'][0]}")
+            job(info['filelist'][0], 0, dataset)
+            logging.info("Execution finished!")
+        else:
+            futures = [client.submit(job, fn, i, dataset) for i, fn in enumerate(info['filelist'])]
+            logging.info("Futures submitted!")
+            return futures
+ 
 def spawnclient():
     """Spawn appropriate client based on runsetting."""
     if not rs.IS_CONDOR:

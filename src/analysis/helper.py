@@ -3,11 +3,11 @@ import glob
 import subprocess
 from pathlib import Path
 import logging
+import shutil
 
 runcom = subprocess.run
 pjoin = os.path.join
 PREFIX = "root://cmseos.fnal.gov"
-
 
 def logresult(result, success_msg):
     if result.returncode == 0:
@@ -26,12 +26,6 @@ def cproot(srcpath, localpath):
     comstr = f'xrdcp {srcpath} {localpath}'
     result = runcom(comstr, shell=True, capture_output=True, text=True)
     logresult(result, "Transfer file from condor successful!")
-    return result
-
-def delroot(filepath):
-    comstr = f'rm filepath'
-    result = runcom(comstr, shell=True, capture_output=True, text=True)
-    logresult(result, "Delete file successful!") 
     return result
 
 def cpcondor(srcpath, destpath, is_file=True):
