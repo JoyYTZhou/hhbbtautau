@@ -3,7 +3,6 @@
 import awkward as ak
 import dask_awkward as dak
 import dask
-from dask.distributed import Client, as_completed
 from coffea.analysis_tools import PackedSelection
 import vector as vec
 import operator as opr

@@ -15,19 +15,16 @@ from config.selectionconfig import runsetting as rs
 
 def main():
     start_time = time.time()
-
-    from analysis.selutility import Processor
-    print("successfully imported everything!")
-
-    proc = Processor(rs)
     
-    client = None 
+    from analysis.spawndask import runfutures
 
     if rs.SPAWN_CLIENT:
         from analysis.spawndask import spawnclient
         client = spawnclient()
-
-    proc.rundata(client)
+    else:
+        client = None
+    
+    runfutures(client)
 
     end_time = time.time()
     print(f"Execution time is {end_time - start_time} seconds")

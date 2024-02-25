@@ -1,8 +1,8 @@
 from dask.distributed import Client, LocalCluster
-from dask_jobqueue.htcondor import HTCondorCluster
 from lpcjobqueue import LPCCondorCluster
 from config.selectionconfig import runsetting as rs
 import dask.config
+from dask.distributed import as_completed
 from .selutility import Processor
 import json as json
 import logging
@@ -12,6 +12,10 @@ def job(fn, i, dataset):
     proc = Processor(rs, dataset)
     proc.runfile(fn, i)
 
+def runfutures(client):
+    futures = submitfutures(client)
+    if futures is not None: process_futures(futures)
+    
 def submitfutures(client):
     with open(rs.INPUTFILE_PATH, 'r') as samplepath:
         metadata = json.load(samplepath)
@@ -22,11 +26,41 @@ def submitfutures(client):
             logging.info(f"Processing filename {info['filelist'][0]}")
             job(info['filelist'][0], 0, dataset)
             logging.info("Execution finished!")
+            return None
         else:
             futures = [client.submit(job, fn, i, dataset) for i, fn in enumerate(info['filelist'])]
             logging.info("Futures submitted!")
             return futures
- 
+
+def process_futures(futures, results_file='futureresult.txt', errors_file='futureerror.txt'):
+    """Process a list of Dask futures.
+    :param futures: List of futures returned by client.submit()
+    :return: A list of results from successfully completed futures.
+    """
+    processed_results = []
+    errors = []
+    for future in as_completed(futures):
+        try:
+            if future.exception():
+                error_msg = f"An error occurred: {future.exception()}"
+                logging.info(error_msg)
+                errors.append(error_msg)
+            else:
+                result = future.result()
+                processed_results.append(result)
+        except Exception as e:
+            error_msg = f"Error processing future result: {e}"
+            logging.info(error_msg)
+            errors.append(error_msg)
+    with open(results_file, 'w') as f:
+        for result in processed_results:
+            f.write(result + '\n')
+    if errors:
+        with open(errors_file, 'w') as f:
+            for error in errors:
+                f.write(error + '\n')
+    return processed_results, errors
+
 def spawnclient():
     """Spawn appropriate client based on runsetting."""
     if not rs.IS_CONDOR:
