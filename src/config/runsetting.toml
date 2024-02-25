@@ -21,7 +21,7 @@ STEP_SIZE = '800MB'
 COPY_DIR = "temp"
 
 [LPCCONDOR]
-IS_CONDOR = true
+IS_CONDOR = false
 PROCESS_NAME = "WW"
 CHANNEL_INDX = 3
 TREE_NAME = "Events"
@@ -30,7 +30,7 @@ INPUTFILE_PATH = "@format src/data/preprocessed/{this.PROCESS_NAME}.json"
 TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
 OUTPUTDIR_PATH = "@format outputs/{this.PROCESS_NAME}"
 COPY_LOCAL = true
-STEP_SIZE = '800MB'
+STEP_SIZE = '1GB'
 COPY_DIR = "temp"
 SPAWN_CLIENT = true
 MIN_WORKER = 1
