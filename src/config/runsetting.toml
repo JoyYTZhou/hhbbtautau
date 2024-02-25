@@ -7,7 +7,6 @@ OUTPUTDIR_PATH = "@format {env[OUTPUTPATH]}"
 TRANSFER = false
 
 [LPCLOCAL]
-IS_CONDOR = false
 PROCESS_NAME = "WW"
 CHANNEL_INDX = 3
 CONDORPATH = "/store/user/joyzhou/output"
@@ -15,13 +14,13 @@ INPUTFILE_PATH = "@format src/data/preprocessed/{this.PROCESS_NAME}.json"
 OUTPUTDIR_PATH = "@format output/{this.PROCESS_NAME}"
 TRANSFER = false
 SPAWN_CLIENT = false
+SPAWN_CONDOR = false
 TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
 COPY_LOCAL = true
 STEP_SIZE = '800MB'
 COPY_DIR = "temp"
 
 [LPCCONDOR]
-IS_CONDOR = false
 PROCESS_NAME = "WW"
 CHANNEL_INDX = 3
 TREE_NAME = "Events"
@@ -33,6 +32,7 @@ COPY_LOCAL = true
 STEP_SIZE = '1GB'
 COPY_DIR = "temp"
 SPAWN_CLIENT = true
+SPAWN_CONDOR = false
 MIN_WORKER = 1
 MAX_WORKER = 3
 MEMORY = '10GB'

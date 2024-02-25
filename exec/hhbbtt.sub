@@ -1,5 +1,6 @@
 # Path variables
 MY_PATH = /uscms/homes/j/joyzhou/work/hhbbtautau
+NO_BACKUP = /uscms/home/joyzhou/nobackup
 
 # Job description
 universe = vanilla
@@ -17,6 +18,8 @@ transfer_output_files = daskworker.log
 
 request_cpus = 2
 request_memory = 10GB
-transfer_input_files = $(MY_PATH)/src, $(MY_PATH)/scripts, /uscms/home/joyzhou/nobackup/newcoffea.tar.gz
+request_disk = 5GB
+transfer_input_files = $(MY_PATH)/src, $(MY_PATH)/scripts, $(NO_BACKUP)/newcoffea.tar.gz, $(MY_PATH)/.condor_config
+
 queue
 

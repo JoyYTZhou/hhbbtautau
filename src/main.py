@@ -20,12 +20,12 @@ def main():
 
     if rs.SPAWN_CLIENT:
         from analysis.spawndask import spawnclient, testsubmit
-        # client = spawnclient()
+        client = spawnclient()
     else:
         client = None
     
-    # runfutures(client)
-    client = testsubmit()
+    runfutures(client)
+    # client = testsubmit()
 
     end_time = time.time()
     print(f"Execution time is {end_time - start_time} seconds")
