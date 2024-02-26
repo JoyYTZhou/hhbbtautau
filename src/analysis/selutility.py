@@ -28,7 +28,7 @@ class Processor:
         self.treename = self.rtcfg.TREE_NAME
         self.outdir = self.rtcfg.OUTPUTDIR_PATH
         self.dataset = dataset
-        if self.rtcfg.COPY_LOCAL: checkpath(self.rtcfg.COYP_DIR)
+        if self.rtcfg.COPY_LOCAL: checkpath(self.rtcfg.COPY_DIR)
         if self.rtcfg.TRANSFER: logging.info("File transfer in real time!")
         checkpath(self.rtcfg.OUTPUTDIR_PATH)
         self.defselections()
@@ -49,9 +49,10 @@ class Processor:
         :return: The loaded file dict
         :rtype: dask_awkward.lib.core.Array
         """
+        step_size = uproot._util.unset if self.rtcfg.STEP_SIZE is None else self.rtcfg.STEP_SIZE
         events = uproot.dask(
             files=filename,
-            step_size=self.rtcfg.STEP_SIZE
+            step_size=step_size
         )
         return events
     
@@ -67,6 +68,7 @@ class Processor:
         if self.rtcfg.COPY_LOCAL:
             msg.append('copying file ...')
             destpath = pjoin(self.rtcfg.COPY_DIR, f"{self.dataset}_{suffix}.root" )
+            logging.debug(f"Destination {destpath}")
             cproot(filename, destpath)
             openpath = destpath
         events = self.loadfile({openpath: self.treename})
@@ -94,7 +96,9 @@ class Processor:
             cpcondor(localpath, condorpath, is_file=True)
         
         msg.append(f"file {filename} processed successfully!")
-        if self.rtcfg.COPY_LOCAL: os.remove(openpath)
+        if self.rtcfg.COPY_LOCAL: 
+            os.remove(openpath)
+            logging.info(f"temporary copy for {filename} removed")
 
         return '\n'.join(msg)
 
