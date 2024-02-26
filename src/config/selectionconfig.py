@@ -18,7 +18,7 @@ runsetting = Dynaconf(
 dasksetting = Dynaconf(
     root_path = root_path,
     environments=True,
-    settings_file=['src/config/jobconfig.toml']
+    settings_file=['src/config/dasksetting.toml']
 )
 
 plotsetting = Dynaconf(

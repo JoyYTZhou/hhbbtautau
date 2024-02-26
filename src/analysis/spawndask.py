@@ -1,12 +1,12 @@
 from dask.distributed import Client, LocalCluster
-from lpcjobqueue import LPCCondorCluster
-from config.selectionconfig import runsetting as rs
 import dask.config
 from dask.distributed import as_completed
 from .selutility import Processor
 import json as json
 import logging
 from .helper import *
+from config.selectionconfig import runsetting as rs
+from config.selectionconfig import dasksetting as daskcfg
 
 def job(fn, i, dataset):
     proc = Processor(rs, dataset)
@@ -39,7 +39,8 @@ def testsubmit():
         metadata = json.load(samplepath)
     for dataset, info in metadata.items():
         logging.info(f"Processing {dataset}...")
-        client.submit(job, info['filelist'][0], 0, dataset)
+        msg = job(info['filelist'][0], 0, dataset)
+        print(msg)
     return client
 
 def process_futures(futures, results_file='futureresult.txt', errors_file='futureerror.txt'):
@@ -73,7 +74,7 @@ def process_futures(futures, results_file='futureresult.txt', errors_file='futur
 
 def spawnclient(default=False):
     """Spawn appropriate client based on runsetting."""
-    if not rs.SPAWN_CONDOR:
+    if not daskcfg.SPAWN_CONDOR:
         client = spawnLocal()
     else:
         client = spawnCondor(default)
@@ -81,6 +82,8 @@ def spawnclient(default=False):
 
 def spawnCondor(default=False):
     """Spawn dask client for condor cluster"""
+    from lpcjobqueue import LPCCondorCluster
+
     print("Trying to submit jobs to condor via dask!")
 
     if default:
@@ -89,9 +92,9 @@ def spawnCondor(default=False):
         print(cluster.job_script())
     else:
         condor_args = {"ship_env": True, 
-                    "processes": rs.PROCESS_NO,
-                    "cores": rs.CORE_NO,
-                    "memory": rs.MEMORY
+                    "processes": daskcfg.PROCESS_NO,
+                    "cores": daskcfg.CORE_NO,
+                    "memory": daskcfg.MEMORY
                     }
         cluster = LPCCondorCluster(**condor_args)
         cluster.job_extra_directives = {
@@ -99,7 +102,7 @@ def spawnCondor(default=False):
             'error': 'daskr_error.$(ClusterId).$(ProcId).err',
             'log': 'dask_log.$(ClusterId).log',
         }
-        cluster.adapt(minimum=rs.MIN_WORKER, maximum=rs.MAX_WORKER)
+        cluster.adapt(minimum=daskcfg.MIN_WORKER, maximum=daskcfg.MAX_WORKER)
 
     client = Client(cluster)
     print("One client created in LPC Condor!")
@@ -110,7 +113,7 @@ def spawnCondor(default=False):
 
 def spawnLocal():
     """Spawn dask client for local cluster"""
-    cluster = LocalCluster(processes=True, threads_per_worker=2)
+    cluster = LocalCluster(processes=False, threads_per_worker=2)
     cluster.adapt(minimum=0, maximum=3)
     client = Client(cluster)
     print("successfully created a dask client in local cluster!")
