@@ -5,11 +5,9 @@ import time
 import logging
 
 PARENT_DIR = os.path.dirname(__file__) 
-
 from config.selectionconfig import dasksetting as dask_cfg
 
 # if not rs.SPAWN_CONDOR: os.environ['CONDOR_CONFIG'] = os.path.join(PARENT_DIR, ".condor_config")
-
 logging.basicConfig(filename="daskworker.log", 
                     filemode='w', 
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', 

@@ -35,6 +35,7 @@ def submitfutures(client):
 
 def testsubmit():
     client = spawnclient()
+    client.get_versions(check=True)
     with open(rs.INPUTFILE_PATH, 'r') as samplepath:
         metadata = json.load(samplepath)
     for dataset, info in metadata.items():

@@ -53,7 +53,7 @@ class Processor:
         user_step_size = uproot._util.unset if not self.rtcfg.STEP_SIZE else self.rtcfg.STEP_SIZE
         try:
             events = uproot.dask(
-                files=filename,
+                files={filename: self.treename},
                 step_size=user_step_size
             )
         except OSError as e:
@@ -65,7 +65,7 @@ class Processor:
                 cproot(filename, destpath)
                 try:
                     events = uproot.dask(
-                        files=destpath,
+                        files={destpath: self.treename},
                         step_size=user_step_size
                     )
                 except OSError as e:
