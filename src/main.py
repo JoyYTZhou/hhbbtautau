@@ -6,7 +6,7 @@ import logging
 
 PARENT_DIR = os.path.dirname(__file__) 
 
-from config.selectionconfig import runsetting as rs
+from config.selectionconfig import dasksetting as dask_cfg
 
 # if not rs.SPAWN_CONDOR: os.environ['CONDOR_CONFIG'] = os.path.join(PARENT_DIR, ".condor_config")
 
@@ -20,7 +20,7 @@ def main():
     
     from analysis.spawndask import runfutures
 
-    if rs.SPAWN_CLIENT:
+    if dask_cfg.SPAWN_CLIENT:
         from analysis.spawndask import spawnclient, testsubmit
         client = testsubmit()
         # client = spawnclient()

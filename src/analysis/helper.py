@@ -44,6 +44,13 @@ def transferfiles(srcpath, destpath):
         if srcfile.is_file():
             cpcondor(str(srcfile), f"{destpath}/{srcfile.name}", is_file=True)
 
+def delfiles(dirname, pattern='*.root'):
+    if pattern is not None:
+        dirpath = Path(dirname)
+        for fipath in dirpath.glob(pattern):
+            fipath.unlink()
+            logging.info(f"Deleted {fipath}")
+
 def checkcondorpath(dirname):
     """Check if a condor path exists. If not will create one."""
     check_dir_cmd = f"xrdfs {PREFIX} stat {dirname}"

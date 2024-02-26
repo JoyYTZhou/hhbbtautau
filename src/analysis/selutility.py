@@ -42,19 +42,36 @@ class Processor:
         self.jetcfg = sel_cfg.signal.commonsel
         self.channelname = sel_cfg.signal[f'channel{self.rtcfg.CHANNEL_INDX}'].name
         
-    def loadfile(self, filename):
+    def loadfile(self, filename, suffix):
         """This is a wrapper function around uproot._dask. 
         I am writing this doc to humiliate myself in the future.
         
-        :return: The loaded file dict
+        :return: The loaded file dict (and error messages if encountered)
         :rtype: dask_awkward.lib.core.Array
         """
-        step_size = uproot._util.unset if self.rtcfg.STEP_SIZE is None else self.rtcfg.STEP_SIZE
-        events = uproot.dask(
-            files=filename,
-            step_size=step_size
-        )
-        return events
+        msg = []
+        user_step_size = uproot._util.unset if not self.rtcfg.STEP_SIZE else self.rtcfg.STEP_SIZE
+        try:
+            events = uproot.dask(
+                files=filename,
+                step_size=user_step_size
+            )
+        except OSError as e:
+            msg.append(f"Encountered an OSError while loading file: {e}")
+            if self.rtcfg.COPY_LOCAL:
+                msg.append("Copying file to local ... ")
+                destpath = pjoin(self.rtcfg.COPY_DIR, f"{self.dataset}_{suffix}.root")
+                msg.append(f"Destination path {destpath}")
+                cproot(filename, destpath)
+                try:
+                    events = uproot.dask(
+                        files=destpath,
+                        step_size=user_step_size
+                    )
+                except OSError as e:
+                    msg.append(f"Failed again to load file after copying: {e}")
+                    events = None
+        return events, msg
     
     def runfile(self, filename, suffix, write_method='dask', write_npz=False):
         """Run test selections on a single file dict.
@@ -63,15 +80,8 @@ class Processor:
         """
         msg = []
         msg.append(f'start processing {filename}!')
-
-        openpath = filename
-        if self.rtcfg.COPY_LOCAL:
-            msg.append('copying file ...')
-            destpath = pjoin(self.rtcfg.COPY_DIR, f"{self.dataset}_{suffix}.root" )
-            logging.debug(f"Destination {destpath}")
-            cproot(filename, destpath)
-            openpath = destpath
-        events = self.loadfile({openpath: self.treename})
+        events, loadmsg = self.loadfile(filename, suffix)
+        msg.extend(loadmsg)
 
         evtsel = EventSelections(self.lepcfg, self.jetcfg, self.channelname)
         passed = evtsel.select(events, return_veto=False)
@@ -96,9 +106,8 @@ class Processor:
             cpcondor(localpath, condorpath, is_file=True)
         
         msg.append(f"file {filename} processed successfully!")
-        if self.rtcfg.COPY_LOCAL: 
-            os.remove(openpath)
-            logging.info(f"temporary copy for {filename} removed")
+
+        if self.rtcfg.COPY_LOCAL: delfiles(self.rtcfg.COPY_DIR)
 
         return '\n'.join(msg)
 
