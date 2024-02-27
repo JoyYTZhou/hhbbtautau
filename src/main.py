@@ -19,14 +19,12 @@ def main():
     from analysis.spawndask import runfutures
 
     if dask_cfg.SPAWN_CLIENT:
-        from analysis.spawndask import spawnclient, testsubmit
-        client = testsubmit()
-        # client = spawnclient()
+        from analysis.spawndask import spawnclient, submitjobs
+        client = spawnclient()
     else:
         client = None
     
-    # runfutures(client)
-    # client = testsubmit()
+    submitjobs(client, future=False)
 
     end_time = time.time()
     print(f"Execution time is {end_time - start_time} seconds")

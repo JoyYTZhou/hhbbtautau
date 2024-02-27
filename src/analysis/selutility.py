@@ -51,26 +51,24 @@ class Processor:
         """
         msg = []
         user_step_size = uproot._util.unset if not self.rtcfg.STEP_SIZE else self.rtcfg.STEP_SIZE
-        try:
+        if self.rtcfg.COPY_LOCAL:
+            msg.append("Copying file to local ... ")
+            destpath = pjoin(self.rtcfg.COPY_DIR, f"{self.dataset}_{suffix}.root")
+            msg.append(f"Destination path {destpath}")
+            cproot(filename, destpath)
+            try:
+                events = uproot.dask(
+                    files={destpath: self.treename},
+                    step_size=user_step_size
+                )
+            except OSError as e:
+                msg.append(f"Failed again to load file after copying: {e}")
+                events = None
+        else:
             events = uproot.dask(
                 files={filename: self.treename},
                 step_size=user_step_size
-            )
-        except OSError as e:
-            msg.append(f"Encountered an OSError while loading file: {e}")
-            if self.rtcfg.COPY_LOCAL:
-                msg.append("Copying file to local ... ")
-                destpath = pjoin(self.rtcfg.COPY_DIR, f"{self.dataset}_{suffix}.root")
-                msg.append(f"Destination path {destpath}")
-                cproot(filename, destpath)
-                try:
-                    events = uproot.dask(
-                        files={destpath: self.treename},
-                        step_size=user_step_size
-                    )
-                except OSError as e:
-                    msg.append(f"Failed again to load file after copying: {e}")
-                    events = None
+            ) 
         return events, msg
     
     def runfile(self, filename, suffix, write_method='dask', write_npz=False):
@@ -89,10 +87,12 @@ class Processor:
             npzname = pjoin(self.outdir, f'cutflow_{suffix}_{self.channelname}.npz')
             evtsel.cfobj.to_npz(npzname)
         if write_method == 'dask':
-            self.writedask(passed, self.channelname, suffix)
+            self.writedask(passed, self.channelname, suffix, delayed=False)
             msg.append(f'computing {filename} finished!')
         elif write_method == 'dataframe':
             self.writeobj(passed, self.channelname, suffix)
+        elif write_method == 'pickle':
+            pass
         else:
             raise ValueError("Write method not supported")
 
@@ -111,16 +111,19 @@ class Processor:
 
         return '\n'.join(msg)
 
-    def writedask(self, passed, prefix, suffix, fields=None):
+    def writedask(self, passed, prefix, suffix, delayed=True, fields=None):
         """Wrapper around uproot.dask_write(),
         transfer all root files generated to a destination location."""
+        msg = []
         if fields is None:
             dir_name = pjoin(self.outdir, prefix)
             checkpath(dir_name)
-            uproot.dask_write(passed, destination=dir_name, compute=True, prefix=f'{self.dataset}_{prefix}_{suffix}')
+            if delayed: uproot.dask_write(passed, destination=dir_name, compute=False, prefix=f'{self.dataset}_{prefix}_{suffix}')
+            else: 
+                uproot.dask_write(passed, destination=dir_name, compute=True, prefix=f'{self.dataset}_{prefix}_{suffix}')
         else:
             pass
-        
+
         if self.rtcfg.TRANSFER:
             transferfiles(dir_name, self.rtcfg.TRANSFER_PATH)
             shutil.rmtree(dir_name)
