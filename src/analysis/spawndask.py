@@ -13,20 +13,23 @@ def job(fn, i, dataset):
     proc.runfile(fn, i)
 
 def runfutures(client):
-    futures = submitfutures(client)
+    futures = submitjobs(client)
     if futures is not None: process_futures(futures)
     
-def submitfutures(client):
-    """Submit future concurrent tasks to client across a set of distributed workers."""
+def submitjobs(client, future=True):
+    """Run jobs based on client settings.
+    If a valid client is found and future mode is true, submit simultaneously run jobs.
+    If not, fall back into a loop mode. Note that even in this mode, any dask computations will be managed by client.
+    """
     with open(rs.INPUTFILE_PATH, 'r') as samplepath:
         metadata = json.load(samplepath)
     for dataset, info in metadata.items():
         logging.info(f"Processing {dataset}...")
-        if client==None:
-            logging.info("No client spawned! In test mode.")
-            logging.info(f"Processing filename {info['filelist'][0]}")
-            job(info['filelist'][0], 0, dataset)
-            logging.info("Execution finished!")
+        if client is None or (not future):
+            for i, file in enumerate(info['filelist']):
+                logging.info(f"Processing filename {file}")
+                job(file, i, dataset)
+                logging.info(f"Execution finished for filename {file}!")
             return None
         else:
             futures = [client.submit(job, fn, i, dataset) for i, fn in enumerate(info['filelist'])]
@@ -35,13 +38,12 @@ def submitfutures(client):
 
 def testsubmit():
     client = spawnclient()
-    client.get_versions(check=True)
+    print(client.get_versions(check=True))
     with open(rs.INPUTFILE_PATH, 'r') as samplepath:
         metadata = json.load(samplepath)
     for dataset, info in metadata.items():
         logging.info(f"Processing {dataset}...")
-        msg = job(info['filelist'][0], 0, dataset)
-        print(msg)
+        client.submit(job, info['filelist'][0], 0, dataset)
     return client
 
 def process_futures(futures, results_file='futureresult.txt', errors_file='futureerror.txt'):
@@ -114,7 +116,7 @@ def spawnCondor(default=False):
 
 def spawnLocal():
     """Spawn dask client for local cluster"""
-    cluster = LocalCluster(processes=False, threads_per_worker=2)
+    cluster = LocalCluster(processes=daskcfg.SPAWN_PROCESS, threads_per_worker=daskcfg.THREADS_NO)
     cluster.adapt(minimum=1, maximum=3)
     client = Client(cluster)
     print("successfully created a dask client in local cluster!")

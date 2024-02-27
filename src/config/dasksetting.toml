@@ -1,6 +1,8 @@
 [LPCLOCAL]
 SPAWN_CLIENT = true
 SPAWN_CONDOR = false
+THREADS_NO = 4
+SPAWN_PROCESS = false  # highly recommended for large datasets
 
 [LPCCONDOR]
 SPAWN_CLIENT = true

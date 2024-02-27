@@ -11,13 +11,14 @@ PROCESS_NAME = "WW"
 CHANNEL_INDX = 3
 TREE_NAME = "Events"
 CONDORPATH = "/store/user/joyzhou/output"
+SCRATCHPATH = "/uscmst1b_scratch/lpc1/3DayLifetime/joyzhou"
 INPUTFILE_PATH = "@format src/data/preprocessed/{this.PROCESS_NAME}.json"
-OUTPUTDIR_PATH = "@format output/{this.PROCESS_NAME}"
+OUTPUTDIR_PATH = "@format {this.SCRATCHPATH}/output/{this.PROCESS_NAME}"
 TRANSFER = false
 TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
 COPY_LOCAL = true
 STEP_SIZE = '800MB'
-COPY_DIR = "/uscmst1b_scratch/lpc1/3DayLifetime/joyzhou/temp"
+COPY_DIR = "@format {this.SCRATCHPATH}/temp"
 
 [LPCCONDOR]
 PROCESS_NAME = "WW"
