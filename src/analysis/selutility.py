@@ -8,7 +8,6 @@ import vector as vec
 import operator as opr
 import logging
 import pandas as pd
-import gc
 from collections import ChainMap
 import uproot
 from config.selectionconfig import settings as sel_cfg

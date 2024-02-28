@@ -18,10 +18,10 @@ logging.basicConfig(filename=f"daskworker_{LOG_NAME}.log",
 def main():
     start_time = time.time()
     
-    from analysis.spawndask import runfutures
+    from analysis.spawndask import submitjobs
 
     if dask_cfg.SPAWN_CLIENT:
-        from analysis.spawndask import spawnclient, submitjobs
+        from analysis.spawndask import spawnclient
         client = spawnclient(default=False)
     else:
         client = None
