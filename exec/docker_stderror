@@ -1,0 +1,1 @@
+Error response from daemon: Get "https://ssiregistry.fnal.gov/v2/": dial tcp: lookup ssiregistry.fnal.gov on [::1]:53: read udp [::1]:36391->[::1]:53: read: connection refused
