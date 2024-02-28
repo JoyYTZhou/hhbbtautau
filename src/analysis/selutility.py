@@ -29,7 +29,8 @@ class Processor:
         self.outdir = self.rtcfg.OUTPUTDIR_PATH
         self.dataset = dataset
         if self.rtcfg.COPY_LOCAL: checkpath(self.rtcfg.COPY_DIR)
-        if self.rtcfg.TRANSFER: logging.info("File transfer in real time!")
+        if self.rtcfg.TRANSFER: 
+            logging.info("File transfer in real time!")
         checkpath(self.rtcfg.OUTPUTDIR_PATH)
         self.defselections()
 
