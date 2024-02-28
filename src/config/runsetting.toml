@@ -21,7 +21,7 @@ STEP_SIZE = '400MB'
 COPY_DIR = "@format {this.SCRATCHPATH}/temp"
 
 [LPCCONDOR]
-PROCESS_NAME = "DYJets"
+PROCESS_NAME = "ZH"
 CHANNEL_INDX = 3
 TREE_NAME = "Events"
 CONDORPATH = "/store/user/joyzhou/output"
@@ -31,7 +31,7 @@ TRANSFER = true
 TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
 COPY_LOCAL = true
 COPY_DIR = "temp"
-STEP_SIZE = '600MB'
+STEP_SIZE = '700MB'
 
 [LPCJUPYTER]
 OUTPUTDIR_PATH = "/uscms_data/d1/joyzhou/output/test"
