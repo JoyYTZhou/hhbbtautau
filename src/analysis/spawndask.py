@@ -91,13 +91,14 @@ def spawnCondor(default=False):
 
     if default:
         cluster = LPCCondorCluster(ship_env=True)
-        cluster.adapt(minimum=1)
+        cluster.adapt(maximum=3)
         print(cluster.job_script())
     else:
         condor_args = {"ship_env": True, 
                     "processes": daskcfg.PROCESS_NO,
                     "cores": daskcfg.CORE_NO,
-                    "memory": daskcfg.MEMORY
+                    "memory": daskcfg.MEMORY,
+                    "disk": daskcfg.DISK
                     }
         cluster = LPCCondorCluster(**condor_args)
         cluster.job_extra_directives = {
@@ -106,6 +107,7 @@ def spawnCondor(default=False):
             'log': 'dask_log.$(ClusterId).log',
         }
         cluster.adapt(minimum=daskcfg.MIN_WORKER, maximum=daskcfg.MAX_WORKER)
+        print(cluster.job_script())
 
     client = Client(cluster)
     print("One client created in LPC Condor!")
