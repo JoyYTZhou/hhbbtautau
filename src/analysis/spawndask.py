@@ -5,6 +5,7 @@ from .selutility import Processor
 import json as json
 import logging
 from .helper import *
+import gc
 from itertools import islice
 from config.selectionconfig import runsetting as rs
 from config.selectionconfig import dasksetting as daskcfg
@@ -37,19 +38,21 @@ def submitloops():
     metadata = loadmeta()
     for dataset, info in metadata.items():
         logging.info(f"Processing {dataset}...")
+        logging.info(f"Expected to see {len(info['filelist'])} number of outputs")
         for i, file in enumerate(info['filelist']):
             logging.info(f"Processing filename {file}")
             job(file, i, dataset)
             logging.info(f"Execution finished for filename {file}!")
+            gc.collect()
     return None
 
-def submitjobs(client, future=True):
+def submitjobs(client):
     """Run jobs based on client settings.
     If a valid client is found and future mode is true, submit simultaneously run jobs.
     If not, fall back into a loop mode. Note that even in this mode, any dask computations will be managed by client.
     """
     result = None
-    if client is None or (not future): result = submitloops()
+    if client is None or (not daskcfg.SPAWN_FUTURE): result = submitloops()
     else: result = submitfutures(client)
     return result
 

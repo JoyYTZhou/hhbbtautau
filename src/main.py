@@ -26,7 +26,7 @@ def main():
     else:
         client = None
     
-    submitjobs(client, future=False)
+    submitjobs(client)
 
     end_time = time.time()
     print(f"Execution time is {end_time - start_time} seconds")
