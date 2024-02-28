@@ -7,7 +7,7 @@ OUTPUTDIR_PATH = "@format {env[OUTPUTPATH]}"
 TRANSFER = false
 
 [LPCLOCAL]
-PROCESS_NAME = "ZH"
+PROCESS_NAME = "DYJets"
 CHANNEL_INDX = 3
 TREE_NAME = "Events"
 CONDORPATH = "/store/user/joyzhou/output"
@@ -17,11 +17,11 @@ OUTPUTDIR_PATH = "@format {this.SCRATCHPATH}/output/{this.PROCESS_NAME}"
 TRANSFER = true
 TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
 COPY_LOCAL = true
-STEP_SIZE = '300MB'
+STEP_SIZE = '400MB'
 COPY_DIR = "@format {this.SCRATCHPATH}/temp"
 
 [LPCCONDOR]
-PROCESS_NAME = "WW"
+PROCESS_NAME = "DYJets"
 CHANNEL_INDX = 3
 TREE_NAME = "Events"
 CONDORPATH = "/store/user/joyzhou/output"
@@ -31,7 +31,7 @@ TRANSFER = true
 TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
 COPY_LOCAL = true
 COPY_DIR = "temp"
-STEP_SIZE = '500MB'
+STEP_SIZE = '600MB'
 
 [LPCJUPYTER]
 OUTPUTDIR_PATH = "/uscms_data/d1/joyzhou/output/test"
@@ -40,11 +40,3 @@ CHANNEL_NO = 1
 INPUTFILE_PATH = "@format {env[PARENT_DIR]}/src/data/chunked/{this.PROCESS_NAME}.json"
 CHANNELNAMES = ["tauhtauh"]
 TRANSFER = true
-
-[LXPLUS]
-PROCESS_NAME = "WW"
-CHANNEL_INDX = 3
-TREE_NAME = "Events"
-CONDORPATH = "/store/user/joyzhou/output"
-
-

@@ -1,19 +1,20 @@
 [LPCLOCAL]
 SPAWN_CLIENT = true
 SPAWN_CONDOR = true
+SPAWN_FUTURE = true
 THREADS_NO = 4
 SPAWN_PROCESS = false  # highly recommended for large datasets
 MIN_WORKER = 1
-MAX_WORKER = 2
-MEMORY = '10GB'
+MAX_WORKER = 3
+MEMORY = '20GB'
 CORE_NO = 2
 PROCESS_NO = 2
-DISK = '5GB'
+DISK = '8GB'
 
-[LPCCONDOR]
+[LPCCONDOR] 
 SPAWN_CLIENT = true
 SPAWN_CONDOR = false
-# if start local cluster for condor jobs
 SPAWN_PROCESS = true
+SPAWN_FUTURE = false
 THREADS_NO = 4
 
