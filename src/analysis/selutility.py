@@ -30,6 +30,7 @@ class Processor:
         if self.rtcfg.COPY_LOCAL: checkpath(self.rtcfg.COPY_DIR)
         if self.rtcfg.TRANSFER: 
             logging.info("File transfer in real time!")
+            checkcondorpath(self.rtcfg.TRANSFER_PATH)
         checkpath(self.rtcfg.OUTPUTDIR_PATH)
         self.defselections()
 
@@ -96,14 +97,15 @@ class Processor:
         else:
             raise ValueError("Write method not supported")
 
-        localpath = pjoin(self.outdir, f'cutflow_{suffix}.csv')
+        cutflow_name = f'{self.dataset}_cutflow_{suffix}.csv'
+        localpath = pjoin(self.outdir, cutflow_name)
         cutflow_df = evtsel.cf_to_df() 
         cutflow_df.to_csv(localpath)
 
         del evtsel, cutflow_df, events, passed
 
         if self.rtcfg.TRANSFER:
-            condorpath = f'{self.rtcfg.TRANSFER_PATH}/cutflow_{suffix}.csv'
+            condorpath = f'{self.rtcfg.TRANSFER_PATH}/{cutflow_name}'
             cpcondor(localpath, condorpath, is_file=True)
         msg.append(f"file {filename} processed successfully!")
         if self.rtcfg.COPY_LOCAL: delfiles(self.rtcfg.COPY_DIR)
