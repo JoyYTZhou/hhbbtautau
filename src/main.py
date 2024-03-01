@@ -6,11 +6,10 @@ import logging
 
 PARENT_DIR = os.path.dirname(__file__) 
 from config.selectionconfig import dasksetting as dask_cfg
-
-LOG_NAME = os.environ.get('ENV_FOR_DYNACONF')
+from config.selectionconfig import runsetting as rs
 
 # if not rs.SPAWN_CONDOR: os.environ['CONDOR_CONFIG'] = os.path.join(PARENT_DIR, ".condor_config")
-logging.basicConfig(filename=f"daskworker_{LOG_NAME}.log", 
+logging.basicConfig(filename=f"daskworker_{rs.PROCESS_NAME}.log", 
                     filemode='w', 
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', 
                     level=logging.INFO)
