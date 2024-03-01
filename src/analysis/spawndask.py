@@ -12,18 +12,22 @@ from config.selectionconfig import dasksetting as daskcfg
 
 def job(fn, i, dataset):
     proc = Processor(rs, dataset)
+    logging.info(f"Processing filename {fn}")
     proc.runfile(fn, i)
+    logging.info(f"Execution finished for file index {i} in {dataset}!")
 
 def runfutures(client):
     futures = submitjobs(client)
     if futures is not None: process_futures(futures)
     
-def loadmeta(resume=False, dsindx=None, fileindx=None):
+def loadmeta():
     with open(rs.INPUTFILE_PATH, 'r') as samplepath:
         metadata = json.load(samplepath)
-    if resume: 
-        pass
-    return metadata
+    loaded = metadata
+    if rs.RESUME: 
+        sliced_dict = dict(islice(metadata.items(), rs.DSINDX, None))
+        loaded = sliced_dict 
+    return loaded
 
 def submitfutures(client):
     metadata = loadmeta()
@@ -36,14 +40,17 @@ def submitloops():
     """Put file processing in loops, i.e. one file by one file.
     Usually used for large file size."""
     metadata = loadmeta()
-    for dataset, info in metadata.items():
+    for j, dataset, info in enumerate(metadata.items()):
         logging.info(f"Processing {dataset}...")
         logging.info(f"Expected to see {len(info['filelist'])} number of outputs")
         for i, file in enumerate(info['filelist']):
-            logging.info(f"Processing filename {file}")
-            job(file, i, dataset)
-            logging.info(f"Execution finished for filename {file}!")
-            gc.collect()
+            if rs.RESUME and j==0:
+                if i >= rs.FINDX: 
+                    job(file, i, dataset)
+                    gc.collect()
+            else:
+                job(file, i, dataset)
+                gc.collect() 
     return None
 
 def submitjobs(client):
