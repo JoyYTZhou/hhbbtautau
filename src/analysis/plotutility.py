@@ -4,28 +4,44 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import glob
 import os
-import warnings
+import json
 from analysis.helper import *
 
 class Visualizer():
     def __init__(self, plt_cfg):
         self._pltcfg = plt_cfg
+        self.indir = plt_cfg.INPUTDIR
+        self.outdir = plt_cfg.OUTPUTDIR
+        with open(plt_cfg.INPUTFILE_PATH, 'r') as samplepath:
+            self.meta = json.load(samplepath)
+
         
     @property
     def pltcfg(self):
         return self._pltcfg
 
-    def combine_cf(self, sourcedir):
+    def combine_cf(self, dsname, output=False):
         """Combines all cutflow tables in source directory and output them into output directory"""
-        pattern = f'{sourcedir}/cutflow_*.csv'
-        file_names = glob.glob(pattern)
+        dirpattern = pjoin(self.indir, f'{dsname}_cutflow*.csv')
+        file_names = glob.glob(dirpattern)
         
         dfs = [pd.read_csv(file_name, index_col=0, header=0) for file_name in file_names]
         concat_df = pd.concat(dfs)
         combined = concat_df.groupby(concat_df.index, sort=False).sum()
         
+        if output: 
+            finame = pjoin(self.outdir, 'cutflow.csv') if outputname is None else pjoin(self.outdir, outputname)
+            combined.to_csv(finame)
+        
         return combined
     
+    def weight_cf(self, dsname, lumi=50, append=False):
+        """Calculate weighted table based on raw table.""" 
+        wgt = self.meta[dsname]["Per Event"]
+
+        
+        pass 
+
     def efficiency(self, cfdf):
         """Add efficiency for the cutflow table"""
         for column in cfdf.columns:
