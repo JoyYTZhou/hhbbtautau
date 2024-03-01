@@ -40,7 +40,7 @@ def submitloops():
     """Put file processing in loops, i.e. one file by one file.
     Usually used for large file size."""
     metadata = loadmeta()
-    for j, dataset, info in enumerate(metadata.items()):
+    for j, (dataset, info) in enumerate(metadata.items()):
         logging.info(f"Processing {dataset}...")
         logging.info(f"Expected to see {len(info['filelist'])} number of outputs")
         for i, file in enumerate(info['filelist']):
