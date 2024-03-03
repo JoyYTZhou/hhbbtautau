@@ -31,10 +31,10 @@ TRANSFER = true
 TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
 COPY_LOCAL = true
 COPY_DIR = "temp"
-STEP_SIZE = '400MB'
-RESUME = false
+STEP_SIZE = '300MB'
+RESUME = true
 DSINDX = 0
-FINDX = 20
+FINDX = 7
 
 [LPCJUPYTER]
 OUTPUTDIR_PATH = "/uscms_data/d1/joyzhou/output/test"

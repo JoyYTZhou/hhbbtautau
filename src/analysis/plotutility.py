@@ -15,7 +15,6 @@ class Visualizer():
         with open(plt_cfg.INPUTFILE_PATH, 'r') as samplepath:
             self.meta = json.load(samplepath)
 
-        
     @property
     def pltcfg(self):
         return self._pltcfg
