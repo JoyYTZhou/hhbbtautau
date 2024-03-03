@@ -13,8 +13,13 @@ from config.selectionconfig import dasksetting as daskcfg
 def job(fn, i, dataset):
     proc = Processor(rs, dataset)
     logging.info(f"Processing filename {fn}")
-    proc.runfile(fn, i)
-    logging.info(f"Execution finished for file index {i} in {dataset}!")
+    try: 
+        proc.runfile(fn, i)
+        logging.info(f"Execution finished for file index {i} in {dataset}!")
+        return True
+    except ValueError as e:
+        logging.error(f"ValueError encountered for file index {i} in {dataset}: {e}", exc_info=True)
+        return False
 
 def runfutures(client):
     futures = submitjobs(client)
