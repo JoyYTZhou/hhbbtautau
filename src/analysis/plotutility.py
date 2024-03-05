@@ -24,8 +24,10 @@ class Visualizer():
         for ds in dslist:
             with open(pjoin(self.pltcfg.DATAPATH, f'{ds}.json'), 'r') as f:
                 meta = json.load(f)
+                dsdict = {}
                 for dskey, dsval in meta.items():
-                    wgt_dict.update({dskey: dsval['Per Event']})
+                    dsdict.update({dskey: dsval['Per Event']})
+                wgt_dict.update({ds: dsdict})
 
         self.wgt_dict = wgt_dict
 
@@ -51,8 +53,9 @@ class Visualizer():
     
     def weight_cf(self, dsname, raw_cf, lumi=50):
         """Calculate weighted table based on raw table.""" 
-        wgt = self.meta[dsname]["Per Event"]*lumi
-        wgt_df = raw_cf*wgt
+        wgt = self.wgt_dict[dsname] * lumi
+        wgt_df = raw_cf * wgt
+        wgt_df.columns = [dsname]
         outfiname = pjoin(self.outdir, f'{dsname}_cutflowwgt.csv')
         wgt_df.to_csv(outfiname)
         return wgt_df
@@ -67,7 +70,25 @@ class Visualizer():
     def beautify_cf(self, cfdf):
         pass
 
-   
+    def compute_allcf(self, lumi=50, output=True):
+        """Load all cutflow tables for all datasets and combine them into one"""
+        ds_list = self.pltcfg.DATASETS
+        raw_df_list = [None]*len(ds_list)
+        wgt_df_list = [None]*len(ds_list)
+
+        for i, dataset in enumerate(ds_list):
+            raw_df_list[i] = self.combine_cf(dataset, output)
+            wgt_df_list[i] = self.weight_cf(dataset, raw_df_list[i], lumi)
+        
+        wgt_df = pd.concat(wgt_df_list, axis=1)
+        wgt_df.columns = ds_list
+
+
+        
+    def concat_cf(self, output=True):
+
+        pass
+    
     def sort_cf(self, srcdir, save=True):
         """Create a multi index table that contains all channel cutflows for all datasets.
         :param ds_list: list of strings of dataset

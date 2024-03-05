@@ -6,7 +6,7 @@ default:
       nJet: 2
     channelnames: ["taumtauh", "tauetauh", "tauhtauh"]
     channelno: 3
-    chanel1:
+    channel1:
       name: "taumtauh"
       triggers:
         electron: null
