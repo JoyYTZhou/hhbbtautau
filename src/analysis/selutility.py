@@ -6,7 +6,6 @@ import dask
 from coffea.analysis_tools import PackedSelection
 import vector as vec
 import operator as opr
-import logging
 import pandas as pd
 from collections import ChainMap
 import uproot
@@ -29,7 +28,6 @@ class Processor:
         self.dataset = dataset
         if self.rtcfg.COPY_LOCAL: checkpath(self.rtcfg.COPY_DIR)
         if self.rtcfg.TRANSFER: 
-            logging.info("File transfer in real time!")
             checkcondorpath(self.rtcfg.TRANSFER_PATH)
         checkpath(self.rtcfg.OUTPUTDIR_PATH)
         self.defselections()
@@ -322,7 +320,6 @@ class Object():
         """Take a dask zipped object, unzip it, compute it, flatten it into a dataframe
         """
         if self.veto is True:
-            logging.info(f"Veto set for {self.name}.")
             return None
         computed, = dask.compute(self.dakzipped[dak.argsort(self.dakzipped[sortname], ascending=ascending)])
         dakarr_dict = {}

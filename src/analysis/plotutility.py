@@ -6,21 +6,26 @@ import os
 import json
 from analysis.helper import *
 
+
 class Visualizer():
     def __init__(self, plt_cfg):
         self._pltcfg = plt_cfg
         self.indir = plt_cfg.INPUTDIR
         self.outdir = plt_cfg.OUTPUTDIR
         self.wgt_dict = None
+        plt.style.use(hep.style.CMS)
 
     @property
     def pltcfg(self):
         return self._pltcfg
     
-    def grepweights(self, dslist, output=False):
+    def getAll(self):
+        pass
+        
+    def grepweights(self, output=False):
         """Function for self use only, grep weights from a list json files formatted in a specific way."""
         wgt_dict = {}
-        for ds in dslist:
+        for ds in self.pltcfg.DATASETS:
             with open(pjoin(self.pltcfg.DATAPATH, f'{ds}.json'), 'r') as f:
                 meta = json.load(f)
                 dsdict = {}
@@ -75,7 +80,7 @@ class Visualizer():
         raw_df_list = []
         wgt_df_list = []
         for process, dsitems in self.wgt_dict.items():
-            for ds, wgt in dsitems.items():
+            for ds in list(dsitems.keys()):
                 raw_df = self.combine_cf(pjoin(self.indir, process), ds)
                 raw_df_list.append(raw_df)
                 wgt_df_list.append(self.weight_cf(ds, raw_df, lumi))
@@ -97,10 +102,6 @@ class Visualizer():
         wgt_df_list = load_csvs(wgt_pattern)
 
         return raw_df_list, wgt_df_list
-        
-    def concat_cf(self, output=True):
-
-        pass
     
     def sort_cf(self, srcdir, save=True):
         """Create a multi index table that contains all channel cutflows for all datasets.
@@ -126,10 +127,10 @@ class Visualizer():
 
         return allds_cf
 
-    def plot_var(self, name, range, df):
+    def plot_var(self, df, name, title, bins, range):
         fig, ax = plt.subplots(figsize=(10, 5))
         hep.histplot(
-            zz,
+            df[name],
             bins=bins,
             histtype="fill",
             color="b",
@@ -138,7 +139,6 @@ class Visualizer():
             label=r"ZZ $\rightarrow$ 4l",
             ax=ax,
         )
-
         ax.set_xlabel("4l invariant mass (GeV)", fontsize=15)
         ax.set_ylabel("Events / 3 GeV", fontsize=15)
         ax.set_xlim(rmin, rmax)
@@ -176,10 +176,6 @@ class Visualizer():
         
         
     
-            
-def jupyter_display():
-    
-    pass 
             
         
     # from https://github.com/aminnj/yahist/blob/master/yahist/utils.py#L133 

@@ -74,8 +74,31 @@ def checkpath(pathstr):
     else:
         logging.debug(f"Directory already exists: {path}")
 
+def initLogger(self, name, suffix):
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
+
+    debug_handler = logging.FileHandler(f"{name}_daskworker_{suffix}.log")
+    debug_handler.setLevel(logging.DEBUG)
+
+    error_handler = logging.FileHandler(f"{name}daskworker_{suffix}.err")
+    error_handler.setLevel(logging.ERROR)
+
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    debug_handler.setFormatter(formatter)
+    error_handler.setFormatter(formatter)
+
+    logger.addHandler(debug_handler)
+    logger.addHandler(error_handler)
+
+    return logger
+
 def load_csvs(pattern):
     file_names = glob.glob(pattern)
     dfs = [pd.read_csv(file_name, index_col=0, header=0) for file_name in file_names] 
     return dfs
 
+def hadd_csvs(pattern):
+    dfs = load_csvs(pattern)
+    return pd.concat(dfs, axis=1)
+    
