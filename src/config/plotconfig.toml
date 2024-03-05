@@ -3,5 +3,5 @@ DATAPATH = "/uscms/home/joyzhou/work/hhbbtautau/src/data/preprocessed"
 INPUTDIR = "root://cmseos.fnal.gov//store/user/joyzhou/output"
 OUTPUTDIR = "/uscms/home/joyzhou/nobackup/plots"
 CONDOR_TRANSFER = false
-DATASETS = ["DYJets", "ggF", "TTbar", "XH", "ZZ"]
+DATASETS = ["DYJets", "ggF", "ZH"]
 

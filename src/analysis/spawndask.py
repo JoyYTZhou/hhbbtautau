@@ -3,22 +3,23 @@ import dask.config
 from dask.distributed import as_completed
 from .selutility import Processor
 import json as json
-import logging
 from .helper import *
 import gc
 from itertools import islice
 from config.selectionconfig import runsetting as rs
 from config.selectionconfig import dasksetting as daskcfg
 
+logger = initLogger(__name__, rs.PROCESS_NAME)
+
 def job(fn, i, dataset):
     proc = Processor(rs, dataset)
-    logging.info(f"Processing filename {fn}")
+    logger.info(f"Processing filename {fn}")
     try: 
         proc.runfile(fn, i)
-        logging.info(f"Execution finished for file index {i} in {dataset}!")
+        logger.info(f"Execution finished for file index {i} in {dataset}!")
         return True
     except ValueError as e:
-        logging.error(f"ValueError encountered for file index {i} in {dataset}: {e}", exc_info=True)
+        logger.error(f"ValueError encountered for file index {i} in {dataset}: {e}", exc_info=True)
         return False
 
 def runfutures(client):
@@ -38,7 +39,7 @@ def submitfutures(client):
     metadata = loadmeta()
     for dataset, info in metadata.items():
         futures = [client.submit(job, fn, i, dataset) for i, fn in enumerate(info['filelist'])]
-        logging.info("Futures submitted!")
+        logger.info("Futures submitted!")
     return futures
 
 def submitloops():
@@ -46,8 +47,8 @@ def submitloops():
     Usually used for large file size."""
     metadata = loadmeta()
     for j, (dataset, info) in enumerate(metadata.items()):
-        logging.info(f"Processing {dataset}...")
-        logging.info(f"Expected to see {len(info['filelist'])} number of outputs")
+        logger.info(f"Processing {dataset}...")
+        logger.info(f"Expected to see {len(info['filelist'])} number of outputs")
         for i, file in enumerate(info['filelist']):
             if rs.RESUME and j==0:
                 if i >= rs.FINDX: 
@@ -74,7 +75,7 @@ def testsubmit():
     with open(rs.INPUTFILE_PATH, 'r') as samplepath:
         metadata = json.load(samplepath)
     for dataset, info in metadata.items():
-        logging.info(f"Processing {dataset}...")
+        logger.info(f"Processing {dataset}...")
         client.submit(job, info['filelist'][0], 0, dataset)
     return client
 
@@ -89,14 +90,14 @@ def process_futures(futures, results_file='futureresult.txt', errors_file='futur
         try:
             if future.exception():
                 error_msg = f"An error occurred: {future.exception()}"
-                logging.info(error_msg)
+                logger.info(error_msg)
                 errors.append(error_msg)
             else:
                 result = future.result()
                 processed_results.append(result)
         except Exception as e:
             error_msg = f"Error processing future result: {e}"
-            logging.info(error_msg)
+            logger.info(error_msg)
             errors.append(error_msg)
     with open(results_file, 'w') as f:
         for result in processed_results:
