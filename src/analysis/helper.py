@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 import logging
 import shutil
+import pandas as pd
 
 runcom = subprocess.run
 pjoin = os.path.join
@@ -73,4 +74,8 @@ def checkpath(pathstr):
     else:
         logging.debug(f"Directory already exists: {path}")
 
+def load_csvs(pattern):
+    file_names = glob.glob(pattern)
+    dfs = [pd.read_csv(file_name, index_col=0, header=0) for file_name in file_names] 
+    return dfs
 

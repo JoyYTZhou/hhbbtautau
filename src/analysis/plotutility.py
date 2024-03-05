@@ -1,6 +1,5 @@
 import mplhep as hep
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import glob
 import os
@@ -28,22 +27,23 @@ class Visualizer():
                 for dskey, dsval in meta.items():
                     dsdict.update({dskey: dsval['Per Event']})
                 wgt_dict.update({ds: dsdict})
-
         self.wgt_dict = wgt_dict
-
         if output: 
             outname = pjoin(self.pltcfg.DATAPATH, 'wgt_total.json')
             with open(outname, 'w') as f:
                 json.dump(self.wgt_dict, f, indent=4)
+    
+    def loadweights(self):
+        pass
 
-    def combine_cf(self, dsname, output=True):
-        """Combines all cutflow tables in source directory and output them into output directory"""
-        dirpattern = pjoin(self.indir, f'{dsname}_cutflow*.csv')
-        file_names = glob.glob(dirpattern)
-        
-        dfs = [pd.read_csv(file_name, index_col=0, header=0) for file_name in file_names]
+    def combine_cf(self, inputdir, dsname, output=True):
+        """Combines all cutflow tables in source directory belonging to one datset and output them into output directory"""
+        dirpattern = pjoin(inputdir, f'{dsname}_cutflow*.csv')
+        dfs = load_csvs(dirpattern)
+
         concat_df = pd.concat(dfs)
         combined = concat_df.groupby(concat_df.index, sort=False).sum()
+        combined.columns = [dsname]
         
         if output: 
             finame = pjoin(self.outdir, f'{dsname}_cutflowraw.csv') 
@@ -71,19 +71,32 @@ class Visualizer():
         pass
 
     def compute_allcf(self, lumi=50, output=True):
-        """Load all cutflow tables for all datasets and combine them into one"""
-        ds_list = self.pltcfg.DATASETS
-        raw_df_list = [None]*len(ds_list)
-        wgt_df_list = [None]*len(ds_list)
-
-        for i, dataset in enumerate(ds_list):
-            raw_df_list[i] = self.combine_cf(dataset, output)
-            wgt_df_list[i] = self.weight_cf(dataset, raw_df_list[i], lumi)
+        """Load all cutflow tables for all datasets from output directory and combine them into one"""
+        raw_df_list = []
+        wgt_df_list = []
+        for process, dsitems in self.wgt_dict.items():
+            for ds, wgt in dsitems.items():
+                raw_df = self.combine_cf(pjoin(self.indir, process), ds)
+                raw_df_list.append(raw_df)
+                wgt_df_list.append(self.weight_cf(ds, raw_df, lumi))
         
+        raw_df = pd.concat(raw_df_list, axis=1)
         wgt_df = pd.concat(wgt_df_list, axis=1)
-        wgt_df.columns = ds_list
 
+        if output:
+            raw_df.to_csv(pjoin(self.outdir, "cutflow_raw_tot.csv"))
+            wgt_df.to_csv(pjoin(self.outdir, "cutflow_wgt_tot.csv"))
 
+        return raw_df, wgt_df
+    
+    def load_computed(self):
+        """Load all computed combined csv's for datasets in store"""
+        raw_pattern = pjoin(self.outdir, '*_cutflowraw.csv')
+        raw_df_list = load_csvs(raw_pattern)
+        wgt_pattern = pjoin(self.outdir, '*_cutflowwgt.csv')
+        wgt_df_list = load_csvs(wgt_pattern)
+
+        return raw_df_list, wgt_df_list
         
     def concat_cf(self, output=True):
 
