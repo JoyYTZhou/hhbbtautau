@@ -5,6 +5,7 @@ from pathlib import Path
 import logging
 import shutil
 import pandas as pd
+from datetime import datetime
 
 runcom = subprocess.run
 pjoin = os.path.join
@@ -102,22 +103,25 @@ def hadd_csvs(pattern):
     dfs = load_csvs(pattern)
     return pd.concat(dfs, axis=1)
 
-# below needs testing
 def list_xrdfs_files(remote_dir):
-    """List files in a remote xrdfs directory."""
+    """List files/dirs in a remote xrdfs directory."""
     cmd = ["xrdfs", PREFIX, "ls", remote_dir]
     output = subprocess.check_output(cmd).decode()
     files = output.strip().split('\n')
     return files
 
 def get_xrdfs_file_info(remote_file):
-    """Get information (size, modification time) of a remote xrdfs file."""
-    cmd = ["xrdfs", "root://server.example.com", "stat", remote_file]
+    """Get information (size, modification time) of a remote xrdfs file/dir"""
+    cmd = ["xrdfs", PREFIX, "stat", remote_file]
     output = subprocess.check_output(cmd).decode()
-    # Parse output to extract size and modification time
-    # This will need to be adjusted based on the actual output format of `xrdfs stat`
-    size = ...
-    mod_time = ...
+    size = None
+    mod_time = None
+
+    for line in output.split('\n'):
+        if line.startswith('Size:'):
+            size = int(line.split()[1])
+        elif line.startswith('MTime:'):
+            mod_time = ' '.join(line.split()[1:])
     return size, mod_time
 
 def sync_files(local_dir, remote_dir):
@@ -125,20 +129,15 @@ def sync_files(local_dir, remote_dir):
     remote_files = list_xrdfs_files(remote_dir)
     for remote_file in remote_files:
         local_file = os.path.join(local_dir, os.path.basename(remote_file))
-        # If the file doesn't exist locally, or sizes/modification times differ, copy it
         if not os.path.exists(local_file):
             copy_file = True
         else:
             local_size = os.path.getsize(local_file)
-            local_mod_time = os.path.getmtime(local_file)
-            remote_size, remote_mod_time = get_xrdfs_file_info(remote_file)
-            copy_file = (local_size != remote_size) or (local_mod_time != remote_mod_time)
+            local_mod_time = datetime.fromtimestamp(os.path.getmtime(local_file))
+            remote_size, remote_mod_time_str = get_xrdfs_file_info(remote_file)
+            remote_mod_time = datetime.strptime(remote_mod_time_str, '%a %b %d %H:%M:%S %Y')
+            copy_file = (local_size != remote_size) or (local_mod_time < remote_mod_time)
         
         if copy_file:
-            cmd = ["xrdcp", f"root://server.example.com/{remote_file}", local_file]
+            cmd = ["xrdcp", f"{PREFIX}/{remote_file}", local_file]
             subprocess.run(cmd)
-
-# Example usage
-# local_dir = "/path/to/local/dir"
-# remote_dir = "/path/to/remote/dir"
-# sync_files(local_dir, remote_dir)
