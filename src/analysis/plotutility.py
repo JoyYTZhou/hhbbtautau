@@ -6,12 +6,12 @@ import os
 import json
 from analysis.helper import *
 
-
 class Visualizer():
     def __init__(self, plt_cfg):
         self._pltcfg = plt_cfg
         self.indir = plt_cfg.INPUTDIR
         self.outdir = plt_cfg.OUTPUTDIR
+        checkpath(self.outdir)
         self.wgt_dict = None
         plt.style.use(hep.style.CMS)
 
@@ -33,6 +33,7 @@ class Visualizer():
                     dsdict.update({dskey: dsval['Per Event']})
                 wgt_dict.update({ds: dsdict})
         self.wgt_dict = wgt_dict
+
         if output: 
             outname = pjoin(self.pltcfg.DATAPATH, 'wgt_total.json')
             with open(outname, 'w') as f:
@@ -56,15 +57,6 @@ class Visualizer():
         
         return combined
     
-    def weight_cf(self, dsname, raw_cf, lumi=50):
-        """Calculate weighted table based on raw table.""" 
-        wgt = self.wgt_dict[dsname] * lumi
-        wgt_df = raw_cf * wgt
-        wgt_df.columns = [dsname]
-        outfiname = pjoin(self.outdir, f'{dsname}_cutflowwgt.csv')
-        wgt_df.to_csv(outfiname)
-        return wgt_df
-
     def efficiency(self, cfdf):
         """Add efficiency for the cutflow table"""
         for column in cfdf.columns:
@@ -83,7 +75,8 @@ class Visualizer():
             for ds in list(dsitems.keys()):
                 raw_df = self.combine_cf(pjoin(self.indir, process), ds)
                 raw_df_list.append(raw_df)
-                wgt_df_list.append(self.weight_cf(ds, raw_df, lumi))
+                wgt = self.wgt_dict[process][ds]
+                wgt_df_list.append(self.weight_cf(ds, wgt, raw_df, lumi))
         
         raw_df = pd.concat(raw_df_list, axis=1)
         wgt_df = pd.concat(wgt_df_list, axis=1)
@@ -93,6 +86,14 @@ class Visualizer():
             wgt_df.to_csv(pjoin(self.outdir, "cutflow_wgt_tot.csv"))
 
         return raw_df, wgt_df
+
+    def weight_cf(self, dsname, wgt, raw_cf, lumi=50):
+        """Calculate weighted table based on raw table.""" 
+        wgt_df = raw_cf * wgt * lumi
+        wgt_df.columns = [dsname]
+        outfiname = pjoin(self.outdir, f'{dsname}_cutflowwgt.csv')
+        wgt_df.to_csv(outfiname)
+        return wgt_df
     
     def load_computed(self):
         """Load all computed combined csv's for datasets in store"""
