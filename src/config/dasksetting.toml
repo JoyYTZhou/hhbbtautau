@@ -18,3 +18,12 @@ SPAWN_PROCESS = true
 SPAWN_FUTURE = false
 THREADS_NO = 4
 
+[LPCJUPYTER]
+SPAWN_CLIENT = false
+SPAWN_CONDOR = false
+SPAWN_PROCESS = false
+SPAWN_FUTURE = false
+
+
+
+

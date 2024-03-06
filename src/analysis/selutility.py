@@ -207,7 +207,7 @@ class EventSelections:
             tau_mask = (tau.ptmask(opr.ge) & \
                         tau.absetamask(opr.le))
             tau.filter_dakzipped(tau_mask)
-            tau_nummask = tau.numselmask(opr.eq)
+            tau_nummask = tau.numselmask(opr.ge)
         else: tau_nummask = tau.vetomask()
 
         self.objsel.add_multiple({"ElectronSelection": elec_nummask,
