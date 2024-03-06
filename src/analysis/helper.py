@@ -6,6 +6,7 @@ import logging
 import shutil
 import pandas as pd
 from datetime import datetime
+import uproot
 
 runcom = subprocess.run
 pjoin = os.path.join
@@ -75,7 +76,7 @@ def checkpath(pathstr):
     else:
         logging.debug(f"Directory already exists: {path}")
 
-def initLogger(self, name, suffix):
+def initLogger(name, suffix):
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
 
@@ -102,6 +103,52 @@ def load_csvs(pattern):
 def hadd_csvs(pattern):
     dfs = load_csvs(pattern)
     return pd.concat(dfs, axis=1)
+
+def load_roots(directory, pattern, branches, tree_name='tree', clean=False):
+    """
+    Load specific branches from ROOT files matching a pattern in a directory, and combine them into a single DataFrame.
+
+    Parameters:
+    - directory: Path to the directory containing ROOT files.
+    - pattern: Pattern to match ROOT files, e.g., "*.root".
+    - branches: List of branch names to load from each ROOT file.
+    - tree_name: Name of the tree to load
+    - clean: whether to clean empty files (be cautious with this)
+
+    Returns:
+    - A pandas DataFrame containing the combined data from all matched ROOT files.
+    """
+    full_pattern = os.path.join(directory, pattern)
+    root_files = glob.glob(full_pattern)
+    dfs = []
+    emptylist = []
+    for root_file in root_files:
+        with uproot.open(root_file) as file:
+            if file.keys() == []:
+                emptylist.append(root_file) 
+            else:
+                tree = file[tree_name]
+                df = tree.arrays(branches, library="pd")
+                dfs.append(df)
+    combined_df = pd.concat(dfs, ignore_index=True)
+    if emptylist != [] and clean: 
+        delfilelist(emptylist)
+    return combined_df
+
+def delfilelist(filelist):
+    """Remove a list of file"""
+    for file_path in filelist:
+        file = Path(file_path)
+        try:
+            file.unlink()  # Deletes the file
+            print(f"Deleted {file}")
+        except FileNotFoundError:
+            print(f"File not found: {file}")
+        except PermissionError:
+            print(f"Permission denied: {file}")
+        except Exception as e:
+            print(f"Error deleting {file}: {e}")
+    return None
 
 def list_xrdfs_files(remote_dir):
     """List files/dirs in a remote xrdfs directory."""

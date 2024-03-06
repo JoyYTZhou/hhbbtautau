@@ -21,7 +21,7 @@ STEP_SIZE = '400MB'
 COPY_DIR = "@format {this.SCRATCHPATH}/temp"
 
 [LPCCONDOR]
-PROCESS_NAME = "WZZ"
+PROCESS_NAME = "ZZ"
 CHANNEL_INDX = 3
 TREE_NAME = "Events"
 CONDORPATH = "/store/user/joyzhou/output"
@@ -34,12 +34,20 @@ COPY_DIR = "temp"
 STEP_SIZE = '300MB'
 RESUME = false
 DSINDX = 0
-FINDX = 7
+FINDX = 20
 
 [LPCJUPYTER]
-OUTPUTDIR_PATH = "/uscms_data/d1/joyzhou/output/test"
-PROCESS_NAME = "DYJets"
-CHANNEL_NO = 1
-INPUTFILE_PATH = "@format {env[PARENT_DIR]}/src/data/chunked/{this.PROCESS_NAME}.json"
-CHANNELNAMES = ["tauhtauh"]
-TRANSFER = true
+PROCESS_NAME = "ggF"
+CHANNEL_INDX = 3
+TREE_NAME = "Events"
+CONDORPATH = "/store/user/joyzhou/output"
+INPUTFILE_PATH = "@format src/data/preprocessed/{this.PROCESS_NAME}.json"
+OUTPUTDIR_PATH = "@format outputs/{this.PROCESS_NAME}"
+TRANSFER = false
+TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
+COPY_LOCAL = true
+COPY_DIR = "/uscms/home/joyzhou/nobackup/temp"
+STEP_SIZE = '300MB'
+RESUME = false
+DSINDX = 0
+FINDX = 0

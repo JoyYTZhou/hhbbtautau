@@ -42,6 +42,19 @@ class Visualizer():
     def loadweights(self):
         pass
 
+    def combine_roots(self, level=0, save=False):
+        df_list = []
+        for process, dsitems in self.wgt_dict.items():
+            for ds in dsitems.keys():
+                ds_dir = pjoin(self.indir, process)
+                ds_df = load_roots(ds_dir, f'{ds}_*.root', self.pltcfg.PLOT_VARS, self.pltcfg.TREENAME)
+                if level==0: ds_df['dataset'] = process
+                else: ds_df['dataset'] = ds
+                df_list.append(ds_df)
+        roots_df = pd.concat(df_list)
+        if save==True: roots_df.to_csv(pjoin(self.outdir, 'hadded_roots.csv'))
+        return roots_df
+        
     def combine_cf(self, inputdir, dsname, output=True):
         """Combines all cutflow tables in source directory belonging to one datset and output them into output directory"""
         dirpattern = pjoin(inputdir, f'{dsname}_cutflow*.csv')
@@ -57,22 +70,33 @@ class Visualizer():
         
         return combined
     
-    def efficiency(self, cfdf):
-        """Add efficiency for the cutflow table"""
-        for column in cfdf.columns:
-            cfdf[f'{column}_eff'] = cfdf[column]/cfdf[column].shift(1)
-        cfdf.replace([np.inf, -np.inf], np.nan, inplace=True)
-        cfdf.fillna(1, inplace=True)
-    
-    def beautify_cf(self, cfdf):
-        pass
+    def efficiency(self, cfdf, overall=True, append=True, save=False):
+        """Add or return efficiency for the cutflow table"""
+        if not overall:
+            efficiency_df = cfdf.div(cfdf.shift(1)).fillna(1)  # Incremental efficiency
+        else:
+            first_row = cfdf.iloc[0]
+            efficiency_df = cfdf.div(first_row).fillna(1)  # Overall efficiency
+
+        efficiency_df.replace([np.inf, -np.inf], np.nan, inplace=True)
+        efficiency_df.fillna(1, inplace=True)
+        efficiency_df *= 100
+        efficiency_df.columns = [f'{col}_eff' for col in cfdf.columns]
+
+        if append:
+            for col in efficiency_df.columns:
+                cfdf[col] = efficiency_df[col]
+            return cfdf
+        else:
+            return efficiency_df
+
 
     def compute_allcf(self, lumi=50, output=True):
         """Load all cutflow tables for all datasets from output directory and combine them into one"""
         raw_df_list = []
         wgt_df_list = []
         for process, dsitems in self.wgt_dict.items():
-            for ds in list(dsitems.keys()):
+            for ds in dsitems.keys():
                 raw_df = self.combine_cf(pjoin(self.indir, process), ds)
                 raw_df_list.append(raw_df)
                 wgt = self.wgt_dict[process][ds]
@@ -128,7 +152,7 @@ class Visualizer():
 
         return allds_cf
 
-    def plot_var(self, df, name, title, bins, range):
+    def plot_var(self, df, name, title, xlabel, bins, range):
         fig, ax = plt.subplots(figsize=(10, 5))
         hep.histplot(
             df[name],
@@ -137,12 +161,12 @@ class Visualizer():
             color="b",
             alpha=0.5,
             edgecolor="black",
-            label=r"ZZ $\rightarrow$ 4l",
+            title=title,
             ax=ax,
         )
-        ax.set_xlabel("4l invariant mass (GeV)", fontsize=15)
-        ax.set_ylabel("Events / 3 GeV", fontsize=15)
-        ax.set_xlim(rmin, rmax)
+        ax.set_xlabel(xlabel, fontsize=15)
+        ax.set_ylabel("Events", fontsize=15)
+        ax.set_xlim(*range)
         ax.legend()
         fig.show()
     

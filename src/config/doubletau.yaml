@@ -72,14 +72,14 @@ default:
       selections:
         electron: 
           veto: True
-          pt: 25
+          pt: 20
         muon: 
           veto: True
-          pt: 25
+          pt: 20
         tau:
           veto: False
-          pt: 40
-          eta: 2.3
+          pt: 20
+          eta: 2.5
           idvsjet: 5
           idvsmu: 1
           idvse: 2
