@@ -16,10 +16,6 @@ output_cfg = sel_cfg.signal.outputs
 
 class Processor:
     """Process individual file or filesets given strings/dicts belonging to one dataset.
-    Attributes:
-        channelseq (list): list of channel names in order of selection preference
-        data (dict): dictionary of files
-        commonsel (dict): dictionary of common selection configurations
     """
     def __init__(self, rt_cfg, dataset):
         self._rtcfg = rt_cfg
@@ -91,6 +87,8 @@ class Processor:
         elif write_method == 'dataframe':
             self.writeobj(passed, self.channelname, suffix)
         elif write_method == 'pickle':
+            pass
+        elif write_method == None:
             pass
         else:
             raise ValueError("Write method not supported")
