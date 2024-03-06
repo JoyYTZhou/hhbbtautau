@@ -1,5 +1,4 @@
 import mplhep as hep
-import numpy as np
 import matplotlib.pyplot as plt
 import glob
 import os
@@ -73,13 +72,10 @@ class Visualizer():
     def efficiency(self, cfdf, overall=True, append=True, save=False):
         """Add or return efficiency for the cutflow table"""
         if not overall:
-            efficiency_df = cfdf.div(cfdf.shift(1)).fillna(1)  # Incremental efficiency
+            efficiency_df = incrementaleff(cfdf)
         else:
-            first_row = cfdf.iloc[0]
-            efficiency_df = cfdf.div(first_row).fillna(1)  # Overall efficiency
+            efficiency_df = overalleff(cfdf)
 
-        efficiency_df.replace([np.inf, -np.inf], np.nan, inplace=True)
-        efficiency_df.fillna(1, inplace=True)
         efficiency_df *= 100
         efficiency_df.columns = [f'{col}_eff' for col in cfdf.columns]
 
@@ -89,7 +85,6 @@ class Visualizer():
             return cfdf
         else:
             return efficiency_df
-
 
     def compute_allcf(self, lumi=50, output=True):
         """Load all cutflow tables for all datasets from output directory and combine them into one"""
