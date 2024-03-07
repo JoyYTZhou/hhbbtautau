@@ -48,9 +48,7 @@ class Processor:
         msg = []
         user_step_size = uproot._util.unset if not self.rtcfg.STEP_SIZE else self.rtcfg.STEP_SIZE
         if self.rtcfg.COPY_LOCAL:
-            msg.append("Copying file to local ... ")
             destpath = pjoin(self.rtcfg.COPY_DIR, f"{self.dataset}_{suffix}.root")
-            msg.append(f"Destination path {destpath}")
             cproot(filename, destpath)
             try:
                 events = uproot.dask(
@@ -65,7 +63,7 @@ class Processor:
                 files={filename: self.treename},
                 step_size=user_step_size
             ) 
-        return events, msg
+        return events
     
     def runfile(self, filename, suffix, write_method='dask', delayed=False, write_npz=False):
         """Run test selections on a single file dict.
@@ -81,8 +79,7 @@ class Processor:
         - messages for debugging
         """
         msg = []
-        events, loadmsg = self.loadfile(filename, suffix)
-        msg.extend(loadmsg)
+        events = self.loadfile(filename, suffix)
 
         evtsel = EventSelections(self.lepcfg, self.jetcfg, self.channelname)
         passed = evtsel.select(events, return_veto=False)
