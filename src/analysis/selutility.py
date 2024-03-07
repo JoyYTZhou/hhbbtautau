@@ -11,6 +11,7 @@ from collections import ChainMap
 import uproot
 from config.selectionconfig import settings as sel_cfg
 from .helper import *
+import pickle
 
 output_cfg = sel_cfg.signal.outputs
 
@@ -66,13 +67,20 @@ class Processor:
             ) 
         return events, msg
     
-    def runfile(self, filename, suffix, write_method='dask', write_npz=False):
+    def runfile(self, filename, suffix, write_method='dask', delayed=False, write_npz=False):
         """Run test selections on a single file dict.
-        :param write_method: method to write the output
-        :return: cutflow dataframe 
+
+        Parameters:
+        - filename: path of file to process
+        - suffix: append to output file (usually an index to map the filename to a list)
+        - write_method: how the output will be saved
+        - delayed: if not , output will be computed before saving
+        - write_npz: if write cutflow out
+        
+        Returns:
+        - messages for debugging
         """
         msg = []
-        msg.append(f'start processing {filename}!')
         events, loadmsg = self.loadfile(filename, suffix)
         msg.extend(loadmsg)
 
@@ -82,11 +90,11 @@ class Processor:
             npzname = pjoin(self.outdir, f'cutflow_{suffix}_{self.channelname}.npz')
             evtsel.cfobj.to_npz(npzname)
         if write_method == 'dask':
-            self.writedask(passed, self.channelname, suffix, delayed=False)
-            msg.append(f'computing {filename} finished!')
+            self.writedask(passed, self.channelname, suffix, delayed)
         elif write_method == 'dataframe':
             self.writeobj(passed, self.channelname, suffix)
         elif write_method == 'pickle':
+            self.writepickle(passed, suffix, delayed)
             pass
         elif write_method == None:
             pass
@@ -146,6 +154,16 @@ class Processor:
         if self.rtcfg.TRANSFER:
             dest_path = pjoin(self.rtcfg.TRANSFER_PATH, f"{chcfg.name}{suffix}.csv")
             cpcondor(obj_path, dest_path, is_file=True)
+    
+    def writepickle(self, passed, suffix, delayed):
+        finame = pjoin(self.outdir, self.dataset, f"{self.dataset}_{suffix}.pkl")
+        with open(finame, 'wb') as f:
+            if delayed:
+                pickle.dump(passed)
+            else:
+                pickle.dump(passed.compute())
+        if self.rtcfg.TRANSFER:
+            cpcondor(finame, pjoin(self.rtcfg.TRANSFER_PATH, f"{self.dataset}_{suffix}.pkl"))
         
 class EventSelections:
     def __init__(self, lepcfg, jetcfg, cfgname) -> None:
