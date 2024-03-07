@@ -105,6 +105,11 @@ class Visualizer():
             wgt_df.to_csv(pjoin(self.outdir, "cutflow_wgt_tot.csv"))
 
         return raw_df, wgt_df
+    
+    def load_allcf(self):
+        raw_df = pd.read_csv(pjoin(self.outdir, "cutflow_raw_tot.csv"), index_col=0)
+        wgt_df = pd.read_csv(pjoin(self.outdir, "cutflow_wgt_tot.csv"), index_col=0)
+        return raw_df, wgt_df
 
     def weight_cf(self, dsname, wgt, raw_cf, lumi=50):
         """Calculate weighted table based on raw table.""" 
