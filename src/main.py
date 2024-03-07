@@ -8,22 +8,6 @@ PARENT_DIR = os.path.dirname(__file__)
 from config.selectionconfig import dasksetting as dask_cfg
 from config.selectionconfig import runsetting as rs
 
-logger = logging.getLogger("Selection")
-logger.setLevel(logging.DEBUG)
-
-debug_handler = logging.FileHandler(f"daskworker_{rs.PROCESS_NAME}.log")
-debug_handler.setLevel(logging.DEBUG)
-
-error_handler = logging.FileHandler(f"daskworker_{rs.PROCESS_NAME}.err")
-error_handler.setLevel(logging.ERROR)
-
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-debug_handler.setFormatter(formatter)
-error_handler.setFormatter(formatter)
-
-logger.addHandler(debug_handler)
-logger.addHandler(error_handler)
-
 # if not rs.SPAWN_CONDOR: os.environ['CONDOR_CONFIG'] = os.path.join(PARENT_DIR, ".condor_config")
 
 def main():

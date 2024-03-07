@@ -227,7 +227,7 @@ class EventSelections:
         fatjet_nummask = fatjet.numselmask(opr.ge)
 
         self.objsel.add_multiple({"JetSelections": jet_nummask,
-                                          "FatJetSelections": fatjet_mask})
+                                  "FatJetSelections": fatjet_mask})
         return None
 
     def callobjsel(self, events, compute_veto=False):

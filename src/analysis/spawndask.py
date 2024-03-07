@@ -21,6 +21,9 @@ def job(fn, i, dataset):
     except ValueError as e:
         logger.error(f"ValueError encountered for file index {i} in {dataset}: {e}", exc_info=True)
         return False
+    except TypeError as e:
+        logger.error(f"TypeError encountered for file index {i} in {dataset}: {e}", exc_info=True)
+        return False
 
 def runfutures(client):
     futures = submitjobs(client)
