@@ -26,7 +26,7 @@ class Processor:
         if self.rtcfg.COPY_LOCAL: checkpath(self.rtcfg.COPY_DIR)
         if self.rtcfg.TRANSFER: 
             checkcondorpath(self.rtcfg.TRANSFER_PATH)
-        checkpath(self.rtcfg.OUTPUTDIR_PATH)
+        checkpath(self.outdir)
         self.defselections()
 
     @property
@@ -116,7 +116,6 @@ class Processor:
     def writedask(self, passed, prefix, suffix, delayed=True, fields=None):
         """Wrapper around uproot.dask_write(),
         transfer all root files generated to a destination location."""
-        msg = []
         if fields is None:
             dir_name = pjoin(self.outdir, prefix)
             checkpath(dir_name)
@@ -153,12 +152,12 @@ class Processor:
             cpcondor(obj_path, dest_path, is_file=True)
     
     def writepickle(self, passed, suffix, delayed):
-        finame = pjoin(self.outdir, self.dataset, f"{self.dataset}_{suffix}.pkl")
+        finame = pjoin(self.outdir, f"{self.dataset}_{suffix}.pkl")
         with open(finame, 'wb') as f:
             if delayed:
-                pickle.dump(passed)
+                pickle.dump(passed, f)
             else:
-                pickle.dump(passed.compute())
+                pickle.dump(passed.compute(), f)
         if self.rtcfg.TRANSFER:
             cpcondor(finame, pjoin(self.rtcfg.TRANSFER_PATH, f"{self.dataset}_{suffix}.pkl"))
         
