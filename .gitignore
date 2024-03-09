@@ -9,6 +9,7 @@ test/.ipynb_checkpoints/
 hhbbttrun/
 # Ignore datachecks
 src/data/objectchecks/
+src/analysis/.api_key.txt
 # Ignore outputs
 outputs/
 # Ignore the exec output
