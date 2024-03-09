@@ -52,7 +52,7 @@ class Visualizer():
     def loadweights(self):
         pass
 
-    def combine_roots(self, level=0, save=False, flat=False):
+    def combine_roots(self, flat=False, level=0, save=False):
         df_list = []
         for process, dsitems in self.wgt_dict.items():
             for ds in dsitems.keys():
