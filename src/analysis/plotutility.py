@@ -21,15 +21,26 @@ class Visualizer():
     def getAll(self):
         pass
         
-    def grepweights(self, output=False):
-        """Function for self use only, grep weights from a list json files formatted in a specific way."""
+    def checkupdates(self):
+        for ds in self.pltcfg.DATASETS:
+            sync_files(pjoin(self.indir, ds), f"{self.pltcfg.CONDORPATH}/{ds}")
+    
+    def grepweights(self, output=False, from_raw=False):
+        """Function for self use only, grep weights from a list json files formatted in a specific way.
+        
+        Parameters
+        - `from_raw`: whether to compute weights based on number of raw events instead of weighted
+        """
         wgt_dict = {}
         for ds in self.pltcfg.DATASETS:
             with open(pjoin(self.pltcfg.DATAPATH, f'{ds}.json'), 'r') as f:
                 meta = json.load(f)
                 dsdict = {}
                 for dskey, dsval in meta.items():
-                    dsdict.update({dskey: dsval['Per Event']})
+                    if from_raw:
+                        dsdict.update({dskey: dsval['xsection']/dsval['Raw Events']})
+                    else:
+                        dsdict.update({dskey: dsval['Per Event']})
                 wgt_dict.update({ds: dsdict})
         self.wgt_dict = wgt_dict
 
@@ -41,7 +52,7 @@ class Visualizer():
     def loadweights(self):
         pass
 
-    def combine_roots(self, level=0, save=False):
+    def combine_roots(self, level=0, save=False, flat=False):
         df_list = []
         for process, dsitems in self.wgt_dict.items():
             for ds in dsitems.keys():
@@ -53,6 +64,16 @@ class Visualizer():
         roots_df = pd.concat(df_list)
         if save==True: roots_df.to_csv(pjoin(self.outdir, 'hadded_roots.csv'))
         return roots_df
+    
+    def load_roots(self):
+        """Load hadded csv files, if any."""
+        fipath = pjoin(self.outdir, 'hadded_roots.csv')
+        if os.path.exists(fipath):
+            roots_df = pd.read_csv(fipath)
+            return roots_df
+        else:
+            print("You didn't save the hadded result last time!")
+            return False
         
     def combine_cf(self, inputdir, dsname, output=True):
         """Combines all cutflow tables in source directory belonging to one datset and output them into output directory"""
@@ -87,7 +108,12 @@ class Visualizer():
             return efficiency_df
 
     def compute_allcf(self, lumi=50, output=True):
-        """Load all cutflow tables for all datasets from output directory and combine them into one"""
+        """Load all cutflow tables for all datasets from output directory and combine them into one.
+        
+        Parameters
+        - `lumi`: luminosity (pb^-1). In the future should be eliminated. Right now for scaling purpose
+        - `output`: whether to save results.
+        """
         raw_df_list = []
         wgt_df_list = []
         for process, dsitems in self.wgt_dict.items():

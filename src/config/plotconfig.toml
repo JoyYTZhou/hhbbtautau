@@ -1,9 +1,10 @@
 [LPCJUPYTER]
 DATAPATH = "/uscms/home/joyzhou/work/hhbbtautau/src/data/preprocessed"
+CONDORPATH = "/store/user/joyzhou/output"
 INPUTDIR = "/uscms/home/joyzhou/nobackup/output"
 OUTPUTDIR = "/uscms/home/joyzhou/nobackup/plots"
 CONDOR_TRANSFER = true
-DATASETS = ["DYJets", "ZH", "SingleH"]
+DATASETS = ["ZH", "SingleH", "ggF"]
 TREENAME = 'tree'
 PLOT_VARS = ['Tau_pt', 'Tau_eta']
 

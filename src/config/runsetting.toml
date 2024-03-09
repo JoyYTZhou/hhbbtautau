@@ -21,7 +21,7 @@ STEP_SIZE = '400MB'
 COPY_DIR = "@format {this.SCRATCHPATH}/temp"
 
 [LPCCONDOR]
-PROCESS_NAME = "ggF"
+PROCESS_NAME = "TTbar"
 CHANNEL_INDX = 3
 TREE_NAME = "Events"
 CONDORPATH = "/store/user/joyzhou/output"
@@ -29,12 +29,12 @@ INPUTFILE_PATH = "@format src/data/preprocessed/{this.PROCESS_NAME}.json"
 OUTPUTDIR_PATH = "@format outputs/{this.PROCESS_NAME}"
 TRANSFER = true
 TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
-COPY_LOCAL = false
+COPY_LOCAL = true
 COPY_DIR = "temp"
 STEP_SIZE = false
-RESUME = false
+RESUME = true
 DSINDX = 0
-FINDX = 0
+FINDX = 10
 
 [LPCJUPYTER]
 PROCESS_NAME = "ggF"
