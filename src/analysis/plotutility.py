@@ -29,6 +29,7 @@ class Visualizer():
         """Function for self use only, grep weights from a list json files formatted in a specific way.
         
         Parameters
+        - `output`: whether to save the weights into a json file
         - `from_raw`: whether to compute weights based on number of raw events instead of weighted
         """
         wgt_dict = {}
@@ -49,10 +50,15 @@ class Visualizer():
             with open(outname, 'w') as f:
                 json.dump(self.wgt_dict, f, indent=4)
     
-    def loadweights(self):
-        pass
-
     def combine_roots(self, level=0, save=False, save_separate=True, flat=False):
+        """Combine all root files of datasets in plot setting into one dataframe.
+        
+        Parameters
+        - `level`: concatenation level. 0 for overall process, 1 for dataset
+        - `save`: whether to save the hadded result (dataframe)
+        - `save_separate`: whether to save separate csv files for each dataset
+        - `flat`: whether it's n-tuple
+        """
         df_list = []
         for process, dsitems in self.wgt_dict.items():
             for ds in dsitems.keys():
@@ -68,53 +74,6 @@ class Visualizer():
         roots_df = pd.concat(df_list)
         if save==True: roots_df.to_csv(pjoin(self.outdir, 'hadded_roots.csv'))
         return roots_df
-    
-    def load_roots(self):
-        """Load hadded csv files, if any."""
-        fipath = pjoin(self.outdir, 'hadded_roots.csv')
-        if os.path.exists(fipath):
-            roots_df = pd.read_csv(fipath)
-            return roots_df
-        else:
-            print("You didn't save the hadded result last time!")
-            return False
-        
-    def combine_cf(self, inputdir, dsname, output=True):
-        """Combines all cutflow tables in source directory belonging to one datset and output them into output directory"""
-        dirpattern = pjoin(inputdir, f'{dsname}_cutflow*.csv')
-        dfs = load_csvs(dirpattern)
-
-        concat_df = pd.concat(dfs)
-        combined = concat_df.groupby(concat_df.index, sort=False).sum()
-        combined.columns = [dsname]
-        
-        if output: 
-            finame = pjoin(self.outdir, f'{dsname}_cutflowraw.csv') 
-            combined.to_csv(finame)
-        
-        return combined
-    
-    def efficiency(self, cfdf, overall=True, append=True, save=False, save_name=None):
-        """Add or return efficiency for the cutflow table.
-        
-        Parameters
-        - `cfdf`:  
-        """
-        if not overall:
-            efficiency_df = incrementaleff(cfdf)
-        else:
-            efficiency_df = overalleff(cfdf)
-        efficiency_df *= 100
-        efficiency_df.columns = [f'{col}_eff' for col in cfdf.columns]
-        if append:
-            for col in efficiency_df.columns:
-                cfdf[col] = efficiency_df[col]
-            return_df = cfdf
-        else:
-            return_df = efficiency_df
-        if save:
-            finame = pjoin(self.outdir, f'{save_name}_eff.csv') if save_name else pjoin(self.outdir, 'tot_eff.csv')
-        return return_df
 
     def compute_allcf(self, lumi=50, output=True):
         """Load all cutflow tables for all datasets from output directory and combine them into one.
@@ -143,7 +102,61 @@ class Visualizer():
             wgt_df.to_csv(pjoin(self.outdir, "cutflow_wgt_tot.csv"))
 
         return raw_df, wgt_df
+
+    def efficiency(self, cfdf, overall=True, append=True, save=False, save_name=None):
+        """Add or return efficiency for the cutflow table.
+        
+        Parameters
+        - `cfdf`: cutflow dataframe
+        - `overall`: whether to calculate overall efficiency
+        - `append`: whether to append efficiency columns to the input dataframe
+        - `save`: whether to save the efficiency table
+        - `save_name`: name of the saved efficiency table. If none is given, it will be named 'tot_eff.csv'
+        """
+        if not overall:
+            efficiency_df = incrementaleff(cfdf)
+        else:
+            efficiency_df = overalleff(cfdf)
+        efficiency_df *= 100
+        efficiency_df.columns = [f'{col}_eff' for col in cfdf.columns]
+        if append:
+            for col in efficiency_df.columns:
+                cfdf[col] = efficiency_df[col]
+            return_df = cfdf
+        else:
+            return_df = efficiency_df
+        if save:
+            finame = pjoin(self.outdir, f'{save_name}_eff.csv') if save_name else pjoin(self.outdir, 'tot_eff.csv')
+        return return_df
     
+    def load_roots(self):
+        """Load hadded csv files, if any."""
+        fipath = pjoin(self.outdir, 'hadded_roots.csv')
+        if os.path.exists(fipath):
+            roots_df = pd.read_csv(fipath)
+            return roots_df
+        else:
+            print("You didn't save the hadded result last time!")
+            return False
+        
+    def combine_cf(self, inputdir, dsname, output=True):
+        """Combines all cutflow tables in source directory belonging to one datset and output them into output directory"""
+        dirpattern = pjoin(inputdir, f'{dsname}_cutflow*.csv')
+        dfs = load_csvs(dirpattern)
+
+        concat_df = pd.concat(dfs)
+        combined = concat_df.groupby(concat_df.index, sort=False).sum()
+        combined.columns = [dsname]
+        
+        if output: 
+            finame = pjoin(self.outdir, f'{dsname}_cutflowraw.csv') 
+            combined.to_csv(finame)
+        
+        return combined
+
+    def loadweights(self):
+        pass
+
     def load_allcf(self):
         raw_df = pd.read_csv(pjoin(self.outdir, "cutflow_raw_tot.csv"), index_col=0)
         wgt_df = pd.read_csv(pjoin(self.outdir, "cutflow_wgt_tot.csv"), index_col=0)
@@ -237,8 +250,6 @@ class Visualizer():
         
         
         
-
-            
             
             
             
