@@ -206,7 +206,8 @@ def get_xrdfs_file_info(remote_file):
     return size, mod_time
 
 def sync_files(local_dir, remote_dir):
-    """Check for discrepancies and update local files from a remote xrdfs directory."""
+    """Check for discrepancies and update local files from a remote xrdfs directory.
+    """
     remote_files = list_xrdfs_files(remote_dir)
     for remote_file in remote_files:
         local_file = os.path.join(local_dir, os.path.basename(remote_file))

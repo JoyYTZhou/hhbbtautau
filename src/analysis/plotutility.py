@@ -52,14 +52,18 @@ class Visualizer():
     def loadweights(self):
         pass
 
-    def combine_roots(self, level=0, save=False, flat=False):
+    def combine_roots(self, level=0, save=False, save_separate=True, flat=False):
         df_list = []
         for process, dsitems in self.wgt_dict.items():
             for ds in dsitems.keys():
                 ds_dir = pjoin(self.indir, process)
-                ds_df = load_roots(ds_dir, f'{ds}_*.root', self.pltcfg.PLOT_VARS, self.pltcfg.TREENAME)
+                ds_df = load_roots(ds_dir, f'{ds}_*.root', self.pltcfg.PLOT_VARS, 
+                                   extra_branches=self.pltcfg.EXTRA_VARS, 
+                                   tree_name = self.pltcfg.TREENAME,
+                                   clean = self.pltcfg.CLEAN)
                 if level==0: ds_df['dataset'] = process
                 else: ds_df['dataset'] = ds
+                if save_separate: ds_df.to_csv(pjoin(self.outdir, f'{process}.csv')) 
                 df_list.append(ds_df)
         roots_df = pd.concat(df_list)
         if save==True: roots_df.to_csv(pjoin(self.outdir, 'hadded_roots.csv'))
@@ -90,22 +94,27 @@ class Visualizer():
         
         return combined
     
-    def efficiency(self, cfdf, overall=True, append=True, save=False):
-        """Add or return efficiency for the cutflow table"""
+    def efficiency(self, cfdf, overall=True, append=True, save=False, save_name=None):
+        """Add or return efficiency for the cutflow table.
+        
+        Parameters
+        - `cfdf`:  
+        """
         if not overall:
             efficiency_df = incrementaleff(cfdf)
         else:
             efficiency_df = overalleff(cfdf)
-
         efficiency_df *= 100
         efficiency_df.columns = [f'{col}_eff' for col in cfdf.columns]
-
         if append:
             for col in efficiency_df.columns:
                 cfdf[col] = efficiency_df[col]
-            return cfdf
+            return_df = cfdf
         else:
-            return efficiency_df
+            return_df = efficiency_df
+        if save:
+            finame = pjoin(self.outdir, f'{save_name}_eff.csv') if save_name else pjoin(self.outdir, 'tot_eff.csv')
+        return return_df
 
     def compute_allcf(self, lumi=50, output=True):
         """Load all cutflow tables for all datasets from output directory and combine them into one.
@@ -113,6 +122,9 @@ class Visualizer():
         Parameters
         - `lumi`: luminosity (pb^-1). In the future should be eliminated. Right now for scaling purpose
         - `output`: whether to save results.
+
+        Returns
+        - Tuple of two dataframes (raw, weighted) of cutflows
         """
         raw_df_list = []
         wgt_df_list = []
@@ -215,6 +227,13 @@ class Visualizer():
     def load_allds(self):
         srcdir = self.pltcfg.LOCAL_OUTPUT
         pass
+
+    def updatedir(self):
+        """Update local input directories from condor"""
+        if self.pltcfg.CLEAN:
+            for ds in self.pltcfg.DATASETS:
+                sync_files(pjoin(self.indir, ds),
+                           pjoin(self.pltcfg.CONDORPATH, ds))
         
         
         
