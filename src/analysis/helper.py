@@ -120,14 +120,14 @@ def overalleff(cfdf):
     eff_df.fillna(1, inplace=True)
     return eff_df
 
-def load_roots(directory, pattern, branches, tree_name='tree', clean=False):
+def load_roots(directory, pattern, fields, extra_branches = [], tree_name='tree', clean=False):
     """
     Load specific branches from ROOT files matching a pattern in a directory, and combine them into a single DataFrame.
 
     Parameters:
     - directory: Path to the directory containing ROOT files.
     - pattern: Pattern to match ROOT files, e.g., "*.root".
-    - branches: List of branch names to load from each ROOT file.
+    - fields: List of field names to load from each ROOT file.
     - tree_name: Name of the tree to load
     - clean: whether to clean empty files (be cautious with this)
 
@@ -138,18 +138,36 @@ def load_roots(directory, pattern, branches, tree_name='tree', clean=False):
     root_files = glob.glob(full_pattern)
     dfs = []
     emptylist = []
+    branch_names = find_branches(root_files[0], fields) 
+    branch_names.extend(extra_branches)
     for root_file in root_files:
         with uproot.open(root_file) as file:
             if file.keys() == []:
                 emptylist.append(root_file) 
             else:
                 tree = file[tree_name]
-                df = tree.arrays(branches, library="pd")
+                df = tree.arrays(branch_names, library="pd")
                 dfs.append(df)
     combined_df = pd.concat(dfs, ignore_index=True)
     if emptylist != [] and clean: 
         delfilelist(emptylist)
     return combined_df
+
+def find_branches(file_path, object_list):
+    """ Return a list of branches for each object in object_list
+
+    :param file_path: path to the root file
+    :param object_list: list of objects to find branches for
+    :return: dictionary of branches for each object
+    :rtype: dict
+    """
+    file = uproot.open(file_path)
+    tree = file["Events"]
+    branch_names = tree.keys()
+    branches = []
+    for object in object_list:
+        branches.extend([name for name in branch_names if name.startswith(object)])
+    return branches
 
 def delfilelist(filelist):
     """Remove a list of file"""
