@@ -4,8 +4,10 @@ CONDORPATH = "/store/user/joyzhou/output"
 INPUTDIR = "/uscms/home/joyzhou/nobackup/output"
 OUTPUTDIR = "/uscms/home/joyzhou/nobackup/plots"
 CONDOR_TRANSFER = true
-DATASETS = ["ZH", "SingleH", "ggF"]
+REFRESH = true
+DATASETS = ["DYJets", "ZH", "SingleH", "ggF", "WJets", "WZ", "WZZ"]
 TREENAME = 'tree'
 PLOT_VARS = ['Tau', 'Jet', 'FatJet']
-EXTRA_VARS = []
+EXTRA_VARS = ['Generator_weight', 'nLHEReweightingWeight', 'LHEReweightingWeight']
+CLEAN = true
 
