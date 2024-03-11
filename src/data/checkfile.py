@@ -3,32 +3,6 @@ import json
 from tqdm import tqdm
 from data.datacollect import dasgo_query, xrootd_format
 
-def find_branches(file_path, object_list):
-    """ Return a list of branches for each object in object_list
-
-    :param file_path: path to the root file
-    :param object_list: list of objects to find branches for
-    :return: dictionary of branches for each object
-    :rtype: dict
-    """
-    # Open the root file
-    file = uproot.open(file_path)
-
-    # Get the tree. Assuming the tree name is "Events"
-    tree = file["Events"]
-
-    # Get all branch names
-    branch_names = tree.keys()
-
-    # Initialize a dictionary to hold the branches for each object
-    branches = {}
-
-    # Filter branch names that start with each object
-    for object in object_list:
-        branches[object] = [name for name in branch_names if name.startswith(object)]
-
-    return branches
-
 def output_branches(in_fipath, out_fipath, checklist):
     """ Write the branches to a file.
 
