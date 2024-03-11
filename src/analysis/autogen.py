@@ -3,11 +3,21 @@ import inspect
 import importlib.util
 from openai import OpenAI
 
+# This file is entirely useless as of now. I have zero credit with openai
 api_key_file = '.api_key.txt'
 with open(api_key_file, 'r') as file:
     api_key = file.read().strip()
 
-client = OpenAI(api_key=api_key)
+def gen_except_hdl_code(except_msg):
+    client = OpenAI(api_key=api_key)
+    
+    chat_completion = client.chat.completions.create(
+        messgaes = [
+            {'role': 'user',
+             'content': ''
+             }
+        ]
+    )
 
 def generate_test_case_with_openai(function_name, module_path):
     spec = importlib.util.spec_from_file_location("module.name", os.path.join(os.getcwd(), module_path))
