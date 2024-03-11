@@ -1,29 +1,33 @@
-import openai
+import os
+import inspect
+import importlib.util
+from openai import OpenAI
 
-# Your OpenAI API key
-openai.api_key = 'your_api_key_here'
+api_key_file = '.api_key.txt'
+with open(api_key_file, 'r') as file:
+    api_key = file.read().strip()
 
-def generate_test_for_function(func_name, func_description):
-    # Construct the prompt
-    prompt = f"Write a pytest test case for a function named `{func_name}` that {func_description}"
-    
-    # Call the ChatGPT API
+client = OpenAI(api_key=api_key)
+
+def generate_test_case_with_openai(function_name, module_path):
+    spec = importlib.util.spec_from_file_location("module.name", os.path.join(os.getcwd(), module_path))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    function = getattr(module, function_name)
+    source_code = inspect.getsource(function)
+
+    prompt = f"I want to test the Python function below:\n{source_code}\nCan you suggest a test case for this function?"
+
     response = openai.Completion.create(
-        engine="text-davinci-003",  # Adjust based on available engines
+        engine="gpt-4-turbo-preview",
         prompt=prompt,
-        temperature=0.7,
-        max_tokens=150,
-        top_p=1.0,
-        frequency_penalty=0.0,
-        presence_penalty=0.0
+        temperature=0.5,
+        max_tokens=100
     )
-    
-    # Extract the test case from the response
-    test_case = response.choices[0].text.strip()
-    return test_case
 
-# Example usage
-func_name = "add_numbers"
-func_description = "takes two integers as input and returns their sum"
-test_case = generate_test_for_function(func_name, func_description)
-print(test_case)
+    return response.choices[0].text.strip()
+
+if __name__ == '__main__':
+    test_case = generate_test_case_with_openai('sync_files', 'helper.py')
+    print(test_case)

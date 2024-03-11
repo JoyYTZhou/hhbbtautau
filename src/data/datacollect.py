@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 # adapted from: https://github.com/bu-cms/bucoffea/blob/83daf25146d883df5131d0b50a51c0a6512d7c5f/bucoffea/helpers/dasgowrapper.py
 
-import json, os, sys, subprocess
+import json, os, subprocess
 from tqdm import tqdm
 import uproot
 from itertools import chain
+import pandas as pd
+import glob
 
 def dasgo_query(query, json=False):
     cmd = ["dasgoclient", "--query", query]
@@ -180,10 +182,28 @@ def divide_samples(inputfn, outputfn, dict_size=5):
     with open(outputfn, 'w') as jsonfile:
         json.dump(complete_dict, jsonfile)
 
+def produceCSV(datadir):
+    json_files = glob.glob(f"{datadir}/*.json")
+    df = []
+    for file_path in json_files:
+        with open(file_path, 'r') as file:
+            data = json.load(file)
+            for name, attributes in data.items():
+                df.append({
+                    'name': name,
+                    'string': attributes['string'][0] if attributes['string'] else None,
+                    'xsection': attributes.get('xsection'),
+                    '# raw events': attributes.get('Raw Events'),
+                    '# weighted events': attributes.get('Wgt Events')
+                })
+    all_df = pd.DataFrame(df)
+    all_df.to_csv('compiled_weight.csv', index=False)
+    
 if __name__ == "__main__":
     # query_MCsamples("data.json", "data_file.json")
-    add_weight("data_file.json", "preprocessed")
+    # add_weight("data_file.json", "preprocessed")
     # print("Jobs finished!")
+    produceCSV('preprocessed')
 
 
 
