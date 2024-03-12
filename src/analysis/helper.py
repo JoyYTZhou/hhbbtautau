@@ -171,6 +171,27 @@ def find_branches(file_path, object_list, tree_name):
         branches.extend([name for name in branch_names if name.startswith(object)])
     return branches
 
+def combine_cf(inputdir, dsname, output=True, outpath=None):
+    """Combines all cutflow tables in a source directory belonging to one datset and output them into output directory.
+    
+    Parameters
+    - `inputdir`: source directory
+    - `dsname`: dataset name. 
+    - `output`: whether to save the combined table into a csv file
+    - `outpath`: path to the output
+    """
+    dirpattern = pjoin(inputdir, f'{dsname}_cutflow*.csv')
+    dfs = load_csvs(dirpattern)
+
+    concat_df = pd.concat(dfs)
+    combined = concat_df.groupby(concat_df.index, sort=False).sum()
+    combined.columns = [dsname]
+
+    if output and outpath is not None:
+        combined.to_csv(outpath)
+    
+    return combined
+
 def delfilelist(filelist):
     """Remove a list of file"""
     for file_path in filelist:
