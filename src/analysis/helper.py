@@ -138,7 +138,7 @@ def load_roots(directory, pattern, fields, extra_branches = [], tree_name='tree'
     root_files = glob.glob(full_pattern)
     dfs = []
     emptylist = []
-    branch_names = find_branches(root_files[0], fields) 
+    branch_names = find_branches(root_files[0], fields, tree_name) 
     branch_names.extend(extra_branches)
     for root_file in root_files:
         with uproot.open(root_file) as file:
@@ -153,16 +153,18 @@ def load_roots(directory, pattern, fields, extra_branches = [], tree_name='tree'
         delfilelist(emptylist)
     return combined_df
 
-def find_branches(file_path, object_list):
+def find_branches(file_path, object_list, tree_name):
     """ Return a list of branches for each object in object_list
 
-    :param file_path: path to the root file
-    :param object_list: list of objects to find branches for
+    Paremters
+    - `file_path`: path to the root file
+    - `object_list`: list of objects to find branches for
+    - `tree_name`:
     :return: dictionary of branches for each object
     :rtype: dict
     """
     file = uproot.open(file_path)
-    tree = file["Events"]
+    tree = file[tree_name]
     branch_names = tree.keys()
     branches = []
     for object in object_list:
