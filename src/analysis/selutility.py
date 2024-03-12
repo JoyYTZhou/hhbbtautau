@@ -7,7 +7,7 @@ from coffea.analysis_tools import PackedSelection
 import vector as vec
 import pandas as pd
 from collections import ChainMap
-import uproot
+import operator as opr
 
 class BaseEventSelections:
     def __init__(self, lepcfg, jetcfg, cfgname) -> None:
@@ -83,12 +83,10 @@ class BaseEventSelections:
         return df_cf
 
 class Object():
-    def __init__(self, name, events, objcfg, selcfg):
+    def __init__(self, name, objcfg, selcfg):
         """Construct an object from provided events with given selection configuration.
         :param name: name of the object
         :type name: str
-        :param events: events loaded from a .root file
-        :type events: dask_awkward.lib.core.Array
         :param objcfg: object properties configuration
         :type objcfg: dynaconf
         :param selcfg: object selection configuration
@@ -99,9 +97,8 @@ class Object():
         self._dakzipped = None
         self.objcfg = objcfg
         self.selcfg = selcfg
-        self.fields = None
+        self.fields = list(self.objcfg.keys())
         self.selection = PackedSelection()
-        self.set_dakzipped(events)
 
     @property
     def name(self):
@@ -125,14 +122,12 @@ class Object():
         self._dakzipped = value
 
     def set_dakzipped(self, events):
-        """Given events, read the object as a dask array for selection purpose."""
-        vars_dict = dict(ChainMap(*(self.objcfg.values())))
+        """Given events, read only object-related observables and zip them into dict."""
         zipped_dict = {}
-        for name, nanoaodname in vars_dict.items():
+        for name, nanoaodname in self.objcfg.items():
             zipped_dict.update({name: events[nanoaodname]})
         zipped_object = dak.zip(zipped_dict)
         self.dakzipped = zipped_object
-        self.fields = list(vars_dict.keys())
 
     def to_daskdf(self, sortname='pt', ascending=False, index=0):
         """Take a dask zipped object, unzip it, compute it, flatten it into a dataframe
@@ -146,9 +141,6 @@ class Object():
             dakarr_dict.update({colname: ak.to_list(computed[field][:, index])})
         objdf = pd.DataFrame(dakarr_dict)
         return objdf
-
-    def output_df(self, objdf, outfn):
-        objdf.to_csv(outfn, index=False)
 
     def filter_dakzipped(self, mask):
         """Filter the object based on a mask.

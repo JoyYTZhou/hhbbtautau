@@ -146,6 +146,7 @@ class Visualizer():
             return_df = efficiency_df
         if save:
             finame = pjoin(self.outdir, f'{save_name}_eff.csv') if save_name else pjoin(self.outdir, 'tot_eff.csv')
+            return_df.to_csv(finame)
         return return_df
     
     def load_roots(self):
