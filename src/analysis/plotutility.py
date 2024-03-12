@@ -7,6 +7,18 @@ from analysis.helper import *
 import pickle
 
 class Visualizer():
+    """
+    This class provides methods for plotting, data manipulation, and analysis of datasets.
+    It includes functions for combining root files, computing cutflow tables, calculating efficiencies,
+    and loading/saving data.
+    
+    Attributes:
+        pltcfg (object): An object containing the plot configuration.
+        indir (str): The input directory path.
+        outdir (str): The output directory path.
+        wgt_dict (dict): A dictionary containing the weights for each dataset.
+    """
+
     def __init__(self, plt_cfg):
         self._pltcfg = plt_cfg
         self.indir = plt_cfg.INPUTDIR
@@ -95,7 +107,8 @@ class Visualizer():
         wgt_df_list = []
         for process, dsitems in self.wgt_dict.items():
             for ds in dsitems.keys():
-                raw_df = self.combine_cf(pjoin(self.indir, process), ds)
+                raw_df = combine_cf(pjoin(self.indir, process), ds, 
+                                    output=True, outpath=pjoin(self.outdir, f'{ds}_cutflowraw.csv'))
                 raw_df_list.append(raw_df)
                 wgt = self.wgt_dict[process][ds]
                 wgt_df_list.append(self.weight_cf(ds, wgt, raw_df, lumi))
@@ -144,21 +157,6 @@ class Visualizer():
         else:
             print("You didn't save the hadded result last time!")
             return False
-        
-    def combine_cf(self, inputdir, dsname, output=True):
-        """Combines all cutflow tables in source directory belonging to one datset and output them into output directory"""
-        dirpattern = pjoin(inputdir, f'{dsname}_cutflow*.csv')
-        dfs = load_csvs(dirpattern)
-
-        concat_df = pd.concat(dfs)
-        combined = concat_df.groupby(concat_df.index, sort=False).sum()
-        combined.columns = [dsname]
-        
-        if output: 
-            finame = pjoin(self.outdir, f'{dsname}_cutflowraw.csv') 
-            combined.to_csv(finame)
-        
-        return combined
 
     def loadweights(self):
         pass
