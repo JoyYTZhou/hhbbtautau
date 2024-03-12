@@ -1,7 +1,7 @@
 from dask.distributed import Client, LocalCluster
 import dask.config
 from dask.distributed import as_completed
-from .selutility import Processor
+from .processor import Processor
 import json as json
 from .helper import *
 import gc
