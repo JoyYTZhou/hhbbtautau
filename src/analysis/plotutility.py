@@ -4,6 +4,7 @@ import glob
 import os
 import json
 from analysis.helper import *
+import pickle
 
 class Visualizer():
     def __init__(self, plt_cfg):
@@ -50,7 +51,7 @@ class Visualizer():
             with open(outname, 'w') as f:
                 json.dump(self.wgt_dict, f, indent=4)
     
-    def combine_roots(self, level=0, save=False, save_separate=True, flat=False):
+    def combine_roots(self, level=1, save=False, save_separate=True, flat=False):
         """Combine all root files of datasets in plot setting into one dataframe.
         
         Parameters
@@ -67,12 +68,17 @@ class Visualizer():
                                    extra_branches=self.pltcfg.EXTRA_VARS, 
                                    tree_name = self.pltcfg.TREENAME,
                                    clean = self.pltcfg.CLEAN)
-                if level==0: ds_df['dataset'] = process
-                else: ds_df['dataset'] = ds
-                if save_separate: ds_df.to_csv(pjoin(self.outdir, f'{process}.csv')) 
+                ds_df['dataset'] = process if level==0 else ds
+                if save_separate: 
+                    finame = pjoin(self.outdir, f'{ds}.pkl') 
+                    with open(finame, 'wb') as f:
+                        pickle.dump(ds_df, f)
                 df_list.append(ds_df)
         roots_df = pd.concat(df_list)
-        if save==True: roots_df.to_csv(pjoin(self.outdir, 'hadded_roots.csv'))
+        if save==True: 
+            finame = pjoin(self.outdir, 'hadded_roots.pkl')
+            with open(finame, 'wb') as f:
+                pickle.dump(roots_df, f)
         return roots_df
 
     def compute_allcf(self, lumi=50, output=True):
@@ -243,7 +249,7 @@ class Visualizer():
 
     def updatedir(self):
         """Update local input directories from condor"""
-        if self.pltcfg.CLEAN:
+        if self.pltcfg.REFRESH:
             for ds in self.pltcfg.DATASETS:
                 sync_files(pjoin(self.indir, ds),
                            pjoin(self.pltcfg.CONDORPATH, ds))
