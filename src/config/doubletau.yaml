@@ -73,9 +73,18 @@ default:
         electron: 
           veto: True
           pt: 20
+          bdtid: 1
+          pt: 33
+          eta: 2.1
+          dxy: 0.045
+          dz: 0.2
         muon: 
           veto: True
-          pt: 20
+          pt: 25
+          eta: 2.1
+          iso: 0.15
+          dxy: 0.045
+          dz: 0.2
         tau:
           veto: False
           pt: 20
@@ -98,61 +107,49 @@ default:
         count: 1
     outputs:
       Tau:
-        float: 
-          pt: Tau_pt
-          eta: Tau_eta
-          phi: Tau_phi
-          mass: Tau_mass
-          dxy: Tau_dxy
-          dz: Tau_dz
-        int:
-          charge: Tau_charge
-        uint:
-          idvsjet: Tau_idDeepTau2017v2p1VSjet
-          idvsmu: Tau_idDeepTau2017v2p1VSmu
-          idvse: Tau_idDeepTau2017v2p1VSe
+        pt: Tau_pt
+        eta: Tau_eta
+        phi: Tau_phi
+        mass: Tau_mass
+        dxy: Tau_dxy
+        dz: Tau_dz
+        charge: Tau_charge
+        idvsjet: Tau_idDeepTau2017v2p1VSjet
+        idvsmu: Tau_idDeepTau2017v2p1VSmu
+        idvse: Tau_idDeepTau2017v2p1VSe
       Electron:
-        float:
-          pt: Electron_pt
-          eta: Electron_eta
-          phi: Electron_phi
-          mass: Electron_mass
-          dxy: Electron_dxy
-          dz: Electron_dz
-          bdtid: Electron_tightCharge
-        int:
-          charge: Electron_charge
+        pt: Electron_pt
+        eta: Electron_eta
+        phi: Electron_phi
+        mass: Electron_mass
+        dxy: Electron_dxy
+        dz: Electron_dz
+        bdtid: Electron_tightCharge
+        charge: Electron_charge
       Muon:
-        float:
-          pt: Muon_pt
-          eta: Muon_eta
-          phi: Muon_phi
-          mass: Muon_mass
-          dxy: Muon_dxy
-          dz: Muon_dz
-          iso: Muon_pfRelIso04_all
-        bool:
-          tightid: Muon_tightId
-        int: 
-          charge: Muon_charge
+        pt: Muon_pt
+        eta: Muon_eta
+        phi: Muon_phi
+        mass: Muon_mass
+        dxy: Muon_dxy
+        dz: Muon_dz
+        iso: Muon_pfRelIso04_all
+        tightid: Muon_tightId
+        charge: Muon_charge
       Jet:
-        float:
-          pt: Jet_pt
-          eta: Jet_eta
-          phi: Jet_phi
-          mass: Jet_mass
-          deepJetbtagger: Jet_btagDeepFlavB
-          deepJetCvsB: Jet_btagDeepFlavCvB
-        uint:
-          jetID: Jet_jetId
+        pt: Jet_pt
+        eta: Jet_eta
+        phi: Jet_phi
+        mass: Jet_mass
+        deepJetbtagger: Jet_btagDeepFlavB
+        deepJetCvsB: Jet_btagDeepFlavCvB
+        jetID: Jet_jetId
       FatJet:
-        float:
-          pt: FatJet_pt
-          eta: FatJet_eta
-          phi: FatJet_phi
-          mass: FatJet_mass
-        uint:
-          jetID: FatJet_jetId
+        pt: FatJet_pt
+        eta: FatJet_eta
+        phi: FatJet_phi
+        mass: FatJet_mass
+        jetID: FatJet_jetId
 
 
 
