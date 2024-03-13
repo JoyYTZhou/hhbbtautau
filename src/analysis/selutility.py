@@ -6,38 +6,33 @@ import dask
 from coffea.analysis_tools import PackedSelection
 import vector as vec
 import pandas as pd
-from collections import ChainMap
 import operator as opr
+from config.selectionconfig import selectionsettings as selcfg
+
+default_lepsel = selcfg.lepselections
+default_jetsel = selcfg.jetselections
+default_mapcfg = selcfg.outputs
 
 class BaseEventSelections:
-    def __init__(self, lepcfg, jetcfg, cfgname) -> None:
-        self._channelname = cfgname
+    def __init__(self, lepcfg=default_lepsel, jetcfg=default_jetsel, mapcfg=default_mapcfg) -> None:
         self._lepselcfg = lepcfg
         self._jetselcfg = jetcfg
+        self._mapcfg = mapcfg
         self.objsel = PackedSelection()
         self.cutflow = None
         self.cfobj = None
 
     @property
-    def channelname(self):
-        return self._channelname
-    @channelname.setter
-    def channelname(self, value):
-        self._channelname = value
-
-    @property
     def lepselcfg(self):
         return self._lepselcfg
-    @lepselcfg.setter
-    def lepselcfg(self, value):
-        self._lepselcfg = value
 
     @property
     def jetselcfg(self):
         return self._jetselcfg
-    @jetselcfg.setter
-    def jetselcfg(self, value):
-        self._jetselcfg = value
+    
+    @property
+    def mapcfg(self):
+        return self._mapcfg
 
     def selectlep(self, events):
         """Custom function to set the lepton selections based on config.
@@ -83,21 +78,23 @@ class BaseEventSelections:
         return df_cf
 
 class Object():
-    def __init__(self, name, objcfg, selcfg):
+    def __init__(self, name, mapcfg, selcfg):
         """Construct an object from provided events with given selection configuration.
-        :param name: name of the object
+        
+        Parameters
+        - `name`: name of the object
         :type name: str
-        :param objcfg: object properties configuration
-        :type objcfg: dynaconf
+        :param mapcfg: mapping cfg from abbreviations to actual nanoaod names
+        :type mapcfg: dynaconf dict
         :param selcfg: object selection configuration
-        :type selcfg: dynaconf
+        :type selcfg: dynaconf dict
         """
         self._name = name
         self._veto = selcfg.get('veto', None)
         self._dakzipped = None
-        self.objcfg = objcfg
+        self.mapcfg = mapcfg
         self.selcfg = selcfg
-        self.fields = list(self.objcfg.keys())
+        self.fields = list(self.mapcfg.keys())
         self.selection = PackedSelection()
 
     @property
@@ -124,7 +121,7 @@ class Object():
     def set_dakzipped(self, events):
         """Given events, read only object-related observables and zip them into dict."""
         zipped_dict = {}
-        for name, nanoaodname in self.objcfg.items():
+        for name, nanoaodname in self.mapcfg.items():
             zipped_dict.update({name: events[nanoaodname]})
         zipped_object = dak.zip(zipped_dict)
         self.dakzipped = zipped_object

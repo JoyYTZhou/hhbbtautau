@@ -1,0 +1,90 @@
+default:
+  name: "tauhtauh"
+  triggerselections: 
+    nFatJet: 1
+    nJet: 2
+  lepselections:
+    Electron: 
+      veto: True
+      bdtid: 1
+      pt: 33
+      eta: 2.1
+      dxy: 0.045
+      dz: 0.2
+    Muon: 
+      veto: True
+      pt: 25
+      eta: 2.1
+      iso: 0.15
+      dxy: 0.045
+      dz: 0.2
+    Tau:
+      veto: False
+      pt: 20
+      eta: 2.5
+      idvsjet: 5
+      idvsmu: 1
+      idvse: 2
+      dz: 0.2
+      count: 2
+      OS: true
+  jetselections:
+    Jet:
+      pt: 20
+      eta: 2.4
+      dRLevel: 0.5
+      count: 2
+      overlapCheck: True
+    FatJet:
+      mass: 40
+      count: 1
+  outputs:
+    Tau:
+      pt: Tau_pt
+      eta: Tau_eta
+      phi: Tau_phi
+      mass: Tau_mass
+      dxy: Tau_dxy
+      dz: Tau_dz
+      charge: Tau_charge
+      idvsjet: Tau_idDeepTau2017v2p1VSjet
+      idvsmu: Tau_idDeepTau2017v2p1VSmu
+      idvse: Tau_idDeepTau2017v2p1VSe
+    Electron:
+      pt: Electron_pt
+      eta: Electron_eta
+      phi: Electron_phi
+      mass: Electron_mass
+      dxy: Electron_dxy
+      dz: Electron_dz
+      bdtid: Electron_tightCharge
+      charge: Electron_charge
+    Muon:
+      pt: Muon_pt
+      eta: Muon_eta
+      phi: Muon_phi
+      mass: Muon_mass
+      dxy: Muon_dxy
+      dz: Muon_dz
+      iso: Muon_pfRelIso04_all
+      tightid: Muon_tightId
+      charge: Muon_charge
+    Jet:
+      pt: Jet_pt
+      eta: Jet_eta
+      phi: Jet_phi
+      mass: Jet_mass
+      deepJetbtagger: Jet_btagDeepFlavB
+      deepJetCvsB: Jet_btagDeepFlavCvB
+      jetID: Jet_jetId
+    FatJet:
+      pt: FatJet_pt
+      eta: FatJet_eta
+      phi: FatJet_phi
+      mass: FatJet_mass
+      jetID: FatJet_jetId
+
+
+
+          
+          
