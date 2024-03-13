@@ -1,15 +1,10 @@
-from config.selectionconfig import settings as sel_cfg
 from .helper import *
 import pickle
-from .selutility import BaseEventSelections, Object
-from .custom import prelimEvtSel, fineEvtSel
-
-output_cfg = sel_cfg.signal.outputs
+from .selutility import BaseEventSelections
 
 class Processor:
-    """Process individual file or filesets given strings/dicts belonging to one dataset.
-    """
-    def __init__(self, rt_cfg, dataset, evtselclass=BaseEventSelections):
+    """Process individual file or filesets given strings/dicts belonging to one dataset."""
+    def __init__(self, rt_cfg, dataset, evtselclass=BaseEventSelections, **kwargs):
         self._rtcfg = rt_cfg
         self.treename = self.rtcfg.TREE_NAME
         self.outdir = self.rtcfg.OUTPUTDIR_PATH
@@ -18,17 +13,11 @@ class Processor:
         if self.rtcfg.TRANSFER: 
             checkcondorpath(self.rtcfg.TRANSFER_PATH)
         checkpath(self.outdir)
-        self.defselections()
-        self.evtsel = evtselclass(self.lepcfg, self.jetcfg, self.channelname) 
+        self.evtsel = evtselclass(**kwargs) 
 
     @property
     def rtcfg(self):
         return self._rtcfg
-    
-    def defselections(self):
-        self.lepcfg = sel_cfg.signal[f'channel{self.rtcfg.CHANNEL_INDX}'].selections
-        self.jetcfg = sel_cfg.signal.commonsel
-        self.channelname = sel_cfg.signal[f'channel{self.rtcfg.CHANNEL_INDX}'].name
         
     def loadfile(self, filename, suffix):
         """This is a wrapper function around uproot._dask. 
