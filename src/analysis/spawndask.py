@@ -1,7 +1,7 @@
 from dask.distributed import Client, LocalCluster
 from dask.distributed import as_completed
 from .processor import Processor
-from .custom import prelimEvtSel, fineEvtSel
+from .custom import prelimEvtSel, fineEvtSel, mockskimEvtSel
 import json as json
 from .helper import *
 import gc
@@ -11,8 +11,8 @@ from config.selectionconfig import dasksetting as daskcfg
 
 logger = initLogger(__name__, rs.PROCESS_NAME)
 
-def job(fn, i, dataset):
-    proc = Processor(rs, dataset, prelimEvtSel)
+def job(fn, i, dataset, eventSelection):
+    proc = Processor(rs, dataset, eventSelection)
     logger.info(f"Processing filename {fn}")
     try: 
         proc.runfile(fn, i)

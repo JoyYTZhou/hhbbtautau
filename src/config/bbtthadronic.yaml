@@ -5,21 +5,22 @@ default:
     nJet: 2
   lepselections:
     Electron: 
-      bdtid: 1
-      pt: 33
+      cbtightid: 4
+      mvaisoid: 0.8
+      pt: 40
       eta: 2.1
       dxy: 0.045
       dz: 0.2
       count: 0
     Muon: 
-      pt: 25
+      pt: 40
       eta: 2.1
-      iso: 0.15
       dxy: 0.045
       dz: 0.2
+      cbtightid: 1
+      isoid: 6
       count: 0
     Tau:
-      veto: False
       pt: 20
       eta: 2.5
       idvsjet: 5
@@ -57,7 +58,8 @@ default:
       mass: Electron_mass
       dxy: Electron_dxy
       dz: Electron_dz
-      bdtid: Electron_tightCharge
+      cbtightid: Electron_cutBased
+      mvaisoid: Electron_mvaIso
       charge: Electron_charge
     Muon:
       pt: Muon_pt
@@ -67,7 +69,8 @@ default:
       dxy: Muon_dxy
       dz: Muon_dz
       iso: Muon_pfRelIso04_all
-      tightid: Muon_tightId
+      isoid: Muon_pfIsoId
+      cbtightid: Muon_tightId
       charge: Muon_charge
     Jet:
       pt: Jet_pt
