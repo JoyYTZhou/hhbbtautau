@@ -94,22 +94,22 @@ class Object():
     - `name`: name of the object
     - `selcfg`: selection configuration for the object
     - `mapcfg`: mapping configuration for the object
-    - `veto`: whether or not to veto the object
     - `dakzipped`: dask zipped object
     - `fields`: list of fields in the object
     - `selection`: PackedSelection object to keep track of more detailed cutflow
     """
 
-    def __init__(self, name, selcfg, **kwargs):
+    def __init__(self, events, name, selcfg, **kwargs):
         """Construct an object from provided events with given selection configuration.
         
         Parameters
         - `name`: name of the object
+        - `selcfg`: Selection configuration for the object
         """
         self._name = name
         self._selcfg = selcfg
         self._mapcfg = kwargs.get('mapcfg', default_mapcfg[name])
-        self._veto = selcfg.get('veto', None)
+        self.events = events
         self.cutflow = kwargs.get('cutflow', PackedSelection())
         self.dakzipped = None
         self.fields = list(self.mapcfg.keys())
@@ -121,16 +121,60 @@ class Object():
     @property
     def selcfg(self):
         return self._selcfg
-
+    
     @property
-    def veto(self):
-        return self._veto
+    def mapcfg(self):
+        return self._mapcfg
 
-    def set_dakzipped(self, events):
-        """Given events, read only object-related observables and zip them into dict."""
+    def custommask(self, maskname, op, func=None):
+        """Create custom mask based on input.
+        
+        Parameters
+        - `maskname`: name of the mask
+        - `op`: operator to use for the mask
+        - `func`: function to apply to the data. Defaults to None.
+
+        Returns
+        - `mask`: mask based on input
+        """
+        if self.selcfg.get(maskname, None) is None:
+            raise ValueError(f"threshold value {maskname} is not given for object {self.name}")
+        if self.mapcfg.get(maskname, None) is None:
+            raise ValueError(f"Nanoaodname is not given for {maskname} of object {self.name}")
+        aodname = self.mapcfg[maskname]
+        selval = self.selcfg[maskname]
+        if func is not None:
+            return op(func(self.events[aodname]), selval)
+        else:
+            return op(self.events[aodname], selval)
+
+    def numselmask(self, op, mask):
+        return op(dak.sum(mask, axis=1), self.selcfg.count)
+
+    def ptmask(self, op):
+        return self.custommask('pt', op)
+
+    def absetamask(self, op):
+        return self.custommask('eta', op, abs)
+
+    def absdxymask(self, op):
+        return self.custommask('dxy', op, abs)
+
+    def absdzmask(self, op):
+        return self.custommask('dz', op, abs)
+
+    def bdtidmask(self, op):
+        return self.custommask("bdtid", op)
+    
+    def osmask(self):
+        """Entirely wrong of now."""
+        return dak.prod(self.dakzipped['charge'], axis=1) < 0 
+
+    def set_dakzipped(self):
+        """Given self.events, read only object-related observables and zip them into dict."""
         zipped_dict = {}
         for name, nanoaodname in self.mapcfg.items():
-            zipped_dict.update({name: events[nanoaodname]})
+            zipped_dict.update({name: self.events[nanoaodname]})
         zipped_object = dak.zip(zipped_dict)
         self.dakzipped = zipped_object
 
@@ -154,47 +198,12 @@ class Object():
         """
         self.dakzipped = self.dakzipped[mask]
 
-    def vetomask(self):
-        self.filter_dakzipped(self.ptmask(opr.ge))
-        veto_mask = dak.num(self.dakzipped)==0
-        return veto_mask
-
-    def numselmask(self, op):
-        return op(dak.num(self.dakzipped), self.selcfg.count)
-
-    def custommask(self, name, op, func=None):
-        """Create custom mask based on input"""
-        if self.selcfg.get(name, None) is None:
-            raise ValueError(f"threshold value {name} is not given for object {self.name}")
-        if func is not None:
-            return op(func(self.dakzipped[name]), self.selcfg[name])
-        else:
-            return op(self.dakzipped[name], self.selcfg[name])
-
-    def ptmask(self, op):
-        return op(self.dakzipped.pt, self.selcfg.pt)
-
-    def absetamask(self, op):
-        return self.custommask('eta', op, abs)
-
-    def absdxymask(self, op):
-        return self.custommask('dxy', op, abs)
-
-    def absdzmask(self, op):
-        return self.custommask('dz', op, abs)
-
-    def bdtidmask(self, op):
-        return self.custommask("bdtid", op)
-    
-    def osmask(self):
-        return dak.prod(self.dakzipped['charge'], axis=1) < 0 
-
-    def fourvector(self, events, sort=True, sortname='pt'):
+    def fourvector(self, sort=True, sortname='pt'):
         object_ak = ak.zip({
-        "pt": events[self.name+"_pt"],
-        "eta": events[self.name+"_eta"],
-        "phi": events[self.name+"_phi"],
-        "M": events[self.name+"_mass"]
+        "pt": self.events[self.name+"_pt"],
+        "eta": self.events[self.name+"_eta"],
+        "phi": self.events[self.name+"_phi"],
+        "M": self.events[self.name+"_mass"]
         })
         if sort:
             object_ak = object_ak[ak.argsort(object_ak[sortname], ascending=False)]
@@ -211,43 +220,6 @@ class Mask():
     def __init__(self) -> None:
         pass
 
-class OutputHist():
-    """Output"""
-    def __init__(self, obj_name, typeval):
-        self._channelname = None
-        self._type = typeval
-        self._objname = obj_name
-        self._hist = None
-
-    @property
-    def channelname(self):
-        return self._channelname
-    @channelname.setter
-    def channelname(self, value):
-        self._channelname = value
-    @property
-    def type(self):
-        return self._type
-    @type.setter
-    def type(self, value):
-        self._type = value
-    @property
-    def objname(self):
-        return self._objname
-    @objname.setter
-    def objname(self, value):
-        self._objname = value
-    @property
-    def hist(self):
-        return self._hist
-    @hist.setter
-    def hist(self, value):
-        self._hist = value
-
-    def sethist(self, events):
-        output_dict = output_cfg[self.objname][self.type]
-        output_names = list(output_dict.keys())
-        nanoaod_names = list(output_dict.values())
 
 
 

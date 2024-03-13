@@ -8,28 +8,21 @@ class prelimEvtSel(BaseEventSelections):
         muon = Object("Muon", self.lepselcfg.muon)
         tau = Object("Tau", self.lepselcfg.tau)
 
-        if not electron.veto:
-            electron_mask = (electron.ptmask(opr.ge) & \
-                        electron.absetamask(opr.le) & \
-                        electron.bdtidmask(opr.ge))
-            electron.filter_dakzipped(electron_mask)
-            elec_nummask = electron.numselmask(opr.eq)
-        else: elec_nummask = electron.vetomask()
+        electron_mask = (electron.ptmask(opr.ge) & \
+                    electron.absetamask(opr.le) & \
+                    electron.bdtidmask(opr.ge))
 
-        if not muon.veto:
-            muon_mask = (muon.ptmask(opr.ge) & \
-                        muon.absetamask(opr.le) & \
-                        muon.custommask('iso', opr.le))
-            muon.filter_dakzipped(muon_mask)
-            muon_nummask = muon.numselmask(opr.eq)
-        else: muon_nummask = muon.vetomask()
+        elec_nummask = electron.numselmask(opr.ge, electron_mask)
 
-        if not tau.veto:
-            tau_mask = (tau.ptmask(opr.ge) & \
-                        tau.absetamask(opr.le))
-            tau.filter_dakzipped(tau_mask)
-            tau_nummask = tau.numselmask(opr.ge)
-        else: tau_nummask = tau.vetomask()
+        muon_mask = (muon.ptmask(opr.ge) & \
+                    muon.absetamask(opr.le) & \
+                    muon.custommask('iso', opr.le))
+        muon_nummask = muon.numselmask(opr.ge, muon_mask)
+
+        tau_mask = (tau.ptmask(opr.ge) & \
+                    tau.absetamask(opr.le))
+
+        tau_nummask = tau.numselmask(opr.ge, tau_mask)
 
         self.objsel.add_multiple({"ElectronSelection": elec_nummask,
                                 "MuonSelection": muon_nummask,
