@@ -14,7 +14,17 @@ default_jetsel = selcfg.jetselections
 default_mapcfg = selcfg.outputs
 
 class BaseEventSelections:
+    """Base class for event selections.
+    
+    Attributes
+    - `lepselcfg`: lepton selection configuration
+    - `jetselcfg`: jet selection configuration
+    - `mapcfg`: mapping configuration {key=abbreviation, value=nanoaodname}
+    - `objsel`: PackedSelection object to keep track of cutflow
+    - `cutflow`: cutflow object
+    """
     def __init__(self, lepcfg=default_lepsel, jetcfg=default_jetsel, mapcfg=default_mapcfg) -> None:
+        """Initialize the event selection object with the given selection configurations."""
         self._lepselcfg = lepcfg
         self._jetselcfg = jetcfg
         self._mapcfg = mapcfg
@@ -78,45 +88,43 @@ class BaseEventSelections:
         return df_cf
 
 class Object():
-    def __init__(self, name, mapcfg, selcfg):
+    """Object class for handling object selections.
+
+    Attributes
+    - `name`: name of the object
+    - `selcfg`: selection configuration for the object
+    - `mapcfg`: mapping configuration for the object
+    - `veto`: whether or not to veto the object
+    - `dakzipped`: dask zipped object
+    - `fields`: list of fields in the object
+    - `selection`: PackedSelection object to keep track of more detailed cutflow
+    """
+
+    def __init__(self, name, selcfg, **kwargs):
         """Construct an object from provided events with given selection configuration.
         
         Parameters
         - `name`: name of the object
-        :type name: str
-        :param mapcfg: mapping cfg from abbreviations to actual nanoaod names
-        :type mapcfg: dynaconf dict
-        :param selcfg: object selection configuration
-        :type selcfg: dynaconf dict
         """
         self._name = name
+        self._selcfg = selcfg
+        self._mapcfg = kwargs.get('mapcfg', default_mapcfg[name])
         self._veto = selcfg.get('veto', None)
-        self._dakzipped = None
-        self.mapcfg = mapcfg
-        self.selcfg = selcfg
+        self.cutflow = kwargs.get('cutflow', PackedSelection())
+        self.dakzipped = None
         self.fields = list(self.mapcfg.keys())
-        self.selection = PackedSelection()
 
     @property
     def name(self):
         return self._name
-    @name.setter
-    def name(self, value):
-        self._name = value
+
+    @property
+    def selcfg(self):
+        return self._selcfg
 
     @property
     def veto(self):
         return self._veto
-    @veto.setter
-    def veto(self, value):
-        self._veto = value
-
-    @property
-    def dakzipped(self):
-        return self._dakzipped
-    @dakzipped.setter
-    def dakzipped(self, value):
-        self._dakzipped = value
 
     def set_dakzipped(self, events):
         """Given events, read only object-related observables and zip them into dict."""
