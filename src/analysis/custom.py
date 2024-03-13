@@ -4,9 +4,9 @@ import operator as opr
 class prelimEvtSel(BaseEventSelections):
     """Custom event selection class for the preliminary event selection."""
     def selectlep(self, events):
-        electron = Object("Electron", self.output_cfg.Electron, self.lepselcfg.electron)
-        muon = Object("Muon", self.output_cfg.Muon, self.lepselcfg.muon)
-        tau = Object("Tau", self.output_cfg.Tau, self.lepselcfg.tau)
+        electron = Object("Electron", self.lepselcfg.electron)
+        muon = Object("Muon", self.lepselcfg.muon)
+        tau = Object("Tau", self.lepselcfg.tau)
 
         if not electron.veto:
             electron_mask = (electron.ptmask(opr.ge) & \
