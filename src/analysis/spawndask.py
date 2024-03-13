@@ -1,7 +1,7 @@
 from dask.distributed import Client, LocalCluster
 from dask.distributed import as_completed
 from .processor import Processor
-from .custom import prelimEvtSel
+from .custom import prelimEvtSel, fineEvtSel
 import json as json
 from .helper import *
 import gc

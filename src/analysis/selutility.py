@@ -17,8 +17,8 @@ class BaseEventSelections:
     """Base class for event selections.
     
     Attributes
-    - `lepselcfg`: lepton selection configuration
-    - `jetselcfg`: jet selection configuration
+    - `lepselcfg`: lepton selection configuration. Default to selcfg.lepselections
+    - `jetselcfg`: jet selection configuration. Default to selcfg.jetselections
     - `mapcfg`: mapping configuration {key=abbreviation, value=nanoaodname}
     - `objsel`: PackedSelection object to keep track of cutflow
     - `cutflow`: cutflow object
