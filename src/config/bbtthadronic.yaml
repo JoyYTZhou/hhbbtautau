@@ -5,19 +5,19 @@ default:
     nJet: 2
   lepselections:
     Electron: 
-      veto: True
       bdtid: 1
       pt: 33
       eta: 2.1
       dxy: 0.045
       dz: 0.2
+      count: 0
     Muon: 
-      veto: True
       pt: 25
       eta: 2.1
       iso: 0.15
       dxy: 0.045
       dz: 0.2
+      count: 0
     Tau:
       veto: False
       pt: 20
