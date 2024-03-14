@@ -17,7 +17,7 @@ when_to_transfer_output = ON_EXIT_OR_EVICT
 
 request_cpus = 2
 request_memory = 20GB
-request_disk = 10GB
+request_disk = 15GB
 transfer_input_files = $(MY_PATH)/src, $(MY_PATH)/scripts, $(NO_BACKUP)/newcoffea.tar.gz, $(MY_PATH)/.condor_config
 
 queue

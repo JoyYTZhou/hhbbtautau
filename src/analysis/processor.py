@@ -64,12 +64,12 @@ class Processor:
 
         passed = self.evtsel.select(events, return_veto=False)
         if write_npz:
-            npzname = pjoin(self.outdir, f'cutflow_{suffix}_{self.channelname}.npz')
-            evtsel.cfobj.to_npz(npzname)
+            npzname = pjoin(self.outdir, f'cutflow_{suffix}.npz')
+            self.evtsel.cfobj.to_npz(npzname)
         if write_method == 'dask':
-            self.writedask(passed, self.channelname, suffix, delayed)
+            self.writedask(passed, suffix, delayed)
         elif write_method == 'dataframe':
-            self.writeobj(passed, self.channelname, suffix)
+            self.writeobj(passed, suffix)
         elif write_method == 'pickle':
             self.writepickle(passed, suffix, delayed)
             pass
@@ -80,10 +80,10 @@ class Processor:
 
         cutflow_name = f'{self.dataset}_cutflow_{suffix}.csv'
         localpath = pjoin(self.outdir, cutflow_name)
-        cutflow_df = evtsel.cf_to_df() 
+        cutflow_df = self.evtsel.cf_to_df() 
         cutflow_df.to_csv(localpath)
 
-        del evtsel, cutflow_df, events, passed
+        del cutflow_df, events, passed
 
         if self.rtcfg.TRANSFER:
             condorpath = f'{self.rtcfg.TRANSFER_PATH}/{cutflow_name}'
@@ -93,21 +93,19 @@ class Processor:
 
         return '\n'.join(msg)
 
-    def writedask(self, passed, prefix, suffix, delayed=True, fields=None):
+    def writedask(self, passed, suffix, delayed=True, fields=None):
         """Wrapper around uproot.dask_write(),
         transfer all root files generated to a destination location."""
         if fields is None:
-            dir_name = pjoin(self.outdir, prefix)
-            checkpath(dir_name)
-            if delayed: uproot.dask_write(passed, destination=dir_name, compute=False, prefix=f'{self.dataset}_{prefix}_{suffix}')
+            if delayed: uproot.dask_write(passed, destination=self.outdir, compute=False, prefix=f'{self.dataset}_{suffix}')
             else: 
-                uproot.dask_write(passed, destination=dir_name, compute=True, prefix=f'{self.dataset}_{prefix}_{suffix}')
+                uproot.dask_write(passed, destination=self.outdir, compute=True, prefix=f'{self.dataset}_{suffix}')
         else:
             pass
 
         if self.rtcfg.TRANSFER:
-            transferfiles(dir_name, self.rtcfg.TRANSFER_PATH)
-            shutil.rmtree(dir_name)
+            transferfiles(self.outdir, self.rtcfg.TRANSFER_PATH)
+            shutil.rmtree(self.outdir)
         
     def writeobj(self, passed, index, suffix):
         """This can be further simplified.I do not like this function...
@@ -130,6 +128,7 @@ class Processor:
         if self.rtcfg.TRANSFER:
             dest_path = pjoin(self.rtcfg.TRANSFER_PATH, f"{chcfg.name}{suffix}.csv")
             cpcondor(obj_path, dest_path, is_file=True)
+        pass
     
     def writepickle(self, passed, suffix, delayed):
         finame = pjoin(self.outdir, f"{self.dataset}_{suffix}.pkl")

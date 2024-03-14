@@ -1,8 +1,15 @@
 from .selutility import BaseEventSelections, Object
 import operator as opr
 
+def switch_selections(sel_name):
+    selections = {
+        'skim': mockskimEvtSel,
+        'prelim': prelimEvtSel
+    }
+    return selections.get(sel_name, BaseEventSelections)
+
 class mockskimEvtSel(BaseEventSelections):
-    """Reduce event sizes."""
+    """Reduce event sizes"""
     def selectlep(self, events):
         electron = Object(events, "Electron", self.lepselcfg.electron)
         muon = Object(events, "Muon", self.lepselcfg.muon)

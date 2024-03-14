@@ -2,13 +2,11 @@
 LOCAL_TEST = true
 SINGLE_PATH = "/Users/yuntongzhou/Desktop/Dihiggszztt/sample1.root"
 PROCESS_NAME = "DYJets"
-CHANNEL_INDX = 3
 OUTPUTDIR_PATH = "@format {env[OUTPUTPATH]}"
 TRANSFER = false
 
 [LPCLOCAL]
 PROCESS_NAME = "DYJets"
-CHANNEL_INDX = 3
 TREE_NAME = "Events"
 CONDORPATH = "/store/user/joyzhou/output"
 SCRATCHPATH = "/uscmst1b_scratch/lpc1/3DayLifetime/joyzhou"
@@ -21,9 +19,9 @@ STEP_SIZE = '400MB'
 COPY_DIR = "@format {this.SCRATCHPATH}/temp"
 
 [LPCCONDOR]
-PROCESS_NAME = "TTbar"
-CHANNEL_INDX = 3
+PROCESS_NAME = "ggF"
 TREE_NAME = "Events"
+SEL_NAME = 'skim'
 CONDORPATH = "/store/user/joyzhou/output"
 INPUTFILE_PATH = "@format src/data/preprocessed/{this.PROCESS_NAME}.json"
 OUTPUTDIR_PATH = "@format outputs/{this.PROCESS_NAME}"
@@ -32,7 +30,7 @@ TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
 COPY_LOCAL = true
 COPY_DIR = "temp"
 STEP_SIZE = false
-RESUME = true
+RESUME = false
 DSINDX = 0
 FINDX = 10
 
