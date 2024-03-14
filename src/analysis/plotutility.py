@@ -206,11 +206,55 @@ class Visualizer():
                            pjoin(self.pltcfg.CONDORPATH, ds))
         
 class DataPlotter():
-    def __init__(self) -> None:
-        pass      
+    def __init__(self, source, **kwargs) -> None:
+        """Constructor for DataPlotter class.
+        
+        Parameters
+        - `source`: source of the data. Can be a string (path to file), a dataframe, or an awkward array.
+        """
+        if isinstance(source, str):
+            if source.endswith('.pkl'):
+                self.data = self.load_pkl(source)
+            elif source.endswith('.csv'):
+                self.data = pd.read_csv(source, **kwargs)
+            elif source.endswith('.root'):
+                self.data = uproot.open(source)
+        elif isinstance(source, pd.core.frame.DataFrame) or isinstance(source, ak.highlevel.Array):
+            self.data = source
+        else:
+            self.data = source
+            raise UserWarning(f"This might not be a valid source. The data type is {type(source)}")
+    
+    def sortobj(self, field, attr, sortall=True, **kwargs):
+        mask = DataPlotter.sortmask(self.data[f'{field}_{attr}'], **kwargs)
+        if sortall:
+            pass
+        pass
 
     @staticmethod
+    def load_pkl(filename):
+        with open(filename, 'rb') as f:
+            data = pickle.load(f)
+        return data
+
+    @staticmethod
+    def sortmask(dfarr, **kwargs):
+        """Wrapper around awkward argsort function.
+        
+        Parameters
+        - `dfarr`: the data arr to be sorted
+        """
+        dfarr = DataPlotter.arr_handler(dfarr)
+        sortmask = ak.argsort(dfarr, 
+                   axis=kwargs.get('axis', -1), 
+                   ascending=kwargs.get('ascending', False),
+                   highlevel=kwargs.get('highlevel', True)
+                   )
+        return sortmask
+    
+    @staticmethod
     def arr_handler(dfarr):
+        """Handle different types of data arrays."""
         if isinstance(dfarr, pd.core.series.Series):
             return dfarr.ak.array
         elif isinstance(dfarr, pd.core.frame.DataFrame):
