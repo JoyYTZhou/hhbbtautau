@@ -244,7 +244,7 @@ class DataPlotter():
         Parameters
         - `dfarr`: the data arr to be sorted
         """
-        dfarr = DataPlotter.arr_handler(dfarr)
+        dfarr = DataLoader.arr_handler(dfarr)
         sortmask = ak.argsort(dfarr, 
                    axis=kwargs.get('axis', -1), 
                    ascending=kwargs.get('ascending', False),
@@ -252,18 +252,6 @@ class DataPlotter():
                    )
         return sortmask
     
-    @staticmethod
-    def arr_handler(dfarr):
-        """Handle different types of data arrays."""
-        if isinstance(dfarr, pd.core.series.Series):
-            return dfarr.ak.array
-        elif isinstance(dfarr, pd.core.frame.DataFrame):
-            raise ValueError("specify a column. This is a dataframe.")
-        elif isinstance(dfarr, ak.highlevel.Array):
-            return dfarr
-        else:
-            raise TypeError(f"This is of type {type(dfarr)}")
-
     @staticmethod
     def plot_var(df, name, title, xlabel, bins, range):
         fig, ax = plt.subplots(figsize=(10, 5))
@@ -285,9 +273,26 @@ class DataPlotter():
             
             
 class DataLoader():
-    def __init__(self, plt_cfg) -> None:
-        self.pltcfg = plt_cfg
+    def __init__(self) -> None:
+        return None
     
+    @staticmethod
+    def findfields(dframe):
+        """Find all fields in a dataframe."""
+        if isinstance(dframe, pd.core.frame.DataFrame):
+            return dframe.columns
+    @staticmethod
+    def arr_handler(dfarr):
+        """Handle different types of data arrays."""
+        if isinstance(dfarr, pd.core.series.Series):
+            return dfarr.ak.array
+        elif isinstance(dfarr, pd.core.frame.DataFrame):
+            raise ValueError("specify a column. This is a dataframe.")
+        elif isinstance(dfarr, ak.highlevel.Array):
+            return dfarr
+        else:
+            raise TypeError(f"This is of type {type(dfarr)}")
+
     @staticmethod
     def haddWeights(regexlist, grepdir, output=False, from_raw=False):
         """Function for self use only, grep weights from a list json files formatted in a specific way.
@@ -315,7 +320,8 @@ class DataLoader():
                 json.dump(wgt_dict, f, indent=4)
         return wgt_dict
  
-    def combine_roots(self, level=1, save=False, save_separate=True, flat=False):
+    @staticmethod
+    def combine_roots(pltcfg, wgt_dict, level=1, save=False, save_separate=True, flat=False):
         """Combine all root files of datasets in plot setting into one dataframe.
         
         Parameters
@@ -325,31 +331,28 @@ class DataLoader():
         - `flat`: whether it's n-tuple
         """
         df_list = []
-        for process, dsitems in self.wgt_dict.items():
+        outdir = pltcfg.OUTPUTDIR
+        for process, dsitems in wgt_dict.items():
             for ds in dsitems.keys():
-                ds_dir = pjoin(self.indir, process)
-                ds_df = load_roots(ds_dir, f'{ds}_*.root', self.pltcfg.PLOT_VARS, 
-                                   extra_branches=self.pltcfg.EXTRA_VARS, 
-                                   tree_name = self.pltcfg.TREENAME,
-                                   clean = self.pltcfg.CLEAN)
+                indir = pltcfg.INPUTDIR
+                ds_dir = pjoin(indir, process)
+                ds_df = load_roots(ds_dir, f'{ds}_*.root', pltcfg.PLOT_VARS, 
+                                   extra_branches=pltcfg.EXTRA_VARS, 
+                                   tree_name = pltcfg.TREENAME,
+                                   clean = pltcfg.CLEAN)
                 ds_df['dataset'] = process if level==0 else ds
                 if save_separate: 
-                    finame = pjoin(self.outdir, f'{ds}.pkl') 
+                    finame = pjoin(outdir, f'{ds}.pkl') 
                     with open(finame, 'wb') as f:
                         pickle.dump(ds_df, f)
                 df_list.append(ds_df)
         roots_df = pd.concat(df_list)
         if save==True: 
-            finame = pjoin(self.outdir, 'hadded_roots.pkl')
+            finame = pjoin(outdir, 'hadded_roots.pkl')
             with open(finame, 'wb') as f:
                 pickle.dump(roots_df, f)
         return roots_df 
     
-    @staticmethod
-    def unpkl_df(pklpath):
-        with open(pklpath, 'rb') as f:
-            df = pickle.load(f)
-        pass
         
         
     
