@@ -84,7 +84,7 @@ class BaseEventSelections:
         """
         row_names = self.cutflow.labels
         number = dask.compute(self.cutflow.nevcutflow)[0]
-        df_cf = pd.DataFrame(data = number, columns = [self.channelname], index=row_names)
+        df_cf = pd.DataFrame(data = number, index=row_names)
         return df_cf
 
 class Object():

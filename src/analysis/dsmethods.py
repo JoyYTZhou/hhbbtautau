@@ -93,52 +93,6 @@ def short_name(dataset):
     return name
 
 
-def load_lists():
-    """Generate file list per dataset
-
-    :return: Mapping of dataset : [files]
-    :rtype: dict
-    """
-    files = [
-        projectcoffea_path(f"data/datasets/datasets_nanoaod_v7_2016.txt"),
-        projectcoffea_path(f"data/datasets/datasets_nanoaod_v7_2017.txt"),
-        projectcoffea_path(f"data/datasets/datasets_nanoaod_v7_2018.txt")
-    ]
-    lines = []
-    for fpath in files:
-        with open(fpath,"r") as f:
-            lines.extend(f.readlines())
-
-    lines = filter(lambda x: "NANOAOD" in x and not x.startswith("#"), lines)
-    return lines
-
-
-
-def files_from_ac(regex):
-    """Generate file list per dataset from T2_DE_RWTH
-
-    :param regex: Regular expression to match datasets
-    :type regex: string
-    :return: Mapping of dataset : [files]
-    :rtype: dict
-    """
-    path = projectcoffea_path('data/datasets/crabfiles.yml')
-
-    with open(path, 'r') as stream:
-        try:
-            fileset = yaml.safe_load(stream)
-        except yaml.YAMLError as exc:
-            print(exc)
-
-    for dataset, files in fileset.items():
-        if not re.match(regex, dataset):
-            continue
-        for ifile in reversed(files):
-            if not len(ifile):
-                files.remove(ifile)
-        fileset[dataset] = files
-    return fileset
-
 def find_files(directory, regex):
     fileset = {}
     for path, _, files in os.walk(directory):

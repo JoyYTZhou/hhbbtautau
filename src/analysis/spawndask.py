@@ -1,7 +1,7 @@
 from dask.distributed import Client, LocalCluster
 from dask.distributed import as_completed
 from .processor import Processor
-from .custom import prelimEvtSel, fineEvtSel, mockskimEvtSel
+from .custom import switch_selections
 import json as json
 from .helper import *
 import gc
@@ -10,8 +10,9 @@ from config.selectionconfig import runsetting as rs
 from config.selectionconfig import dasksetting as daskcfg
 
 logger = initLogger(__name__, rs.PROCESS_NAME)
+evtselclass = switch_selections(rs.SEL_NAME)
 
-def job(fn, i, dataset, eventSelection):
+def job(fn, i, dataset, eventSelection=evtselclass):
     proc = Processor(rs, dataset, eventSelection)
     logger.info(f"Processing filename {fn}")
     try: 
