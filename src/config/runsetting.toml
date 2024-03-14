@@ -19,7 +19,7 @@ STEP_SIZE = '400MB'
 COPY_DIR = "@format {this.SCRATCHPATH}/temp"
 
 [LPCCONDOR]
-PROCESS_NAME = "ggF"
+PROCESS_NAME = "TTbar"
 TREE_NAME = "Events"
 SEL_NAME = 'skim'
 CONDORPATH = "/store/user/joyzhou/output"
@@ -29,7 +29,7 @@ TRANSFER = true
 TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
 COPY_LOCAL = true
 COPY_DIR = "temp"
-STEP_SIZE = false
+STEP_SIZE = '300MB'
 RESUME = false
 DSINDX = 0
 FINDX = 10
