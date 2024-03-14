@@ -79,6 +79,7 @@ class Processor:
             raise ValueError("Write method not supported")
 
         cutflow_name = f'{self.dataset}_cutflow_{suffix}.csv'
+        checkpath(self.outdir)
         localpath = pjoin(self.outdir, cutflow_name)
         cutflow_df = self.evtsel.cf_to_df() 
         cutflow_df.to_csv(localpath)
@@ -107,29 +108,6 @@ class Processor:
             transferfiles(self.outdir, self.rtcfg.TRANSFER_PATH)
             shutil.rmtree(self.outdir)
         
-    def writeobj(self, passed, index, suffix):
-        """This can be further simplified.I do not like this function...
-        Write computed awk array selected in sel_cfg to csv files."""
-        chcfg = self.channelsel[index]
-        electron = Object("Electron", passed, output_cfg.Electron, chcfg.selections.electron)
-        muon = Object("Muon", passed, output_cfg.Muon, chcfg.selections.muon)
-        tau = Object("Tau", passed, output_cfg.Tau, chcfg.selections.tau)
-
-        edf = electron.to_daskdf()
-        mdf = muon.to_daskdf()
-        tdf = tau.to_daskdf()
-
-        obj_df = pd.concat([edf, mdf, tdf], axis=1)
-        del edf, mdf, tdf
-
-        obj_path = pjoin(self.outdir, f"{chcfg.name}{suffix}.csv")
-        obj_df.to_csv(obj_path, index=False)
-
-        if self.rtcfg.TRANSFER:
-            dest_path = pjoin(self.rtcfg.TRANSFER_PATH, f"{chcfg.name}{suffix}.csv")
-            cpcondor(obj_path, dest_path, is_file=True)
-        pass
-    
     def writepickle(self, passed, suffix, delayed):
         finame = pjoin(self.outdir, f"{self.dataset}_{suffix}.pkl")
         with open(finame, 'wb') as f:
