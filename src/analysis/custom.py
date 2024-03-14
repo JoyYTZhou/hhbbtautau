@@ -1,3 +1,6 @@
+# This file contains custom event selection classes for the analysis.
+# The classes are inherited from the BaseEventSelections class
+# TECHNICALLY THIS SHOULD BE THE ONLY FILE THAT NEEDS TO BE MODIFIED FOR CUSTOM EVENT SELECTIONS
 from .selutility import BaseEventSelections, Object
 import operator as opr
 
