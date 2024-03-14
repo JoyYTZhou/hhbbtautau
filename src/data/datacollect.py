@@ -30,7 +30,7 @@ def xrootd_format(fpath, prefix):
     else:
         return f"file://{fpath}"
 
-def query_MCsamples(dspath, outputfn):
+def query_MCsamples(dspath, outputfn, regex=None):
     """ Query xrootd to find all filepaths to a given set of dataset names.
     the result is saved to a new file.
     :param dspath: path to json file containing dataset names
@@ -42,12 +42,19 @@ def query_MCsamples(dspath, outputfn):
         dsjson = json.load(ds)
 
     query_fistr = lambda ds: "".join(["file dataset=", ds])
-
+     
     for name, dataset_dict in tqdm(dsjson.items(), f"finding samples ..."):
+        keys_to_del = []
         for ds, ds_dict in dataset_dict.items():
-            filelist = list(chain.from_iterable(dasgo_query(query_fistr(s)) for s in ds_dict["string"]))
-            print(filelist)
-            ds_dict["filelist"] = filelist
+            if regex is None:
+                filelist = list(chain.from_iterable(dasgo_query(query_fistr(s)) for s in ds_dict["string"]))
+            else:
+                filelist = list(chain.from_iterable(dasgo_query(query_fistr(s)) for s in ds_dict["string"] if regex in s))
+            if filelist:
+                ds_dict["filelist"] = filelist
+            else:
+                keys_to_del.append(ds)
+        for key in keys_to_del: del dataset_dict[key]
 
     with open(outputfn, 'w') as jsonfile:
         json.dump(dsjson, jsonfile, indent=4)
@@ -56,8 +63,8 @@ def add_weight(dspath, outputdir, dsname=None):
 
     with open(dspath, 'r') as ds:
         dsjson = json.load(ds)
-
     os.makedirs(outputdir, exist_ok=True)
+
     if dsname is None:
         searchitems = dsjson
     elif isinstance(dsjson, str):
@@ -66,32 +73,34 @@ def add_weight(dspath, outputdir, dsname=None):
         raise ValueError("Needs to pass a dataset name!")
 
     for name, dataset_dict in tqdm(searchitems.items(), f"finding samples ..."):
-        for ds, ds_dict in dataset_dict.items():
-            print(f"locating {ds}")
-            wgt_tot = 0
-            raw_tot = 0
-            success_list = []
-            failed_list = []
-            for file in tqdm(ds_dict['filelist']):
-                xrd_file = xrootd_format(file, 'local')
-                result = info_file(xrd_file)
-                if isinstance(result, str): 
-                    failed_list.append(xrd_file)
-                    continue
-                n_raw, n_wgt = result
-                wgt_tot += n_wgt
-                raw_tot += n_raw
-                success_list.append(xrd_file)
-            ds_dict['filelist'] = success_list
-            ds_dict['failedlist'] = failed_list
-            ds_dict["Raw Events"] = raw_tot
-            ds_dict["Wgt Events"] = wgt_tot
-            ds_dict["Per Event"] = ds_dict['xsection']/wgt_tot
-        fipath = os.path.join(outputdir, f'{name}.json')
-        with open(fipath, 'w') as jsonfile:
-            json.dump(dataset_dict, jsonfile, indent=4)
-
+        if dataset_dict != {}:
+            for ds, ds_dict in dataset_dict.items():
+                print(f"locating {ds}")
+                wgt_tot = 0
+                raw_tot = 0
+                success_list = []
+                failed_list = []
+                for file in tqdm(ds_dict['filelist']):
+                    xrd_file = xrootd_format(file, 'local')
+                    result = info_file(xrd_file)
+                    if isinstance(result, str): 
+                        failed_list.append(xrd_file)
+                        continue
+                    n_raw, n_wgt = result
+                    wgt_tot += n_wgt
+                    raw_tot += n_raw
+                    success_list.append(xrd_file)
+                ds_dict['filelist'] = success_list
+                ds_dict['failedlist'] = failed_list
+                ds_dict["Raw Events"] = raw_tot
+                ds_dict["Wgt Events"] = wgt_tot
+                ds_dict["Per Event"] = ds_dict['xsection']/wgt_tot
+            fipath = os.path.join(outputdir, f'{name}.json')
+            with open(fipath, 'w') as jsonfile:
+                json.dump(dataset_dict, jsonfile, indent=4)
     
+    return None
+
 def info_file(file):
     """Return the number of raw events and weighted events of a file in a json dictionary
     with error handled."""
@@ -200,10 +209,10 @@ def produceCSV(datadir):
     all_df.to_csv('compiled_weight.csv', index=False)
     
 if __name__ == "__main__":
-    # query_MCsamples("data.json", "data_file.json")
-    # add_weight("data_file.json", "preprocessed")
+    # query_MCsamples("data.json", "data_file.json", regex="NanoAODv")
+    add_weight("data_file.json", "preprocessed")
     # print("Jobs finished!")
-    produceCSV('preprocessed')
+    # produceCSV('preprocessed')
 
 
 
