@@ -5,6 +5,7 @@ import os
 import json
 from analysis.helper import *
 import pickle
+import awkward as ak
 
 class Visualizer():
     """
@@ -38,61 +39,15 @@ class Visualizer():
         for ds in self.pltcfg.DATASETS:
             sync_files(pjoin(self.indir, ds), f"{self.pltcfg.CONDORPATH}/{ds}")
     
-    def grepweights(self, output=False, from_raw=False):
-        """Function for self use only, grep weights from a list json files formatted in a specific way.
-        
-        Parameters
-        - `output`: whether to save the weights into a json file
-        - `from_raw`: whether to compute weights based on number of raw events instead of weighted
-        """
-        wgt_dict = {}
-        for ds in self.pltcfg.DATASETS:
-            with open(pjoin(self.pltcfg.DATAPATH, f'{ds}.json'), 'r') as f:
-                meta = json.load(f)
-                dsdict = {}
-                for dskey, dsval in meta.items():
-                    if from_raw:
-                        dsdict.update({dskey: dsval['xsection']/dsval['Raw Events']})
-                    else:
-                        dsdict.update({dskey: dsval['Per Event']})
-                wgt_dict.update({ds: dsdict})
-        self.wgt_dict = wgt_dict
-
-        if output: 
-            outname = pjoin(self.pltcfg.DATAPATH, 'wgt_total.json')
-            with open(outname, 'w') as f:
-                json.dump(self.wgt_dict, f, indent=4)
+    def getweights(self, output=False, from_raw=False):
+        """Compute weights needed for these datasets. Save if needed."""
+        self.wgt_dict = DataLoader.haddWeights(self.pltcfg.DATASETS, self.pltcfg.DATAPATH, output, from_raw)
     
-    def combine_roots(self, level=1, save=False, save_separate=True, flat=False):
-        """Combine all root files of datasets in plot setting into one dataframe.
-        
-        Parameters
-        - `level`: concatenation level. 0 for overall process, 1 for dataset
-        - `save`: whether to save the hadded result (dataframe)
-        - `save_separate`: whether to save separate csv files for each dataset
-        - `flat`: whether it's n-tuple
-        """
-        df_list = []
-        for process, dsitems in self.wgt_dict.items():
-            for ds in dsitems.keys():
-                ds_dir = pjoin(self.indir, process)
-                ds_df = load_roots(ds_dir, f'{ds}_*.root', self.pltcfg.PLOT_VARS, 
-                                   extra_branches=self.pltcfg.EXTRA_VARS, 
-                                   tree_name = self.pltcfg.TREENAME,
-                                   clean = self.pltcfg.CLEAN)
-                ds_df['dataset'] = process if level==0 else ds
-                if save_separate: 
-                    finame = pjoin(self.outdir, f'{ds}.pkl') 
-                    with open(finame, 'wb') as f:
-                        pickle.dump(ds_df, f)
-                df_list.append(ds_df)
-        roots_df = pd.concat(df_list)
-        if save==True: 
-            finame = pjoin(self.outdir, 'hadded_roots.pkl')
-            with open(finame, 'wb') as f:
-                pickle.dump(roots_df, f)
-        return roots_df
-
+    def loadweights(self):
+        """Load weights needed for these datasets"""
+        with open(pjoin(self.pltcfg.DATASETS, 'wgt_total.json'), 'r') as f:
+            self.wgt_dict = json.load(f)
+    
     def compute_allcf(self, lumi=50, output=True):
         """Load all cutflow tables for all datasets from output directory and combine them into one.
         
@@ -158,9 +113,6 @@ class Visualizer():
         else:
             print("You didn't save the hadded result last time!")
             return False
-
-    def loadweights(self):
-        pass
 
     def load_allcf(self):
         raw_df = pd.read_csv(pjoin(self.outdir, "cutflow_raw_tot.csv"), index_col=0)
@@ -253,16 +205,111 @@ class Visualizer():
                 sync_files(pjoin(self.indir, ds),
                            pjoin(self.pltcfg.CONDORPATH, ds))
         
+class DataPlotter():
+    def __init__(self) -> None:
+        pass      
+
+    @staticmethod
+    def arr_handler(dfarr):
+        if isinstance(dfarr, pd.core.series.Series):
+            return dfarr.ak.array
+        elif isinstance(dfarr, pd.core.frame.DataFrame):
+            raise ValueError("specify a column. This is a dataframe.")
+        elif isinstance(dfarr, ak.highlevel.Array):
+            return dfarr
+        else:
+            raise TypeError(f"This is of type {type(dfarr)}")
+
+    @staticmethod
+    def plot_var(df, name, title, xlabel, bins, range):
+        fig, ax = plt.subplots(figsize=(10, 5))
+        hep.histplot(
+            df[name],
+            bins=bins,
+            histtype="fill",
+            color="b",
+            alpha=0.5,
+            edgecolor="black",
+            title=title,
+            ax=ax,
+        )
+        ax.set_xlabel(xlabel, fontsize=15)
+        ax.set_ylabel("Events", fontsize=15)
+        ax.set_xlim(*range)
+        ax.legend()
+        fig.show() 
+            
+            
+class DataLoader():
+    def __init__(self, plt_cfg) -> None:
+        self.pltcfg = plt_cfg
+    
+    @staticmethod
+    def haddWeights(regexlist, grepdir, output=False, from_raw=False):
+        """Function for self use only, grep weights from a list json files formatted in a specific way.
         
+        Parameters
+        - `regexlist`: list of strings of dataset names
+        - `grepdir`: directory where the json files are located
+        - `output`: whether to save the weights into a json file
+        - `from_raw`: whether to compute weights based on number of raw events instead of weighted
+        """
+        wgt_dict = {}
+        for ds in regexlist:
+            with open(pjoin(grepdir, f'{ds}.json'), 'r') as f:
+                meta = json.load(f)
+                dsdict = {}
+                for dskey, dsval in meta.items():
+                    if from_raw:
+                        dsdict.update({dskey: dsval['xsection']/dsval['Raw Events']})
+                    else:
+                        dsdict.update({dskey: dsval['Per Event']})
+                wgt_dict.update({ds: dsdict})
+        if output: 
+            outname = pjoin(grepdir, 'wgt_total.json')
+            with open(outname, 'w') as f:
+                json.dump(wgt_dict, f, indent=4)
+        return wgt_dict
+ 
+    def combine_roots(self, level=1, save=False, save_separate=True, flat=False):
+        """Combine all root files of datasets in plot setting into one dataframe.
         
-            
-            
-            
-            
+        Parameters
+        - `level`: concatenation level. 0 for overall process, 1 for dataset
+        - `save`: whether to save the hadded result (dataframe)
+        - `save_separate`: whether to save separate csv files for each dataset
+        - `flat`: whether it's n-tuple
+        """
+        df_list = []
+        for process, dsitems in self.wgt_dict.items():
+            for ds in dsitems.keys():
+                ds_dir = pjoin(self.indir, process)
+                ds_df = load_roots(ds_dir, f'{ds}_*.root', self.pltcfg.PLOT_VARS, 
+                                   extra_branches=self.pltcfg.EXTRA_VARS, 
+                                   tree_name = self.pltcfg.TREENAME,
+                                   clean = self.pltcfg.CLEAN)
+                ds_df['dataset'] = process if level==0 else ds
+                if save_separate: 
+                    finame = pjoin(self.outdir, f'{ds}.pkl') 
+                    with open(finame, 'wb') as f:
+                        pickle.dump(ds_df, f)
+                df_list.append(ds_df)
+        roots_df = pd.concat(df_list)
+        if save==True: 
+            finame = pjoin(self.outdir, 'hadded_roots.pkl')
+            with open(finame, 'wb') as f:
+                pickle.dump(roots_df, f)
+        return roots_df 
+    
+    @staticmethod
+    def unpkl_df(pklpath):
+        with open(pklpath, 'rb') as f:
+            df = pickle.load(f)
+        pass
         
         
     
-            
+       
         
     # from https://github.com/aminnj/yahist/blob/master/yahist/utils.py#L133 
 def clopper_pearson_error(passed, total, level=0.6827):

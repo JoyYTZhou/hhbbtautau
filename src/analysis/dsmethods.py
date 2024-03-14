@@ -185,7 +185,6 @@ def is_data(dataset):
         return True
     return False
 
-
 def extract_year(dataset):
     """Extract the year from a dataset name
 

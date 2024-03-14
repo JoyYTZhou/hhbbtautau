@@ -1,7 +1,6 @@
 # adapted from https://github.com/bu-cms/projectcoffea/blob/master/projectcoffea/helpers/helpers.py
 
 import numpy as np
-import analysis as HHtobbtautau
 import os
 
 pjoin = os.path.join
@@ -26,6 +25,7 @@ def min_dphi_jet_met(jets, met_phi, njet=4, ptmin=30, etamax=2.4):
     """
 
     assert(met_phi.shape!=())
+    
 
     jets=jets[(jets.pt>ptmin)&(jets.abseta < etamax)]
     jets = jets[:,:njet]
