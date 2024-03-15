@@ -9,6 +9,7 @@ import pandas as pd
 import glob
 
 def dasgo_query(query, json=False):
+    """Query dasgoclient and return the result as a list of strings."""
     cmd = ["dasgoclient", "--query", query]
     if json:
         cmd.append("-json")
@@ -33,10 +34,11 @@ def xrootd_format(fpath, prefix):
 def query_MCsamples(dspath, outputfn, regex=None):
     """ Query xrootd to find all filepaths to a given set of dataset names.
     the result is saved to a new file.
-    :param dspath: path to json file containing dataset names
-    :type dspath: string
-    :param outputfn: path to output json file containing full dataset paths
-    :type outputfn: string
+
+    Parameters
+    - `dspath`: path to json file containing dataset names
+    - `outputfn`: path to output json file containing full dataset paths
+    - `regex`: optional, a string to filter the dataset names
     """
     with open(dspath, 'r') as ds:
         dsjson = json.load(ds)
@@ -60,6 +62,13 @@ def query_MCsamples(dspath, outputfn, regex=None):
         json.dump(dsjson, jsonfile, indent=4)
 
 def add_weight(dspath, outputdir, dsname=None):
+    """Add the number of raw events, weighted events, and per event weight to the dataset dictionary.
+    The result is saved to a new file.
+    
+    Parameters
+    - `dspath`: path to json file containing dataset names
+    - `outputdir`: path to output directory
+    - `dsname`: optional, a string to specify the dataset name"""
 
     with open(dspath, 'r') as ds:
         dsjson = json.load(ds)
@@ -76,20 +85,7 @@ def add_weight(dspath, outputdir, dsname=None):
         if dataset_dict != {}:
             for ds, ds_dict in dataset_dict.items():
                 print(f"locating {ds}")
-                wgt_tot = 0
-                raw_tot = 0
-                success_list = []
-                failed_list = []
-                for file in tqdm(ds_dict['filelist']):
-                    xrd_file = xrootd_format(file, 'local')
-                    result = info_file(xrd_file)
-                    if isinstance(result, str): 
-                        failed_list.append(xrd_file)
-                        continue
-                    n_raw, n_wgt = result
-                    wgt_tot += n_wgt
-                    raw_tot += n_raw
-                    success_list.append(xrd_file)
+                raw_tot, wgt_tot, success_list, failed_list = weight_fl(ds_dict['filelist']) 
                 ds_dict['filelist'] = success_list
                 ds_dict['failedlist'] = failed_list
                 ds_dict["Raw Events"] = raw_tot
@@ -100,6 +96,35 @@ def add_weight(dspath, outputdir, dsname=None):
                 json.dump(dataset_dict, jsonfile, indent=4)
     
     return None
+
+def weight_fl(filelist):
+    """Find the total number of raw events, weighted events in a list of files.
+    
+    Parameters
+    - `filelist`: list of file paths
+    Returns
+    - `raw_tot`: total number of raw events
+    - `wgt_tot`: total number of weighted events
+    - `success_list`: list of successful file paths
+    - `failed_list`: list of failed file paths (unable to open/query)
+    """
+    wgt_tot = 0
+    raw_tot = 0
+    success_list = []
+    failed_list = []
+    for file in tqdm(filelist):
+        xrd_file = xrootd_format(file, 'local')
+        result = info_file(xrd_file)
+        if isinstance(result, str): 
+            failed_list.append(xrd_file)
+            continue
+        n_raw, n_wgt = result
+        wgt_tot += n_wgt
+        raw_tot += n_raw
+        success_list.append(xrd_file)
+    
+    return raw_tot, wgt_tot, success_list, failed_list
+    
 
 def info_file(file):
     """Return the number of raw events and weighted events of a file in a json dictionary
