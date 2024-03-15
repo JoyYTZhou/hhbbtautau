@@ -179,8 +179,10 @@ def concat_roots(directory, pattern, fields, outdir, outname, batch_size=30, ext
         if added_columns != {}: 
             for column, value in added_columns.items():
                 combined_df[column] = value
-        outfilepath = pjoin(outdir, f'{outname}_{i//batch_size + 1}.parquet')
-        combined_df.to_parquet(outfilepath)
+        outfilepath = pjoin(outdir, f'{outname}_{i//batch_size + 1}.pkl')
+        combined_df.to_pickle(outfilepath)
+        # outfilepath = pjoin(outdir, f'{outname}_{i//batch_size + 1}.parquet')
+        # combined_df.to_parquet(outfilepath)
     return emptyfiles
 
 def find_branches(file_path, object_list, tree_name):

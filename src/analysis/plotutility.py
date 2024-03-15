@@ -269,6 +269,10 @@ class DataLoader():
         """Find all fields in a dataframe."""
         if isinstance(dframe, pd.core.frame.DataFrame):
             return dframe.columns
+        elif hasattr(dframe, 'keys') and callable(getattr(dframe, 'keys')):
+            return dframe.keys()
+        else:
+            return "Not supported yet..."
 
     @staticmethod
     def arr_handler(dfarr):
