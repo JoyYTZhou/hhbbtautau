@@ -240,7 +240,7 @@ def produceCSV(datadir):
     
 if __name__ == "__main__":
     # query_MCsamples("data.json", "data_file.json", regex="NanoAODv")
-    add_weight("data_file.json", "preprocessed", dsname=['WZZ','ZH','SingleH','ZZ'])
+    add_weight("data_file.json", "preprocessed", dsname=['ZH','SingleH','ZZ'])
     # print("Jobs finished!")
     # produceCSV('preprocessed')
 

@@ -120,6 +120,28 @@ def overalleff(cfdf):
     eff_df.fillna(1, inplace=True)
     return eff_df
 
+def combine_with_limit(dfs, limit_bytes=5e8):
+    combined_dfs = []  # To store resulting DataFrames
+    current_df = pd.DataFrame()
+    
+    for df in dfs:
+        # Simulate adding the DataFrame and check new memory usage
+        temp_df = pd.concat([current_df, df])
+        memory_usage = temp_df.memory_usage(deep=True).sum()
+        
+        if memory_usage < limit_bytes:
+            current_df = temp_df
+        else:
+            # If limit is exceeded, save the current DataFrame and start a new one
+            combined_dfs.append(current_df)
+            current_df = df  # Start new frame with the current df
+    
+    # Don't forget to add the last DataFrame if it's not empty
+    if not current_df.empty:
+        combined_dfs.append(current_df)
+    
+    return combined_dfs
+
 def load_roots(directory, pattern, fields, extra_branches = [], tree_name='tree', clean=False):
     """
     Load specific branches from ROOT files matching a pattern in a directory, and combine them into a single DataFrame.
