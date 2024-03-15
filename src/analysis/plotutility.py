@@ -39,7 +39,7 @@ class Visualizer():
     def getweights(self, save=False, from_raw=False, from_load=False):
         """Compute/Load weights needed for these datasets. Save if needed."""
         if from_load:
-            with open(pjoin(self.pltcfg.DATASETS, 'wgt_total.json'), 'r') as f:
+            with open(pjoin(self.pltcfg.DATAPATH, 'wgt_total.json'), 'r') as f:
                 self.wgt_dict = json.load(f)        
         else:
             self.wgt_dict = DataLoader.haddWeights(self.pltcfg.DATASETS, self.pltcfg.DATAPATH, save, from_raw)
@@ -321,7 +321,7 @@ class DataLoader():
             return False
         
     @staticmethod
-    def combine_roots(pltcfg, wgt_dict, level=1, save=False, save_separate=True, flat=False):
+    def combine_roots(pltcfg, wgt_dict, level=1, flat=False):
         """Combine all root files of datasets in plot setting into one dataframe.
         
         Parameters
