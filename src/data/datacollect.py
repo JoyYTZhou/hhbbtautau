@@ -147,6 +147,15 @@ def info_file(file):
         return message
 
 def preprocess_files(inputfn, step_size=10000, tree_name="Events", process_name = "DYJets"):
+    """Preprocess the files in the dataset dictionary by chunking the files into smaller steps.
+    The result is saved to a new file.
+    
+    Parameters
+    - `inputfn`: path to json file containing dataset names
+    - `step_size`: size of the chunk
+    - `tree_name`: name of the tree
+    - `process_name`: name of the process (supposedly a key in the json file)
+    """
     def chunkfile_dict(file_path, tree_name, step_size):
         with uproot.open(file_path) as file:
             print("=============", file_path, "=============")
