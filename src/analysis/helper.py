@@ -139,7 +139,18 @@ def combine_with_limit(dfs, limit_bytes=5e8):
     
     return combined_dfs
 
-def load_files(filelist, branch_names, tree_name):
+def load_roots(filelist, branch_names, tree_name):
+    """Load root files in filelist and combine them into a single DataFrame.
+    
+    Parameters:
+    - filelist: list of file paths
+    - branch_names: list of branch names to load
+    - tree_name: name of the tree in the root file
+
+    Returns:
+    - A pandas DataFrame containing the combined data from all root files in filelist.
+    - A list of empty files
+    """
     emptylist = []
     dfs = []
     for root_file in filelist:
@@ -161,10 +172,15 @@ def concat_roots(directory, pattern, fields, outdir, outname, batch_size=30, ext
     - directory: Path to the directory containing ROOT files.
     - pattern: Pattern to match ROOT files, e.g., "*.root".
     - fields: List of field names to load from each ROOT file.
+    - outdir: Path to the directory to save the combined DataFrame.
+    - outname: Name of the combined DataFrame.
+    - batch_size: Number of ROOT files to load at a time.
+    - extra_branches: List of extra branches to load from each ROOT file.
     - tree_name: Name of the tree to load
+    - added_columns: Dictionary of additional columns to add to the combined DataFrame.
 
     Returns:
-    - A pandas DataFrame containing the combined data from all matched ROOT files.
+    - A list of empty files among the searched ROOT files
     """
     checkpath(outdir)
     full_pattern = os.path.join(directory, pattern)
@@ -174,7 +190,7 @@ def concat_roots(directory, pattern, fields, outdir, outname, batch_size=30, ext
     branch_names.extend(extra_branches)
     for i in range(0, len(root_files), batch_size):
         batch_files = root_files[i:i+batch_size]
-        combined_df, empty_list = load_files(batch_files, branch_names, tree_name)
+        combined_df, empty_list = load_roots(batch_files, branch_names, tree_name)
         emptyfiles.extend(empty_list)
         if added_columns != {}: 
             for column, value in added_columns.items():
@@ -185,15 +201,16 @@ def concat_roots(directory, pattern, fields, outdir, outname, batch_size=30, ext
         # combined_df.to_parquet(outfilepath)
     return emptyfiles
 
-def find_branches(file_path, object_list, tree_name):
-    """ Return a list of branches for each object in object_list
+def find_branches(file_path, object_list, tree_name) -> list:
+    """ Return a list of branches for objects in object_list
 
     Paremters
     - `file_path`: path to the root file
     - `object_list`: list of objects to find branches for
-    - `tree_name`:
-    :return: dictionary of branches for each object
-    :rtype: dict
+    - `tree_name`: name of the tree in the root file
+
+    Returns
+    - list of branches
     """
     file = uproot.open(file_path)
     tree = file[tree_name]
@@ -229,7 +246,7 @@ def delfilelist(filelist):
     for file_path in filelist:
         file = Path(file_path)
         try:
-            file.unlink()  # Deletes the file
+            file.unlink()
             print(f"Deleted {file}")
         except FileNotFoundError:
             print(f"File not found: {file}")
