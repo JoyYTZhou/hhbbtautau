@@ -202,11 +202,15 @@ class DataPlotter():
         """
         if isinstance(source, str):
             if source.endswith('.pkl'):
-                self.data = self.load_pkl(source)
+                self.data = DataLoader.load_pkl(source)
             elif source.endswith('.csv'):
                 self.data = pd.read_csv(source, **kwargs)
             elif source.endswith('.root'):
                 self.data = uproot.open(source)
+            elif source.endswith('.parquet'):
+                self.data = pd.read_parquet(source, **kwargs)
+            else:
+                raise ValueError("This is not a valid file type.")
         elif isinstance(source, pd.core.frame.DataFrame) or isinstance(source, ak.highlevel.Array):
             self.data = source
         else:
@@ -218,12 +222,6 @@ class DataPlotter():
         if sortall:
             fieldlist = DataLoader.findfields(self.data) 
         pass
-
-    @staticmethod
-    def load_pkl(filename):
-        with open(filename, 'rb') as f:
-            data = pickle.load(f)
-        return data
 
     @staticmethod
     def sortmask(dfarr, **kwargs):
@@ -264,6 +262,12 @@ class DataLoader():
     def __init__(self) -> None:
         return None
     
+    @staticmethod
+    def load_pkl(filename):
+        with open(filename, 'rb') as f:
+            data = pickle.load(f)
+        return data
+
     @staticmethod
     def findfields(dframe):
         """Find all fields in a dataframe."""
@@ -321,13 +325,12 @@ class DataLoader():
             return False
         
     @staticmethod
-    def combine_roots(pltcfg, wgt_dict, level=1, flat=False):
+    def combine_roots(pltcfg, wgt_dict, level=1, flat=False) -> None:
         """Combine all root files of datasets in plot setting into one dataframe.
         
         Parameters
         - `level`: concatenation level. 0 for overall process, 1 for dataset
-        - `save`: whether to save the hadded result (dataframe)
-        - `save_separate`: whether to save separate csv files for each dataset
+        - `wgt_dict`: dictionary of process, dataset, and weights
         - `flat`: whether it's n-tuple
         """
         outdir = pltcfg.OUTPUTDIR
@@ -343,6 +346,7 @@ class DataLoader():
                                    tree_name = pltcfg.TREENAME,
                                    added_columns=added_columns
                                    )
+        if empty_fis != [] & pltcfg.CLEAN: delfilelist(empty_fis)
         return None
     
         
