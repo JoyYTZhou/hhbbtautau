@@ -121,48 +121,28 @@ def overalleff(cfdf):
     return eff_df
 
 def combine_with_limit(dfs, limit_bytes=5e8):
-    combined_dfs = []  # To store resulting DataFrames
+    combined_dfs = []
     current_df = pd.DataFrame()
-    
+
     for df in dfs:
-        # Simulate adding the DataFrame and check new memory usage
         temp_df = pd.concat([current_df, df])
         memory_usage = temp_df.memory_usage(deep=True).sum()
         
         if memory_usage < limit_bytes:
             current_df = temp_df
         else:
-            # If limit is exceeded, save the current DataFrame and start a new one
             combined_dfs.append(current_df)
-            current_df = df  # Start new frame with the current df
+            current_df = df
     
-    # Don't forget to add the last DataFrame if it's not empty
     if not current_df.empty:
         combined_dfs.append(current_df)
     
     return combined_dfs
 
-def load_roots(directory, pattern, fields, extra_branches = [], tree_name='tree', clean=False):
-    """
-    Load specific branches from ROOT files matching a pattern in a directory, and combine them into a single DataFrame.
-
-    Parameters:
-    - directory: Path to the directory containing ROOT files.
-    - pattern: Pattern to match ROOT files, e.g., "*.root".
-    - fields: List of field names to load from each ROOT file.
-    - tree_name: Name of the tree to load
-    - clean: whether to clean empty files (be cautious with this)
-
-    Returns:
-    - A pandas DataFrame containing the combined data from all matched ROOT files.
-    """
-    full_pattern = os.path.join(directory, pattern)
-    root_files = glob.glob(full_pattern)
-    dfs = []
+def load_files(filelist, branch_names, tree_name):
     emptylist = []
-    branch_names = find_branches(root_files[0], fields, tree_name) 
-    branch_names.extend(extra_branches)
-    for root_file in root_files:
+    dfs = []
+    for root_file in filelist:
         with uproot.open(root_file) as file:
             if file.keys() == []:
                 emptylist.append(root_file) 
@@ -171,9 +151,37 @@ def load_roots(directory, pattern, fields, extra_branches = [], tree_name='tree'
                 df = tree.arrays(branch_names, library="pd")
                 dfs.append(df)
     combined_df = pd.concat(dfs, ignore_index=True)
-    if emptylist != [] and clean: 
-        delfilelist(emptylist)
-    return combined_df
+    return combined_df, emptylist
+
+def concat_roots(directory, pattern, fields, outdir, outname, batch_size=30, extra_branches = [], tree_name='tree', added_columns={}):
+    """
+    Load specific branches from ROOT files matching a pattern in a directory, and combine them into a single DataFrame.
+
+    Parameters:
+    - directory: Path to the directory containing ROOT files.
+    - pattern: Pattern to match ROOT files, e.g., "*.root".
+    - fields: List of field names to load from each ROOT file.
+    - tree_name: Name of the tree to load
+
+    Returns:
+    - A pandas DataFrame containing the combined data from all matched ROOT files.
+    """
+    checkpath(outdir)
+    full_pattern = os.path.join(directory, pattern)
+    root_files = glob.glob(full_pattern)
+    emptyfiles = []
+    branch_names = find_branches(root_files[0], fields, tree_name) 
+    branch_names.extend(extra_branches)
+    for i in range(0, len(root_files), batch_size):
+        batch_files = root_files[i:i+batch_size]
+        combined_df, empty_list = load_files(batch_files, branch_names, tree_name)
+        emptyfiles.extend(empty_list)
+        if added_columns != {}: 
+            for column, value in added_columns.items():
+                combined_df[column] = value
+        outfilepath = pjoin(outdir, f'{outname}_{i//batch_size + 1}.parquet')
+        combined_df.to_parquet(outfilepath)
+    return emptyfiles
 
 def find_branches(file_path, object_list, tree_name):
     """ Return a list of branches for each object in object_list

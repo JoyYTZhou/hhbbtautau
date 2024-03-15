@@ -330,28 +330,20 @@ class DataLoader():
         - `save_separate`: whether to save separate csv files for each dataset
         - `flat`: whether it's n-tuple
         """
-        df_list = []
         outdir = pltcfg.OUTPUTDIR
         for process, dsitems in wgt_dict.items():
             for ds in dsitems.keys():
                 indir = pltcfg.INPUTDIR
                 ds_dir = pjoin(indir, process)
-                ds_df = load_roots(ds_dir, f'{ds}_*.root', pltcfg.PLOT_VARS, 
+                added_columns = {'dataset': process} if level==0 else {'dataset': ds} 
+                empty_fis = concat_roots(directory=ds_dir, pattern=f'{ds}_*.root', fields=pltcfg.PLOT_VARS, 
+                                   outdir=outdir,
+                                   outname=ds,
                                    extra_branches=pltcfg.EXTRA_VARS, 
                                    tree_name = pltcfg.TREENAME,
-                                   clean = pltcfg.CLEAN)
-                ds_df['dataset'] = process if level==0 else ds
-                if save_separate: 
-                    finame = pjoin(outdir, f'{ds}.pkl') 
-                    with open(finame, 'wb') as f:
-                        pickle.dump(ds_df, f)
-                df_list.append(ds_df)
-        roots_df = pd.concat(df_list)
-        if save==True: 
-            finame = pjoin(outdir, 'hadded_roots.pkl')
-            with open(finame, 'wb') as f:
-                pickle.dump(roots_df, f)
-        return roots_df 
+                                   added_columns=added_columns
+                                   )
+        return None
     
         
     # from https://github.com/aminnj/yahist/blob/master/yahist/utils.py#L133 
