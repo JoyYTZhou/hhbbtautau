@@ -221,7 +221,11 @@ class DataPlotter():
         mask = DataPlotter.sortmask(self.data[f'{field}_{attr}'], **kwargs)
         if sortall:
             fieldlist = DataLoader.findfields(self.data) 
-        pass
+        for field in fieldlist:
+            try:
+                self.data[field] = self.data[field][mask]
+            except ValueError:
+                pass
 
     @staticmethod
     def sortmask(dfarr, **kwargs):
