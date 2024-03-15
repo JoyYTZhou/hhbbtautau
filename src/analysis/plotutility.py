@@ -32,21 +32,17 @@ class Visualizer():
     def pltcfg(self):
         return self._pltcfg
     
-    def getAll(self):
-        pass
-        
     def checkupdates(self):
         for ds in self.pltcfg.DATASETS:
             sync_files(pjoin(self.indir, ds), f"{self.pltcfg.CONDORPATH}/{ds}")
     
-    def getweights(self, output=False, from_raw=False):
-        """Compute weights needed for these datasets. Save if needed."""
-        self.wgt_dict = DataLoader.haddWeights(self.pltcfg.DATASETS, self.pltcfg.DATAPATH, output, from_raw)
-    
-    def loadweights(self):
-        """Load weights needed for these datasets"""
-        with open(pjoin(self.pltcfg.DATASETS, 'wgt_total.json'), 'r') as f:
-            self.wgt_dict = json.load(f)
+    def getweights(self, save=False, from_raw=False, from_load=False):
+        """Compute/Load weights needed for these datasets. Save if needed."""
+        if from_load:
+            with open(pjoin(self.pltcfg.DATASETS, 'wgt_total.json'), 'r') as f:
+                self.wgt_dict = json.load(f)        
+        else:
+            self.wgt_dict = DataLoader.haddWeights(self.pltcfg.DATASETS, self.pltcfg.DATAPATH, save, from_raw)
     
     def compute_allcf(self, lumi=50, output=True):
         """Load all cutflow tables for all datasets from output directory and combine them into one.
@@ -104,15 +100,7 @@ class Visualizer():
             return_df.to_csv(finame)
         return return_df
     
-    def load_roots(self):
-        """Load hadded csv files, if any."""
-        fipath = pjoin(self.outdir, 'hadded_roots.csv')
-        if os.path.exists(fipath):
-            roots_df = pd.read_csv(fipath)
-            return roots_df
-        else:
-            print("You didn't save the hadded result last time!")
-            return False
+
 
     def load_allcf(self):
         raw_df = pd.read_csv(pjoin(self.outdir, "cutflow_raw_tot.csv"), index_col=0)
@@ -228,7 +216,7 @@ class DataPlotter():
     def sortobj(self, field, attr, sortall=True, **kwargs):
         mask = DataPlotter.sortmask(self.data[f'{field}_{attr}'], **kwargs)
         if sortall:
-            pass
+            fieldlist = DataLoader.findfields(self.data) 
         pass
 
     @staticmethod
@@ -281,6 +269,7 @@ class DataLoader():
         """Find all fields in a dataframe."""
         if isinstance(dframe, pd.core.frame.DataFrame):
             return dframe.columns
+
     @staticmethod
     def arr_handler(dfarr):
         """Handle different types of data arrays."""
@@ -295,7 +284,7 @@ class DataLoader():
 
     @staticmethod
     def haddWeights(regexlist, grepdir, output=False, from_raw=False):
-        """Function for self use only, grep weights from a list json files formatted in a specific way.
+        """Function for self use only, grep weights from a list of json files formatted in a specific way.
         
         Parameters
         - `regexlist`: list of strings of dataset names
@@ -319,7 +308,18 @@ class DataLoader():
             with open(outname, 'w') as f:
                 json.dump(wgt_dict, f, indent=4)
         return wgt_dict
- 
+    
+    @staticmethod 
+    def load_roots(outdir):
+        """Load hadded csv files, if any."""
+        fipath = pjoin(outdir, 'hadded_roots.csv')
+        if os.path.exists(fipath):
+            roots_df = pd.read_csv(fipath)
+            return roots_df
+        else:
+            print("You didn't save the hadded result last time!")
+            return False
+        
     @staticmethod
     def combine_roots(pltcfg, wgt_dict, level=1, save=False, save_separate=True, flat=False):
         """Combine all root files of datasets in plot setting into one dataframe.
@@ -353,10 +353,6 @@ class DataLoader():
                 pickle.dump(roots_df, f)
         return roots_df 
     
-        
-        
-    
-       
         
     # from https://github.com/aminnj/yahist/blob/master/yahist/utils.py#L133 
 def clopper_pearson_error(passed, total, level=0.6827):
