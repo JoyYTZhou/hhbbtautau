@@ -67,10 +67,15 @@ def add_weight(dspath, outputdir, dsname=None):
 
     if dsname is None:
         searchitems = dsjson
-    elif isinstance(dsjson, str):
-        searchitems = {dsname: dsjson[str]}
-    else: 
-        raise ValueError("Needs to pass a dataset name!")
+    elif isinstance(dsname, str):
+        if dsname in dsjson: searchitems = {dsname: dsjson[dsname]} 
+        else: raise ValueError("Needs to pass a dataset name!")
+    elif isinstance(dsname, list):
+        searchitems = {}
+        for ds in dsname:
+            if ds in dsjson: searchitems.update({ds: dsjson[ds]})
+    else:
+        raise ValueError("Enter reasonable dataset name(s)")
 
     for name, dataset_dict in tqdm(searchitems.items(), f"finding samples ..."):
         if dataset_dict != {}:
@@ -210,7 +215,7 @@ def produceCSV(datadir):
     
 if __name__ == "__main__":
     # query_MCsamples("data.json", "data_file.json", regex="NanoAODv")
-    add_weight("data_file.json", "preprocessed")
+    add_weight("data_file.json", "preprocessed", dsname=['WZZ','ZH','SingleH','ZZ'])
     # print("Jobs finished!")
     # produceCSV('preprocessed')
 
