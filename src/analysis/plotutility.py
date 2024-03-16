@@ -6,6 +6,7 @@ import json
 from analysis.helper import *
 import pickle
 import awkward as ak
+from mathutility import *
 
 class Visualizer():
     """
@@ -217,15 +218,9 @@ class DataPlotter():
             self.data = source
             raise UserWarning(f"This might not be a valid source. The data type is {type(source)}")
     
-    def sortobj(self, field, attr, sortall=True, **kwargs):
-        mask = DataPlotter.sortmask(self.data[f'{field}_{attr}'], **kwargs)
-        if sortall:
-            fieldlist = DataLoader.findfields(self.data) 
-        for field in fieldlist:
-            try:
-                self.data[field] = self.data[field][mask]
-            except ValueError:
-                pass
+    def sortobj(self, sort_by, sort_what, **kwargs):
+        mask = DataPlotter.sortmask(self.data[sort_by], **kwargs)
+        return arr_handler(self.data[sort_what])[mask]
 
     @staticmethod
     def sortmask(dfarr, **kwargs):
@@ -234,7 +229,7 @@ class DataPlotter():
         Parameters
         - `dfarr`: the data arr to be sorted
         """
-        dfarr = DataLoader.arr_handler(dfarr)
+        dfarr = arr_handler(dfarr)
         sortmask = ak.argsort(dfarr, 
                    axis=kwargs.get('axis', -1), 
                    ascending=kwargs.get('ascending', False),
@@ -281,22 +276,6 @@ class DataLoader():
             return dframe.keys()
         else:
             return "Not supported yet..."
-
-    @staticmethod
-    def arr_handler(dfarr):
-        """Handle different types of data arrays."""
-        if isinstance(dfarr, pd.core.series.Series):
-            try: 
-                ak_arr = dfarr.ak.array
-                return ak_arr
-            except AttributeError as e:
-                return dfarr
-        elif isinstance(dfarr, pd.core.frame.DataFrame):
-            raise ValueError("specify a column. This is a dataframe.")
-        elif isinstance(dfarr, ak.highlevel.Array):
-            return dfarr
-        else:
-            raise TypeError(f"This is of type {type(dfarr)}")
 
     @staticmethod
     def haddWeights(regexlist, grepdir, output=False, from_raw=False):

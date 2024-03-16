@@ -9,14 +9,41 @@ import pandas as pd
 pjoin = os.path.join
 
 def checkevents(events):
+    """Returns True if the events are in the right format, False otherwise."""
     if hasattr(events, 'keys') and callable(getattr(events, 'keys')):
         return True
     elif isinstance(events, pd.core.frame.DataFrame):
         return True
     else:
-        pass
+        raise TypeError("Invalid type for events. Must be an awkward object or a DataFrame")
+
+def arr_handler(dfarr):
+    """Handle different types of data arrays to convert them to awkward arrays."""
+    if isinstance(dfarr, pd.core.series.Series):
+        try: 
+            ak_arr = dfarr.ak.array
+            return ak_arr
+        except AttributeError as e:
+            return dfarr
+    elif isinstance(dfarr, pd.core.frame.DataFrame):
+        raise ValueError("specify a column. This is a dataframe.")
+    elif isinstance(dfarr, ak.highlevel.Array):
+        return dfarr
+    else:
+        raise TypeError(f"This is of type {type(dfarr)}")
 
 def fourvector(events, field, sort=True, sortname='pt'):
+    """Returns a fourvector from the events.
+   
+    Parameters
+    - `events`: the events to extract the fourvector from. 
+    - `field`: the name of the field in the events that contains the fourvector information.
+    - `sort`: whether to sort the fourvector
+    - `sortname`: the name of the field to sort the fourvector by.
+
+    Return
+    - a fourvector object.
+    """
     object_ak = ak.zip({
         "pt": events[field+"_pt"],
         "eta": events[field+"_eta"],
