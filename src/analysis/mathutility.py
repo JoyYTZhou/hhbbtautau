@@ -2,9 +2,31 @@
 
 import numpy as np
 import os
+import awkward as ak
+import vector as vec
+import pandas as pd
 
 pjoin = os.path.join
 
+def checkevents(events):
+    if hasattr(events, 'keys') and callable(getattr(events, 'keys')):
+        return True
+    elif isinstance(events, pd.core.frame.DataFrame):
+        return True
+    else:
+        pass
+
+def fourvector(events, field, sort=True, sortname='pt'):
+    object_ak = ak.zip({
+        "pt": events[field+"_pt"],
+        "eta": events[field+"_eta"],
+        "phi": events[field+"_phi"],
+        "M": events[field+"_mass"]
+        })
+    if sort:
+        object_ak = object_ak[ak.argsort(object_ak[sortname], ascending=False)]
+        object_LV = vec.Array(object_ak)
+    return object_LV
 
 def dphi(phi1, phi2):
     """Calculates delta phi between objects"""

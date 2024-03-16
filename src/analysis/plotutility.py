@@ -286,7 +286,11 @@ class DataLoader():
     def arr_handler(dfarr):
         """Handle different types of data arrays."""
         if isinstance(dfarr, pd.core.series.Series):
-            return dfarr.ak.array
+            try: 
+                ak_arr = dfarr.ak.array
+                return ak_arr
+            except AttributeError as e:
+                return dfarr
         elif isinstance(dfarr, pd.core.frame.DataFrame):
             raise ValueError("specify a column. This is a dataframe.")
         elif isinstance(dfarr, ak.highlevel.Array):
