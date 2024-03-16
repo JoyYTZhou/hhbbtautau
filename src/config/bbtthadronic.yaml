@@ -33,9 +33,7 @@ default:
     Jet:
       pt: 20
       eta: 2.4
-      dRLevel: 0.5
       count: 2
-      overlapCheck: True
     FatJet:
       mass: 40
       count: 1

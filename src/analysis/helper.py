@@ -222,6 +222,22 @@ def combine_cf(inputdir, dsname, output=True, outpath=None):
     
     return combined
 
+def add_selcutflow(cutflowlist, save=True, outpath=None):
+    """Add cutflows sequentially.
+    
+    Parameters
+    - `cutflowlist`: list of cutflow csv files
+    - `save`: whether to save the combined table into a csv file
+    - `outpath`: path to the output
+    
+    Return
+    - combined cutflow table"""
+    dfs = load_csvs(cutflowlist)
+    dfs = [df.iloc[1:] for i, df in enumerate(dfs) if i != 0]
+    result = pd.concat(dfs, axis=1)
+    if save: result.to_csv(outpath)
+    return result
+
 def delfilelist(filelist):
     """Remove a list of file"""
     for file_path in filelist:
