@@ -339,9 +339,9 @@ class DataLoader():
         """
         outdir = pltcfg.OUTPUTDIR
         for process, dsitems in wgt_dict.items():
+            indir = pltcfg.INPUTDIR
+            ds_dir = pjoin(indir, process)
             for ds in dsitems.keys():
-                indir = pltcfg.INPUTDIR
-                ds_dir = pjoin(indir, process)
                 added_columns = {'dataset': process} if level==0 else {'dataset': ds} 
                 empty_fis = concat_roots(directory=ds_dir, pattern=f'{ds}_*.root', fields=pltcfg.PLOT_VARS, 
                                    outdir=outdir,

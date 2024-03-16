@@ -3,7 +3,7 @@ from config.selectionconfig import plotsetting as pltsetting
 
 def plot():
     vis = Visualizer(pltsetting)
-    vis.getweights(from_load=True)
+    vis.getweights(save=True, from_raw=True)
     DataLoader.combine_roots(pltsetting, vis.wgt_dict)
     # vis.updatedir()
     # raw_df, wgt_df = vis.compute_allcf(lumi=5000, output=True)
