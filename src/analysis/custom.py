@@ -46,31 +46,13 @@ class mockskimEvtSel(BaseEventSelections):
         
 class prelimEvtSel(BaseEventSelections):
     """Custom event selection class for the preliminary event selection."""
-    def selectlep(self, events):
-        electron = Object(events, "Electron", self.lepselcfg.electron)
-        muon = Object(events, "Muon", self.lepselcfg.muon)
-        tau = Object(events, "Tau", self.lepselcfg.tau)
-
-        electron_mask = (electron.ptmask(opr.ge) & \
-                    electron.absetamask(opr.le) & \
-                    electron.bdtidmask(opr.ge))
-
-        elec_nummask = electron.numselmask(opr.ge, electron_mask)
-
-        muon_mask = (muon.ptmask(opr.ge) & \
-                    muon.absetamask(opr.le) & \
-                    muon.custommask('iso', opr.le))
-        muon_nummask = muon.numselmask(opr.ge, muon_mask)
-
-        tau_mask = (tau.ptmask(opr.ge) & \
-                    tau.absetamask(opr.le))
-
-        tau_nummask = tau.numselmask(opr.ge, tau_mask)
-
-        self.objsel.add_multiple({"ElectronSelection": elec_nummask,
-                                "MuonSelection": muon_nummask,
-                                "TauSelection": tau_nummask})
-
+    def selectjet(self, events):
+        jet = Object(events, 'Jet', self.jetselcfg.jet)
+        j_mask = (jet.ptmask(opr.ge) &
+                  jet.absetamask(opr.le))
+        j_nummask = jet.numselmask(opr.ge, j_mask)
+        
+        self.objsel.add_multiple({"JetSelection": j_nummask})
         return None
 
 class fineEvtSel(BaseEventSelections):
