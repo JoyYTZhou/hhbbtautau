@@ -100,8 +100,6 @@ class Visualizer():
             finame = pjoin(self.outdir, f'{save_name}_eff.csv') if save_name else pjoin(self.outdir, 'tot_eff.csv')
             return_df.to_csv(finame)
         return return_df
-    
-
 
     def load_allcf(self):
         raw_df = pd.read_csv(pjoin(self.outdir, "cutflow_raw_tot.csv"), index_col=0)
@@ -219,6 +217,13 @@ class DataPlotter():
             raise UserWarning(f"This might not be a valid source. The data type is {type(source)}")
     
     def sortobj(self, sort_by, sort_what, **kwargs):
+        """Return an awkward array representation of the sorted attribute in data.
+        
+        Parameters
+        - `sort_by`: the attribute to sort by
+        - `sort_what`: the attribute to be sorted
+        - `kwargs`: additional arguments for sorting
+        """
         mask = DataPlotter.sortmask(self.data[sort_by], **kwargs)
         return arr_handler(self.data[sort_what])[mask]
 
@@ -247,13 +252,12 @@ class DataPlotter():
         return hist, bin_edges
 
     @staticmethod
-    def plot_var(arr, title, xlabel, bin_no, range):
-        h, bins = np.histogram(arr, bins=bin_no)
+    def plot_var(hist, bin_edges, title, xlabel, range):
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.set_title(title)
         hep.histplot(
-            h,
-            bins=bins,
+            hist,
+            bins=bin_edges,
             histtype="fill",
             color="b",
             alpha=0.5,
@@ -314,17 +318,6 @@ class DataLoader():
                 json.dump(wgt_dict, f, indent=4)
         return wgt_dict
     
-    @staticmethod 
-    def load_roots(outdir):
-        """Load hadded csv files, if any."""
-        fipath = pjoin(outdir, 'hadded_roots.csv')
-        if os.path.exists(fipath):
-            roots_df = pd.read_csv(fipath)
-            return roots_df
-        else:
-            print("You didn't save the hadded result last time!")
-            return False
-        
     @staticmethod
     def combine_roots(pltcfg, wgt_dict, level=1, flat=False) -> None:
         """Combine all root files of datasets in plot setting into one dataframe.
@@ -351,7 +344,7 @@ class DataLoader():
         return None
     
         
-    # from https://github.com/aminnj/yahist/blob/master/yahist/utils.py#L133 
+
 def clopper_pearson_error(passed, total, level=0.6827):
     """
     matching TEfficiency::ClopperPearson(),
