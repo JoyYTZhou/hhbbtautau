@@ -1,5 +1,4 @@
 # adapted from https://github.com/bu-cms/projectcoffea/blob/master/projectcoffea/helpers/helpers.py
-
 import numpy as np
 import os
 import awkward as ak
@@ -44,6 +43,7 @@ def fourvector(events, field, sort=True, sortname='pt'):
     Return
     - a fourvector object.
     """
+    # Precision dubious
     object_ak = ak.zip({
         "pt": events[field+"_pt"],
         "eta": events[field+"_eta"],
@@ -126,69 +126,16 @@ def weight_shape(values, weight):
 def object_overlap(toclean, cleanagainst, dr=0.4):
     """Generate a mask to use for overlap removal
 
-    :param toclean: Candidates that should be cleaned (lower priority candidats)
-    :type toclean: JaggedCandidateArray
-    :param cleanagainst: Candidates that should be cleaned against (higher priority)
-    :type cleanagainst: JaggedCandidateArray
-    :param dr: Delta R parameter, defaults to 0.4
-    :type dr: float, optional
-    :return: Mask to select non-overlapping candidates in the collection to be cleaned
-    :rtype: JaggedArray
-    """
-    comb_phi = toclean.phi.cross(cleanagainst.phi, nested=True)
-    comb_eta = toclean.eta.cross(cleanagainst.eta, nested=True)
-    delta_r = np.hypot( dphi(comb_phi.i0, comb_phi.i1), comb_eta.i0-comb_eta.i1)
+    Parameters
+    - `toclean`: Candidates that should be cleaned (lower priority candidats)
+    - `cleanagainst`: Candidate that should be cleaned against (higher priority)
+    - `dr`: Delta R parameter, defaults to 0.4
 
+    Return
+    Mask to select non-overlapping candidates in the collection to be cleaned
+    """
+    delta_r = toclean.deltaR(cleanagainst)
     return delta_r.min() > dr
-
-
-def mask_or(df, masks):
-    """Returns the OR of the masks in the list
-
-    :param df: Data frame
-    :type df: LazyDataFrame
-    :param masks: Mask names as saved in the df
-    :type masks: List
-    :return: OR of all masks for each event
-    :rtype: array
-    """
-    # Start with array of False
-    decision = np.ones(df.size)==0
-
-    # Flip to true if any is passed
-    for t in masks:
-        try:
-            decision = decision | df[t]
-        except KeyError:
-            continue
-    return decision
-
-def mask_and(df, masks):
-    """Returns the AND of the masks in the list
-
-    :param df: Data frame
-    :type df: LazyDataFrame
-    :param masks: Mask names as saved in the df
-    :type masks: List
-    :return: OR of all masks for each event
-    :rtype: array
-    """
-    # Start with array of False
-    decision = np.ones(df.size)==1
-
-    # Flip to true if any is passed
-    for t in masks:
-        try:
-            decision = decision & df[t]
-        except KeyError:
-            continue
-    return decision
-
-
-from coffea.lookup_tools import extractor
-
-
-
 
 def sigmoid(x,a,b,c,d):
     """

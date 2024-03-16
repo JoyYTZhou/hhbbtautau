@@ -19,7 +19,7 @@ STEP_SIZE = '400MB'
 COPY_DIR = "@format {this.SCRATCHPATH}/temp"
 
 [LPCCONDOR]
-PROCESS_NAME = "SingleH"
+PROCESS_NAME = "WW"
 TREE_NAME = "Events"
 SEL_NAME = 'skim'
 CONDORPATH = "/store/user/joyzhou/output"

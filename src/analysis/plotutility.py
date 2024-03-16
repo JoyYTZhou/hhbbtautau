@@ -6,7 +6,7 @@ import json
 from analysis.helper import *
 import pickle
 import awkward as ak
-from mathutility import *
+from analysis.mathhelper import *
 
 class Visualizer():
     """
@@ -238,16 +238,26 @@ class DataPlotter():
         return sortmask
     
     @staticmethod
-    def plot_var(df, name, title, xlabel, bins, range):
+    def deal_overflow(arr, bin_no, range):
+        bins = np.linspace(*range, bin_no)
+        min_edge = bins[0]
+        max_edge = bins[-1]
+        adjusted_data = np.clip(arr, min_edge, max_edge)
+        hist, bin_edges = np.histogram(adjusted_data, bins=bins)
+        return hist, bin_edges
+
+    @staticmethod
+    def plot_var(arr, title, xlabel, bin_no, range):
+        h, bins = np.histogram(arr, bins=bin_no)
         fig, ax = plt.subplots(figsize=(10, 5))
+        ax.set_title(title)
         hep.histplot(
-            df[name],
+            h,
             bins=bins,
             histtype="fill",
             color="b",
             alpha=0.5,
             edgecolor="black",
-            title=title,
             ax=ax,
         )
         ax.set_xlabel(xlabel, fontsize=15)
