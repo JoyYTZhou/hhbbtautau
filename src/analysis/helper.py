@@ -120,25 +120,6 @@ def overalleff(cfdf):
     eff_df.fillna(1, inplace=True)
     return eff_df
 
-def combine_with_limit(dfs, limit_bytes=5e8):
-    combined_dfs = []
-    current_df = pd.DataFrame()
-
-    for df in dfs:
-        temp_df = pd.concat([current_df, df])
-        memory_usage = temp_df.memory_usage(deep=True).sum()
-        
-        if memory_usage < limit_bytes:
-            current_df = temp_df
-        else:
-            combined_dfs.append(current_df)
-            current_df = df
-    
-    if not current_df.empty:
-        combined_dfs.append(current_df)
-    
-    return combined_dfs
-
 def load_roots(filelist, branch_names, tree_name):
     """Load root files in filelist and combine them into a single DataFrame.
     

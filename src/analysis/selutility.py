@@ -198,18 +198,6 @@ class Object():
         """
         self.dakzipped = self.dakzipped[mask]
 
-    def fourvector(self, sort=True, sortname='pt'):
-        object_ak = ak.zip({
-        "pt": self.events[self.name+"_pt"],
-        "eta": self.events[self.name+"_eta"],
-        "phi": self.events[self.name+"_phi"],
-        "M": self.events[self.name+"_mass"]
-        })
-        if sort:
-            object_ak = object_ak[ak.argsort(object_ak[sortname], ascending=False)]
-        object_LV = vec.Array(object_ak)
-        return object_LV
-
     def overlap(self, altobject):
         pass
 
