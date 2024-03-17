@@ -11,6 +11,8 @@ def checkevents(events):
     """Returns True if the events are in the right format, False otherwise."""
     if hasattr(events, 'keys') and callable(getattr(events, 'keys')):
         return True
+    elif hasattr(events, 'fields'):
+        return True
     elif isinstance(events, pd.core.frame.DataFrame):
         return True
     else:
@@ -30,30 +32,6 @@ def arr_handler(dfarr):
         return dfarr
     else:
         raise TypeError(f"This is of type {type(dfarr)}")
-
-def fourvector(events, field, sort=True, sortname='pt'):
-    """Returns a fourvector from the events.
-   
-    Parameters
-    - `events`: the events to extract the fourvector from. 
-    - `field`: the name of the field in the events that contains the fourvector information.
-    - `sort`: whether to sort the fourvector
-    - `sortname`: the name of the field to sort the fourvector by.
-
-    Return
-    - a fourvector object.
-    """
-    # Precision dubious
-    object_ak = ak.zip({
-        "pt": events[field+"_pt"],
-        "eta": events[field+"_eta"],
-        "phi": events[field+"_phi"],
-        "M": events[field+"_mass"]
-        })
-    if sort:
-        object_ak = object_ak[ak.argsort(object_ak[sortname], ascending=False)]
-        object_LV = vec.Array(object_ak)
-    return object_LV
 
 def dphi(phi1, phi2):
     """Calculates delta phi between objects"""
