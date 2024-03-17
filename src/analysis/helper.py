@@ -49,11 +49,18 @@ def transferfiles(srcpath, destpath):
             cpcondor(str(srcfile), f"{destpath}/{srcfile.name}", is_file=True)
 
 def delfiles(dirname, pattern='*.root'):
+    """Delete all files in a directory with a specific pattern."""
     if pattern is not None:
         dirpath = Path(dirname)
         for fipath in dirpath.glob(pattern):
             fipath.unlink()
             logging.info(f"Deleted {fipath}")
+
+def filter_xrdfs_files(remote_dir, file_ending):
+    """Filter XRDFS files in a remote directory by a specific file ending."""
+    all_files = list_xrdfs_files(remote_dir, PREFIX)
+    filtered_files = [f for f in all_files if f.endswith(file_ending)]
+    return filtered_files
 
 def checkcondorpath(dirname):
     """Check if a condor path exists. If not will create one."""
@@ -78,6 +85,7 @@ def checkpath(pathstr):
         logging.debug(f"Directory already exists: {path}")
 
 def initLogger(name, suffix):
+    """Initialize a logger for a module."""
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
 
@@ -97,11 +105,13 @@ def initLogger(name, suffix):
     return logger
 
 def load_csvs(pattern):
+    """Load csv files matching a pattern into a list of DataFrames."""
     file_names = glob.glob(pattern)
     dfs = [pd.read_csv(file_name, index_col=0, header=0) for file_name in file_names] 
     return dfs
 
 def hadd_csvs(pattern):
+    """return a combined DataFrame from csv files matching a pattern."""
     dfs = load_csvs(pattern)
     return pd.concat(dfs, axis=1)
 
@@ -254,10 +264,10 @@ def delfilelist(filelist):
     return None
 
 def list_xrdfs_files(remote_dir):
-    """List files/dirs in a remote xrdfs directory."""
+    """List files/dirs in a remote xrdfs directory using subprocess.run."""
     cmd = ["xrdfs", PREFIX, "ls", remote_dir]
-    output = subprocess.check_output(cmd).decode()
-    files = output.strip().split('\n')
+    result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+    files = result.stdout.strip().split('\n')
     return files
 
 def get_xrdfs_file_info(remote_file):
