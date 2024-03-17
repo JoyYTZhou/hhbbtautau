@@ -56,10 +56,13 @@ def delfiles(dirname, pattern='*.root'):
             fipath.unlink()
             logging.info(f"Deleted {fipath}")
 
-def filter_xrdfs_files(remote_dir, start_pattern, end_pattern):
+def filter_xrdfs_files(remote_dir, start_pattern, end_pattern, add_prefix=True):
     """Filter XRDFS files in a remote directory by a specific file ending."""
     all_files = list_xrdfs_files(remote_dir, PREFIX)
-    filtered_files = [f for f in all_files if f.split('/')[-1].startswith(start_pattern) and f.split('/')[-1].endswith(end_pattern)]
+    if add_prefix:
+        filtered_files = [PREFIX + "/" + f for f in all_files if f.split('/')[-1].startswith(start_pattern) and f.split('/')[-1].endswith(end_pattern)]
+    else: 
+        filtered_files = [f for f in all_files if f.split('/')[-1].startswith(start_pattern) and f.split('/')[-1].endswith(end_pattern)]
     return filtered_files
 
 def checkcondorpath(dirname):
