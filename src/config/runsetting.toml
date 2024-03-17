@@ -19,33 +19,32 @@ STEP_SIZE = '400MB'
 COPY_DIR = "@format {this.SCRATCHPATH}/temp"
 
 [LPCCONDOR]
-PROCESS_NAME = "WW"
-TREE_NAME = "Events"
-SEL_NAME = 'skim'
-CONDORPATH = "/store/user/joyzhou/output"
+PROCESS_NAME = "ggF"
+TREE_NAME = "tree"
+SEL_NAME = 'prelim'
+CONDORPATH = "/store/user/joyzhou/jet_output"
 INPUTFILE_PATH = "@format src/data/preprocessed/{this.PROCESS_NAME}.json"
 OUTPUTDIR_PATH = "@format outputs/{this.PROCESS_NAME}"
 TRANSFER = true
 TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
-COPY_LOCAL = true
+COPY_LOCAL = false
 COPY_DIR = "temp"
-STEP_SIZE = '300MB'
+STEP_SIZE = false
 RESUME = false
 DSINDX = 0
 FINDX = 10
 
 [LPCJUPYTER]
 PROCESS_NAME = "ggF"
-CHANNEL_INDX = 3
-TREE_NAME = "Events"
+TREE_NAME = "tree"
 CONDORPATH = "/store/user/joyzhou/output"
 INPUTFILE_PATH = "@format src/data/preprocessed/{this.PROCESS_NAME}.json"
 OUTPUTDIR_PATH = "/uscms/home/joyzhou/nobackup/tests"
 TRANSFER = false
 TRANSFER_PATH = "@format {this.CONDORPATH}/tests"
-COPY_LOCAL = true
+COPY_LOCAL = false
 COPY_DIR = "/uscms/home/joyzhou/nobackup/temp"
-STEP_SIZE = '300MB'
+STEP_SIZE = false
 RESUME = false
 DSINDX = 0
 FINDX = 0
