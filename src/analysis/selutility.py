@@ -8,6 +8,7 @@ import vector as vec
 import pandas as pd
 import operator as opr
 from config.selectionconfig import selectionsettings as selcfg
+from analysis.mathhelper import checkevents
 
 default_lepsel = selcfg.lepselections
 default_jetsel = selcfg.jetselections
@@ -170,6 +171,31 @@ class Object():
         """Entirely wrong of now."""
         return dak.prod(self.dakzipped['charge'], axis=1) < 0 
 
+    @staticmethod
+    def fourvector(events, field, sort=True, sortname='pt'):
+        """Returns a fourvector from the events.
+    
+        Parameters
+        - `events`: the events to extract the fourvector from. 
+        - `field`: the name of the field in the events that contains the fourvector information.
+        - `sort`: whether to sort the fourvector
+        - `sortname`: the name of the field to sort the fourvector by.
+
+        Return
+        - a fourvector object.
+        """
+        # Precision dubious
+        object_ak = ak.zip({
+            "pt": events[field+"_pt"],
+            "eta": events[field+"_eta"],
+            "phi": events[field+"_phi"],
+            "M": events[field+"_mass"]
+            })
+        if sort:
+            object_ak = object_ak[ak.argsort(object_ak[sortname], ascending=False)]
+            object_LV = vec.Array(object_ak)
+        return object_LV
+
     def set_dakzipped(self):
         """Given self.events, read only object-related observables and zip them into dict."""
         zipped_dict = {}
@@ -193,11 +219,12 @@ class Object():
 
     def filter_dakzipped(self, mask):
         """Filter the object based on a mask.
-        :param mask: mask to filter the object
-        :type mask: ak.array
+        Parameters
+        - `mask`: mask to filter the object
         """
         self.dakzipped = self.dakzipped[mask]
 
+    @staticmethod
     def overlap(self, altobject):
         pass
 
