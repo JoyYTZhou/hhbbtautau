@@ -4,6 +4,7 @@ import glob
 import os
 import json
 from analysis.helper import *
+from analysis.selutility import Object
 import pickle
 import awkward as ak
 from analysis.mathhelper import *
