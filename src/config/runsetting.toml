@@ -23,6 +23,7 @@ PROCESS_NAME = "ggF"
 TREE_NAME = "tree"
 SEL_NAME = 'prelim'
 CONDORPATH = "/store/user/joyzhou/jet_output"
+INPUTFILE_PATH = "@format /store/user/joyzhou/output/{this.PROCESS_NAME}"
 # INPUTFILE_PATH = "@format src/data/preprocessed/{this.PROCESS_NAME}.json"
 OUTPUTDIR_PATH = "@format outputs/{this.PROCESS_NAME}"
 TRANSFER = true
@@ -37,6 +38,7 @@ FINDX = 10
 [LPCJUPYTER]
 PROCESS_NAME = "ggF"
 TREE_NAME = "tree"
+SEL_NAME = 'prelim'
 CONDORPATH = "/store/user/joyzhou/output"
 INPUTFILE_PATH = "@format src/data/preprocessed/{this.PROCESS_NAME}.json"
 OUTPUTDIR_PATH = "/uscms/home/joyzhou/nobackup/tests"
