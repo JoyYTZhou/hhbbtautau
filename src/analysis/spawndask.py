@@ -31,12 +31,13 @@ def runfutures(client):
     if futures is not None: process_futures(futures)
     
 def loadmeta():
-    with open(rs.INPUTFILE_PATH, 'r') as samplepath:
-        metadata = json.load(samplepath)
-    loaded = metadata
-    if rs.RESUME: 
-        sliced_dict = dict(islice(metadata.items(), rs.DSINDX, None))
-        loaded = sliced_dict 
+    if rs.INPUTFILE_PATH.endswith('.json'):
+        with open(rs.INPUTFILE_PATH, 'r') as samplepath:
+            metadata = json.load(samplepath)
+        loaded = metadata
+        if rs.RESUME: 
+            sliced_dict = dict(islice(metadata.items(), rs.DSINDX, None))
+            loaded = sliced_dict
     return loaded
 
 def submitfutures(client):
