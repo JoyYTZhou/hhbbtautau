@@ -11,8 +11,17 @@ from config.selectionconfig import dasksetting as daskcfg
 
 logger = initLogger(__name__, rs.PROCESS_NAME)
 evtselclass = switch_selections(rs.SEL_NAME)
+with open("src/data/data.json", 'r') as data:
+    realmeta = json.load(data)
 
 def job(fn, i, dataset, eventSelection=evtselclass):
+    """Run the processor for a single file.
+    Parameters
+    - `fn`: The name of the file to process
+    - `i`: The index of the file in the list of files
+    - `dataset`: The name of the dataset (same dataset has same xsection)
+    - `eventSelection`: Custom Defined Event Selection Class
+    """
     proc = Processor(rs, dataset, eventSelection)
     logger.info(f"Processing filename {fn}")
     try: 
@@ -30,7 +39,8 @@ def runfutures(client):
     futures = submitjobs(client)
     if futures is not None: process_futures(futures)
     
-def loadmeta():
+def loadmeta(save=False):
+    """Load metadata from input file"""
     if rs.INPUTFILE_PATH.endswith('.json'):
         with open(rs.INPUTFILE_PATH, 'r') as samplepath:
             metadata = json.load(samplepath)
@@ -38,6 +48,10 @@ def loadmeta():
         if rs.RESUME: 
             sliced_dict = dict(islice(metadata.items(), rs.DSINDX, None))
             loaded = sliced_dict
+    elif rs.INPUTFILE_PATH.startswith('/store/user/'):
+        loaded = realmeta[rs.PROCESS_NAME]
+        for dataset in loaded.keys():
+            loaded[dataset]['filelist'] = filter_xrdfs_files(rs.INPUTFILE_PATH, dataset, '.root')
     return loaded
 
 def submitfutures(client):
