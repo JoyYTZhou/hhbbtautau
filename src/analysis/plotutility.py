@@ -148,24 +148,6 @@ class Visualizer():
 
         return allds_cf
 
-    def plot_var(self, df, name, title, xlabel, bins, range):
-        fig, ax = plt.subplots(figsize=(10, 5))
-        hep.histplot(
-            df[name],
-            bins=bins,
-            histtype="fill",
-            color="b",
-            alpha=0.5,
-            edgecolor="black",
-            title=title,
-            ax=ax,
-        )
-        ax.set_xlabel(xlabel, fontsize=15)
-        ax.set_ylabel("Events", fontsize=15)
-        ax.set_xlim(*range)
-        ax.legend()
-        fig.show()
-    
     def concat_obj(self, srcdir, dsname, save=True):
         """Take a src dir and one dataset name to concat all observables.csv output in one channel""" 
         df_dict = {}
