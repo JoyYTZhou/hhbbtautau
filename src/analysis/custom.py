@@ -29,6 +29,7 @@ class mockskimEvtSel(BaseEventSelections):
 
         m_mask = (muon.ptmask(opr.ge) & \
                 muon.absdxymask(opr.le) & \
+                muon.absetamask(opr.le) & \
                 muon.absdzmask(opr.le) & \
                 muon.custommask('cbtightid', opr.ge) & \
                 muon.custommask('isoid', opr.ge))
@@ -46,6 +47,11 @@ class mockskimEvtSel(BaseEventSelections):
         
 class prelimEvtSel(BaseEventSelections):
     """Custom event selection class for the preliminary event selection."""
+    def selectlep(self, events):
+        tau = Object(events, 'Tau', self.lepselcfg.tau)
+        self.objsel.add(name="OSTau", selection=tau.osmask())
+        return None
+
     def selectjet(self, events):
         jet = Object(events, 'Jet', self.jetselcfg.jet)
         j_mask = (jet.ptmask(opr.ge) &

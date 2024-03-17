@@ -168,8 +168,12 @@ class Object():
         return self.custommask("bdtid", op)
     
     def osmask(self):
-        """Entirely wrong of now."""
-        return dak.prod(self.dakzipped['charge'], axis=1) < 0 
+        """Create mask on events with OS objects.
+        !!! Note that this mask is applied per event, not per object"""
+        aodname = self.mapcfg['charge']
+        sum_charge = abs(dak.sum(self.events[aodname], axis=1))
+        mask = (sum_charge < dak.num(self.events[aodname], axis=1))
+        return mask
 
     @staticmethod
     def fourvector(events, field, sort=True, sortname='pt'):
@@ -231,9 +235,6 @@ class Object():
     def dRoverlap(self, altobject):
         pass
 
-class Mask():
-    def __init__(self) -> None:
-        pass
 
 
 
