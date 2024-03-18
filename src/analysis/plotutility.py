@@ -9,9 +9,9 @@ import pickle
 import awkward as ak
 from analysis.mathhelper import *
 
-class Visualizer():
+class WeightOutput():
     """
-    This class provides methods for plotting, data manipulation, and analysis of datasets.
+    This class provides methods for getting cutflows of datasets
     It includes functions for combining root files, computing cutflow tables, calculating efficiencies,
     and loading/saving data.
     
@@ -28,7 +28,15 @@ class Visualizer():
         self.outdir = plt_cfg.OUTPUTDIR
         checkpath(self.outdir)
         self.wgt_dict = None
-        plt.style.use(hep.style.CMS)
+    
+    def __call__(self, from_load=False):
+        """Get total cutflow and efficiency for all datasets.
+        Parameters:
+        - `from_load`: whether to load from output directory"""
+        self.getweights(from_load=from_load)
+        raw_df, wgt_df = self.get_totcf(from_load=from_load)
+        efficiency(self.outdir, wgt_df, append=False, save=True, save_name='total_cutflow_efficiency.csv')
+        return raw_df, wgt_df
 
     @property
     def pltcfg(self):
@@ -46,74 +54,38 @@ class Visualizer():
         else:
             self.wgt_dict = DataLoader.haddWeights(self.pltcfg.DATASETS, self.pltcfg.DATAPATH, save, from_raw)
     
-    def compute_allcf(self, lumi=50, output=True):
+    def get_totcf(self, from_load=False, lumi=50, output=True):
         """Load all cutflow tables for all datasets from output directory and combine them into one.
         
         Parameters
+        - `from_load`: whether to load from output directory
         - `lumi`: luminosity (pb^-1). In the future should be eliminated. Right now for scaling purpose
         - `output`: whether to save results.
 
         Returns
         - Tuple of two dataframes (raw, weighted) of cutflows
         """
-        raw_df_list = []
-        wgt_df_list = []
-        for process, dsitems in self.wgt_dict.items():
-            for ds in dsitems.keys():
-                raw_df = combine_cf(pjoin(self.indir, process), ds, 
-                                    output=True, outpath=pjoin(self.outdir, f'{ds}_cutflowraw.csv'))
-                raw_df_list.append(raw_df)
-                wgt = self.wgt_dict[process][ds]
-                wgt_df_list.append(self.weight_cf(ds, wgt, raw_df, lumi))
-        
-        raw_df = pd.concat(raw_df_list, axis=1)
-        wgt_df = pd.concat(wgt_df_list, axis=1)
-
-        if output:
-            raw_df.to_csv(pjoin(self.outdir, "cutflow_raw_tot.csv"))
-            wgt_df.to_csv(pjoin(self.outdir, "cutflow_wgt_tot.csv"))
+        if from_load:
+            raw_df = pd.read_csv(pjoin(self.outdir, "cutflow_raw_tot.csv"), index_col=0)
+            wgt_df = pd.read_csv(pjoin(self.outdir, "cutflow_wgt_tot.csv"), index_col=0)
+        else: 
+            raw_df_list = []
+            wgt_df_list = []
+            for process, dsitems in self.wgt_dict.items():
+                for ds in dsitems.keys():
+                    raw_df = combine_cf(pjoin(self.indir, process), ds, 
+                                        output=True, outpath=pjoin(self.outdir, f'{ds}_cutflowraw.csv'))
+                    raw_df_list.append(raw_df)
+                    wgt = self.wgt_dict[process][ds]
+                    wgt_df_list.append(weight_cf(self.outdir, ds, wgt, raw_df, lumi))
+            
+            raw_df = pd.concat(raw_df_list, axis=1)
+            wgt_df = pd.concat(wgt_df_list, axis=1)
+            if output:
+                raw_df.to_csv(pjoin(self.outdir, "cutflow_raw_tot.csv"))
+                wgt_df.to_csv(pjoin(self.outdir, "cutflow_wgt_tot.csv"))
 
         return raw_df, wgt_df
-
-    def efficiency(self, cfdf, overall=True, append=True, save=False, save_name=None):
-        """Add or return efficiency for the cutflow table.
-        
-        Parameters
-        - `cfdf`: cutflow dataframe
-        - `overall`: whether to calculate overall efficiency
-        - `append`: whether to append efficiency columns to the input dataframe
-        - `save`: whether to save the efficiency table
-        - `save_name`: name of the saved efficiency table. If none is given, it will be named 'tot_eff.csv'
-        """
-        if not overall:
-            efficiency_df = incrementaleff(cfdf)
-        else:
-            efficiency_df = overalleff(cfdf)
-        efficiency_df *= 100
-        efficiency_df.columns = [f'{col}_eff' for col in cfdf.columns]
-        if append:
-            for col in efficiency_df.columns:
-                cfdf[col] = efficiency_df[col]
-            return_df = cfdf
-        else:
-            return_df = efficiency_df
-        if save:
-            finame = pjoin(self.outdir, f'{save_name}_eff.csv') if save_name else pjoin(self.outdir, 'tot_eff.csv')
-            return_df.to_csv(finame)
-        return return_df
-
-    def load_allcf(self):
-        raw_df = pd.read_csv(pjoin(self.outdir, "cutflow_raw_tot.csv"), index_col=0)
-        wgt_df = pd.read_csv(pjoin(self.outdir, "cutflow_wgt_tot.csv"), index_col=0)
-        return raw_df, wgt_df
-
-    def weight_cf(self, dsname, wgt, raw_cf, lumi=50):
-        """Calculate weighted table based on raw table.""" 
-        wgt_df = raw_cf * wgt * lumi
-        wgt_df.columns = [dsname]
-        outfiname = pjoin(self.outdir, f'{dsname}_cutflowwgt.csv')
-        wgt_df.to_csv(outfiname)
-        return wgt_df
     
     def load_computed(self):
         """Load all computed combined csv's for datasets in store"""
@@ -135,7 +107,7 @@ class Visualizer():
         for i, ds in enumerate(ds_list):
             ds_dir = os.path.join(srcdir, ds)
             ds_cf = self.combine_cf(ds_dir)
-            self.efficiency(ds_cf)
+            efficiency(self.outdir, ds_cf)
             df_list[i] = ds_cf
             multi_indx += [(ds, indx) for indx in ds_cf.index]
         
@@ -176,28 +148,8 @@ class Visualizer():
                            pjoin(self.pltcfg.CONDORPATH, ds))
         
 class DataPlotter():
-    def __init__(self, source, **kwargs) -> None:
-        """Constructor for DataPlotter class.
-        
-        Parameters
-        - `source`: source of the data. Can be a string (path to file), a dataframe, or an awkward array.
-        """
-        if isinstance(source, str):
-            if source.endswith('.pkl'):
-                self.data = DataLoader.load_pkl(source)
-            elif source.endswith('.csv'):
-                self.data = pd.read_csv(source, **kwargs)
-            elif source.endswith('.root'):
-                self.data = uproot.open(source)
-            elif source.endswith('.parquet'):
-                self.data = pd.read_parquet(source, **kwargs)
-            else:
-                raise ValueError("This is not a valid file type.")
-        elif isinstance(source, pd.core.frame.DataFrame) or isinstance(source, ak.highlevel.Array):
-            self.data = source
-        else:
-            self.data = source
-            raise UserWarning(f"This might not be a valid source. The data type is {type(source)}")
+    def __init__(self):
+        pass
     
     def sortobj(self, sort_by, sort_what, **kwargs):
         """Return an awkward array representation of the sorted attribute in data.
@@ -209,7 +161,7 @@ class DataPlotter():
         """
         mask = DataPlotter.sortmask(self.data[sort_by], **kwargs)
         return arr_handler(self.data[sort_what])[mask]
-
+    
     @staticmethod
     def sortmask(dfarr, **kwargs):
         """Wrapper around awkward argsort function.
@@ -265,14 +217,33 @@ class DataLoader():
     def __init__(self) -> None:
         return None
     
-    def __call__(self, mode, **args):
-        if mode == 'hadd':
-            DataLoader.combine_roots(**args)
-        elif mode == 'load':
-            pass
+    def __call__(self, source, **kwargs):
+        """Constructor for DataLoader class.
+        
+        Parameters
+        - `source`: source of the data. Can be a string (path to file), a dataframe, or an awkward array.
+        """
+        if isinstance(source, str):
+            if source.endswith('.pkl'):
+                data = DataLoader.load_pkl(source)
+            elif source.endswith('.csv'):
+                data = pd.read_csv(source, **kwargs)
+            elif source.endswith('.root'):
+                data = uproot.open(source)
+            elif source.endswith('.parquet'):
+                data = pd.read_parquet(source, **kwargs)
+            else:
+                raise ValueError("This is not a valid file type.")
+        elif checkevents(source):
+            data = source
+        else:
+            data = source
+            raise UserWarning(f"This might not be a valid source. The data type is {type(source)}")
+        return data
     
     @staticmethod
     def load_pkl(filename):
+        """Load a pickle file and return the data."""
         with open(filename, 'rb') as f:
             data = pickle.load(f)
         return data
@@ -319,13 +290,14 @@ class DataLoader():
         pass
 
     @staticmethod
-    def combine_roots(pltcfg, wgt_dict, level=1, flat=False) -> None:
+    def combine_roots(pltcfg, wgt_dict, level=1, out_suffix='') -> None:
         """Combine all root files of datasets in plot setting into one dataframe.
         
         Parameters
         - `level`: concatenation level. 0 for overall process, 1 for dataset
         - `wgt_dict`: dictionary of process, dataset, and weights
         - `flat`: whether it's n-tuple
+        - `out_suffix`: suffix for the output file
         """
         outdir = pltcfg.OUTPUTDIR
         for process, dsitems in wgt_dict.items():
@@ -335,7 +307,7 @@ class DataLoader():
                 added_columns = {'dataset': process} if level==0 else {'dataset': ds} 
                 empty_fis = concat_roots(directory=ds_dir, pattern=f'{ds}_*.root', fields=pltcfg.PLOT_VARS, 
                                    outdir=outdir,
-                                   outname=ds,
+                                   outname=ds+out_suffix,
                                    extra_branches=pltcfg.EXTRA_VARS, 
                                    tree_name = pltcfg.TREENAME,
                                    added_columns=added_columns

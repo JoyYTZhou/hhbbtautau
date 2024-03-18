@@ -33,6 +33,67 @@ def arr_handler(dfarr):
     else:
         raise TypeError(f"This is of type {type(dfarr)}")
 
+def weight_cf(outdir, dsname, wgt, raw_cf, lumi=50):
+    """Calculate weighted table based on raw table.
+    
+    Parameters
+    - `dsname`: name of the dataset
+    - `wgt`: weight of the dataset
+    - `raw_cf`: raw cutflow table
+    - `lumi`: luminosity (pb^-1)
+
+    Return
+    - `wgt_df`: weighted cutflow table
+    """ 
+    wgt_df = raw_cf * wgt * lumi
+    wgt_df.columns = [dsname]
+    outfiname = pjoin(outdir, f'{dsname}_cutflowwgt.csv')
+    wgt_df.to_csv(outfiname)
+    return wgt_df
+
+def efficiency(outdir, cfdf, overall=True, append=True, save=False, save_name=None):
+    """Add or return efficiency for the cutflow table.
+    
+    Parameters
+    - `outdir`: name of the output directory
+    - `cfdf`: cutflow dataframe
+    - `overall`: whether to calculate overall efficiency
+    - `append`: whether to append efficiency columns to the input dataframe
+    - `save`: whether to save the efficiency table
+    - `save_name`: name of the saved efficiency table. If none is given, it will be named 'tot_eff.csv'
+    """
+    if not overall:
+        efficiency_df = incrementaleff(cfdf)
+    else:
+        efficiency_df = overalleff(cfdf)
+    efficiency_df *= 100
+    efficiency_df.columns = [f'{col}_eff' for col in cfdf.columns]
+    if append:
+        for col in efficiency_df.columns:
+            cfdf[col] = efficiency_df[col]
+        return_df = cfdf
+    else:
+        return_df = efficiency_df
+    if save:
+        finame = pjoin(outdir, f'{save_name}_eff.csv') if save_name else pjoin(outdir, 'tot_eff.csv')
+        return_df.to_csv(finame)
+    return return_df
+
+def incrementaleff(cfdf):
+    """Return incremental efficiency for a table."""
+    eff_df = cfdf.div(cfdf.shift(1)).fillna(1)
+    eff_df.replace([np.inf, -np.inf], np.nan, inplace=True)
+    eff_df.fillna(1, inplace=True) 
+    return eff_df
+
+def overalleff(cfdf):
+    """Return efficiency wrt total events."""
+    first_row = cfdf.iloc[0]
+    eff_df = cfdf.div(first_row).fillna(1)
+    eff_df.replace([np.inf, -np.inf], np.nan, inplace=True)
+    eff_df.fillna(1, inplace=True)
+    return eff_df
+
 def dphi(phi1, phi2):
     """Calculates delta phi between objects"""
     x = np.abs(phi1 - phi2)
