@@ -208,7 +208,7 @@ class Object():
         return zipped_object
 
     @staticmethod
-    def to_daskdf(dakzipped, sortname, prefix='', ascending=False, index=0):
+    def object_to_df(dakzipped, sortname, prefix='', ascending=False, index=0):
         """Take a dask zipped object, unzip it, compute it, flatten it into a dataframe"""
         computed, = dask.compute(dakzipped[dak.argsort(dakzipped[sortname], ascending=ascending)])
         dakarr_dict = {}
