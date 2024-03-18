@@ -227,6 +227,13 @@ class DataPlotter():
     
     @staticmethod
     def deal_overflow(arr, bin_no, range):
+        """Wrapper around numpy histogram function to deal with overflow.
+        
+        Parameters
+        - `arr`: the array to be histogrammed
+        - `bin_no`: number of bins
+        - `range`: range of the histogram
+        """
         bins = np.linspace(*range, bin_no)
         min_edge = bins[0]
         max_edge = bins[-1]
@@ -301,6 +308,10 @@ class DataLoader():
                 json.dump(wgt_dict, f, indent=4)
         return wgt_dict
     
+    @staticmethod
+    def load_vars(varname, filenames):
+        pass
+
     @staticmethod
     def combine_roots(pltcfg, wgt_dict, level=1, flat=False) -> None:
         """Combine all root files of datasets in plot setting into one dataframe.
