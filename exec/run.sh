@@ -28,4 +28,5 @@ export PYTHONPATH=$PWD/src:$PYTHONPATH
 
 export ENV_FOR_DYNACONF=LPCCONDOR
 
-python3 src/main.py
+# python3 src/main.py
+python3 src/plot.py

@@ -9,7 +9,7 @@ import pickle
 import awkward as ak
 from analysis.mathhelper import *
 
-class WeightOutput():
+class Combiner():
     """
     This class provides methods for getting cutflows of datasets
     It includes functions for combining root files, computing cutflow tables, calculating efficiencies,
@@ -41,6 +41,11 @@ class WeightOutput():
     @property
     def pltcfg(self):
         return self._pltcfg
+
+    def hadd_to_pkl(self):
+        """Combine all root files of datasets in plot setting into one dataframe and save as pickle."""
+        checkcondorpath(self.pltcfg.CONDORPATH)
+        DataLoader.combine_roots(self.pltcfg, self.wgt_dict)
     
     def checkupdates(self):
         for ds in self.pltcfg.DATASETS:
@@ -290,7 +295,7 @@ class DataLoader():
         pass
 
     @staticmethod
-    def combine_roots(pltcfg, wgt_dict, level=1, out_suffix='') -> None:
+    def combine_roots(pltcfg, wgt_dict, level=1, out_suffix='', **kwargs) -> None:
         """Combine all root files of datasets in plot setting into one dataframe.
         
         Parameters
@@ -300,22 +305,26 @@ class DataLoader():
         - `out_suffix`: suffix for the output file
         """
         outdir = pltcfg.OUTPUTDIR
+        checkpath(outdir)
         for process, dsitems in wgt_dict.items():
             indir = pltcfg.INPUTDIR
             ds_dir = pjoin(indir, process)
             for ds in dsitems.keys():
                 added_columns = {'dataset': process} if level==0 else {'dataset': ds} 
-                empty_fis = concat_roots(directory=ds_dir, pattern=f'{ds}_*.root', fields=pltcfg.PLOT_VARS, 
-                                   outdir=outdir,
-                                   outname=ds+out_suffix,
-                                   extra_branches=pltcfg.EXTRA_VARS, 
-                                   tree_name = pltcfg.TREENAME,
-                                   added_columns=added_columns
-                                   )
+                empty_fis = concat_roots(directory=ds_dir,
+                                         startpattern=f'{ds}_',
+                                         fields=pltcfg.PLOT_VARS, 
+                                         outdir=outdir,
+                                         outname=ds+out_suffix,
+                                         extra_branches=pltcfg.EXTRA_VARS, 
+                                         tree_name = pltcfg.TREENAME,
+                                         added_columns=added_columns,
+                                         **kwargs)
+                if pltcfg.CONDOR_TRANSFER:
+                    transferfiles(outdir, pltcfg.CONDORPATH)
+                    delfiles(outdir, pattern='*.pkl')
         if empty_fis != [] & pltcfg.CLEAN: delfilelist(empty_fis)
         return None
-    
-        
 
 def clopper_pearson_error(passed, total, level=0.6827):
     """

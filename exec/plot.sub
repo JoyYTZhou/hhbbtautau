@@ -1,0 +1,22 @@
+# Path variables
+MY_PATH = /uscms/homes/j/joyzhou/work/hhbbtautau
+NO_BACKUP = /uscms/home/joyzhou/nobackup
+
+# Job description
+universe = vanilla
+executable = $(MY_PATH)/exec/run.sh
+
+log = dask_$(SUBMIT_TIME).log
+output = dask_$(SUBMIT_TIME).out
+error = dask_$(SUBMIT_TIME).err
+stream_error = True
+stream_output = True
+
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT_OR_EVICT 
+
+request_cpus = 2
+request_memory = 20GB
+request_disk = 5GB
+transfer_input_files = $(MY_PATH)/src, $(MY_PATH)/scripts, $(NO_BACKUP)/newcoffea.tar.gz, $(MY_PATH)/.condor_config
+
