@@ -6,7 +6,7 @@ OUTPUTDIR_PATH = "@format {env[OUTPUTPATH]}"
 TRANSFER = false
 
 [LPCLOCAL]
-PROCESS_NAME = "DYJets"
+PROCESS_NAME = "SingleH"
 TREE_NAME = "Events"
 CONDORPATH = "/store/user/joyzhou/output"
 SCRATCHPATH = "/uscmst1b_scratch/lpc1/3DayLifetime/joyzhou"
@@ -19,7 +19,7 @@ STEP_SIZE = '400MB'
 COPY_DIR = "@format {this.SCRATCHPATH}/temp"
 
 [LPCCONDOR]
-PROCESS_NAME = "ggF"
+PROCESS_NAME = "DYJets"
 TREE_NAME = "tree"
 SEL_NAME = 'prelim'
 CONDORPATH = "/store/user/joyzhou/jet_output"
