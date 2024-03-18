@@ -3,11 +3,12 @@ import matplotlib.pyplot as plt
 import glob
 import os
 import json
-from analysis.helper import *
+from utils.helper import *
 from analysis.selutility import Object
 import pickle
 import awkward as ak
-from analysis.mathhelper import *
+from src.utils.mathhelper import *
+import gc
 
 class Combiner():
     """
@@ -145,12 +146,15 @@ class Combiner():
         srcdir = self.pltcfg.LOCAL_OUTPUT
         pass
 
-    def updatedir(self):
+    def updatedir(self, fipattern='*.csv'):
         """Update local input directories from condor"""
         if self.pltcfg.REFRESH:
             for ds in self.pltcfg.DATASETS:
-                sync_files(pjoin(self.indir, ds),
-                           pjoin(self.pltcfg.CONDORPATH, ds))
+                remote_path = pjoin(self.pltcfg.CONDORPATH, ds)
+                files_tocp = glob_files
+                checkpath(pjoin(self.inputdir, ds))
+                cpfcondor(remote_path, pjoin(self.inputdir, ds))
+                
         
 class DataPlotter():
     def __init__(self):
@@ -320,6 +324,7 @@ class DataLoader():
                                          tree_name = pltcfg.TREENAME,
                                          added_columns=added_columns,
                                          **kwargs)
+                gc.collect()
                 if pltcfg.CONDOR_TRANSFER:
                     transferfiles(outdir, pltcfg.CONDORPATH)
                     delfiles(outdir, pattern='*.pkl')
