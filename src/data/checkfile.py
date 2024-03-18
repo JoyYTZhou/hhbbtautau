@@ -2,7 +2,7 @@ import uproot as uproot
 import json
 from tqdm import tqdm
 from data.datacollect import dasgo_query, xrootd_format
-from analysis.helper import *
+from src.utils.helper import *
 
 def output_branches(in_fipath, out_fipath, checklist):
     """ Write the branches to a file.
