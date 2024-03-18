@@ -3,7 +3,7 @@ from dask.distributed import as_completed
 from .processor import Processor
 from .custom import switch_selections
 import json as json
-from .helper import *
+from ..utils.helper import *
 import gc
 from itertools import islice
 from config.selectionconfig import runsetting as rs
