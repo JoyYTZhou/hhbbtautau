@@ -5,6 +5,7 @@ NO_BACKUP = /uscms/home/joyzhou/nobackup
 # Job description
 universe = vanilla
 executable = $(MY_PATH)/exec/run.sh
+arguments = $(arg1)
 
 log = dask_$(SUBMIT_TIME).log
 output = dask_$(SUBMIT_TIME).out
@@ -20,5 +21,9 @@ request_memory = 20GB
 request_disk = 5GB
 transfer_input_files = $(MY_PATH)/src, $(MY_PATH)/scripts, $(NO_BACKUP)/newcoffea.tar.gz, $(MY_PATH)/.condor_config
 
-queue
+queue arg1 from (
+    DYJets
+    ggF
+    SingleH
+)
 

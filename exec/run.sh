@@ -4,6 +4,7 @@
 
 echo "Currently in $PWD"
 
+export PROCESS_NAME=$1
 export ENV_NAME=newcoffea
 OLD_ENV_NAME=/uscms_data/d3/joyzhou/${ENV_NAME}
 
