@@ -8,7 +8,7 @@ import vector as vec
 import pandas as pd
 import operator as opr
 from config.selectionconfig import selectionsettings as selcfg
-from analysis.mathhelper import checkevents
+from utils.mathhelper import checkevents
 
 default_lepsel = selcfg.lepselections
 default_jetsel = selcfg.jetselections
