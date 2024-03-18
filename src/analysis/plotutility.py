@@ -28,6 +28,15 @@ class WeightOutput():
         self.outdir = plt_cfg.OUTPUTDIR
         checkpath(self.outdir)
         self.wgt_dict = None
+    
+    def __call__(self, from_load=False):
+        """Get total cutflow and efficiency for all datasets.
+        Parameters:
+        - `from_load`: whether to load from output directory"""
+        self.getweights(from_load=from_load)
+        raw_df, wgt_df = self.get_totcf(from_load=from_load)
+        efficiency(self.outdir, wgt_df, append=False, save=True, save_name='total_cutflow_efficiency.csv')
+        return raw_df, wgt_df
 
     @property
     def pltcfg(self):
@@ -139,28 +148,8 @@ class WeightOutput():
                            pjoin(self.pltcfg.CONDORPATH, ds))
         
 class DataPlotter():
-    def __init__(self, source, **kwargs) -> None:
-        """Constructor for DataPlotter class.
-        
-        Parameters
-        - `source`: source of the data. Can be a string (path to file), a dataframe, or an awkward array.
-        """
-        if isinstance(source, str):
-            if source.endswith('.pkl'):
-                self.data = DataLoader.load_pkl(source)
-            elif source.endswith('.csv'):
-                self.data = pd.read_csv(source, **kwargs)
-            elif source.endswith('.root'):
-                self.data = uproot.open(source)
-            elif source.endswith('.parquet'):
-                self.data = pd.read_parquet(source, **kwargs)
-            else:
-                raise ValueError("This is not a valid file type.")
-        elif isinstance(source, pd.core.frame.DataFrame) or isinstance(source, ak.highlevel.Array):
-            self.data = source
-        else:
-            self.data = source
-            raise UserWarning(f"This might not be a valid source. The data type is {type(source)}")
+    def __init__(self):
+        pass
     
     def sortobj(self, sort_by, sort_what, **kwargs):
         """Return an awkward array representation of the sorted attribute in data.
@@ -172,7 +161,7 @@ class DataPlotter():
         """
         mask = DataPlotter.sortmask(self.data[sort_by], **kwargs)
         return arr_handler(self.data[sort_what])[mask]
-
+    
     @staticmethod
     def sortmask(dfarr, **kwargs):
         """Wrapper around awkward argsort function.
@@ -228,8 +217,33 @@ class DataLoader():
     def __init__(self) -> None:
         return None
     
+    def __call__(self, source, **kwargs):
+        """Constructor for DataLoader class.
+        
+        Parameters
+        - `source`: source of the data. Can be a string (path to file), a dataframe, or an awkward array.
+        """
+        if isinstance(source, str):
+            if source.endswith('.pkl'):
+                data = DataLoader.load_pkl(source)
+            elif source.endswith('.csv'):
+                data = pd.read_csv(source, **kwargs)
+            elif source.endswith('.root'):
+                data = uproot.open(source)
+            elif source.endswith('.parquet'):
+                data = pd.read_parquet(source, **kwargs)
+            else:
+                raise ValueError("This is not a valid file type.")
+        elif checkevents(source):
+            data = source
+        else:
+            data = source
+            raise UserWarning(f"This might not be a valid source. The data type is {type(source)}")
+        return data
+    
     @staticmethod
     def load_pkl(filename):
+        """Load a pickle file and return the data."""
         with open(filename, 'rb') as f:
             data = pickle.load(f)
         return data
@@ -276,13 +290,14 @@ class DataLoader():
         pass
 
     @staticmethod
-    def combine_roots(pltcfg, wgt_dict, level=1, flat=False) -> None:
+    def combine_roots(pltcfg, wgt_dict, level=1, out_suffix='') -> None:
         """Combine all root files of datasets in plot setting into one dataframe.
         
         Parameters
         - `level`: concatenation level. 0 for overall process, 1 for dataset
         - `wgt_dict`: dictionary of process, dataset, and weights
         - `flat`: whether it's n-tuple
+        - `out_suffix`: suffix for the output file
         """
         outdir = pltcfg.OUTPUTDIR
         for process, dsitems in wgt_dict.items():
@@ -292,7 +307,7 @@ class DataLoader():
                 added_columns = {'dataset': process} if level==0 else {'dataset': ds} 
                 empty_fis = concat_roots(directory=ds_dir, pattern=f'{ds}_*.root', fields=pltcfg.PLOT_VARS, 
                                    outdir=outdir,
-                                   outname=ds,
+                                   outname=ds+out_suffix,
                                    extra_branches=pltcfg.EXTRA_VARS, 
                                    tree_name = pltcfg.TREENAME,
                                    added_columns=added_columns
