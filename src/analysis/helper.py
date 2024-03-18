@@ -158,13 +158,12 @@ def load_roots(filelist, branch_names, tree_name):
     combined_df = pd.concat(dfs, ignore_index=True)
     return combined_df, emptylist
 
-def concat_roots(directory, pattern, fields, outdir, outname, batch_size=35, extra_branches = [], tree_name='tree', added_columns={}):
+def concat_roots(directory, startpattern, endpattern, fields, outdir, outname, batch_size=35, extra_branches = [], tree_name='tree', added_columns={}):
     """
     Load specific branches from ROOT files matching a pattern in a directory, and combine them into a single DataFrame.
 
     Parameters:
     - directory: Path to the directory containing ROOT files.
-    - pattern: Pattern to match ROOT files, e.g., "*.root".
     - fields: List of field names to load from each ROOT file.
     - outdir: Path to the directory to save the combined DataFrame.
     - outname: Name of the combined DataFrame.
@@ -177,8 +176,7 @@ def concat_roots(directory, pattern, fields, outdir, outname, batch_size=35, ext
     - A list of empty files among the searched ROOT files
     """
     checkpath(outdir)
-    full_pattern = os.path.join(directory, pattern)
-    root_files = glob.glob(full_pattern)
+    root_files = glob_files(directory, startpattern, endpattern)
     random.shuffle(root_files)
     emptyfiles = []
     branch_names = find_branches(root_files[0], fields, tree_name) 
@@ -271,6 +269,14 @@ def list_xrdfs_files(remote_dir):
     result = subprocess.run(cmd, capture_output=True, text=True, check=True)
     files = sorted(result.stdout.strip().split('\n'))
     return files
+
+def glob_files(dirname, startpattern, endpattern, **kwargs):
+    if dirname.startswith('/store/user'):
+        files = filter_xrdfs_files(dirname, start_pattern=startpattern, end_pattern=endpattern, **kwargs)
+    else:
+        pattern = f'{startpattern}*{endpattern}'
+        files = glob.glob(pjoin(dirname, pattern)) 
+    return sorted(files)
 
 def get_xrdfs_file_info(remote_file):
     """Get information (size, modification time) of a remote xrdfs file/dir"""

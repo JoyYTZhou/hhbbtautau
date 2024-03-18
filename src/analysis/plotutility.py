@@ -265,6 +265,12 @@ class DataLoader():
     def __init__(self) -> None:
         return None
     
+    def __call__(self, mode, **args):
+        if mode == 'hadd':
+            DataLoader.combine_roots(**args)
+        elif mode == 'load':
+            pass
+    
     @staticmethod
     def load_pkl(filename):
         with open(filename, 'rb') as f:
