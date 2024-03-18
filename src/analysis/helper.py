@@ -270,7 +270,7 @@ def list_xrdfs_files(remote_dir):
     """List files/dirs in a remote xrdfs directory using subprocess.run."""
     cmd = ["xrdfs", PREFIX, "ls", remote_dir]
     result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-    files = result.stdout.strip().split('\n')
+    files = sorted(result.stdout.strip().split('\n'))
     return files
 
 def get_xrdfs_file_info(remote_file):
