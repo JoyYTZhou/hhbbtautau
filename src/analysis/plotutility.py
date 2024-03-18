@@ -148,24 +148,6 @@ class Visualizer():
 
         return allds_cf
 
-    def plot_var(self, df, name, title, xlabel, bins, range):
-        fig, ax = plt.subplots(figsize=(10, 5))
-        hep.histplot(
-            df[name],
-            bins=bins,
-            histtype="fill",
-            color="b",
-            alpha=0.5,
-            edgecolor="black",
-            title=title,
-            ax=ax,
-        )
-        ax.set_xlabel(xlabel, fontsize=15)
-        ax.set_ylabel("Events", fontsize=15)
-        ax.set_xlim(*range)
-        ax.legend()
-        fig.show()
-    
     def concat_obj(self, srcdir, dsname, save=True):
         """Take a src dir and one dataset name to concat all observables.csv output in one channel""" 
         df_dict = {}
@@ -245,6 +227,13 @@ class DataPlotter():
     
     @staticmethod
     def deal_overflow(arr, bin_no, range):
+        """Wrapper around numpy histogram function to deal with overflow.
+        
+        Parameters
+        - `arr`: the array to be histogrammed
+        - `bin_no`: number of bins
+        - `range`: range of the histogram
+        """
         bins = np.linspace(*range, bin_no)
         min_edge = bins[0]
         max_edge = bins[-1]
@@ -319,6 +308,10 @@ class DataLoader():
                 json.dump(wgt_dict, f, indent=4)
         return wgt_dict
     
+    @staticmethod
+    def load_vars(varname, filenames):
+        pass
+
     @staticmethod
     def combine_roots(pltcfg, wgt_dict, level=1, flat=False) -> None:
         """Combine all root files of datasets in plot setting into one dataframe.

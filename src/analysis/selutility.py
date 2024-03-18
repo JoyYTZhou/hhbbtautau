@@ -112,7 +112,6 @@ class Object():
         self._mapcfg = kwargs.get('mapcfg', default_mapcfg[name])
         self.events = events
         self.cutflow = kwargs.get('cutflow', PackedSelection())
-        self.dakzipped = None
         self.fields = list(self.mapcfg.keys())
 
     @property
@@ -188,7 +187,6 @@ class Object():
         Return
         - a fourvector object.
         """
-        # Precision dubious
         object_ak = ak.zip({
             "pt": events[field+"_pt"],
             "eta": events[field+"_eta"],
@@ -200,33 +198,25 @@ class Object():
             object_LV = vec.Array(object_ak)
         return object_LV
 
-    def set_dakzipped(self):
+    @staticmethod
+    def set_dakzipped(events, namemap):
         """Given self.events, read only object-related observables and zip them into dict."""
         zipped_dict = {}
-        for name, nanoaodname in self.mapcfg.items():
-            zipped_dict.update({name: self.events[nanoaodname]})
+        for name, nanoaodname in namemap.items():
+            zipped_dict.update({name: events[nanoaodname]})
         zipped_object = dak.zip(zipped_dict)
-        self.dakzipped = zipped_object
+        return zipped_object
 
-    def to_daskdf(self, sortname='pt', ascending=False, index=0):
-        """Take a dask zipped object, unzip it, compute it, flatten it into a dataframe
-        """
-        if self.veto is True:
-            return None
-        computed, = dask.compute(self.dakzipped[dak.argsort(self.dakzipped[sortname], ascending=ascending)])
+    @staticmethod
+    def object_to_df(dakzipped, sortname, prefix='', ascending=False, index=0):
+        """Take a dask zipped object, unzip it, compute it, flatten it into a dataframe"""
+        computed, = dask.compute(dakzipped[dak.argsort(dakzipped[sortname], ascending=ascending)])
         dakarr_dict = {}
-        for i, field in enumerate(self.fields):
-            colname = self.name + "_" + field
+        for i, field in enumerate(dakzipped.fields):
+            colname = prefix + "_" + field if prefix != '' else field
             dakarr_dict.update({colname: ak.to_list(computed[field][:, index])})
         objdf = pd.DataFrame(dakarr_dict)
         return objdf
-
-    def filter_dakzipped(self, mask):
-        """Filter the object based on a mask.
-        Parameters
-        - `mask`: mask to filter the object
-        """
-        self.dakzipped = self.dakzipped[mask]
 
     @staticmethod
     def overlap(self, altobject):
