@@ -9,9 +9,9 @@ import pickle
 import awkward as ak
 from analysis.mathhelper import *
 
-class Visualizer():
+class WeightOutput():
     """
-    This class provides methods for plotting, data manipulation, and analysis of datasets.
+    This class provides methods for getting cutflows of datasets
     It includes functions for combining root files, computing cutflow tables, calculating efficiencies,
     and loading/saving data.
     
@@ -28,7 +28,6 @@ class Visualizer():
         self.outdir = plt_cfg.OUTPUTDIR
         checkpath(self.outdir)
         self.wgt_dict = None
-        plt.style.use(hep.style.CMS)
 
     @property
     def pltcfg(self):
@@ -46,74 +45,38 @@ class Visualizer():
         else:
             self.wgt_dict = DataLoader.haddWeights(self.pltcfg.DATASETS, self.pltcfg.DATAPATH, save, from_raw)
     
-    def compute_allcf(self, lumi=50, output=True):
+    def get_totcf(self, from_load=False, lumi=50, output=True):
         """Load all cutflow tables for all datasets from output directory and combine them into one.
         
         Parameters
+        - `from_load`: whether to load from output directory
         - `lumi`: luminosity (pb^-1). In the future should be eliminated. Right now for scaling purpose
         - `output`: whether to save results.
 
         Returns
         - Tuple of two dataframes (raw, weighted) of cutflows
         """
-        raw_df_list = []
-        wgt_df_list = []
-        for process, dsitems in self.wgt_dict.items():
-            for ds in dsitems.keys():
-                raw_df = combine_cf(pjoin(self.indir, process), ds, 
-                                    output=True, outpath=pjoin(self.outdir, f'{ds}_cutflowraw.csv'))
-                raw_df_list.append(raw_df)
-                wgt = self.wgt_dict[process][ds]
-                wgt_df_list.append(self.weight_cf(ds, wgt, raw_df, lumi))
-        
-        raw_df = pd.concat(raw_df_list, axis=1)
-        wgt_df = pd.concat(wgt_df_list, axis=1)
-
-        if output:
-            raw_df.to_csv(pjoin(self.outdir, "cutflow_raw_tot.csv"))
-            wgt_df.to_csv(pjoin(self.outdir, "cutflow_wgt_tot.csv"))
+        if from_load:
+            raw_df = pd.read_csv(pjoin(self.outdir, "cutflow_raw_tot.csv"), index_col=0)
+            wgt_df = pd.read_csv(pjoin(self.outdir, "cutflow_wgt_tot.csv"), index_col=0)
+        else: 
+            raw_df_list = []
+            wgt_df_list = []
+            for process, dsitems in self.wgt_dict.items():
+                for ds in dsitems.keys():
+                    raw_df = combine_cf(pjoin(self.indir, process), ds, 
+                                        output=True, outpath=pjoin(self.outdir, f'{ds}_cutflowraw.csv'))
+                    raw_df_list.append(raw_df)
+                    wgt = self.wgt_dict[process][ds]
+                    wgt_df_list.append(weight_cf(self.outdir, ds, wgt, raw_df, lumi))
+            
+            raw_df = pd.concat(raw_df_list, axis=1)
+            wgt_df = pd.concat(wgt_df_list, axis=1)
+            if output:
+                raw_df.to_csv(pjoin(self.outdir, "cutflow_raw_tot.csv"))
+                wgt_df.to_csv(pjoin(self.outdir, "cutflow_wgt_tot.csv"))
 
         return raw_df, wgt_df
-
-    def efficiency(self, cfdf, overall=True, append=True, save=False, save_name=None):
-        """Add or return efficiency for the cutflow table.
-        
-        Parameters
-        - `cfdf`: cutflow dataframe
-        - `overall`: whether to calculate overall efficiency
-        - `append`: whether to append efficiency columns to the input dataframe
-        - `save`: whether to save the efficiency table
-        - `save_name`: name of the saved efficiency table. If none is given, it will be named 'tot_eff.csv'
-        """
-        if not overall:
-            efficiency_df = incrementaleff(cfdf)
-        else:
-            efficiency_df = overalleff(cfdf)
-        efficiency_df *= 100
-        efficiency_df.columns = [f'{col}_eff' for col in cfdf.columns]
-        if append:
-            for col in efficiency_df.columns:
-                cfdf[col] = efficiency_df[col]
-            return_df = cfdf
-        else:
-            return_df = efficiency_df
-        if save:
-            finame = pjoin(self.outdir, f'{save_name}_eff.csv') if save_name else pjoin(self.outdir, 'tot_eff.csv')
-            return_df.to_csv(finame)
-        return return_df
-
-    def load_allcf(self):
-        raw_df = pd.read_csv(pjoin(self.outdir, "cutflow_raw_tot.csv"), index_col=0)
-        wgt_df = pd.read_csv(pjoin(self.outdir, "cutflow_wgt_tot.csv"), index_col=0)
-        return raw_df, wgt_df
-
-    def weight_cf(self, dsname, wgt, raw_cf, lumi=50):
-        """Calculate weighted table based on raw table.""" 
-        wgt_df = raw_cf * wgt * lumi
-        wgt_df.columns = [dsname]
-        outfiname = pjoin(self.outdir, f'{dsname}_cutflowwgt.csv')
-        wgt_df.to_csv(outfiname)
-        return wgt_df
     
     def load_computed(self):
         """Load all computed combined csv's for datasets in store"""
@@ -135,7 +98,7 @@ class Visualizer():
         for i, ds in enumerate(ds_list):
             ds_dir = os.path.join(srcdir, ds)
             ds_cf = self.combine_cf(ds_dir)
-            self.efficiency(ds_cf)
+            efficiency(self.outdir, ds_cf)
             df_list[i] = ds_cf
             multi_indx += [(ds, indx) for indx in ds_cf.index]
         

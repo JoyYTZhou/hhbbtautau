@@ -118,21 +118,6 @@ def hadd_csvs(pattern):
     dfs = load_csvs(pattern)
     return pd.concat(dfs, axis=1)
 
-def incrementaleff(cfdf):
-    """Return incremental efficiency for a table."""
-    eff_df = cfdf.div(cfdf.shift(1)).fillna(1)
-    eff_df.replace([np.inf, -np.inf], np.nan, inplace=True)
-    eff_df.fillna(1, inplace=True) 
-    return eff_df 
-
-def overalleff(cfdf):
-    """Return efficiency wrt total events."""
-    first_row = cfdf.iloc[0]
-    eff_df = cfdf.div(first_row).fillna(1)
-    eff_df.replace([np.inf, -np.inf], np.nan, inplace=True)
-    eff_df.fillna(1, inplace=True)
-    return eff_df
-
 def load_roots(filelist, branch_names, tree_name):
     """Load root files in filelist and combine them into a single DataFrame.
     
