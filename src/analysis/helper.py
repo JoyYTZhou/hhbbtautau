@@ -63,7 +63,7 @@ def filter_xrdfs_files(remote_dir, start_pattern, end_pattern, add_prefix=True):
         filtered_files = [PREFIX + "/" + f for f in all_files if f.split('/')[-1].startswith(start_pattern) and f.split('/')[-1].endswith(end_pattern)]
     else: 
         filtered_files = [f for f in all_files if f.split('/')[-1].startswith(start_pattern) and f.split('/')[-1].endswith(end_pattern)]
-    return filtered_files
+    return sorted(filtered_files)
 
 def checkcondorpath(dirname):
     """Check if a condor path exists. If not will create one."""

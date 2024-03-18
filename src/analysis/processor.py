@@ -4,6 +4,7 @@
 from .helper import *
 import pickle
 from .selutility import BaseEventSelections
+import shutil
 
 class Processor:
     """Process individual file or filesets given strings/dicts belonging to one dataset."""
