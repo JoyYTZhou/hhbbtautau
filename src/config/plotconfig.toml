@@ -13,13 +13,15 @@ CLEAN = true
 
 [LPCCONDOR]
 DATAPATH = "@format src/data/preprocessed"
-CONDORPATH = "/store/user/joyzhou/jet_output"
 INPUTDIR = "/store/user/joyzhou/jet_output"
-OUTPUTDIR = "/store/user/joyzhou/obj_skim"
+CONDOR_TRANSFER = true
+CONDORPATH = "/store/user/joyzhou/pkl_files"
+OUTPUTDIR = "/tempout"
 DATASETS = ["ggF", "SingleH", "DYJets", "TTbar"]
 PLOT_VARS = ['Tau', 'Jet', 'FatJet', "GenPart"]
 EXTRA_VARS = ['Generator_weight', 'nLHEReweightingWeight', 'LHEReweightingWeight']
 TREENAME = "tree"
+CLEAN = false
 
 
 

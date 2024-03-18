@@ -143,12 +143,13 @@ def load_roots(filelist, branch_names, tree_name):
     combined_df = pd.concat(dfs, ignore_index=True)
     return combined_df, emptylist
 
-def concat_roots(directory, startpattern, endpattern, fields, outdir, outname, batch_size=35, extra_branches = [], tree_name='tree', added_columns={}):
+def concat_roots(directory, startpattern, fields, outdir, outname, batch_size=35, extra_branches = [], tree_name='tree', added_columns={}):
     """
     Load specific branches from ROOT files matching a pattern in a directory, and combine them into a single DataFrame.
 
     Parameters:
     - directory: Path to the directory containing ROOT files.
+    - startpattern: Pattern to match the start of the ROOT file name.
     - fields: List of field names to load from each ROOT file.
     - outdir: Path to the directory to save the combined DataFrame.
     - outname: Name of the combined DataFrame.
@@ -161,7 +162,7 @@ def concat_roots(directory, startpattern, endpattern, fields, outdir, outname, b
     - A list of empty files among the searched ROOT files
     """
     checkpath(outdir)
-    root_files = glob_files(directory, startpattern, endpattern)
+    root_files = glob_files(directory, startpattern, endpattern='.root')
     random.shuffle(root_files)
     emptyfiles = []
     branch_names = find_branches(root_files[0], fields, tree_name) 
@@ -256,6 +257,14 @@ def list_xrdfs_files(remote_dir):
     return files
 
 def glob_files(dirname, startpattern, endpattern, **kwargs):
+    """Returns a list of files matching a pattern in a directory.
+    
+    Parameters
+    - `dirname`: directory path (remote/local)
+    - `startpattern`: pattern to match the start of the file name
+    - `endpattern`: pattern to match the end of the file name
+    - `kwargs`: additional arguments for filtering files
+    """
     if dirname.startswith('/store/user'):
         files = filter_xrdfs_files(dirname, start_pattern=startpattern, end_pattern=endpattern, **kwargs)
     else:
