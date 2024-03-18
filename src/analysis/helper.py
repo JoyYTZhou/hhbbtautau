@@ -3,11 +3,11 @@ import glob
 import subprocess
 from pathlib import Path
 import logging
-import shutil
 import pandas as pd
 import numpy as np
 from datetime import datetime
 import uproot
+import random
 
 runcom = subprocess.run
 pjoin = os.path.join
@@ -158,7 +158,7 @@ def load_roots(filelist, branch_names, tree_name):
     combined_df = pd.concat(dfs, ignore_index=True)
     return combined_df, emptylist
 
-def concat_roots(directory, pattern, fields, outdir, outname, batch_size=30, extra_branches = [], tree_name='tree', added_columns={}):
+def concat_roots(directory, pattern, fields, outdir, outname, batch_size=35, extra_branches = [], tree_name='tree', added_columns={}):
     """
     Load specific branches from ROOT files matching a pattern in a directory, and combine them into a single DataFrame.
 
@@ -179,6 +179,7 @@ def concat_roots(directory, pattern, fields, outdir, outname, batch_size=30, ext
     checkpath(outdir)
     full_pattern = os.path.join(directory, pattern)
     root_files = glob.glob(full_pattern)
+    random.shuffle(root_files)
     emptyfiles = []
     branch_names = find_branches(root_files[0], fields, tree_name) 
     branch_names.extend(extra_branches)
@@ -191,8 +192,6 @@ def concat_roots(directory, pattern, fields, outdir, outname, batch_size=30, ext
                 combined_df[column] = value
         outfilepath = pjoin(outdir, f'{outname}_{i//batch_size + 1}.pkl')
         combined_df.to_pickle(outfilepath)
-        # outfilepath = pjoin(outdir, f'{outname}_{i//batch_size + 1}.parquet')
-        # combined_df.to_parquet(outfilepath)
     return emptyfiles
 
 def find_branches(file_path, object_list, tree_name) -> list:
