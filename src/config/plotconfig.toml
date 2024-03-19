@@ -4,12 +4,13 @@ CONDORPATH = "/store/user/joyzhou/jet_output"
 INPUTDIR = "/uscms/home/joyzhou/nobackup/jet_output"
 OUTPUTDIR = "/uscms/home/joyzhou/nobackup/jet_output"
 CONDOR_TRANSFER = true # as of now this has zero impact
-REFRESH = true
+REFRESH = false
 DATASETS = ["ggF", "SingleH", "DYJets", "TTbar"]
 TREENAME = 'tree'
 PLOT_VARS = ['Tau', 'Jet', 'FatJet', "GenPart"]
 EXTRA_VARS = ['Generator_weight', 'nLHEReweightingWeight', 'LHEReweightingWeight']
 CLEAN = true
+LUMI = 5000 # pb^-1
 
 [LPCCONDOR]
 DATAPATH = "@format src/data/preprocessed"
@@ -22,6 +23,7 @@ PLOT_VARS = ['Tau', 'Jet', 'FatJet', "GenPart"]
 EXTRA_VARS = ['Generator_weight', 'nLHEReweightingWeight', 'LHEReweightingWeight']
 TREENAME = "tree"
 CLEAN = false
+LUMI = 5000 # pb^-1
 
 
 

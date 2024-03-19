@@ -41,7 +41,7 @@ class Combiner():
         if self.pltcfg.REFRESH: self.updatedir(**kwargs)
         self.getweights(from_load=from_load, from_raw=from_raw)
         raw_df, wgt_df = self.get_totcf(from_load=from_load)
-        efficiency(self.outdir, wgt_df, append=False, save=True, save_name='total_cutflow_efficiency.csv')
+        efficiency(self.outdir, wgt_df, append=False, save=True, save_name='aftjet')
         return raw_df, wgt_df
 
     @property
@@ -65,12 +65,12 @@ class Combiner():
         else:
             self.wgt_dict = DataLoader.haddWeights(self.pltcfg.DATASETS, self.pltcfg.DATAPATH, save, from_raw)
     
-    def get_totcf(self, from_load=False, lumi=50, output=True):
-        """Load all cutflow tables for all datasets from output directory and combine them into one.
+    def get_totcf(self, from_load=False, output=True):
+        """Load all cutflow tables for all datasets from output directory and combine them into one. 
+        Scaled by luminosity in self.pltcfg currently.
         
         Parameters
         - `from_load`: whether to load from output directory
-        - `lumi`: luminosity (pb^-1). In the future should be eliminated. Right now for scaling purpose
         - `output`: whether to save results.
 
         Returns
@@ -88,7 +88,7 @@ class Combiner():
                                         output=True, outpath=pjoin(self.outdir, f'{ds}_cutflowraw.csv'))
                     raw_df_list.append(raw_df)
                     wgt = self.wgt_dict[process][ds]
-                    wgt_df_list.append(weight_cf(self.outdir, ds, wgt, raw_df, lumi))
+                    wgt_df_list.append(weight_cf(self.outdir, ds, wgt, raw_df, self.pltcfg.LUMI))
             
             raw_df = pd.concat(raw_df_list, axis=1)
             wgt_df = pd.concat(wgt_df_list, axis=1)
