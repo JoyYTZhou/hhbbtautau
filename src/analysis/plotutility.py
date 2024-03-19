@@ -31,10 +31,11 @@ class Combiner():
         checkpath(self.outdir)
         self.wgt_dict = None
     
-    def __call__(self, from_load=False):
+    def __call__(self, from_load=False, **kwargs):
         """Get total cutflow and efficiency for all datasets.
         Parameters:
         - `from_load`: whether to load from output directory"""
+        if self.pltcfg.REFRESH: self.updatedir(**kwargs)
         self.getweights(from_load=from_load)
         raw_df, wgt_df = self.get_totcf(from_load=from_load)
         efficiency(self.outdir, wgt_df, append=False, save=True, save_name='total_cutflow_efficiency.csv')
@@ -147,14 +148,12 @@ class Combiner():
         srcdir = self.pltcfg.LOCAL_OUTPUT
         pass
 
-    def updatedir(self, fipattern='*.csv'):
+    def updatedir(self, startpattern='', endpattern='.csv'):
         """Update local input directories from condor"""
-        if self.pltcfg.REFRESH:
-            for ds in self.pltcfg.DATASETS:
-                remote_path = pjoin(self.pltcfg.CONDORPATH, ds)
-                files_tocp = glob_files
-                checkpath(pjoin(self.inputdir, ds))
-                cpfcondor(remote_path, pjoin(self.inputdir, ds))
+        for ds in self.pltcfg.DATASETS:
+            remote_path = pjoin(self.pltcfg.CONDORPATH, ds)
+            to_dir = pjoin(self.indir, ds)
+            transferfiles(remote_path, to_dir, startpattern=startpattern, endpattern=endpattern)
                 
         
 class DataPlotter():

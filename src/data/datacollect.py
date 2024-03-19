@@ -129,7 +129,6 @@ def weight_fl(filelist):
         success_list.append(xrd_file)
     
     return raw_tot, wgt_tot, success_list, failed_list
-    
 
 def info_file(file):
     """Return the number of raw events and weighted events of a file in a json dictionary
