@@ -31,12 +31,15 @@ class Combiner():
         checkpath(self.outdir)
         self.wgt_dict = None
     
-    def __call__(self, from_load=False, **kwargs):
+    def __call__(self, from_load=False, from_raw=True, **kwargs):
         """Get total cutflow and efficiency for all datasets.
         Parameters:
-        - `from_load`: whether to load from output directory"""
+        - `from_load`: whether to load from output directory
+        Returns:
+        - Raw cutflow dataframe, weighted cutflow dataframe
+        """
         if self.pltcfg.REFRESH: self.updatedir(**kwargs)
-        self.getweights(from_load=from_load)
+        self.getweights(from_load=from_load, from_raw=from_raw)
         raw_df, wgt_df = self.get_totcf(from_load=from_load)
         efficiency(self.outdir, wgt_df, append=False, save=True, save_name='total_cutflow_efficiency.csv')
         return raw_df, wgt_df

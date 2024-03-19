@@ -52,7 +52,7 @@ def transferfiles(srcpath, destpath, startpattern='', endpattern=''):
         else:
             checkcondorpath(destpath)
             for srcfile in glob_files(srcpath, startpattern, endpattern):
-                cpcondor(srcfile, f'{destpath}/{os.path.basename(srcfile)}', is_file=True)
+                cpcondor(srcfile, f'{destpath}/{os.path.basename(srcfile)}')
     elif isremote(srcpath):
         if isremote(destpath):
             raise ValueError("Destination path should be a local directory. Why are you transferring from EOS to EOS?")
