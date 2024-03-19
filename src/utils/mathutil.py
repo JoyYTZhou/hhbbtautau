@@ -51,7 +51,7 @@ def weight_cf(outdir, dsname, wgt, raw_cf, lumi=50):
     wgt_df.to_csv(outfiname)
     return wgt_df
 
-def efficiency(outdir, cfdf, overall=True, append=True, save=False, save_name=None):
+def efficiency(outdir, cfdf, overall=True, append=True, save=False, save_name='tot'):
     """Add or return efficiency for the cutflow table.
     
     Parameters
@@ -75,7 +75,7 @@ def efficiency(outdir, cfdf, overall=True, append=True, save=False, save_name=No
     else:
         return_df = efficiency_df
     if save:
-        finame = pjoin(outdir, f'{save_name}_eff.csv') if save_name else pjoin(outdir, 'tot_eff.csv')
+        finame = pjoin(outdir, f'{save_name}_eff.csv')
         return_df.to_csv(finame)
     return return_df
 
