@@ -22,7 +22,6 @@ def logresult(result, success_msg):
             stderr_message = "No error message available."
         logging.info(f"Operation not successful! Return code: {result.returncode}. Here's the error message =========================\n{stderr_message}")
 
-
 def initLogger(name, suffix):
     """Initialize a logger for a module."""
     logger = logging.getLogger(name)
