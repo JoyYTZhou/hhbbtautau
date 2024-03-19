@@ -2,46 +2,64 @@ import os
 import glob
 import subprocess
 from pathlib import Path
+import datetime
 
 runcom = subprocess.run
 pjoin = os.path.join
 PREFIX = "root://cmseos.fnal.gov"
 
-
-def list_xrdfs_files(remote_dir):
-    """List files/dirs in a remote xrdfs directory using subprocess.run."""
-    cmd = ["xrdfs", PREFIX, "ls", remote_dir]
-    result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-    files = sorted(result.stdout.strip().split('\n'))
-    return files
-
 def glob_files(dirname, startpattern, endpattern, **kwargs):
-    """Returns a list of files matching a pattern in a directory.
+    """Returns a list of files matching a pattern in a directory. If both patterns are None, return all files.
     
     Parameters
     - `dirname`: directory path (remote/local)
     - `startpattern`: pattern to match the start of the file name
     - `endpattern`: pattern to match the end of the file name
     - `kwargs`: additional arguments for filtering files
+
+    Return
+    - A list of files (str)
     """
     if dirname.startswith('/store/user'):
-        files = filter_xrdfs_files(dirname, start_pattern=startpattern, end_pattern=endpattern, **kwargs)
+        files = get_xrdfs_files(dirname, start_pattern=startpattern, end_pattern=endpattern, **kwargs)
     else:
-        pattern = f'{startpattern}*{endpattern}'
-        files = glob.glob(pjoin(dirname, pattern)) 
+        if startpattern == None and endpattern == None:
+            files = [str(file.absolute()) for file in Path(dirname).iterdir() if file.is_file()]
+        else:
+            pattern = f'{startpattern}*{endpattern}'
+            files = glob.glob(pjoin(dirname, pattern)) 
     return sorted(files)
 
-def checkcondorpath(dirname):
-    """Check if a condor path exists. If not will create one."""
-    check_dir_cmd = f"xrdfs {PREFIX} stat {dirname}"
-    create_dir_cmd = f"xrdfs {PREFIX} mkdir -p {dirname}"
-
-    proc = runcom(check_dir_cmd, shell=True, capture_output=True, text=True) 
-
-    if proc.returncode != 0:
-        runcom(create_dir_cmd, shell=True)
+def checkpath(dirname):
+    """Check if a directory exists. If not will create one."""
+    if dirname.startswith('/store/user/'):
+        checkcondorpath(dirname)
     else:
-        return True
+        checklocalpath(dirname)
+
+def transferfiles(srcpath, destpath, startpattern=None, endpattern=None):
+    """Transfer files between local and condor system.
+    
+    Parameters:
+    - `srcpath`: source path (local/remote)
+    - `destpath`: destination path (remote/local)
+    - `startpattern`: pattern to match the start of the file name
+    - `endpattern`: pattern to match the end of the file name
+    """
+    if isremote(destpath):
+        if isremote(srcpath):
+            raise ValueError("Source path should be a local directory. Why are you transferring from one EOS to another?")
+        else:
+            checkcondorpath(destpath)
+            for srcfile in glob_files(srcpath, startpattern, endpattern):
+                cpcondor(srcfile, f'{destpath}/{os.path.basename(srcfile)}', is_file=True)
+    elif isremote(srcpath):
+        if isremote(destpath):
+            raise ValueError("Destination path should be a local directory. Why are you transferring from EOS to EOS?")
+        else:
+            checklocalpath(destpath)
+            for srcfile in glob_files(srcpath, startpattern, endpattern):
+                cpfcondor(srcfile, f'{destpath}/')
 
 def delfilelist(filelist):
     """Remove a list of file"""
@@ -58,11 +76,13 @@ def delfilelist(filelist):
             print(f"Error deleting {file}: {e}")
     return None
     
-def checkpath(pathstr):
+def checklocalpath(pathstr):
     """Check if a local path exists. If not will create one."""
     path = Path(pathstr) 
     if not path.exists():
         path.mkdir(parents=True, exist_ok=True)
+
+
 
 def cpfcondor(srcpath, localpath):
     """Copy a root file FROM condor to LOCAL."""
@@ -76,14 +96,20 @@ def cpcondor(srcpath, destpath, is_file=True):
     result = runcom(comstr, shell=True, capture_output=True, text=True)
     return result
 
-def transferfiles(srcpath, destpath):
-    """Copy all files FROM one local directory to a condor directory. 
-    If destpath does not exist, will create one."""
-    checkcondorpath(destpath)
-    for srcfile in Path(srcpath).iterdir():
-        if srcfile.is_file():
-            cpcondor(str(srcfile), f"{destpath}/{srcfile.name}", is_file=True)
+def isremote(pathstr):
+    """Check if a path is remote."""
+    is_remote = pathstr.startswith('/store/user') or pathstr.startswith("root://")
+    return is_remote
 
+def checkcondorpath(dirname):
+    """Check if a condor path exists. If not will create one."""
+    check_dir_cmd = f"xrdfs {PREFIX} stat {dirname}"
+    create_dir_cmd = f"xrdfs {PREFIX} mkdir -p {dirname}"
+    proc = runcom(check_dir_cmd, shell=True, capture_output=True, text=True) 
+    if proc.returncode != 0:
+        runcom(create_dir_cmd, shell=True)
+    else:
+        return True
 
 def delfiles(dirname, pattern='*.root'):
     """Delete all files in a directory with a specific pattern."""
@@ -92,14 +118,34 @@ def delfiles(dirname, pattern='*.root'):
         for fipath in dirpath.glob(pattern):
             fipath.unlink()
 
-def filter_xrdfs_files(remote_dir, start_pattern, end_pattern, add_prefix=True):
-    """Filter XRDFS files in a remote directory by a specific file ending."""
+def get_xrdfs_files(remote_dir, start_pattern, end_pattern, add_prefix=True):
+    """Get the files in a remote directory that match a pattern. If both patterns==None, returns all files.
+    
+    Parameters:
+    - `remote_dir`: remote directory path
+    - `start_pattern`: pattern to match the start of the file name
+    - `end_pattern`: pattern to match the end of the file name
+    - `add_prefix`: if True, will add the PREFIX to the file path
+    
+    Returns:
+    - list of files that match the pattern
+    """
     all_files = list_xrdfs_files(remote_dir)
-    if add_prefix:
-        filtered_files = [PREFIX + "/" + f for f in all_files if f.split('/')[-1].startswith(start_pattern) and f.split('/')[-1].endswith(end_pattern)]
-    else: 
-        filtered_files = [f for f in all_files if f.split('/')[-1].startswith(start_pattern) and f.split('/')[-1].endswith(end_pattern)]
-    return sorted(filtered_files)
+    if start_pattern == None and end_pattern == None:
+        return sorted(all_files)
+    else:
+        if add_prefix:
+            filtered_files = [PREFIX + "/" + f for f in all_files if f.split('/')[-1].startswith(start_pattern) and f.split('/')[-1].endswith(end_pattern)]
+        else: 
+            filtered_files = [f for f in all_files if f.split('/')[-1].startswith(start_pattern) and f.split('/')[-1].endswith(end_pattern)]
+        return sorted(filtered_files)
+
+def list_xrdfs_files(remote_dir):
+    """List files/dirs in a remote xrdfs directory using subprocess.run."""
+    cmd = ["xrdfs", PREFIX, "ls", remote_dir]
+    result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+    files = sorted(result.stdout.strip().split('\n'))
+    return files
 
 def get_xrdfs_file_info(remote_file):
     """Get information (size, modification time) of a remote xrdfs file/dir"""
