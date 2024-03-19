@@ -4,6 +4,7 @@ from .processor import Processor
 from .custom import switch_selections
 import json as json
 from utils.filehelper import *
+from utils.filesysutil import glob_files
 import gc
 from itertools import islice
 from config.selectionconfig import runsetting as rs
@@ -51,7 +52,7 @@ def loadmeta(save=False):
     elif rs.INPUTFILE_PATH.startswith('/store/user/'):
         loaded = realmeta[rs.PROCESS_NAME]
         for dataset in loaded.keys():
-            loaded[dataset]['filelist'] = filter_xrdfs_files(rs.INPUTFILE_PATH, dataset, '.root')
+            loaded[dataset]['filelist'] = glob_files(rs.INPUTFILE_PATH, startpattern=dataset, endpattern='.root')
     return loaded
 
 def submitfutures(client):

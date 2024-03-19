@@ -8,7 +8,7 @@ runcom = subprocess.run
 pjoin = os.path.join
 PREFIX = "root://cmseos.fnal.gov"
 
-def glob_files(dirname, startpattern, endpattern, **kwargs):
+def glob_files(dirname, startpattern='', endpattern='', **kwargs):
     """Returns a list of files matching a pattern in a directory. If both patterns are None, return all files.
     
     Parameters
@@ -37,7 +37,7 @@ def checkpath(dirname):
     else:
         checklocalpath(dirname)
 
-def transferfiles(srcpath, destpath, startpattern=None, endpattern=None):
+def transferfiles(srcpath, destpath, startpattern='', endpattern=''):
     """Transfer files between local and condor system.
     
     Parameters:
@@ -82,17 +82,15 @@ def checklocalpath(pathstr):
     if not path.exists():
         path.mkdir(parents=True, exist_ok=True)
 
-
-
 def cpfcondor(srcpath, localpath):
     """Copy a root file FROM condor to LOCAL."""
     comstr = f'xrdcp {srcpath} {localpath}' if srcpath.startswith('root://') else f'xrdcp {PREFIX}/{srcpath} {localpath}'
     result = runcom(comstr, shell=True, capture_output=True, text=True)
     return result
 
-def cpcondor(srcpath, destpath, is_file=True):
+def cpcondor(srcpath, destpath):
     """Copy srcpath (file/directory) FROM local to condor destpath"""
-    comstr = f'xrdcp -f {srcpath} {PREFIX}/{destpath}' if is_file else f'xrdcp -r {srcpath} {destpath}'
+    comstr = f'xrdcp {srcpath} {destpath}' if destpath.startswith('root://') else f'xrdcp {srcpath} {PREFIX}/{destpath}' 
     result = runcom(comstr, shell=True, capture_output=True, text=True)
     return result
 
