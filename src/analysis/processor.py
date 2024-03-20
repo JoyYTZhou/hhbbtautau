@@ -65,8 +65,7 @@ class Processor:
         """
         msg = []
         events = self.loadfile(filename, suffix)
-
-        passed = self.evtsel.select(events, return_veto=False)
+        passed = self.evtsel(events)
         if write_npz:
             npzname = pjoin(self.outdir, f'cutflow_{suffix}.npz')
             self.evtsel.cfobj.to_npz(npzname)

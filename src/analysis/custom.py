@@ -14,9 +14,9 @@ def switch_selections(sel_name):
 class mockskimEvtSel(BaseEventSelections):
     """Reduce event sizes"""
     def selectlep(self, events):
-        electron = Object(events, "Electron", self.lepselcfg.electron)
-        muon = Object(events, "Muon", self.lepselcfg.muon)
-        tau = Object(events, "Tau", self.lepselcfg.tau)
+        electron = Object(events, "Electron")
+        muon = Object(events, "Muon")
+        tau = Object(events, "Tau")
 
         e_mask = (electron.ptmask(opr.ge) & \
                 electron.custommask('cbtightid', opr.ge) & \
@@ -46,7 +46,7 @@ class mockskimEvtSel(BaseEventSelections):
         return None
    
     def selectjet(self, events):
-        jet = Object(events, 'Jet', self.jetselcfg.jet)
+        jet = Object(events, 'Jet')
         j_mask = (jet.ptmask(opr.ge) &
                   jet.absetamask(opr.le))
 
@@ -60,12 +60,12 @@ class mockskimEvtSel(BaseEventSelections):
 class prelimEvtSel(BaseEventSelections):
     """Custom event selection class for the preliminary event selection."""
     def selectlep(self, events):
-        tau = Object(events, 'Tau', self.lepselcfg.tau)
+        tau = Object(events, 'Tau')
         self.objsel.add(name="OSTau", selection=tau.osmask())
         return None
 
     def selectjet(self, events):
-        jet = Object(events, 'Jet', self.jetselcfg.jet)
+        jet = Object(events, 'Jet')
         j_mask = (jet.ptmask(opr.ge) &
                   jet.absetamask(opr.le))
         j_nummask = jet.numselmask(opr.ge, j_mask)
