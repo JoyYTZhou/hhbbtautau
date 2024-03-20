@@ -5,24 +5,24 @@ default:
     nJet: 2
   lepselections:
     Electron: 
-      cbtightid: 4
+      cbtightid: 1
       mvaisoid: 0.8
-      pt: 40
+      pt: 25
       eta: 2.1
       dxy: 0.045
       dz: 0.2
       count: 0
     Muon: 
-      pt: 40
+      pt: 20
       eta: 2.1
       dxy: 0.045
       dz: 0.2
-      cbtightid: 1
-      isoid: 6
+      looseid: true
+      isoid: 1
       count: 0
     Tau:
       pt: 20
-      eta: 2.5
+      eta: 2.3
       idvsjet: 5
       idvsmu: 1
       idvse: 2
@@ -33,6 +33,7 @@ default:
     Jet:
       pt: 20
       eta: 2.4
+      btag: 0.5
       count: 2
     FatJet:
       mass: 40
@@ -66,7 +67,7 @@ default:
       mass: Muon_mass
       dxy: Muon_dxy
       dz: Muon_dz
-      iso: Muon_pfRelIso04_all
+      looseid: Muon_looseId
       isoid: Muon_pfIsoId
       cbtightid: Muon_tightId
       charge: Muon_charge
@@ -75,7 +76,7 @@ default:
       eta: Jet_eta
       phi: Jet_phi
       mass: Jet_mass
-      deepJetbtagger: Jet_btagDeepFlavB
+      btag: Jet_btagDeepFlavB
       deepJetCvsB: Jet_btagDeepFlavCvB
       jetID: Jet_jetId
     FatJet:
