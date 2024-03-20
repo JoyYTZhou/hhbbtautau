@@ -33,7 +33,7 @@ default:
     Jet:
       pt: 20
       eta: 2.4
-      btag: 0.5
+      btag: 0.4
       count: 2
     FatJet:
       mass: 40

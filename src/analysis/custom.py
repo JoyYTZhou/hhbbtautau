@@ -48,12 +48,13 @@ class mockskimEvtSel(BaseEventSelections):
     def selectjet(self, events):
         jet = Object(events, 'Jet', self.jetselcfg.jet)
         j_mask = (jet.ptmask(opr.ge) &
-                  jet.absetamask(opr.le) &
-                  jet.custommask('btag', opr.ge))
+                  jet.absetamask(opr.le))
 
         j_nummask = jet.numselmask(opr.ge, j_mask)
-        
-        self.objsel.add_multiple({"Jet Selection": j_nummask})
+        print(j_nummask.compute())
+        self.objsel.add_multiple({"Jet Selection": j_nummask,
+                                  "Jet Btag": jet.custommask('btag', opr.ge)})
+
         return None 
         
 class prelimEvtSel(BaseEventSelections):
