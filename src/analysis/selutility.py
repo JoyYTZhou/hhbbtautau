@@ -173,6 +173,9 @@ class Object():
         sum_charge = abs(dak.sum(self.events[aodname], axis=1))
         mask = (sum_charge < dak.num(self.events[aodname], axis=1))
         return mask
+    
+    def getdakobj(self):
+        return Object.set_dakzipped(self.events, self.mapcfg)
 
     @staticmethod
     def fourvector(events, field, sort=True, sortname='pt'):

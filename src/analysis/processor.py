@@ -92,7 +92,7 @@ class Processor:
 
         if self.rtcfg.TRANSFER:
             condorpath = f'{self.rtcfg.TRANSFER_PATH}/{cutflow_name}'
-            cpcondor(localpath, condorpath, is_file=True)
+            cpcondor(localpath, condorpath)
         msg.append(f"file {filename} processed successfully!")
         if self.rtcfg.COPY_LOCAL: delfiles(self.rtcfg.COPY_DIR)
 

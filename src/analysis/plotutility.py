@@ -11,7 +11,7 @@ import awkward as ak
 from utils.mathutil import *
 import gc
 
-class Combiner():
+class CFCombiner():
     """
     This class provides methods for getting cutflows of datasets
     It includes functions for combining root files, computing cutflow tables, calculating efficiencies,
@@ -31,17 +31,20 @@ class Combiner():
         checkpath(self.outdir)
         self.wgt_dict = None
     
-    def __call__(self, from_load=False, from_raw=True, **kwargs):
+    def __call__(self, from_load=False, from_raw=True, name='cutflow_tot', **kwargs):
         """Get total cutflow and efficiency for all datasets.
         Parameters:
         - `from_load`: whether to load from output directory
+        - `from_raw`: whether to compute weights based on number of raw events instead of weighted
+        - `name`: name of the cutflow output file
+        - `kwargs`: additional arguments for the function
         Returns:
         - Raw cutflow dataframe, weighted cutflow dataframe
         """
         if self.pltcfg.REFRESH: self.updatedir(**kwargs)
         self.getweights(from_load=from_load, from_raw=from_raw)
-        raw_df, wgt_df = self.get_totcf(from_load=from_load)
-        efficiency(self.outdir, wgt_df, append=False, save=True, save_name='aftjet')
+        raw_df, wgt_df = self.get_totcf(from_load=from_load, name=name)
+        efficiency(self.outdir, wgt_df, append=False, save=True, save_name='tot')
         return raw_df, wgt_df
 
     @property
@@ -65,7 +68,7 @@ class Combiner():
         else:
             self.wgt_dict = DataLoader.haddWeights(self.pltcfg.DATASETS, self.pltcfg.DATAPATH, save, from_raw)
     
-    def get_totcf(self, from_load=False, output=True):
+    def get_totcf(self, name='cutflow_tot', from_load=False, output=True):
         """Load all cutflow tables for all datasets from output directory and combine them into one. 
         Scaled by luminosity in self.pltcfg currently.
         
@@ -77,8 +80,8 @@ class Combiner():
         - Tuple of two dataframes (raw, weighted) of cutflows
         """
         if from_load:
-            raw_df = pd.read_csv(pjoin(self.outdir, "cutflow_raw_tot.csv"), index_col=0)
-            wgt_df = pd.read_csv(pjoin(self.outdir, "cutflow_wgt_tot.csv"), index_col=0)
+            raw_df = pd.read_csv(pjoin(self.outdir, f"{name}_raw.csv"), index_col=0)
+            wgt_df = pd.read_csv(pjoin(self.outdir, f"{name}_wgt.csv"), index_col=0)
         else: 
             raw_df_list = []
             wgt_df_list = []
@@ -93,8 +96,8 @@ class Combiner():
             raw_df = pd.concat(raw_df_list, axis=1)
             wgt_df = pd.concat(wgt_df_list, axis=1)
             if output:
-                raw_df.to_csv(pjoin(self.outdir, "cutflow_raw_tot.csv"))
-                wgt_df.to_csv(pjoin(self.outdir, "cutflow_wgt_tot.csv"))
+                raw_df.to_csv(pjoin(self.outdir, f"{name}_raw.csv"))
+                wgt_df.to_csv(pjoin(self.outdir, f"{name}_wgt.csv"))
 
         return raw_df, wgt_df
     
@@ -131,22 +134,6 @@ class Combiner():
 
         return allds_cf
 
-    def concat_obj(self, srcdir, dsname, save=True):
-        """Take a src dir and one dataset name to concat all observables.csv output in one channel""" 
-        df_dict = {}
-        channel_list = self.pltcfg.CHANNELS
-        for j, channelname in enumerate(channel_list):
-            pattern = f'{srcdir}/{dsname}/{channelname}*.csv' 
-            files = glob.glob(pattern)
-            dfs = [pd.read_csv(file_name, header=0) for file_name in files]
-            concat_df = pd.concat(dfs)
-            if save:
-                outfiname = os.path.join(self.pltcfg.LOCAL_OUTPUT, f'{dsname}_{channelname}.csv')
-                concat_df.to_csv(outfiname)
-            df_dict.update({channelname: concat_df})
-            
-        return df_dict
-    
     def load_allds(self):
         srcdir = self.pltcfg.LOCAL_OUTPUT
         pass
@@ -163,7 +150,9 @@ class DataPlotter():
     def __init__(self):
         pass
     
-    def sortobj(self, sort_by, sort_what, **kwargs):
+
+    @staticmethod
+    def sortobj(data, sort_by, sort_what, **kwargs):
         """Return an awkward array representation of the sorted attribute in data.
         
         Parameters
@@ -171,8 +160,8 @@ class DataPlotter():
         - `sort_what`: the attribute to be sorted
         - `kwargs`: additional arguments for sorting
         """
-        mask = DataPlotter.sortmask(self.data[sort_by], **kwargs)
-        return arr_handler(self.data[sort_what])[mask]
+        mask = DataPlotter.sortmask(data[sort_by], **kwargs)
+        return arr_handler(data[sort_what])[mask]
     
     @staticmethod
     def sortmask(dfarr, **kwargs):
@@ -206,7 +195,7 @@ class DataPlotter():
         return hist, bin_edges
 
     @staticmethod
-    def plot_var(hist, bin_edges, title, xlabel, range):
+    def plot_var(hist, bin_edges, title, xlabel, range, save=True, save_name='plot.png'):
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.set_title(title)
         hep.histplot(
