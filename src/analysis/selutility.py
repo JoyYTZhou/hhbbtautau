@@ -10,8 +10,8 @@ import operator as opr
 from config.selectionconfig import selectionsettings as selcfg
 from utils.mathutil import checkevents
 
-default_lepsel = selcfg.lepselections
-default_jetsel = selcfg.jetselections
+default_trigsel = selcfg.triggerselections
+default_objsel = selcfg.objselections
 default_mapcfg = selcfg.outputs
 
 class BaseEventSelections:
@@ -24,42 +24,39 @@ class BaseEventSelections:
     - `objsel`: PackedSelection object to keep track of cutflow
     - `cutflow`: cutflow object
     """
-    def __init__(self, lepcfg=default_lepsel, jetcfg=default_jetsel, mapcfg=default_mapcfg) -> None:
+    def __init__(self, objcfg=default_objsel, mapcfg=default_mapcfg) -> None:
         """Initialize the event selection object with the given selection configurations."""
-        self._lepselcfg = lepcfg
-        self._jetselcfg = jetcfg
+        self._objselcfg = objcfg
         self._mapcfg = mapcfg
         self.objsel = PackedSelection()
         self.cutflow = None
         self.cfobj = None
+    
+    def __call__(self, events, **kwargs):
+        """Apply all the selections in line on the events"""
+        return self.callevtsel(events, **kwargs)
 
     @property
-    def lepselcfg(self):
-        return self._lepselcfg
-
-    @property
-    def jetselcfg(self):
-        return self._jetselcfg
+    def objselcfg(self):
+        return self._objselcfg
     
     @property
     def mapcfg(self):
         return self._mapcfg
 
-    def selectlep(self, events):
-        """Custom function to set the lepton selections based on config.
+    def setevtsel(self, events):
+        """Custom function to set the object selections on event levels based on config.
+        Mask should be N*bool 1-D array.
+
         :param events: events loaded from a .root file
         """
         pass
                         
-    def selectjet(self, events):
-        """Custom function to select jets based on config.
-        :param events: events loaded from a .root file"""
-        pass
-        
-    def callobjsel(self, events, compute_veto=False):
+    def callevtsel(self, events, compute_veto=False):
         """Apply all the selections in line on the events
         :return: passed events, vetoed events
         """
+        self.setevtsel(events)
         passed = events[self.objsel.all()]
         self.cfobj = self.objsel.cutflow(*self.objsel.names)
         self.cutflow = self.cfobj.result()
@@ -68,13 +65,6 @@ class BaseEventSelections:
             result = (passed, vetoed)
         else:
             result = passed
-        return result
-
-    def select(self, events, return_veto=False):
-        """Apply all selections in selection config object on the events."""
-        self.selectlep(events)
-        self.selectjet(events)
-        result = self.callobjsel(events, return_veto)
         return result
 
     def cf_to_df(self):
@@ -100,7 +90,7 @@ class Object():
     - `selection`: PackedSelection object to keep track of more detailed cutflow
     """
 
-    def __init__(self, events, name, selcfg, **kwargs):
+    def __init__(self, events, name, **kwargs):
         """Construct an object from provided events with given selection configuration.
         
         Parameters
@@ -108,7 +98,7 @@ class Object():
         - `selcfg`: Selection configuration for the object
         """
         self._name = name
-        self._selcfg = selcfg
+        self._selcfg = kwargs.get('selcfg', default_objsel[name])
         self._mapcfg = kwargs.get('mapcfg', default_mapcfg[name])
         self.events = events
         self.cutflow = kwargs.get('cutflow', PackedSelection())

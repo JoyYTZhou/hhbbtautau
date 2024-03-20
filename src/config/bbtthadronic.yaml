@@ -3,7 +3,7 @@ default:
   triggerselections: 
     nFatJet: 1
     nJet: 2
-  lepselections:
+  objselections:
     Electron: 
       cbtightid: 1
       mvaisoid: 0.8
