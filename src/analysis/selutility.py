@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 import awkward as ak
 import dask_awkward as dak
 import dask
@@ -8,7 +7,6 @@ import vector as vec
 import pandas as pd
 import operator as opr
 from config.selectionconfig import selectionsettings as selcfg
-from utils.mathutil import checkevents
 
 default_trigsel = selcfg.triggerselections
 default_objsel = selcfg.objselections

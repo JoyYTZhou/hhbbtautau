@@ -1,15 +1,12 @@
 import mplhep as hep
 import matplotlib.pyplot as plt
-import glob
 import os
 import json
-from utils.rootutil import *
 from utils.filesysutil import *
 from utils.cutflowutil import *
+from utils.rootutil import DataLoader, arr_handler
 from analysis.selutility import Object
-import pickle
 import awkward as ak
-import gc
 
 class CFCombiner():
     """
