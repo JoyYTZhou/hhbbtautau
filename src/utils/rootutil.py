@@ -153,7 +153,7 @@ def make_ntuple(filelist, outname, outdir, tree_name='tree', branch_names=None):
 def load_roots(filelist, **kwargs):
     pass
 
-def evts_to_roots(events, destination, **kwargs):
+def objs_to_root(events, destination, **kwargs):
 
     compression = kwargs.pop('compression', None)
     compression_level = kwargs.pop('compression_level', 1)
@@ -176,18 +176,18 @@ def evts_to_roots(events, destination, **kwargs):
     if compression is not None: 
         compression = uproot.compression.Compression.from_code_pair(compression_code, compression_level)
     
-    out_file = uproot.recreate(
-        destination,
-        compression=compression
-    )
-    branch_types = {name: events[name].type for name in events.fields}
+    #out_file = uproot.recreate(
+        #destination,
+        #compression=compression
+    #)
+    #branch_types = {name: events[name].type for name in events.fields}
     
-    out_file.mktree(name=tree_name,
-                    branch_types=branch_types,
-                    title='Events')
-    out_file[tree_name].extend({name: events[name] for name in events.fields})
+    #out_file.mktree(name=tree_name,
+                    #branch_types=branch_types,
+                    #title='Events')
+    #out_file[tree_name].extend({name: events[name] for name in events.fields})
 
-    return out_file
+    #return out_file
 
 
 def load_roots_pd(filelist, branch_names, tree_name):
