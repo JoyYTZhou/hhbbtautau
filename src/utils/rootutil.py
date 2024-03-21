@@ -6,10 +6,10 @@ import json
 import pickle
 import awkward as ak
 import random
-import gc
 from utils.filesysutil import *
 
 pjoin = os.path.join
+runcom = subprocess.run
 
 class DataLoader():
     def __init__(self) -> None:
@@ -88,7 +88,7 @@ class DataLoader():
         pass
 
     @staticmethod
-    def combine_roots(pltcfg, wgt_dict, level=1, out_suffix='', **kwargs) -> None:
+    def hadd_roots(pltcfg, wgt_dict, **kwargs) -> None:
         """Combine all root files of datasets in plot setting into one dataframe.
         
         Parameters
@@ -97,27 +97,21 @@ class DataLoader():
         - `flat`: whether it's n-tuple
         - `out_suffix`: suffix for the output file
         """
-        outdir = pltcfg.OUTPUTDIR
-        checkpath(outdir)
+        batch_size = kwargs.pop("batch_size", 15)
         for process, dsitems in wgt_dict.items():
+            outdir = pjoin(pltcfg.OUTPUTDIR, process)
+            checkpath(outdir)
             indir = pltcfg.INPUTDIR
             ds_dir = pjoin(indir, process)
             for ds in dsitems.keys():
-                added_columns = {'dataset': process} if level==0 else {'dataset': ds} 
-                empty_fis = concat_roots(directory=ds_dir,
-                                         startpattern=f'{ds}_',
-                                         fields=pltcfg.PLOT_VARS, 
-                                         outdir=outdir,
-                                         outname=ds+out_suffix,
-                                         extra_branches=pltcfg.EXTRA_VARS, 
-                                         tree_name = pltcfg.TREENAME,
-                                         added_columns=added_columns,
-                                         **kwargs)
-                gc.collect()
+                root_files = glob_files(ds_dir, ds, '.root')
+                for i in range(0, len(root_files), batch_size):
+                    batch_files = root_files[i:i+batch_size]
+                    outname = pjoin(outdir, f"{ds}_{i//batch_size+1}.root") 
+                    call_hadd(outname, batch_files)
                 if pltcfg.CONDOR_TRANSFER:
                     transferfiles(outdir, pltcfg.CONDORPATH)
-                    delfiles(outdir, pattern='*.pkl')
-        if empty_fis != [] & pltcfg.CLEAN: delfilelist(empty_fis)
+                    delfiles(outdir, pattern='*.root')
         return None
 
 def checkevents(events):
@@ -150,14 +144,25 @@ def arr_handler(dfarr):
 def make_ntuple(filelist, outname, outdir, tree_name='tree', branch_names=None):
     pass
 
-def load_roots(filelist, **kwargs):
-    pass
+def objs_to_roots(events, objectnames, destination, **kwargs):
+    compression = get_compression(**kwargs)
+    tree_name = kwargs.pop('tree_name', 'Events')
+    out_file = uproot.recreate(
+        destination,
+        compression=compression
+    )
+    branch_types = {name: events[name].type for name in events.fields}
+    
+    out_file.mktree(name=tree_name,
+                    branch_types=branch_types,
+                    title='Events')
+    out_file[tree_name].extend({name: events[name] for name in events.fields})
 
-def evts_to_roots(events, destination, **kwargs):
+    return out_file
 
+def get_compression(**kwargs):
     compression = kwargs.pop('compression', None)
     compression_level = kwargs.pop('compression_level', 1)
-    tree_name = kwargs.pop('tree_name', 'Events')
 
     if compression in ("LZMA", "lzma"):
         compression_code = uproot.const.kLZMA
@@ -175,23 +180,11 @@ def evts_to_roots(events, destination, **kwargs):
     
     if compression is not None: 
         compression = uproot.compression.Compression.from_code_pair(compression_code, compression_level)
-    
-    out_file = uproot.recreate(
-        destination,
-        compression=compression
-    )
-    branch_types = {name: events[name].type for name in events.fields}
-    
-    out_file.mktree(name=tree_name,
-                    branch_types=branch_types,
-                    title='Events')
-    out_file[tree_name].extend({name: events[name] for name in events.fields})
 
-    return out_file
+    return compression
 
-
-def load_roots_pd(filelist, branch_names, tree_name):
-    """Load root files in filelist and combine them into a single DataFrame.
+def load_roots(filelist, branch_names=None, tree_name='Events', lib='ak'):
+    """Load root files in filelist and combine them into a single Arr.
     
     Parameters:
     - filelist: list of file paths
@@ -199,7 +192,7 @@ def load_roots_pd(filelist, branch_names, tree_name):
     - tree_name: name of the tree in the root file
 
     Returns:
-    - A pandas DataFrame containing the combined data from all root files in filelist.
+    - A data arr containing the combined data from all root files in filelist.
     - A list of empty files
     """
     emptylist = []
@@ -210,12 +203,26 @@ def load_roots_pd(filelist, branch_names, tree_name):
                 emptylist.append(root_file) 
             else:
                 tree = file[tree_name]
-                df = tree.arrays(branch_names, library="pd")
-                dfs.append(df)
-    combined_df = pd.concat(dfs, ignore_index=True)
-    return combined_df, emptylist
+                dfs.append(tree.arrays(branch_names, library=lib))
+    combined_evts = ak.concatenate(dfs)
+    return combined_evts, emptylist
 
-def concat_roots(directory, startpattern, fields, outdir, outname, batch_size=35, extra_branches = [], tree_name='tree', added_columns={}):
+def write_root(evts, destination, outputtree="Events", title="Events", compression=None):
+    """Write arrays to root file"""
+    branch_types = {name: evts[name].type for name in evts.fields}
+    with uproot.recreate(destination, compression=compression) as file:
+        file.mktree(name=outputtree, branch_types=branch_types, title=title)
+        file[outputtree].extend({name: evts[name] for name in evts.fields}) 
+
+def call_hadd(output_file, input_files):
+    command = ['hadd', '-f0', output_file] + input_files
+    result = subprocess.run(command, capture_output=True, text=True)
+    if result.returncode == 0:
+        print(f"Merged files into {output_file}")
+    else:
+        print(f"Error merging files: {result.stderr}")    
+
+def concat_roots(directory, startpattern, outdir, fields=None, batch_size=20, extra_branches = [], **kwargs):
     """
     Load specific branches from ROOT files matching a pattern in a directory, and combine them into a single DataFrame.
 
@@ -224,7 +231,6 @@ def concat_roots(directory, startpattern, fields, outdir, outname, batch_size=35
     - startpattern: Pattern to match the start of the ROOT file name.
     - fields: List of field names to load from each ROOT file.
     - outdir: Path to the directory to save the combined DataFrame.
-    - outname: Name of the combined DataFrame.
     - batch_size: Number of ROOT files to load at a time.
     - extra_branches: List of extra branches to load from each ROOT file.
     - tree_name: Name of the tree to load
@@ -234,20 +240,23 @@ def concat_roots(directory, startpattern, fields, outdir, outname, batch_size=35
     - A list of empty files among the searched ROOT files
     """
     checkpath(outdir)
-    root_files = glob_files(directory, startpattern, endpattern='.root')
+    tree_name=kwargs.pop('tree_name', "Events")
+    root_files = glob_files(directory, startpattern, endpattern=kwargs.pop('endpattern', '.root'))
     random.shuffle(root_files)
     emptyfiles = []
-    branch_names = find_branches(root_files[0], fields, tree_name) 
-    branch_names.extend(extra_branches)
+
+    if fields is not None:
+        branch_names = find_branches(root_files[0], fields, tree_name=tree_name)
+        branch_names.extend(extra_branches)
+    else:
+        branch_names = None
+
     for i in range(0, len(root_files), batch_size):
         batch_files = root_files[i:i+batch_size]
-        combined_df, empty_list = load_roots(batch_files, branch_names, tree_name)
+        combined_evts, empty_list = load_roots(batch_files, branch_names, tree_name=tree_name)
         emptyfiles.extend(empty_list)
-        if added_columns != {}: 
-            for column, value in added_columns.items():
-                combined_df[column] = value
-        outfilepath = pjoin(outdir, f'{outname}_{i//batch_size + 1}.pkl')
-        combined_df.to_pickle(outfilepath)
+        outfilepath = pjoin(outdir, f'{startpattern}_{i//batch_size + 1}.pkl')
+        write_root(combined_evts, outfilepath, **kwargs)
     return emptyfiles
 
 def find_branches(file_path, object_list, tree_name) -> list:
