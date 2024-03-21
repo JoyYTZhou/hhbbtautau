@@ -3,6 +3,7 @@ import glob
 import subprocess
 from pathlib import Path
 import datetime
+import logging
 
 runcom = subprocess.run
 pjoin = os.path.join
@@ -60,6 +61,37 @@ def transferfiles(srcpath, destpath, startpattern='', endpattern=''):
             checklocalpath(destpath)
             for srcfile in glob_files(srcpath, startpattern, endpattern):
                 cpfcondor(srcfile, f'{destpath}/')
+
+def logresult(result, success_msg):
+    if result.returncode == 0:
+        logging.debug(success_msg)
+    else:
+        # Ensure stderr is a string. Decode if it's bytes.
+        stderr_message = result.stderr.decode('utf-8') if isinstance(result.stderr, bytes) else result.stderr
+        # Check if stderr is empty or None
+        if not stderr_message:
+            stderr_message = "No error message available."
+        logging.info(f"Operation not successful! Return code: {result.returncode}. Here's the error message =========================\n{stderr_message}")
+
+def initLogger(name, suffix):
+    """Initialize a logger for a module."""
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
+
+    debug_handler = logging.FileHandler(f"{name}_daskworker_{suffix}.log")
+    debug_handler.setLevel(logging.DEBUG)
+
+    error_handler = logging.FileHandler(f"{name}daskworker_{suffix}.err")
+    error_handler.setLevel(logging.ERROR)
+
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    debug_handler.setFormatter(formatter)
+    error_handler.setFormatter(formatter)
+
+    logger.addHandler(debug_handler)
+    logger.addHandler(error_handler)
+
+    return logger
 
 def delfilelist(filelist):
     """Remove a list of file"""
