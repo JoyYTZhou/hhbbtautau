@@ -1,7 +1,7 @@
 # This file contains the Processor class, which is used to process individual files or filesets.
 # The behavior of the Processor class is highly dependent on run time configurations and the event selection class used.
-
-from utils.rootutil import *
+from utils.filesysutil import *
+import uproot
 import pickle
 from .selutility import BaseEventSelections
 import shutil

@@ -47,7 +47,10 @@ def loadmeta(save=False):
             metadata = json.load(samplepath)
         loaded = metadata
         if rs.RESUME: 
-            sliced_dict = dict(islice(metadata.items(), rs.DSINDX, None))
+            if isinstance(rs.DSINDX, int):
+                sliced_dict = dict(islice(metadata.items(), rs.DSINDX, None))
+            elif isinstance(rs.DSINDX, str):
+                pass
             loaded = sliced_dict
     elif rs.INPUTFILE_PATH.startswith('/store/user/'):
         loaded = realmeta[rs.PROCESS_NAME]
