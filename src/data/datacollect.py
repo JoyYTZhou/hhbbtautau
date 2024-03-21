@@ -247,10 +247,10 @@ def produceCSV(datadir):
     all_df.to_csv('compiled_weight.csv', index=False)
     
 if __name__ == "__main__":
-    # query_MCsamples("data.json", "data_file.json", regex="NanoAODv")
-    # add_weight("data_file.json", "preprocessed", dsname=['ZH','SingleH','ZZ'])
+    query_MCsamples("data.json", "data_file.json", regex="NanoAODv")
+    add_weight("data_file.json", "preprocessed", dsname=['ZH', 'ZZ', 'WZ'])
     # print("Jobs finished!")
-    produceCSV('preprocessed')
+    # produceCSV('preprocessed')
 
 
 
