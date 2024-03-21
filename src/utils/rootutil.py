@@ -92,10 +92,6 @@ class DataLoader():
         """Combine all root files of datasets in plot setting into one dataframe.
         
         Parameters
-        - `level`: concatenation level. 0 for overall process, 1 for dataset
-        - `wgt_dict`: dictionary of process, dataset, and weights
-        - `flat`: whether it's n-tuple
-        - `out_suffix`: suffix for the output file
         """
         batch_size = kwargs.pop("batch_size", 15)
         for process, dsitems in wgt_dict.items():
@@ -215,7 +211,7 @@ def write_root(evts, destination, outputtree="Events", title="Events", compressi
         file[outputtree].extend({name: evts[name] for name in evts.fields}) 
 
 def call_hadd(output_file, input_files):
-    command = ['hadd', '-f0', output_file] + input_files
+    command = ['hadd', '-f0 -O', output_file] + input_files
     result = subprocess.run(command, capture_output=True, text=True)
     if result.returncode == 0:
         print(f"Merged files into {output_file}")
