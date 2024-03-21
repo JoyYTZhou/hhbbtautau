@@ -18,8 +18,6 @@ class BaseEventSelections:
     """Base class for event selections.
     
     Attributes
-    - `lepselcfg`: lepton selection configuration. Default to selcfg.lepselections
-    - `jetselcfg`: jet selection configuration. Default to selcfg.jetselections
     - `mapcfg`: mapping configuration {key=abbreviation, value=nanoaodname}
     - `objsel`: PackedSelection object to keep track of cutflow
     - `cutflow`: cutflow object
@@ -57,14 +55,18 @@ class BaseEventSelections:
         :return: passed events, vetoed events
         """
         self.setevtsel(events)
-        passed = events[self.objsel.all()]
-        self.cfobj = self.objsel.cutflow(*self.objsel.names)
-        self.cutflow = self.cfobj.result()
-        if compute_veto: 
-            vetoed = events[~(self.objsel.all())]
-            result = (passed, vetoed)
+        if self.objsel.names:
+            passed = events[self.objsel.all()]
+            self.cfobj = self.objsel.cutflow(*self.objsel.names)
+            self.cutflow = self.cfobj.result()
+            if compute_veto: 
+                vetoed = events[~(self.objsel.all())]
+                result = (passed, vetoed)
+            else:
+                result = passed
         else:
-            result = passed
+            raise UserWarning("Events selections not set, this is base selection!")
+            result = events
         return result
 
     def cf_to_df(self):
