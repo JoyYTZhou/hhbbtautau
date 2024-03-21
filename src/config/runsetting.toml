@@ -23,7 +23,7 @@ PROCESS_NAME = "@format {env[PROCESS_NAME]}"
 TREE_NAME = "Events"
 SEL_NAME = 'skim'
 CONDORPATH = "/store/user/joyzhou/skim"
-# INPUTFILE_PATH = "@format /store/user/joyzhou/output/{this.PROCESS_NAME}"
+# INPUTFILE_PATH = "@format /store/use/joyzhou/output/{this.PROCESS_NAME}"
 INPUTFILE_PATH = "@format src/data/preprocessed/{this.PROCESS_NAME}.json"
 OUTPUTDIR_PATH = "@format outputs/{this.PROCESS_NAME}"
 TRANSFER = true
@@ -31,9 +31,9 @@ TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
 COPY_LOCAL = true
 COPY_DIR = "temp"
 STEP_SIZE = '300MB'
-RESUME = false
+RESUME = true
 DSINDX = 0
-FINDX = 10
+FINDX = 6
 
 [LPCJUPYTER]
 PROCESS_NAME = "ggF"

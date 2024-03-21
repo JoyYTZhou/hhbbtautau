@@ -1,12 +1,12 @@
 [LPCJUPYTER]
 DATAPATH = "/uscms/home/joyzhou/work/hhbbtautau/src/data/preprocessed"
 CONDORPATH = "/store/user/joyzhou/jet_output"
-INPUTDIR = "/uscms/home/joyzhou/nobackup/jet_output"
-OUTPUTDIR = "/uscms/home/joyzhou/nobackup/jet_output"
-CONDOR_TRANSFER = true # as of now this has zero impact
+INPUTDIR = "/uscms/home/joyzhou/nobackup/output"
+OUTPUTDIR = "/uscms/home/joyzhou/nobackup/hadded"
+CONDOR_TRANSFER = false # as of now this has zero impact
 REFRESH = false
-DATASETS = ["ggF", "SingleH", "DYJets", "TTbar"]
-TREENAME = 'tree'
+DATASETS = ["ZH"]
+TREENAME = 'Events'
 PLOT_VARS = ['Tau', 'Jet', 'FatJet', "GenPart"]
 EXTRA_VARS = ['Generator_weight', 'nLHEReweightingWeight', 'LHEReweightingWeight']
 CLEAN = true
@@ -14,7 +14,7 @@ LUMI = 5000 # pb^-1
 
 [LPCCONDOR]
 DATAPATH = "@format src/data/preprocessed"
-INPUTDIR = "/store/user/joyzhou/jet_output"
+INPUTDIR = "/store/user/joyzhou/skim"
 CONDOR_TRANSFER = true
 CONDORPATH = "/store/user/joyzhou/pkl_files"
 OUTPUTDIR = "tempout"
