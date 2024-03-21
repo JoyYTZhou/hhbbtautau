@@ -3,12 +3,12 @@ import matplotlib.pyplot as plt
 import glob
 import os
 import json
-from utils.filehelper import *
+from utils.rootutil import *
 from utils.filesysutil import *
+from utils.cutflowutil import *
 from analysis.selutility import Object
 import pickle
 import awkward as ak
-from utils.mathutil import *
 import gc
 
 class CFCombiner():
@@ -214,114 +214,7 @@ class DataPlotter():
         fig.show() 
             
             
-class DataLoader():
-    def __init__(self) -> None:
-        return None
-    
-    def __call__(self, source, **kwargs):
-        """Constructor for DataLoader class.
-        
-        Parameters
-        - `source`: source of the data. Can be a string (path to file), a dataframe, or an awkward array.
-        """
-        if isinstance(source, str):
-            if source.endswith('.pkl'):
-                data = DataLoader.load_pkl(source)
-            elif source.endswith('.csv'):
-                data = pd.read_csv(source, **kwargs)
-            elif source.endswith('.root'):
-                data = uproot.open(source)
-            elif source.endswith('.parquet'):
-                data = pd.read_parquet(source, **kwargs)
-            else:
-                raise ValueError("This is not a valid file type.")
-        elif checkevents(source):
-            data = source
-        else:
-            data = source
-            raise UserWarning(f"This might not be a valid source. The data type is {type(source)}")
-        return data
-    
-    @staticmethod
-    def load_pkl(filename):
-        """Load a pickle file and return the data."""
-        with open(filename, 'rb') as f:
-            data = pickle.load(f)
-        return data
 
-    @staticmethod
-    def findfields(dframe):
-        """Find all fields in a dataframe."""
-        if isinstance(dframe, pd.core.frame.DataFrame):
-            return dframe.columns
-        elif hasattr(dframe, 'keys') and callable(getattr(dframe, 'keys')):
-            return dframe.keys()
-        else:
-            return "Not supported yet..."
-
-    @staticmethod
-    def haddWeights(regexlist, grepdir, output=False, from_raw=False):
-        """Function for self use only, grep weights from a list of json files formatted in a specific way.
-        
-        Parameters
-        - `regexlist`: list of strings of dataset names
-        - `grepdir`: directory where the json files are located
-        - `output`: whether to save the weights into a json file
-        - `from_raw`: whether to compute weights based on number of raw events instead of weighted
-        """
-        wgt_dict = {}
-        for ds in regexlist:
-            with open(pjoin(grepdir, f'{ds}.json'), 'r') as f:
-                meta = json.load(f)
-                dsdict = {}
-                for dskey, dsval in meta.items():
-                    if from_raw:
-                        dsdict.update({dskey: dsval['xsection']/dsval['Raw Events']})
-                    else:
-                        dsdict.update({dskey: dsval['Per Event']})
-                wgt_dict.update({ds: dsdict})
-        if output: 
-            outname = pjoin(grepdir, 'wgt_total.json')
-            with open(outname, 'w') as f:
-                json.dump(wgt_dict, f, indent=4)
-        return wgt_dict
-    
-    @staticmethod
-    def load_vars(varname, filenames):
-        pass
-
-    @staticmethod
-    def combine_roots(pltcfg, wgt_dict, level=1, out_suffix='', **kwargs) -> None:
-        """Combine all root files of datasets in plot setting into one dataframe.
-        
-        Parameters
-        - `level`: concatenation level. 0 for overall process, 1 for dataset
-        - `wgt_dict`: dictionary of process, dataset, and weights
-        - `flat`: whether it's n-tuple
-        - `out_suffix`: suffix for the output file
-        """
-        outdir = pltcfg.OUTPUTDIR
-        checkpath(outdir)
-        for process, dsitems in wgt_dict.items():
-            indir = pltcfg.INPUTDIR
-            ds_dir = pjoin(indir, process)
-            for ds in dsitems.keys():
-                added_columns = {'dataset': process} if level==0 else {'dataset': ds} 
-                empty_fis = concat_roots(directory=ds_dir,
-                                         startpattern=f'{ds}_',
-                                         fields=pltcfg.PLOT_VARS, 
-                                         outdir=outdir,
-                                         outname=ds+out_suffix,
-                                         extra_branches=pltcfg.EXTRA_VARS, 
-                                         tree_name = pltcfg.TREENAME,
-                                         added_columns=added_columns,
-                                         **kwargs)
-                gc.collect()
-                if pltcfg.CONDOR_TRANSFER:
-                    transferfiles(outdir, pltcfg.CONDORPATH)
-                    delfiles(outdir, pattern='*.pkl')
-        if empty_fis != [] & pltcfg.CLEAN: delfilelist(empty_fis)
-        return None
 
 def clopper_pearson_error(passed, total, level=0.6827):
     """
