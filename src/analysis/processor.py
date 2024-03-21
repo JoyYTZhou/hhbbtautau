@@ -101,9 +101,9 @@ class Processor:
         """Wrapper around uproot.dask_write(),
         transfer all root files generated to a destination location."""
         if fields is None:
-            if delayed: uproot.dask_write(passed, destination=self.outdir, compute=False, prefix=f'{self.dataset}_{suffix}')
+            if delayed: uproot.dask_write(passed, destination=self.outdir, tree_name="Events", compute=False, prefix=f'{self.dataset}_{suffix}')
             else: 
-                uproot.dask_write(passed, destination=self.outdir, compute=True, prefix=f'{self.dataset}_{suffix}')
+                uproot.dask_write(passed, destination=self.outdir, tree_name="Events", compute=True, prefix=f'{self.dataset}_{suffix}')
         else:
             pass
 

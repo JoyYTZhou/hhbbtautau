@@ -29,7 +29,6 @@ default:
       dz: 0.2
       count: 2
       OS: true
-  jetselections:
     Jet:
       pt: 20
       eta: 2.4

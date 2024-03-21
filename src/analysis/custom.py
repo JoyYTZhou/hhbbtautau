@@ -13,7 +13,7 @@ def switch_selections(sel_name):
 
 class mockskimEvtSel(BaseEventSelections):
     """Reduce event sizes"""
-    def selectlep(self, events):
+    def setevtsel(self, events):
         electron = Object(events, "Electron")
         muon = Object(events, "Muon")
         tau = Object(events, "Tau")
@@ -43,17 +43,16 @@ class mockskimEvtSel(BaseEventSelections):
         self.objsel.add_multiple({"Electron Veto": elec_nummask,
                                 "Muon Veto": muon_nummask,
                                 "Tau Selections": tau_nummask})
-        return None
-   
-    def selectjet(self, events):
+  
         jet = Object(events, 'Jet')
         j_mask = (jet.ptmask(opr.ge) &
                   jet.absetamask(opr.le))
 
         j_nummask = jet.numselmask(opr.ge, j_mask)
-        print(j_nummask.compute())
+        btagmask = jet.numselmask(opr.ge, jet.custommask('btag', opr.ge))
+
         self.objsel.add_multiple({"Jet Selection": j_nummask,
-                                  "Jet Btag": jet.custommask('btag', opr.ge)})
+                                  "Jet Btag": btagmask})
 
         return None 
         
