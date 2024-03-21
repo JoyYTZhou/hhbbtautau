@@ -10,7 +10,7 @@ pjoin = os.path.join
 PREFIX = "root://cmseos.fnal.gov"
 
 def glob_files(dirname, startpattern='', endpattern='', **kwargs):
-    """Returns a list of files matching a pattern in a directory. If both patterns are None, return all files.
+    """Returns a SORTED list of files matching a pattern in a directory. If both patterns are None, return all files.
     
     Parameters
     - `dirname`: directory path (remote/local)
@@ -19,7 +19,7 @@ def glob_files(dirname, startpattern='', endpattern='', **kwargs):
     - `kwargs`: additional arguments for filtering files
 
     Return
-    - A list of files (str)
+    - A SORTED list of files (str)
     """
     if dirname.startswith('/store/user'):
         files = get_xrdfs_files(dirname, start_pattern=startpattern, end_pattern=endpattern, **kwargs)
@@ -130,6 +130,16 @@ def isremote(pathstr):
     """Check if a path is remote."""
     is_remote = pathstr.startswith('/store/user') or pathstr.startswith("root://")
     return is_remote
+
+def check_missing(pattern, fileno, dirtocheck, endpattern='.root', return_indices=True):
+    existfiles = glob_files(dirtocheck, startpattern=pattern, endpattern=endpattern)
+    fileset = set(existfiles)
+    patterns = [f"{pattern}_{i}" for i in range(fileno)]
+    if return_indices: 
+        toreturn = [i for i, pattern in enumerate(patterns) if not any(pattern in file for file in fileset)]
+    else:
+        toreturn = [pattern for i, pattern in enumerate(patterns) if not any(pattern in file for file in fileset)] 
+    return toreturn
 
 def checkcondorpath(dirname):
     """Check if a condor path exists. If not will create one."""
