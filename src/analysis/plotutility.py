@@ -38,7 +38,9 @@ class CFCombiner():
         Returns:
         - Raw cutflow dataframe, weighted cutflow dataframe
         """
-        if self.pltcfg.REFRESH: self.updatedir(**kwargs)
+        if self.pltcfg.REFRESH: 
+            self.updatedir(**kwargs)
+            delfiles(self.inputidr)
         self.getweights(from_load=from_load, from_raw=from_raw)
         raw_df, wgt_df = self.get_totcf(from_load=from_load, name=name)
         efficiency(self.outdir, wgt_df, append=False, save=True, save_name='tot')
