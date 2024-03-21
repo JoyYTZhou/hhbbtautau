@@ -17,6 +17,43 @@ def hadd_csvs(pattern):
     dfs = load_csvs(pattern)
     return pd.concat(dfs, axis=1)
 
+def combine_cf(inputdir, dsname, output=True, outpath=None):
+    """Combines all cutflow tables in a source directory belonging to one datset and output them into output directory.
+    
+    Parameters
+    - `inputdir`: source directory
+    - `dsname`: dataset name. 
+    - `output`: whether to save the combined table into a csv file
+    - `outpath`: path to the output
+    """
+    dirpattern = pjoin(inputdir, f'{dsname}_cutflow*.csv')
+    dfs = load_csvs(dirpattern)
+
+    concat_df = pd.concat(dfs)
+    combined = concat_df.groupby(concat_df.index, sort=False).sum()
+    combined.columns = [dsname]
+
+    if output and outpath is not None:
+        combined.to_csv(outpath)
+    
+    return combined
+
+def add_selcutflow(cutflowlist, save=True, outpath=None):
+    """Add cutflows sequentially.
+    
+    Parameters
+    - `cutflowlist`: list of cutflow csv files
+    - `save`: whether to save the combined table into a csv file
+    - `outpath`: path to the output
+    
+    Return
+    - combined cutflow table"""
+    dfs = load_csvs(cutflowlist)
+    dfs = [df.iloc[1:] for i, df in enumerate(dfs) if i != 0]
+    result = pd.concat(dfs, axis=1)
+    if save: result.to_csv(outpath)
+    return result
+
 def weight_cf(outdir, dsname, wgt, raw_cf, lumi=50):
     """Calculate weighted table based on raw table.
     
