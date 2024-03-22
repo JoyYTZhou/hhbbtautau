@@ -3,11 +3,9 @@ import matplotlib.pyplot as plt
 import os
 import json
 import shutil
-from utils.filesysutil import *
 from utils.cutflowutil import *
 from utils.rootutil import *
 from analysis.selutility import Object
-import awkward as ak
 
 class CFCombiner():
     """

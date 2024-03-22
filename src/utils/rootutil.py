@@ -72,9 +72,11 @@ class DataLoader():
 
     @staticmethod
     def hadd_roots(pltcfg, wgt_dict) -> None:
-        """Combine all root files of datasets in plot setting into one dataframe.
+        """Hadd root files of datasets into appropriate size based on plot setting. 
         
         Parameters
+        - `pltcfg`: plot setting
+        - `wgt_dict`: dictionary of weights for each process
         """
         batch_size = pltcfg.HADD_BATCH
         for process, dsitems in wgt_dict.items():
@@ -94,6 +96,66 @@ class DataLoader():
                     transferfiles(outdir, condorpath)
                     if pltcfg.CLEAN: delfiles(outdir, pattern='*.root')
         return None
+
+def load_fields(filelist, branch_names=None, tree_name='Events', lib='ak'):
+    """Load specific fields from root files in filelist and combine them into a single Arr.
+    
+    Parameters:
+    - `filelist`: list of file paths
+    - `branch_names`: list of branch names to load
+    - `tree_name`: name of the tree in the root file
+    - `lib`: library used to load the data into
+
+    Returns:
+    - A data arr containing the combined data from all root files in filelist.
+    - A list of empty files
+    """
+    emptylist = []
+    dfs = []
+    for root_file in filelist:
+        with uproot.open(root_file) as file:
+            if file.keys() == []:
+                emptylist.append(root_file) 
+            else:
+                tree = file[tree_name]
+                dfs.append(tree.arrays(branch_names, library=lib))
+    combined_evts = ak.concatenate(dfs)
+    return combined_evts, emptylist
+
+def write_root(evts, destination, outputtree="Events", title="Events", compression=None):
+    """Write arrays to root file.
+    Parameters
+    - `evts`: arrays to write
+    - `destination`: output file name
+    - `outputtree`: name of the output tree
+    - `title`: title of the tree
+    - `compression`: compression algorithm
+    """
+    branch_types = {name: evts[name].type for name in evts.fields}
+    with uproot.recreate(destination, compression=compression) as file:
+        file.mktree(name=outputtree, branch_types=branch_types, title=title)
+        file[outputtree].extend({name: evts[name] for name in evts.fields}) 
+
+def call_hadd(output_file, input_files):
+    """Merge ROOT files using hadd command.
+    Parameters
+    - `output_file`: output file name
+    - `input_files`: list of input file names"""
+    command = ['hadd', '-f0 -O', output_file] + input_files
+    result = subprocess.run(command, capture_output=True, text=True)
+    if result.returncode == 0:
+        print(f"Merged files into {output_file}")
+    else:
+        print(f"Error merging files: {result.stderr}")    
+
+def findfields(dframe):
+    """Find all fields in a dataframe."""
+    if isinstance(dframe, pd.core.frame.DataFrame):
+        return dframe.columns
+    elif hasattr(dframe, 'keys') and callable(getattr(dframe, 'keys')):
+        return dframe.keys()
+    else:
+        return "Not supported yet..."
 
 def checkevents(events):
     """Returns True if the events are in the right format, False otherwise."""
@@ -121,6 +183,34 @@ def arr_handler(dfarr):
     else:
         raise TypeError(f"This is of type {type(dfarr)}")
 
+def find_branches(file_path, object_list, tree_name, extra=[]) -> list:
+    """ Return a list of branches for objects in object_list
+
+    Paremters
+    - `file_path`: path to the root file
+    - `object_list`: list of objects to find branches for
+    - `tree_name`: name of the tree in the root file
+    - `extra`: list of extra branches to include
+
+    Returns
+    - list of branches
+    """
+    file = uproot.open(file_path)
+    tree = file[tree_name]
+    branch_names = tree.keys()
+    branches = []
+    for object in object_list:
+        branches.extend([name for name in branch_names if name.startswith(object)])
+    if extra != []:
+        branches.extend([name for name in extra if name in branch_names])
+    return branches
+
+def load_pkl(filename):
+    """Load a pickle file and return the data."""
+    with open(filename, 'rb') as f:
+        data = pickle.load(f)
+    return data
+
 def get_compression(**kwargs):
     compression = kwargs.pop('compression', None)
     compression_level = kwargs.pop('compression_level', 1)
@@ -143,55 +233,6 @@ def get_compression(**kwargs):
         compression = uproot.compression.Compression.from_code_pair(compression_code, compression_level)
 
     return compression
-
-def load_fields(filelist, branch_names=None, tree_name='Events', lib='ak'):
-    """Load specific fields from root files in filelist and combine them into a single Arr.
-    
-    Parameters:
-    - filelist: list of file paths
-    - branch_names: list of branch names to load
-    - tree_name: name of the tree in the root file
-
-    Returns:
-    - A data arr containing the combined data from all root files in filelist.
-    - A list of empty files
-    """
-    emptylist = []
-    dfs = []
-    for root_file in filelist:
-        with uproot.open(root_file) as file:
-            if file.keys() == []:
-                emptylist.append(root_file) 
-            else:
-                tree = file[tree_name]
-                dfs.append(tree.arrays(branch_names, library=lib))
-    combined_evts = ak.concatenate(dfs)
-    return combined_evts, emptylist
-
-def write_root(evts, destination, outputtree="Events", title="Events", compression=None):
-    """Write arrays to root file"""
-    branch_types = {name: evts[name].type for name in evts.fields}
-    with uproot.recreate(destination, compression=compression) as file:
-        file.mktree(name=outputtree, branch_types=branch_types, title=title)
-        file[outputtree].extend({name: evts[name] for name in evts.fields}) 
-
-def call_hadd(output_file, input_files):
-    command = ['hadd', '-f0 -O', output_file] + input_files
-    result = subprocess.run(command, capture_output=True, text=True)
-    if result.returncode == 0:
-        print(f"Merged files into {output_file}")
-    else:
-        print(f"Error merging files: {result.stderr}")    
-
-def findfields(dframe):
-    """Find all fields in a dataframe."""
-    if isinstance(dframe, pd.core.frame.DataFrame):
-        return dframe.columns
-    elif hasattr(dframe, 'keys') and callable(getattr(dframe, 'keys')):
-        return dframe.keys()
-    else:
-        return "Not supported yet..."
-
 def concat_roots(directory, startpattern, outdir, fields=None, batch_size=20, extra_branches = [], **kwargs):
     """
     Load specific branches from ROOT files matching a pattern in a directory, and combine them into a single DataFrame.
@@ -229,29 +270,3 @@ def concat_roots(directory, startpattern, outdir, fields=None, batch_size=20, ex
         write_root(combined_evts, outfilepath, **kwargs)
     return emptyfiles
 
-def find_branches(file_path, object_list, tree_name, extra=[]) -> list:
-    """ Return a list of branches for objects in object_list
-
-    Paremters
-    - `file_path`: path to the root file
-    - `object_list`: list of objects to find branches for
-    - `tree_name`: name of the tree in the root file
-
-    Returns
-    - list of branches
-    """
-    file = uproot.open(file_path)
-    tree = file[tree_name]
-    branch_names = tree.keys()
-    branches = []
-    for object in object_list:
-        branches.extend([name for name in branch_names if name.startswith(object)])
-    if extra != []:
-        branches.extend([name for name in extra if name in branch_names])
-    return branches
-
-def load_pkl(filename):
-    """Load a pickle file and return the data."""
-    with open(filename, 'rb') as f:
-        data = pickle.load(f)
-    return data
