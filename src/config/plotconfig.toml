@@ -1,14 +1,14 @@
 [LPCJUPYTER]
 DATAPATH = "/uscms/home/joyzhou/work/hhbbtautau/src/data/preprocessed"
 INPUTDIR = "/store/user/joyzhou/skim"
+PLOTDATA = "/store/user/joyzhou/hadded" 
 OUTPUTDIR = "/uscms/home/joyzhou/nobackup/hadded"
-PLOTDATA = "/uscms/home/joyzhou/nobackup/hadded" 
-CONDOR_TRANSFER = true # as of now this has zero impact
+CONDOR_TRANSFER = true 
 CONDORPATH = "/store/user/joyzhou/hadded"
 REFRESH = true
 HADD_BATCH = 20
 CLEAN = true
-DATASETS = ["TTbar", "ggF", "ZH"]
+DATASETS = ["ggF", "ZH"]
 TREENAME = 'Events'
 PLOT_VARS = ['Tau', 'Jet', 'FatJet', "GenPart"]
 EXTRA_VARS = ['Generator_weight', 'nLHEReweightingWeight', 'LHEReweightingWeight']

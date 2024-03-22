@@ -1,0 +1,60 @@
+import pandas as pd
+import awkward as ak
+import uproot
+
+def arr_handler(dfarr):
+    """Handle different types of data arrays to convert them to awkward arrays."""
+    if isinstance(dfarr, pd.core.series.Series):
+        try: 
+            ak_arr = dfarr.ak.array
+            return ak_arr
+        except AttributeError as e:
+            return dfarr
+    elif isinstance(dfarr, pd.core.frame.DataFrame):
+        raise ValueError("specify a column. This is a dataframe.")
+    elif isinstance(dfarr, ak.highlevel.Array):
+        return dfarr
+    else:
+        raise TypeError(f"This is of type {type(dfarr)}")
+
+def checkevents(events):
+    """Returns True if the events are in the right format, False otherwise."""
+    if hasattr(events, 'keys') and callable(getattr(events, 'keys')):
+        return True
+    elif hasattr(events, 'fields'):
+        return True
+    elif isinstance(events, pd.core.frame.DataFrame):
+        return True
+    else:
+        raise TypeError("Invalid type for events. Must be an awkward object or a DataFrame")
+
+def findfields(dframe):
+    """Find all fields in a dataframe."""
+    if isinstance(dframe, pd.core.frame.DataFrame):
+        return dframe.columns
+    elif hasattr(dframe, 'keys') and callable(getattr(dframe, 'keys')):
+        return dframe.keys()
+    else:
+        return "Not supported yet..."
+
+def find_branches(file_path, object_list, tree_name, extra=[]) -> list:
+    """ Return a list of branches for objects in object_list
+
+    Paremters
+    - `file_path`: path to the root file
+    - `object_list`: list of objects to find branches for
+    - `tree_name`: name of the tree in the root file
+
+    Returns
+    - list of branches
+    """
+    file = uproot.open(file_path)
+    tree = file[tree_name]
+    branch_names = tree.keys()
+    branches = []
+    for object in object_list:
+        branches.extend([name for name in branch_names if name.startswith(object)])
+    if extra != []:
+        branches.extend([name for name in extra if name in branch_names])
+    return branches
+
