@@ -151,23 +151,11 @@ class DataPlotter():
         self.wgt_dict = wgt_dict
         self.pltcfg = pltcfg
 
-    def __call__(self, pltcfg, wgt_dict) -> plt.Any:
+    def __call__(self, pltcfg, wgt_dict):
         if pltcfg.REFRESH:
             pass
     
-    def load_limited(self, save=True):
-        list_of_awk = []
-        pltcfg = self.pltcfg
-        for process in pltcfg.DATASETS:
-            for ds in self.wgt_dict[ds].keys():
-                datadir = pjoin(pltcfg.PLOTDATA, ds)
-                files = glob_files(datadir, endpattern='.root')
-                branches = self.getbranches(files[0])
-                awk_arr, emplist = load_fields(files, branches)
-                destination = pjoin(pltcfg.OUTPUTDIR, f"{ds}_limited.root")
-                if save: write_root(awk_arr, destination)
-                list_of_awk.append(awk_arr)
-        return list_of_awk
+
     
     def load_obj(self, files):
         pass 

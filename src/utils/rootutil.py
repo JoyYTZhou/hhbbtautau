@@ -12,8 +12,9 @@ pjoin = os.path.join
 runcom = subprocess.run
 
 class DataLoader():
-    def __init__(self) -> None:
-        return None
+    def __init__(self, pltcfg) -> None:
+        self.pltcfg = pltcfg
+        self.wgt_dict = DataLoader.haddWeights(self.pltcfg.DATASETS, self.pltcfg.DATAPATH)
     
     def __call__(self, source, **kwargs):
         """Constructor for DataLoader class.
@@ -39,8 +40,22 @@ class DataLoader():
             raise UserWarning(f"This might not be a valid source. The data type is {type(source)}")
         return data
 
+    def load_limited(self, save=True):
+        list_of_awk = []
+        pltcfg = self.pltcfg
+        for process in pltcfg.DATASETS:
+            for ds in self.wgt_dict[ds].keys():
+                datadir = pjoin(pltcfg.PLOTDATA, ds)
+                files = glob_files(datadir, endpattern='.root')
+                branches = self.getbranches(files[0])
+                awk_arr, emplist = load_fields(files, branches)
+                destination = pjoin(pltcfg.OUTPUTDIR, f"{ds}_limited.root")
+                if save: write_root(awk_arr, destination)
+                list_of_awk.append(awk_arr)
+        return list_of_awk 
+
     @staticmethod
-    def haddWeights(regexlist, grepdir, output=False, from_raw=False):
+    def haddWeights(regexlist, grepdir, output=True, from_raw=True):
         """Function for self use only, grep weights from a list of json files formatted in a specific way.
         
         Parameters
