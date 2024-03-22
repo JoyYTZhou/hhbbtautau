@@ -88,9 +88,11 @@ class DataLoader():
 
     @staticmethod
     def hadd_roots(pltcfg, wgt_dict) -> None:
-        """Combine all root files of datasets in plot setting into one ro
+        """Hadd root files of datasets into appropriate size based on plot setting. 
         
         Parameters
+        - `pltcfg`: plot setting
+        - `wgt_dict`: dictionary of weights for each process
         """
         batch_size = pltcfg.HADD_BATCH
         for process, dsitems in wgt_dict.items():
@@ -128,6 +130,34 @@ class DataLoader():
         if extradict: 
             for name, arrlist in extradict.items(): writable[name] = ak.concatenate(arrlist)
         return None
+
+def find_branches(file_path, object_list, tree_name, extra=[]) -> list:
+    """ Return a list of branches for objects in object_list
+
+    Paremters
+    - `file_path`: path to the root file
+    - `object_list`: list of objects to find branches for
+    - `tree_name`: name of the tree in the root file
+    - `extra`: list of extra branches to include
+
+    Returns
+    - list of branches
+    """
+    file = uproot.open(file_path)
+    tree = file[tree_name]
+    branch_names = tree.keys()
+    branches = []
+    for object in object_list:
+        branches.extend([name for name in branch_names if name.startswith(object)])
+    if extra != []:
+        branches.extend([name for name in extra if name in branch_names])
+    return branches
+
+def load_pkl(filename):
+    """Load a pickle file and return the data."""
+    with open(filename, 'rb') as f:
+        data = pickle.load(f)
+    return data
 
 def get_compression(**kwargs):
     compression = kwargs.pop('compression', None)
@@ -230,9 +260,3 @@ def concat_roots(directory, startpattern, outdir, fields=None, extra_branches = 
     outfilepath = pjoin(outdir, f'{startpattern}.root')
     write_root(combined_evts, outfilepath, **kwargs)
     return emptyfiles
-
-def load_pkl(filename):
-    """Load a pickle file and return the data."""
-    with open(filename, 'rb') as f:
-        data = pickle.load(f)
-    return data
