@@ -207,26 +207,6 @@ class DataPlotter():
         ax.set_xlim(*range)
         ax.legend()
         fig.show() 
-            
-            
-
-
-def clopper_pearson_error(passed, total, level=0.6827):
-    """
-    matching TEfficiency::ClopperPearson(),
-    >>> ROOT.TEfficiency.ClopperPearson(total, passed, level, is_upper)
-    """
-    import scipy.stats
-
-    alpha = 0.5 * (1.0 - level)
-    low = scipy.stats.beta.ppf(alpha, passed, total - passed + 1)
-    high = scipy.stats.beta.ppf(1 - alpha, passed + 1, total - passed)
-    return low, high
-    
-def simplifyError(passed,total,level=0.6827):
-    low,high=clopper_pearson_error(passed, total, level)
-    err=high-passed
-    return err
 
 # style a dataframe table
 def makePretty(styler,color_code):
@@ -234,11 +214,3 @@ def makePretty(styler,color_code):
     css_indexes=f'background-color: {color_code}; color: white;'
     styler.applymap_index(lambda _: css_indexes, axis=1)
     return styler
-
-
-
-
-    
-         
-        
-        

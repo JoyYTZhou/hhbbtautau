@@ -7,6 +7,23 @@ import pandas as pd
 
 pjoin = os.path.join
 
+def clopper_pearson_error(passed, total, level=0.6827):
+    """
+    matching TEfficiency::ClopperPearson(),
+    >>> ROOT.TEfficiency.ClopperPearson(total, passed, level, is_upper)
+    """
+    import scipy.stats
+
+    alpha = 0.5 * (1.0 - level)
+    low = scipy.stats.beta.ppf(alpha, passed, total - passed + 1)
+    high = scipy.stats.beta.ppf(1 - alpha, passed + 1, total - passed)
+    return low, high
+    
+def simplifyError(passed,total,level=0.6827):
+    low,high=clopper_pearson_error(passed, total, level)
+    err=high-passed
+    return err
+
 def dphi(phi1, phi2):
     """Calculates delta phi between objects"""
     x = np.abs(phi1 - phi2)
