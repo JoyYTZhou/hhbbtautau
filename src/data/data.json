@@ -22,16 +22,18 @@
         }
     },
     "TTbar": {
-        "TTToSemiLeptonic": {
-            "string": [
-                "/TTToSemiLeptonic_TuneCP5_13p6TeV-powheg-pythia8/Run3Winter22NanoAOD-FlatPU0to70_pilot_122X_mcRun3_2021_realistic_v9-v1/NANOAODSIM"
-            ],
-            "xsection": 365.34
+        "TTtoLNu2Q": {
+            "string": ["/TTtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer22EENanoAODv11-126X_mcRun3_2022_realistic_postEE_v1-v1/NANOAODSIM"],
+            "xsection": 762.1
         },
         "TTto2L2N": {
             "string": [
                 "/TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6-v2/NANOAODSIM"
             ],
+            "xsection": 762.1
+        },
+        "TTto4Q":{
+            "string": ["/TTto4Q_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer22EENanoAODv11-126X_mcRun3_2022_realistic_postEE_v1-v1/NANOAODSIM"],
             "xsection": 762.1
         }
     },

@@ -23,7 +23,7 @@ class DataLoader():
         """
         if isinstance(source, str):
             if source.endswith('.pkl'):
-                data = DataLoader.load_pkl(source)
+                data = load_pkl(source)
             elif source.endswith('.csv'):
                 data = pd.read_csv(source, **kwargs)
             elif source.endswith('.root'):
@@ -38,23 +38,6 @@ class DataLoader():
             data = source
             raise UserWarning(f"This might not be a valid source. The data type is {type(source)}")
         return data
-    
-    @staticmethod
-    def load_pkl(filename):
-        """Load a pickle file and return the data."""
-        with open(filename, 'rb') as f:
-            data = pickle.load(f)
-        return data
-
-    @staticmethod
-    def findfields(dframe):
-        """Find all fields in a dataframe."""
-        if isinstance(dframe, pd.core.frame.DataFrame):
-            return dframe.columns
-        elif hasattr(dframe, 'keys') and callable(getattr(dframe, 'keys')):
-            return dframe.keys()
-        else:
-            return "Not supported yet..."
 
     @staticmethod
     def haddWeights(regexlist, grepdir, output=False, from_raw=False):
@@ -88,17 +71,18 @@ class DataLoader():
         pass
 
     @staticmethod
-    def hadd_roots(pltcfg, wgt_dict, **kwargs) -> None:
+    def hadd_roots(pltcfg, wgt_dict) -> None:
         """Combine all root files of datasets in plot setting into one dataframe.
         
         Parameters
         """
-        batch_size = kwargs.pop("batch_size", 15)
+        batch_size = pltcfg.HADD_BATCH
         for process, dsitems in wgt_dict.items():
             outdir = pjoin(pltcfg.OUTPUTDIR, process)
             checkpath(outdir)
             indir = pltcfg.INPUTDIR
             ds_dir = pjoin(indir, process)
+            condorpath = pjoin(pltcfg.CONDORPATH, process)
             for ds in dsitems.keys():
                 root_files = glob_files(ds_dir, ds, '.root')
                 for i in range(0, len(root_files), batch_size):
@@ -106,8 +90,9 @@ class DataLoader():
                     outname = pjoin(outdir, f"{ds}_{i//batch_size+1}.root") 
                     call_hadd(outname, batch_files)
                 if pltcfg.CONDOR_TRANSFER:
-                    transferfiles(outdir, pltcfg.CONDORPATH)
-                    delfiles(outdir, pattern='*.root')
+                    checkcondorpath(condorpath)
+                    transferfiles(outdir, condorpath)
+                    if pltcfg.CLEAN: delfiles(outdir, pattern='*.root')
         return None
 
 def checkevents(events):
@@ -136,26 +121,6 @@ def arr_handler(dfarr):
     else:
         raise TypeError(f"This is of type {type(dfarr)}")
 
-
-def make_ntuple(filelist, outname, outdir, tree_name='tree', branch_names=None):
-    pass
-
-def objs_to_roots(events, objectnames, destination, **kwargs):
-    compression = get_compression(**kwargs)
-    tree_name = kwargs.pop('tree_name', 'Events')
-    out_file = uproot.recreate(
-        destination,
-        compression=compression
-    )
-    branch_types = {name: events[name].type for name in events.fields}
-    
-    out_file.mktree(name=tree_name,
-                    branch_types=branch_types,
-                    title='Events')
-    out_file[tree_name].extend({name: events[name] for name in events.fields})
-
-    return out_file
-
 def get_compression(**kwargs):
     compression = kwargs.pop('compression', None)
     compression_level = kwargs.pop('compression_level', 1)
@@ -179,8 +144,8 @@ def get_compression(**kwargs):
 
     return compression
 
-def load_roots(filelist, branch_names=None, tree_name='Events', lib='ak'):
-    """Load root files in filelist and combine them into a single Arr.
+def load_fields(filelist, branch_names=None, tree_name='Events', lib='ak'):
+    """Load specific fields from root files in filelist and combine them into a single Arr.
     
     Parameters:
     - filelist: list of file paths
@@ -218,6 +183,15 @@ def call_hadd(output_file, input_files):
     else:
         print(f"Error merging files: {result.stderr}")    
 
+def findfields(dframe):
+    """Find all fields in a dataframe."""
+    if isinstance(dframe, pd.core.frame.DataFrame):
+        return dframe.columns
+    elif hasattr(dframe, 'keys') and callable(getattr(dframe, 'keys')):
+        return dframe.keys()
+    else:
+        return "Not supported yet..."
+
 def concat_roots(directory, startpattern, outdir, fields=None, batch_size=20, extra_branches = [], **kwargs):
     """
     Load specific branches from ROOT files matching a pattern in a directory, and combine them into a single DataFrame.
@@ -249,13 +223,13 @@ def concat_roots(directory, startpattern, outdir, fields=None, batch_size=20, ex
 
     for i in range(0, len(root_files), batch_size):
         batch_files = root_files[i:i+batch_size]
-        combined_evts, empty_list = load_roots(batch_files, branch_names, tree_name=tree_name)
+        combined_evts, empty_list = load_fields(batch_files, branch_names, tree_name=tree_name)
         emptyfiles.extend(empty_list)
         outfilepath = pjoin(outdir, f'{startpattern}_{i//batch_size + 1}.pkl')
         write_root(combined_evts, outfilepath, **kwargs)
     return emptyfiles
 
-def find_branches(file_path, object_list, tree_name) -> list:
+def find_branches(file_path, object_list, tree_name, extra=[]) -> list:
     """ Return a list of branches for objects in object_list
 
     Paremters
@@ -272,4 +246,12 @@ def find_branches(file_path, object_list, tree_name) -> list:
     branches = []
     for object in object_list:
         branches.extend([name for name in branch_names if name.startswith(object)])
+    if extra != []:
+        branches.extend([name for name in extra if name in branch_names])
     return branches
+
+def load_pkl(filename):
+    """Load a pickle file and return the data."""
+    with open(filename, 'rb') as f:
+        data = pickle.load(f)
+    return data

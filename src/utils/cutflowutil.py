@@ -1,14 +1,14 @@
 import os, subprocess
 import numpy as np
-import glob
 import pandas as pd
+from utils.filesysutil import glob_files 
 
 pjoin = os.path.join
 runcom = subprocess.run
 
-def load_csvs(pattern):
+def load_csvs(dirname, startpattern):
     """Load csv files matching a pattern into a list of DataFrames."""
-    file_names = glob.glob(pattern)
+    file_names = glob_files(dirname, startpattern=startpattern, endpattern='.csv')
     dfs = [pd.read_csv(file_name, index_col=0, header=0) for file_name in file_names] 
     return dfs
 
@@ -26,9 +26,7 @@ def combine_cf(inputdir, dsname, output=True, outpath=None):
     - `output`: whether to save the combined table into a csv file
     - `outpath`: path to the output
     """
-    dirpattern = pjoin(inputdir, f'{dsname}_cutflow*.csv')
-    dfs = load_csvs(dirpattern)
-
+    dfs = load_csvs(dirname=inputdir, startpattern=f'{dsname}_cutflow')
     concat_df = pd.concat(dfs)
     combined = concat_df.groupby(concat_df.index, sort=False).sum()
     combined.columns = [dsname]
