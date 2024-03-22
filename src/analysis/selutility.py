@@ -3,6 +3,7 @@ import awkward as ak
 import dask_awkward as dak
 import dask
 from coffea.analysis_tools import PackedSelection
+from utils.rootutil import arr_handler
 import vector as vec
 import pandas as pd
 import operator as opr
@@ -164,8 +165,23 @@ class Object():
         mask = (sum_charge < dak.num(self.events[aodname], axis=1))
         return mask
     
-    def getdakobj(self):
-        return Object.set_dakzipped(self.events, self.mapcfg)
+    def getzipped(self):
+        return Object.set_zipped(self.events, self.mapcfg)
+    
+    @staticmethod
+    def sortmask(dfarr, **kwargs):
+        """Wrapper around awkward argsort function.
+        
+        Parameters
+        - `dfarr`: the data arr to be sorted
+        """
+        dfarr = arr_handler(dfarr)
+        sortmask = ak.argsort(dfarr, 
+                   axis=kwargs.get('axis', -1), 
+                   ascending=kwargs.get('ascending', False),
+                   highlevel=kwargs.get('highlevel', True)
+                   )
+        return sortmask
 
     @staticmethod
     def fourvector(events, field, sort=True, sortname='pt'):
@@ -192,12 +208,13 @@ class Object():
         return object_LV
 
     @staticmethod
-    def set_dakzipped(events, namemap):
-        """Given self.events, read only object-related observables and zip them into dict."""
+    def set_zipped(events, namemap, delayed=False):
+        """Given events, read only object-related observables and zip them into dict."""
         zipped_dict = {}
         for name, nanoaodname in namemap.items():
             zipped_dict.update({name: events[nanoaodname]})
-        zipped_object = dak.zip(zipped_dict)
+        if delayed: zipped_object = dak.zip(zipped_dict)
+        else: zipped_object = ak.zip(zipped_dict)
         return zipped_object
 
     @staticmethod

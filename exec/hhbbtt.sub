@@ -22,6 +22,6 @@ request_disk = 8GB
 transfer_input_files = $(MY_PATH)/src, $(MY_PATH)/scripts, $(NO_BACKUP)/newcoffea.tar.gz, $(MY_PATH)/.condor_config
 
 queue arg1 from (
-    DYJets
+    WWW
 )
 

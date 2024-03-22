@@ -2,9 +2,10 @@ import mplhep as hep
 import matplotlib.pyplot as plt
 import os
 import json
+import shutil
 from utils.filesysutil import *
 from utils.cutflowutil import *
-from utils.rootutil import DataLoader, arr_handler
+from utils.rootutil import *
 from analysis.selutility import Object
 import awkward as ak
 
@@ -38,22 +39,22 @@ class CFCombiner():
         Returns:
         - Raw cutflow dataframe, weighted cutflow dataframe
         """
-        if self.pltcfg.REFRESH: 
-            self.updatedir(**kwargs)
-            delfiles(self.inputidr)
         self.getweights(from_load=from_load, from_raw=from_raw)
+        if self.pltcfg.REFRESH: 
+            for ds in self.pltcfg.DATASETS:
+                if os.path.isdir(pjoin(self.outdir, ds)): shutil.rmtree(pjoin(self.outdir, ds))
+            DataLoader.hadd_roots(self.pltcfg, self.wgt_dict)
         raw_df, wgt_df = self.get_totcf(from_load=from_load, name=name)
         efficiency(self.outdir, wgt_df, append=False, save=True, save_name='tot')
+        if self.pltcfg.CONDOR_TRANSFER: 
+            condorpath = self.pltcfg.CONDORPATH
+            checkcondorpath(condorpath)
+            transferfiles(self.outdir, condorpath)
         return raw_df, wgt_df
 
     @property
     def pltcfg(self):
         return self._pltcfg
-
-    def hadd_to_pkl(self):
-        """Combine all root files of datasets in plot setting into one dataframe and save as pickle."""
-        checkcondorpath(self.pltcfg.CONDORPATH)
-        DataLoader.combine_roots(self.pltcfg, self.wgt_dict)
     
     def checkupdates(self):
         for ds in self.pltcfg.DATASETS:
@@ -146,9 +147,42 @@ class CFCombiner():
                 
         
 class DataPlotter():
-    def __init__(self):
-        pass
+    def __init__(self, pltcfg, wgt_dict):
+        self.wgt_dict = wgt_dict
+        self.pltcfg = pltcfg
+
+    def __call__(self, pltcfg, wgt_dict) -> plt.Any:
+        if pltcfg.REFRESH:
+            pass
     
+    def load_limited(self, save=True):
+        list_of_awk = []
+        pltcfg = self.pltcfg
+        for process in pltcfg.DATASETS:
+            for ds in self.wgt_dict[ds].keys():
+                datadir = pjoin(pltcfg.PLOTDATA, ds)
+                files = glob_files(datadir, endpattern='.root')
+                branches = self.getbranches(files[0])
+                awk_arr, emplist = load_fields(files, branches)
+                destination = pjoin(pltcfg.OUTPUTDIR, f"{ds}_limited.root")
+                if save: write_root(awk_arr, destination)
+                list_of_awk.append(awk_arr)
+        return list_of_awk
+    
+    def load_obj(self, files):
+        pass 
+
+    def plotobj(self, arrs, labels, name):
+        for arr in arrs:
+            obj = Object(arr, name).getzipped()
+        
+        pass
+
+    def getbranches(self, file):
+        pltcfg = self.pltcfg
+        branchnames = find_branches(file, pltcfg.PLOT_VARS, tree_name=pltcfg.TREENAME, 
+                                    extra=pltcfg.EXTRA_VARS)
+        return branchnames
 
     @staticmethod
     def sortobj(data, sort_by, sort_what, **kwargs):
@@ -161,21 +195,6 @@ class DataPlotter():
         """
         mask = DataPlotter.sortmask(data[sort_by], **kwargs)
         return arr_handler(data[sort_what])[mask]
-    
-    @staticmethod
-    def sortmask(dfarr, **kwargs):
-        """Wrapper around awkward argsort function.
-        
-        Parameters
-        - `dfarr`: the data arr to be sorted
-        """
-        dfarr = arr_handler(dfarr)
-        sortmask = ak.argsort(dfarr, 
-                   axis=kwargs.get('axis', -1), 
-                   ascending=kwargs.get('ascending', False),
-                   highlevel=kwargs.get('highlevel', True)
-                   )
-        return sortmask
     
     @staticmethod
     def deal_overflow(arr, bin_no, range):
