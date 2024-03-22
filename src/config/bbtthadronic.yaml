@@ -4,6 +4,7 @@ default:
     nFatJet: 1
     nJet: 2
   objselections:
+    GenPart: null
     Electron: 
       cbtightid: 1
       mvaisoid: 0.8
@@ -84,6 +85,13 @@ default:
       phi: FatJet_phi
       mass: FatJet_mass
       jetID: FatJet_jetId
+    GenPart:
+      pt: GenPart_pt
+      eta: GenPart_eta
+      phi: GenPart_phi
+      mass: GenPart_mass
+      pdgid: GenPart_pdgId
+      motherid: GenPart_genPartIdxMother
 
 
 

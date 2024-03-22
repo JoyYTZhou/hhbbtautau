@@ -4,10 +4,10 @@ import os
 import json
 import shutil
 from utils.filesysutil import *
-from utils.cutflowutil import *
-from utils.rootutil import *
+from utils.cutflowutil import * 
+from utils.rootutil import DataLoader
+from utils.datautil import arr_handler
 from analysis.selutility import Object
-import awkward as ak
 
 class CFCombiner():
     """
@@ -48,7 +48,7 @@ class CFCombiner():
         efficiency(self.outdir, wgt_df, append=False, save=True, save_name='tot')
         if self.pltcfg.CONDOR_TRANSFER: 
             condorpath = self.pltcfg.CONDORPATH
-            checkcondorpath(condorpath)
+            checkpath(condorpath)
             transferfiles(self.outdir, condorpath)
         return raw_df, wgt_df
 
@@ -154,23 +154,12 @@ class DataPlotter():
     def __call__(self, pltcfg, wgt_dict):
         if pltcfg.REFRESH:
             pass
-    
-
-    
-    def load_obj(self, files):
-        pass 
 
     def plotobj(self, arrs, labels, name):
         for arr in arrs:
             obj = Object(arr, name).getzipped()
         
         pass
-
-    def getbranches(self, file):
-        pltcfg = self.pltcfg
-        branchnames = find_branches(file, pltcfg.PLOT_VARS, tree_name=pltcfg.TREENAME, 
-                                    extra=pltcfg.EXTRA_VARS)
-        return branchnames
 
     @staticmethod
     def sortobj(data, sort_by, sort_what, **kwargs):

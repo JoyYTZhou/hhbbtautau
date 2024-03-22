@@ -3,7 +3,7 @@ import awkward as ak
 import dask_awkward as dak
 import dask
 from coffea.analysis_tools import PackedSelection
-from utils.rootutil import arr_handler
+from utils.datautil import arr_handler
 import vector as vec
 import pandas as pd
 import operator as opr

@@ -6,7 +6,10 @@ import json
 import pickle
 import awkward as ak
 import random
-from utils.filesysutil import *
+import subprocess
+from analysis.selutility import Object
+from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles
+from utils.datautil import checkevents, find_branches
 
 pjoin = os.path.join
 runcom = subprocess.run
@@ -40,19 +43,21 @@ class DataLoader():
             raise UserWarning(f"This might not be a valid source. The data type is {type(source)}")
         return data
 
-    def load_limited(self, save=True):
-        list_of_awk = []
+    def get_objs(self):
         pltcfg = self.pltcfg
         for process in pltcfg.DATASETS:
-            for ds in self.wgt_dict[ds].keys():
-                datadir = pjoin(pltcfg.PLOTDATA, ds)
-                files = glob_files(datadir, endpattern='.root')
-                branches = self.getbranches(files[0])
-                awk_arr, emplist = load_fields(files, branches)
+            for ds in self.wgt_dict[process].keys():
+                datadir = pjoin(pltcfg.PLOTDATA, process)
+                files = glob_files(datadir, startpattern=ds, endpattern='.root')
                 destination = pjoin(pltcfg.OUTPUTDIR, f"{ds}_limited.root")
-                if save: write_root(awk_arr, destination)
-                list_of_awk.append(awk_arr)
-        return list_of_awk 
+                with uproot.recreate(destination) as output:
+                    DataLoader.write_obj(output, files, pltcfg.PLOT_VARS, pltcfg.EXTRA_VARS)
+
+    def getbranches(self, file):
+        pltcfg = self.pltcfg
+        branchnames = find_branches(file, pltcfg.PLOT_VARS, tree_name=pltcfg.TREENAME, 
+                                    extra=pltcfg.EXTRA_VARS)
+        return branchnames
 
     @staticmethod
     def haddWeights(regexlist, grepdir, output=True, from_raw=True):
@@ -80,14 +85,10 @@ class DataLoader():
             with open(outname, 'w') as f:
                 json.dump(wgt_dict, f, indent=4)
         return wgt_dict
-    
-    @staticmethod
-    def load_vars(varname, filenames):
-        pass
 
     @staticmethod
     def hadd_roots(pltcfg, wgt_dict) -> None:
-        """Combine all root files of datasets in plot setting into one dataframe.
+        """Combine all root files of datasets in plot setting into one ro
         
         Parameters
         """
@@ -105,36 +106,28 @@ class DataLoader():
                     outname = pjoin(outdir, f"{ds}_{i//batch_size+1}.root") 
                     call_hadd(outname, batch_files)
                 if pltcfg.CONDOR_TRANSFER:
-                    checkcondorpath(condorpath)
+                    checkpath(condorpath)
                     transferfiles(outdir, condorpath)
                     if pltcfg.CLEAN: delfiles(outdir, pattern='*.root')
         return None
-
-def checkevents(events):
-    """Returns True if the events are in the right format, False otherwise."""
-    if hasattr(events, 'keys') and callable(getattr(events, 'keys')):
-        return True
-    elif hasattr(events, 'fields'):
-        return True
-    elif isinstance(events, pd.core.frame.DataFrame):
-        return True
-    else:
-        raise TypeError("Invalid type for events. Must be an awkward object or a DataFrame")
-
-def arr_handler(dfarr):
-    """Handle different types of data arrays to convert them to awkward arrays."""
-    if isinstance(dfarr, pd.core.series.Series):
-        try: 
-            ak_arr = dfarr.ak.array
-            return ak_arr
-        except AttributeError as e:
-            return dfarr
-    elif isinstance(dfarr, pd.core.frame.DataFrame):
-        raise ValueError("specify a column. This is a dataframe.")
-    elif isinstance(dfarr, ak.highlevel.Array):
-        return dfarr
-    else:
-        raise TypeError(f"This is of type {type(dfarr)}")
+    
+    @staticmethod
+    def write_obj(writable, filelist, objnames, extra=None):
+        objdict = {obj: [] for obj in objnames}
+        if extra is not None:
+            extradict = {name: [] for name in extra}
+        for file in filelist:
+            evts = load_fields(file)
+            for name in objnames:
+                obj = Object(evts, name)
+                zipped = obj.getzipped()
+                objdict[name].append(zipped)
+            if extra is not None:
+                for name in extra: extradict[name].append(evts[name])
+        for name, arrlist in objdict.items(): writable[name] = ak.concatenate(arrlist)
+        if extradict: 
+            for name, arrlist in extradict.items(): writable[name] = ak.concatenate(arrlist)
+        return None
 
 def get_compression(**kwargs):
     compression = kwargs.pop('compression', None)
@@ -159,11 +152,11 @@ def get_compression(**kwargs):
 
     return compression
 
-def load_fields(filelist, branch_names=None, tree_name='Events', lib='ak'):
+def load_fields(file, branch_names=None, tree_name='Events', lib='ak'):
     """Load specific fields from root files in filelist and combine them into a single Arr.
     
     Parameters:
-    - filelist: list of file paths
+    - file: file
     - branch_names: list of branch names to load
     - tree_name: name of the tree in the root file
 
@@ -171,20 +164,30 @@ def load_fields(filelist, branch_names=None, tree_name='Events', lib='ak'):
     - A data arr containing the combined data from all root files in filelist.
     - A list of empty files
     """
-    emptylist = []
-    dfs = []
-    for root_file in filelist:
-        with uproot.open(root_file) as file:
+    def load_one(fi):
+        with uproot.open(fi) as file:
             if file.keys() == []:
-                emptylist.append(root_file) 
+                return False
             else:
-                tree = file[tree_name]
-                dfs.append(tree.arrays(branch_names, library=lib))
-    combined_evts = ak.concatenate(dfs)
-    return combined_evts, emptylist
+                tree = file[tree_name] 
+        return tree.arrays(branch_names, library=lib)
+
+    returned = None
+    if isinstance(file, str):
+        returned = load_one(file)
+    elif isinstance(file, list):
+        dfs = []
+        emptylist = []
+        for root_file in file:
+            if load_one(file):
+                dfs.append(load_one(file))
+            else: emptylist.append(root_file)
+        combined_evts = ak.concatenate(dfs)
+        returned = (combined_evts, emptylist)
+    return returned
 
 def write_root(evts, destination, outputtree="Events", title="Events", compression=None):
-    """Write arrays to root file"""
+    """Write arrays to root file. Highly inefficient methods in terms of data storage."""
     branch_types = {name: evts[name].type for name in evts.fields}
     with uproot.recreate(destination, compression=compression) as file:
         file.mktree(name=outputtree, branch_types=branch_types, title=title)
@@ -198,16 +201,7 @@ def call_hadd(output_file, input_files):
     else:
         print(f"Error merging files: {result.stderr}")    
 
-def findfields(dframe):
-    """Find all fields in a dataframe."""
-    if isinstance(dframe, pd.core.frame.DataFrame):
-        return dframe.columns
-    elif hasattr(dframe, 'keys') and callable(getattr(dframe, 'keys')):
-        return dframe.keys()
-    else:
-        return "Not supported yet..."
-
-def concat_roots(directory, startpattern, outdir, fields=None, batch_size=20, extra_branches = [], **kwargs):
+def concat_roots(directory, startpattern, outdir, fields=None, extra_branches = [], **kwargs):
     """
     Load specific branches from ROOT files matching a pattern in a directory, and combine them into a single DataFrame.
 
@@ -216,10 +210,8 @@ def concat_roots(directory, startpattern, outdir, fields=None, batch_size=20, ex
     - startpattern: Pattern to match the start of the ROOT file name.
     - fields: List of field names to load from each ROOT file.
     - outdir: Path to the directory to save the combined DataFrame.
-    - batch_size: Number of ROOT files to load at a time.
     - extra_branches: List of extra branches to load from each ROOT file.
     - tree_name: Name of the tree to load
-    - added_columns: Dictionary of additional columns to add to the combined DataFrame.
 
     Returns:
     - A list of empty files among the searched ROOT files
@@ -229,41 +221,15 @@ def concat_roots(directory, startpattern, outdir, fields=None, batch_size=20, ex
     root_files = glob_files(directory, startpattern, endpattern=kwargs.pop('endpattern', '.root'))
     random.shuffle(root_files)
     emptyfiles = []
-
     if fields is not None:
-        branch_names = find_branches(root_files[0], fields, tree_name=tree_name)
-        branch_names.extend(extra_branches)
+        branch_names = find_branches(root_files[0], fields, tree_name=tree_name, extra=extra_branches)
     else:
         branch_names = None
-
-    for i in range(0, len(root_files), batch_size):
-        batch_files = root_files[i:i+batch_size]
-        combined_evts, empty_list = load_fields(batch_files, branch_names, tree_name=tree_name)
-        emptyfiles.extend(empty_list)
-        outfilepath = pjoin(outdir, f'{startpattern}_{i//batch_size + 1}.pkl')
-        write_root(combined_evts, outfilepath, **kwargs)
+    combined_evts, empty_list = load_fields(root_files, branch_names, tree_name=tree_name)
+    emptyfiles.extend(empty_list)
+    outfilepath = pjoin(outdir, f'{startpattern}.root')
+    write_root(combined_evts, outfilepath, **kwargs)
     return emptyfiles
-
-def find_branches(file_path, object_list, tree_name, extra=[]) -> list:
-    """ Return a list of branches for objects in object_list
-
-    Paremters
-    - `file_path`: path to the root file
-    - `object_list`: list of objects to find branches for
-    - `tree_name`: name of the tree in the root file
-
-    Returns
-    - list of branches
-    """
-    file = uproot.open(file_path)
-    tree = file[tree_name]
-    branch_names = tree.keys()
-    branches = []
-    for object in object_list:
-        branches.extend([name for name in branch_names if name.startswith(object)])
-    if extra != []:
-        branches.extend([name for name in extra if name in branch_names])
-    return branches
 
 def load_pkl(filename):
     """Load a pickle file and return the data."""
