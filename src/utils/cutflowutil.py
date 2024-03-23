@@ -30,10 +30,7 @@ def combine_cf(inputdir, dsname, output=True, outpath=None):
     concat_df = pd.concat(dfs)
     combined = concat_df.groupby(concat_df.index, sort=False).sum()
     combined.columns = [dsname]
-
-    if output and outpath is not None:
-        combined.to_csv(outpath)
-    
+    if output and outpath is not None: combined.to_csv(outpath)
     return combined
 
 def add_selcutflow(cutflowlist, save=True, outpath=None):
@@ -52,7 +49,7 @@ def add_selcutflow(cutflowlist, save=True, outpath=None):
     if save: result.to_csv(outpath)
     return result
 
-def weight_cf(outdir, dsname, wgt, raw_cf, lumi=50):
+def weight_cf(dsname, wgt, raw_cf, save=False, outname=None, lumi=50):
     """Calculate weighted table based on raw table.
     
     Parameters
@@ -66,8 +63,7 @@ def weight_cf(outdir, dsname, wgt, raw_cf, lumi=50):
     """ 
     wgt_df = raw_cf * wgt * lumi
     wgt_df.columns = [dsname]
-    outfiname = pjoin(outdir, f'{dsname}_cutflowwgt.csv')
-    wgt_df.to_csv(outfiname)
+    if save and outname is not None: wgt_df.to_csv(outname)
     return wgt_df
 
 def efficiency(outdir, cfdf, overall=True, append=True, save=False, save_name='tot'):

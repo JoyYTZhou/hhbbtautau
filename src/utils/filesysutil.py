@@ -39,7 +39,7 @@ def checkpath(dirname):
         checklocalpath(dirname)
 
 def transferfiles(srcpath, destpath, startpattern='', endpattern=''):
-    """Transfer files between local and condor system.
+    """Transfer files between local and condor system. Will check if srcpath and destpath exist.
     
     Parameters:
     - `srcpath`: source path (local/remote)
