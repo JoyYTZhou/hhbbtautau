@@ -66,40 +66,7 @@ class CFCombiner():
                 self.wgt_dict = json.load(f)        
         else:
             self.wgt_dict = DataLoader.haddWeights(self.pltcfg.DATASETS, self.pltcfg.DATAPATH, save, from_raw)
-    
-    def get_totcf(self, name='cutflow_tot', from_load=False, output=True):
-        """Load all cutflow tables for all datasets from output directory and combine them into one. 
-        Scaled by luminosity in self.pltcfg currently.
-        
-        Parameters
-        - `from_load`: whether to load from output directory
-        - `output`: whether to save results.
 
-        Returns
-        - Tuple of two dataframes (raw, weighted) of cutflows
-        """
-        if from_load:
-            raw_df = pd.read_csv(pjoin(self.outdir, f"{name}_raw.csv"), index_col=0)
-            wgt_df = pd.read_csv(pjoin(self.outdir, f"{name}_wgt.csv"), index_col=0)
-        else: 
-            raw_df_list = []
-            wgt_df_list = []
-            for process, dsitems in self.wgt_dict.items():
-                for ds in dsitems.keys():
-                    raw_df = combine_cf(pjoin(self.indir, process), ds, 
-                                        output=True, outpath=pjoin(self.outdir, f'{ds}_cutflowraw.csv'))
-                    raw_df_list.append(raw_df)
-                    wgt = self.wgt_dict[process][ds]
-                    wgt_df_list.append(weight_cf(self.outdir, ds, wgt, raw_df, self.pltcfg.LUMI))
-            
-            raw_df = pd.concat(raw_df_list, axis=1)
-            wgt_df = pd.concat(wgt_df_list, axis=1)
-            if output:
-                raw_df.to_csv(pjoin(self.outdir, f"{name}_raw.csv"))
-                wgt_df.to_csv(pjoin(self.outdir, f"{name}_wgt.csv"))
-
-        return raw_df, wgt_df
-    
     def load_computed(self):
         """Load all computed combined csv's for datasets in store"""
         raw_pattern = pjoin(self.outdir, '*_cutflowraw.csv')

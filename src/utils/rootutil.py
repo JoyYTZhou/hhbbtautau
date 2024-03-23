@@ -15,7 +15,7 @@ pjoin = os.path.join
 runcom = subprocess.run
 
 class DataLoader():
-    """Class for loading and hadding data from skims/predefined selections."""
+    """Class for loading and hadding data from skims/predefined selections produced directly by Processor."""
     def __init__(self, pltcfg) -> None:
         self.pltcfg = pltcfg
         self.wgt_dict = DataLoader.haddWeights(self.pltcfg.DATASETS, self.pltcfg.DATAPATH)
@@ -25,6 +25,43 @@ class DataLoader():
             DataLoader.hadd_roots(self.pltcfg, self.wgt_dict)
             DataLoader.hadd_cfs()
         self.get_objs()
+        self.get_totcf()
+    
+    def get_totcf(self, resolution=0):
+        """Load all cutflow tables for all datasets from output directory and combine them into one. 
+        Scaled by luminosity in self.pltcfg currently.
+        
+        Parameters
+        - `output`: whether to save results.
+
+        Returns
+        - Tuple of two dataframes (raw, weighted) of cutflows
+        """
+        def process_file(path, process, resolution):
+            """Read and process a file based on resolution."""
+            df = pd.read_csv(path)
+            if resolution == 0:
+                df = df.sum(axis=1).to_frame(name=process)
+            return df
+        pltcfg = self.pltcfg
+        tot_raw_list = []
+        tot_wgt_list = []
+        for process in self.wgt_dict.keys():
+            wgt_path = pjoin(pltcfg.PLOTDATA, process, f'{process}_wgtcf.csv')
+            wgt_df = process_file(wgt_path, process, resolution)
+            tot_wgt_list.append(wgt_df)
+
+            raw_path = pjoin(pltcfg.PLOTDATA, process, f'{process}_rawcf.csv')
+            raw_df = process_file(raw_path, process, resolution)
+            tot_raw_list.append(raw_df)
+
+        raw_df = pd.concat(tot_raw_list, axis=1)
+        wgt_df = pd.concat(tot_wgt_list, axis=1)
+
+        raw_df.to_csv(pjoin(pltcfg.OUTPUTDIR, 'final_raw_data.csv'))
+        wgt_df.to_csv(pjoin(pltcfg.OUTPUTDIR, 'final_wgt_data.csv'))
+
+        return raw_df, wgt_df
 
     def get_objs(self):
         """Writes the selected, concated objects to root files."""
@@ -49,8 +86,9 @@ class DataLoader():
             condorpath = pjoin(pltcfg.CONDORPATH, process)
             outpath = pjoin(pltcfg.OUTPUTDIR, process)
             checkpath(outpath)
+            indir = pltcfg.INPUTDIR
             for ds in dsitems.keys():
-                raw_df = combine_cf(pjoin(self.indir, process), ds, output=False)
+                raw_df = combine_cf(pjoin(indir, process), ds, output=False)
                 rawdflist.append(raw_df)
                 wgt = self.wgt_dict[process][ds]
                 wgtdflist.append(weight_cf(ds, wgt, raw_df, save=False, lumi=self.pltcfg.LUMI))
@@ -59,7 +97,7 @@ class DataLoader():
             
             if pltcfg.CONDOR_TRANSFER:
                 transferfiles(outpath, condorpath, endpattern='.csv')
-                if pltcfg.CLEAN: delfiles(outdir, pattern='*.csv')
+                if pltcfg.CLEAN: delfiles(outpath, pattern='*.csv')
 
     @staticmethod
     def haddWeights(regexlist, grepdir, output=True, from_raw=True):
