@@ -3,6 +3,30 @@ import awkward as ak
 import uproot
 import pickle
 
+def get_compression(**kwargs):
+    """Returns the compression algorithm to use for writing root files."""
+    compression = kwargs.pop('compression', None)
+    compression_level = kwargs.pop('compression_level', 1)
+
+    if compression in ("LZMA", "lzma"):
+        compression_code = uproot.const.kLZMA
+    elif compression in ("ZLIB", "zlib"):
+        compression_code = uproot.const.kZLIB
+    elif compression in ("LZ4", "lz4"):
+        compression_code = uproot.const.kLZ4
+    elif compression in ("ZSTD", "zstd"):
+        compression_code = uproot.const.kZSTD
+    elif compression is None:
+        raise UserWarning("Not sure if this option is supported, should be...")
+    else:
+        msg = f"unrecognized compression algorithm: {compression}. Only ZLIB, LZMA, LZ4, and ZSTD are accepted."
+        raise ValueError(msg)
+    
+    if compression is not None: 
+        compression = uproot.compression.Compression.from_code_pair(compression_code, compression_level)
+
+    return compression
+
 def load_pkl(filename):
     """Load a pickle file and return the data."""
     with open(filename, 'rb') as f:

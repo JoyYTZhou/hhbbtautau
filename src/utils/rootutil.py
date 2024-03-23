@@ -32,7 +32,7 @@ class DataLoader():
         Scaled by luminosity in self.pltcfg currently.
         
         Parameters
-        - `output`: whether to save results.
+        - `resolution`: resolution of the cutflow table. 0 keep process level. 1 keep dataset level (specific channels etc.)
 
         Returns
         - Tuple of two dataframes (raw, weighted) of cutflows
@@ -193,30 +193,6 @@ def find_branches(file_path, object_list, tree_name, extra=[]) -> list:
     if extra != []:
         branches.extend([name for name in extra if name in branch_names])
     return branches
-
-def get_compression(**kwargs):
-    """Returns the compression algorithm to use for writing root files."""
-    compression = kwargs.pop('compression', None)
-    compression_level = kwargs.pop('compression_level', 1)
-
-    if compression in ("LZMA", "lzma"):
-        compression_code = uproot.const.kLZMA
-    elif compression in ("ZLIB", "zlib"):
-        compression_code = uproot.const.kZLIB
-    elif compression in ("LZ4", "lz4"):
-        compression_code = uproot.const.kLZ4
-    elif compression in ("ZSTD", "zstd"):
-        compression_code = uproot.const.kZSTD
-    elif compression is None:
-        raise UserWarning("Not sure if this option is supported, should be...")
-    else:
-        msg = f"unrecognized compression algorithm: {compression}. Only ZLIB, LZMA, LZ4, and ZSTD are accepted."
-        raise ValueError(msg)
-    
-    if compression is not None: 
-        compression = uproot.compression.Compression.from_code_pair(compression_code, compression_level)
-
-    return compression
 
 def load_fields(file, branch_names=None, tree_name='Events', lib='ak'):
     """Load specific fields. If the file is a list, concatenate the data from all files.
