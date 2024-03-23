@@ -127,7 +127,7 @@ class DataLoader():
             if extra is not None:
                 for name in extra: extradict[name].append(evts[name])
         for name, arrlist in objdict.items(): writable[name] = ak.concatenate(arrlist)
-        if extradict: 
+        if extra is not None: 
             for name, arrlist in extradict.items(): writable[name] = ak.concatenate(arrlist)
         return None
 
