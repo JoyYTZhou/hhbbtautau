@@ -4,11 +4,12 @@ import json
 import awkward as ak
 import random
 import subprocess
-import shutil
+import pandas as pd
 
 from analysis.selutility import Object
 from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles
 from utils.datautil import checkevents, find_branches
+from utils.cutflowutil import weight_cf, combine_cf
 
 pjoin = os.path.join
 runcom = subprocess.run
@@ -22,18 +23,43 @@ class DataLoader():
     def __call__(self):
         if self.pltcfg.REFRESH:
             DataLoader.hadd_roots(self.pltcfg, self.wgt_dict)
+            DataLoader.hadd_cfs()
         self.get_objs()
 
     def get_objs(self):
         """Writes the selected, concated objects to root files."""
         pltcfg = self.pltcfg
+        outdir = pjoin(pltcfg.OUTPUTDIR, 'objlimited')
+        checkpath(outdir)
         for process in pltcfg.DATASETS:
             for ds in self.wgt_dict[process].keys():
                 datadir = pjoin(pltcfg.PLOTDATA, process)
                 files = glob_files(datadir, startpattern=ds, endpattern='.root')
-                destination = pjoin(pltcfg.OUTPUTDIR, f"{ds}_limited.root")
+                destination = pjoin(outdir, f"{ds}_limited.root")
                 with uproot.recreate(destination) as output:
+                    print(f"Writing limited data to file {destination}")
                     DataLoader.write_obj(output, files, pltcfg.PLOT_VARS, pltcfg.EXTRA_VARS)
+    
+    def hadd_cfs(self):
+        """Hadd cutflow tables"""
+        pltcfg = self.pltcfg
+        for process, dsitems in self.wgt_dict.items():
+            rawdflist = []
+            wgtdflist = []
+            condorpath = pjoin(pltcfg.CONDORPATH, process)
+            outpath = pjoin(pltcfg.OUTPUTDIR, process)
+            checkpath(outpath)
+            for ds in dsitems.keys():
+                raw_df = combine_cf(pjoin(self.indir, process), ds, output=False)
+                rawdflist.append(raw_df)
+                wgt = self.wgt_dict[process][ds]
+                wgtdflist.append(weight_cf(ds, wgt, raw_df, save=False, lumi=self.pltcfg.LUMI))
+            pd.concat(rawdflist, axis=1).to_csv(pjoin(outpath, f"{process}_rawcf.csv"))
+            pd.concat(wgtdflist, axis=1).to_csv(pjoin(outpath, f"{process}_wgtcf.csv"))
+            
+            if pltcfg.CONDOR_TRANSFER:
+                transferfiles(outpath, condorpath, endpattern='.csv')
+                if pltcfg.CLEAN: delfiles(outdir, pattern='*.csv')
 
     @staticmethod
     def haddWeights(regexlist, grepdir, output=True, from_raw=True):
@@ -51,14 +77,11 @@ class DataLoader():
                 meta = json.load(f)
                 dsdict = {}
                 for dskey, dsval in meta.items():
-                    if from_raw:
-                        dsdict.update({dskey: dsval['xsection']/dsval['Raw Events']})
-                    else:
-                        dsdict.update({dskey: dsval['Per Event']})
-                wgt_dict.update({ds: dsdict})
+                    weight = dsval['xsection']/dsval['Raw Events'] if from_raw else dsval['Per Event']
+                    dsdict[dskey] = weight
+                wgt_dict[ds] = dsdict
         if output: 
-            outname = pjoin(grepdir, 'wgt_total.json')
-            with open(outname, 'w') as f:
+            with open(pjoin(grepdir, 'wgt_total.json'), 'w') as f:
                 json.dump(wgt_dict, f, indent=4)
         return wgt_dict
 
@@ -71,10 +94,10 @@ class DataLoader():
         - `wgt_dict`: dictionary of weights for each process
         """
         batch_size = pltcfg.HADD_BATCH
+        indir = pltcfg.INPUTDIR
         for process, dsitems in wgt_dict.items():
             outdir = pjoin(pltcfg.OUTPUTDIR, process)
             checkpath(outdir)
-            indir = pltcfg.INPUTDIR
             ds_dir = pjoin(indir, process)
             condorpath = pjoin(pltcfg.CONDORPATH, process)
             for ds in dsitems.keys():
@@ -84,8 +107,7 @@ class DataLoader():
                     outname = pjoin(outdir, f"{ds}_{i//batch_size+1}.root") 
                     call_hadd(outname, batch_files)
                 if pltcfg.CONDOR_TRANSFER:
-                    checkpath(condorpath)
-                    transferfiles(outdir, condorpath)
+                    transferfiles(outdir, condorpath, endpattern='.root')
                     if pltcfg.CLEAN: delfiles(outdir, pattern='*.root')
         return None
     
@@ -97,20 +119,19 @@ class DataLoader():
         - `filelist`: list of root files to extract info from
         - `objnames`: list of objects to load. Required to be entered in the selection config file.
         - `extra`: list of extra branches to save"""
-        objdict = {obj: [] for obj in objnames}
-        if extra is not None:
-            extradict = {name: [] for name in extra}
+        all_names = objnames + extra if extra is not None else objnames
+        all_data = {name: [] for name in all_names}
         for file in filelist:
             evts = load_fields(file)
-            for name in objnames:
-                obj = Object(evts, name)
-                zipped = obj.getzipped()
-                objdict[name].append(zipped)
-            if extra is not None:
-                for name in extra: extradict[name].append(evts[name])
-        for name, arrlist in objdict.items(): writable[name] = ak.concatenate(arrlist)
-        if extra is not None: 
-            for name, arrlist in extradict.items(): writable[name] = ak.concatenate(arrlist)
+            for name in all_names:
+                if name in objnames:
+                    obj = Object(evts, name)
+                    zipped = obj.getzipped()
+                    all_data[name].append(zipped)
+                else:
+                    all_data[name].append(evts[name])
+        for name, arrlist in all_data.items():
+            writable[name] = ak.concatenate(arrlist)
         return None
 
 def find_branches(file_path, object_list, tree_name, extra=[]) -> list:
