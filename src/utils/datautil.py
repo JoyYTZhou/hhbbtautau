@@ -1,6 +1,30 @@
 import pandas as pd
 import awkward as ak
 import uproot
+import pickle
+
+def load_pkl(filename):
+    """Load a pickle file and return the data."""
+    with open(filename, 'rb') as f:
+        data = pickle.load(f)
+    return data
+
+def load_data(source, **kwargs):
+    if isinstance(source, str):
+        if source.endswith('.csv'):
+            data = pd.read_csv(source, **kwargs)
+        elif source.endswith('.root'):
+            data = uproot.open(source)
+        elif source.endswith('.parquet'):
+            data = pd.read_parquet(source, **kwargs)
+        else:
+            raise ValueError("This is not a valid file type.")
+    elif checkevents(source):
+        data = source
+    else:
+        data = source
+        raise UserWarning(f"This might not be a valid source. The data type is {type(source)}")
+    return data
 
 def arr_handler(dfarr):
     """Handle different types of data arrays to convert them to awkward arrays."""

@@ -1,12 +1,11 @@
 import os
-import pandas as pd
-import numpy as np
 import uproot
 import json
-import pickle
 import awkward as ak
 import random
 import subprocess
+import shutil
+
 from analysis.selutility import Object
 from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles
 from utils.datautil import checkevents, find_branches
@@ -15,35 +14,18 @@ pjoin = os.path.join
 runcom = subprocess.run
 
 class DataLoader():
+    """Class for loading and hadding data from skims/predefined selections."""
     def __init__(self, pltcfg) -> None:
         self.pltcfg = pltcfg
         self.wgt_dict = DataLoader.haddWeights(self.pltcfg.DATASETS, self.pltcfg.DATAPATH)
     
-    def __call__(self, source, **kwargs):
-        """Constructor for DataLoader class.
-        
-        Parameters
-        - `source`: source of the data. Can be a string (path to file), a dataframe, or an awkward array.
-        """
-        if isinstance(source, str):
-            if source.endswith('.pkl'):
-                data = load_pkl(source)
-            elif source.endswith('.csv'):
-                data = pd.read_csv(source, **kwargs)
-            elif source.endswith('.root'):
-                data = uproot.open(source)
-            elif source.endswith('.parquet'):
-                data = pd.read_parquet(source, **kwargs)
-            else:
-                raise ValueError("This is not a valid file type.")
-        elif checkevents(source):
-            data = source
-        else:
-            data = source
-            raise UserWarning(f"This might not be a valid source. The data type is {type(source)}")
-        return data
+    def __call__(self):
+        if self.pltcfg.REFRESH:
+            DataLoader.hadd_roots(self.pltcfg, self.wgt_dict)
+        self.get_objs()
 
     def get_objs(self):
+        """Writes the selected, concated objects to root files."""
         pltcfg = self.pltcfg
         for process in pltcfg.DATASETS:
             for ds in self.wgt_dict[process].keys():
@@ -52,12 +34,6 @@ class DataLoader():
                 destination = pjoin(pltcfg.OUTPUTDIR, f"{ds}_limited.root")
                 with uproot.recreate(destination) as output:
                     DataLoader.write_obj(output, files, pltcfg.PLOT_VARS, pltcfg.EXTRA_VARS)
-
-    def getbranches(self, file):
-        pltcfg = self.pltcfg
-        branchnames = find_branches(file, pltcfg.PLOT_VARS, tree_name=pltcfg.TREENAME, 
-                                    extra=pltcfg.EXTRA_VARS)
-        return branchnames
 
     @staticmethod
     def haddWeights(regexlist, grepdir, output=True, from_raw=True):
@@ -114,7 +90,13 @@ class DataLoader():
         return None
     
     @staticmethod
-    def write_obj(writable, filelist, objnames, extra=None):
+    def write_obj(writable, filelist, objnames, extra=None) -> None:
+        """Writes the selected, concated objects to root files.
+        Parameters:
+        - `writable`: the uproot.writable directory
+        - `filelist`: list of root files to extract info from
+        - `objnames`: list of objects to load. Required to be entered in the selection config file.
+        - `extra`: list of extra branches to save"""
         objdict = {obj: [] for obj in objnames}
         if extra is not None:
             extradict = {name: [] for name in extra}
@@ -132,7 +114,7 @@ class DataLoader():
         return None
 
 def find_branches(file_path, object_list, tree_name, extra=[]) -> list:
-    """ Return a list of branches for objects in object_list
+    """Return a list of branches for objects in object_list
 
     Paremters
     - `file_path`: path to the root file
@@ -153,13 +135,8 @@ def find_branches(file_path, object_list, tree_name, extra=[]) -> list:
         branches.extend([name for name in extra if name in branch_names])
     return branches
 
-def load_pkl(filename):
-    """Load a pickle file and return the data."""
-    with open(filename, 'rb') as f:
-        data = pickle.load(f)
-    return data
-
 def get_compression(**kwargs):
+    """Returns the compression algorithm to use for writing root files."""
     compression = kwargs.pop('compression', None)
     compression_level = kwargs.pop('compression_level', 1)
 
@@ -183,16 +160,16 @@ def get_compression(**kwargs):
     return compression
 
 def load_fields(file, branch_names=None, tree_name='Events', lib='ak'):
-    """Load specific fields from root files in filelist and combine them into a single Arr.
+    """Load specific fields. If the file is a list, concatenate the data from all files.
     
     Parameters:
-    - file: file
+    - file: path to the root file or list of paths
     - branch_names: list of branch names to load
     - tree_name: name of the tree in the root file
+    - lib: library to use for loading the data
 
     Returns:
-    - A data arr containing the combined data from all root files in filelist.
-    - A list of empty files
+    - awkward array of the loaded data (, list of empty files)
     """
     def load_one(fi):
         with uproot.open(fi) as file:
@@ -217,13 +194,23 @@ def load_fields(file, branch_names=None, tree_name='Events', lib='ak'):
     return returned
 
 def write_root(evts, destination, outputtree="Events", title="Events", compression=None):
-    """Write arrays to root file. Highly inefficient methods in terms of data storage."""
+    """Write arrays to root file. Highly inefficient methods in terms of data storage.
+    Parameters
+    - `evts`: awkward array to write
+    - `destination`: path to the output root file
+    - `outputtree`: name of the tree to write to
+    - `title`: title of the tree
+    - `compression`: compression algorithm to use"""
     branch_types = {name: evts[name].type for name in evts.fields}
     with uproot.recreate(destination, compression=compression) as file:
         file.mktree(name=outputtree, branch_types=branch_types, title=title)
         file[outputtree].extend({name: evts[name] for name in evts.fields}) 
 
 def call_hadd(output_file, input_files):
+    """Merge ROOT files using hadd.
+    Parameters
+    - `output_file`: path to the output file
+    - `input_files`: list of paths to the input files"""
     command = ['hadd', '-f0 -O', output_file] + input_files
     result = subprocess.run(command, capture_output=True, text=True)
     if result.returncode == 0:
