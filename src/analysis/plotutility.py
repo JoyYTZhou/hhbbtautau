@@ -43,7 +43,6 @@ class CFCombiner():
         if self.pltcfg.REFRESH: 
             for ds in self.pltcfg.DATASETS:
                 if os.path.isdir(pjoin(self.outdir, ds)): shutil.rmtree(pjoin(self.outdir, ds))
-            DataLoader.hadd_roots(self.pltcfg, self.wgt_dict)
         raw_df, wgt_df = self.get_totcf(from_load=from_load, name=name)
         efficiency(self.outdir, wgt_df, append=False, save=True, save_name='tot')
         if self.pltcfg.CONDOR_TRANSFER: 
