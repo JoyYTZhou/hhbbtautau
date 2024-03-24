@@ -233,24 +233,25 @@ def produceCSV(datadir):
     json_files = glob.glob(f"{datadir}/*.json")
     df = []
     for file_path in json_files:
-        with open(file_path, 'r') as file:
-            data = json.load(file)
-            for name, attributes in data.items():
-                df.append({
-                    'name': name,
-                    'string': attributes['string'][0] if attributes['string'] else None,
-                    'xsection': attributes.get('xsection'),
-                    '# raw events': attributes.get('Raw Events'),
-                    '# weighted events': attributes.get('Wgt Events')
-                })
+        if not file_path.endswith('total.json'):
+            with open(file_path, 'r') as file:
+                data = json.load(file)
+                for name, attributes in data.items():
+                    df.append({
+                        'name': name,
+                        'string': attributes['string'][0] if attributes['string'] else None,
+                        'xsection': attributes.get('xsection'),
+                        '# raw events': attributes.get('Raw Events'),
+                        '# weighted events': attributes.get('Wgt Events')
+                    })
     all_df = pd.DataFrame(df)
     all_df.to_csv('compiled_weight.csv', index=False)
     
 if __name__ == "__main__":
     # query_MCsamples("data.json", "data_file.json", regex="NanoAODv")
-    add_weight("data_file.json", "preprocessed", dsname=['TTbar'])
+    # add_weight("data_file.json", "preprocessed", dsname=['TTbar'])
     # print("Jobs finished!")
-    # produceCSV('preprocessed')
+    produceCSV('preprocessed')
 
 
 

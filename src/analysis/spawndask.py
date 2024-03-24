@@ -1,12 +1,12 @@
 from dask.distributed import Client, LocalCluster
 from dask.distributed import as_completed
-from .processor import Processor
-from .custom import switch_selections
 import json as json
-from utils.rootutil import *
-from utils.filesysutil import glob_files
 import gc
 from itertools import islice
+
+from .custom import switch_selections
+from .processor import Processor
+from utils.filesysutil import glob_files, initLogger
 from config.selectionconfig import runsetting as rs
 from config.selectionconfig import dasksetting as daskcfg
 

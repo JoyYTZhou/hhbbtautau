@@ -5,7 +5,6 @@ import json
 import shutil
 from utils.filesysutil import *
 from utils.cutflowutil import * 
-from utils.rootutil import DataLoader
 from utils.datautil import arr_handler
 from analysis.selutility import Object
 
@@ -64,8 +63,6 @@ class CFCombiner():
         if from_load:
             with open(pjoin(self.pltcfg.DATAPATH, 'wgt_total.json'), 'r') as f:
                 self.wgt_dict = json.load(f)        
-        else:
-            self.wgt_dict = DataLoader.haddWeights(self.pltcfg.DATASETS, self.pltcfg.DATAPATH, save, from_raw)
 
     def load_computed(self):
         """Load all computed combined csv's for datasets in store"""
@@ -110,21 +107,20 @@ class CFCombiner():
             remote_path = pjoin(self.pltcfg.CONDORPATH, ds)
             to_dir = pjoin(self.indir, ds)
             transferfiles(remote_path, to_dir, startpattern=startpattern, endpattern=endpattern)
-                
         
 class DataPlotter():
-    def __init__(self, pltcfg, wgt_dict):
-        self.wgt_dict = wgt_dict
+    def __init__(self, pltcfg):
         self.pltcfg = pltcfg
+        with open(pjoin(self.pltcfg.DATAPATH, 'wgt_total.json'), 'r') as f:
+            self.wgt_dict = json.load(f)
 
-    def __call__(self, pltcfg, wgt_dict):
-        if pltcfg.REFRESH:
+    def __call__(self):
+        if self.pltcfg.REFRESH:
             pass
 
     def plotobj(self, arrs, labels, name):
         for arr in arrs:
             obj = Object(arr, name).getzipped()
-        
         pass
 
     @staticmethod
@@ -136,7 +132,7 @@ class DataPlotter():
         - `sort_what`: the attribute to be sorted
         - `kwargs`: additional arguments for sorting
         """
-        mask = DataPlotter.sortmask(data[sort_by], **kwargs)
+        mask = Object.sortmask(data[sort_by], **kwargs)
         return arr_handler(data[sort_what])[mask]
     
     @staticmethod
@@ -156,7 +152,7 @@ class DataPlotter():
         return hist, bin_edges
 
     @staticmethod
-    def plot_var(hist, bin_edges, title, xlabel, range, save=True, save_name='plot.png'):
+    def plot_var(hist, bin_edges, weight, title, xlabel, range, save=True, save_name='plot.png'):
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.set_title(title)
         hep.histplot(
@@ -166,6 +162,7 @@ class DataPlotter():
             color="b",
             alpha=0.5,
             edgecolor="black",
+            weights=weight,
             ax=ax,
         )
         ax.set_xlabel(xlabel, fontsize=15)
