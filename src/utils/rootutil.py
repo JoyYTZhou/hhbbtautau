@@ -22,7 +22,7 @@ class DataLoader():
     
     def __call__(self):
         if self.pltcfg.REFRESH:
-            #DataLoader.hadd_roots(self.pltcfg, self.wgt_dict)
+            DataLoader.hadd_roots(self.pltcfg, self.wgt_dict)
             self.hadd_cfs()
         # self.get_objs()
         self.get_totcf()
@@ -57,12 +57,14 @@ class DataLoader():
         tot_wgt_list = []
         for process in self.wgt_dict.keys():
             wgt_path = glob_files(pjoin(pltcfg.PLOTDATA, process), startpattern=process, endpattern='wgtcf.csv')[0]
-            wgt_df = process_file(wgt_path, process, resolution)
-            tot_wgt_list.append(wgt_df)
+            if wgt_path: 
+                wgt_df = process_file(wgt_path, process, resolution)
+                tot_wgt_list.append(wgt_df)
 
             raw_path = glob_files(pjoin(pltcfg.PLOTDATA, process), startpattern=process, endpattern='rawcf.csv')[0]
-            raw_df = process_file(raw_path, process, resolution)
-            tot_raw_list.append(raw_df)
+            if raw_path: 
+                raw_df = process_file(raw_path, process, resolution)
+                tot_raw_list.append(raw_df)
 
         raw_df = pd.concat(tot_raw_list, axis=1)
         wgt_df = pd.concat(tot_wgt_list, axis=1)
@@ -120,14 +122,17 @@ class DataLoader():
         - `from_raw`: whether to compute weights based on number of raw events instead of weighted
         """
         wgt_dict = {}
-        for ds in regexlist:
-            with open(pjoin(grepdir, f'{ds}.json'), 'r') as f:
-                meta = json.load(f)
-                dsdict = {}
-                for dskey, dsval in meta.items():
-                    weight = dsval['xsection']/dsval['Raw Events'] if from_raw else dsval['Per Event']
-                    dsdict[dskey] = weight
-                wgt_dict[ds] = dsdict
+        jsonfiles = glob_files(grepdir)
+        for filename in jsonfiles:
+            ds = os.path.basename(filename).rsplit('.json', 1)[0]
+            if ds != 'wgt_total':
+                with open(filename, 'r') as f:
+                    meta = json.load(f)
+                    dsdict = {}
+                    for dskey, dsval in meta.items():
+                        weight = dsval['xsection']/dsval['Raw Events'] if from_raw else dsval['Per Event']
+                        dsdict[dskey] = weight
+                    wgt_dict[ds] = dsdict
         if output: 
             with open(pjoin(grepdir, 'wgt_total.json'), 'w') as f:
                 json.dump(wgt_dict, f, indent=4)

@@ -5,7 +5,7 @@ import json
 import shutil
 from utils.filesysutil import *
 from utils.cutflowutil import * 
-from utils.datautil import arr_handler
+from utils.datautil import arr_handler, iterwgt
 from analysis.selutility import Object
 
 class CFCombiner():
@@ -96,32 +96,39 @@ class CFCombiner():
             allds_cf.to_csv(finame)
 
         return allds_cf
-
-    def load_allds(self):
-        srcdir = self.pltcfg.LOCAL_OUTPUT
-        pass
-
-    def updatedir(self, startpattern='', endpattern='.csv'):
-        """Update local input directories from condor"""
-        for ds in self.pltcfg.DATASETS:
-            remote_path = pjoin(self.pltcfg.CONDORPATH, ds)
-            to_dir = pjoin(self.indir, ds)
-            transferfiles(remote_path, to_dir, startpattern=startpattern, endpattern=endpattern)
         
 class DataPlotter():
     def __init__(self, pltcfg):
         self.pltcfg = pltcfg
         with open(pjoin(self.pltcfg.DATAPATH, 'wgt_total.json'), 'r') as f:
             self.wgt_dict = json.load(f)
+        self.data_dict = {}
 
     def __call__(self):
         if self.pltcfg.REFRESH:
             pass
+    
+    @iterwgt
+    def getdata(self, process, ds, datadir):
+        datadir = pjoin(self.pltcfg.PLOTDATA, 'objlimited')
+        self.data_dict = {}
+        for process, dsinfo in self.wgt_dict.items():
+            for ds in dsinfo.keys():
+                rootfile = glob_files(datadir, startpattern=ds, endpattern='.root')[0]
+                if not process in self.data_dict.keys(): self.data_dict[process] = {}
+                else: self.data_dict[process][ds] = rootfile
+    
+    
+        
 
     def plotobj(self, arrs, labels, name):
         for arr in arrs:
             obj = Object(arr, name).getzipped()
         pass
+    
+    def iterdata(self, func, *args, **kwargs):
+        pass
+        
 
     @staticmethod
     def sortobj(data, sort_by, sort_what, **kwargs):
@@ -136,7 +143,7 @@ class DataPlotter():
         return arr_handler(data[sort_what])[mask]
     
     @staticmethod
-    def deal_overflow(arr, bin_no, range):
+    def deal_overflow(arr, bins, range, weights=None):
         """Wrapper around numpy histogram function to deal with overflow.
         
         Parameters
@@ -144,31 +151,33 @@ class DataPlotter():
         - `bin_no`: number of bins
         - `range`: range of the histogram
         """
-        bins = np.linspace(*range, bin_no)
+        bins = np.linspace(*range, bins)
         min_edge = bins[0]
         max_edge = bins[-1]
         adjusted_data = np.clip(arr, min_edge, max_edge)
-        hist, bin_edges = np.histogram(adjusted_data, bins=bins)
+        hist, bin_edges = np.histogram(adjusted_data, bins=bins, weights=weights)
         return hist, bin_edges
 
     @staticmethod
-    def plot_var(hist, bin_edges, weight, title, xlabel, range, save=True, save_name='plot.png'):
+    def plot_var(hist, bin_edges, title, legend, xlabel, range, save=True, save_name='plot.png'):
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.set_title(title)
+        hep.style.use("CMS")
         hep.histplot(
             hist,
             bins=bin_edges,
             histtype="fill",
-            color="b",
             alpha=0.5,
             edgecolor="black",
-            weights=weight,
             ax=ax,
+            label=legend
         )
         ax.set_xlabel(xlabel, fontsize=15)
         ax.set_ylabel("Events", fontsize=15)
         ax.set_xlim(*range)
         ax.legend()
+        if save:
+            fig.savefig(save_name, dpi=300)
         fig.show() 
 
 # style a dataframe table
