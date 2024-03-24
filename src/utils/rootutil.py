@@ -18,15 +18,24 @@ class DataLoader():
     """Class for loading and hadding data from skims/predefined selections produced directly by Processor."""
     def __init__(self, pltcfg) -> None:
         self.pltcfg = pltcfg
-        self.wgt_dict = DataLoader.haddWeights(self.pltcfg.DATASETS, self.pltcfg.DATAPATH)
+        self.get_wgt()
     
     def __call__(self):
         if self.pltcfg.REFRESH:
-            DataLoader.hadd_roots(self.pltcfg, self.wgt_dict)
-            DataLoader.hadd_cfs()
-        self.get_objs()
+            #DataLoader.hadd_roots(self.pltcfg, self.wgt_dict)
+            self.hadd_cfs()
+        # self.get_objs()
         self.get_totcf()
     
+    def get_wgt(self):
+        """Compute/Load weights needed for these datasets. Save if needed."""
+        from_load = self.pltcfg.FROM_LOAD
+        if from_load:
+            with open(pjoin(self.pltcfg.DATAPATH, 'wgt_total.json'), 'r') as f:
+                self.wgt_dict = json.load(f)        
+        else:
+            self.wgt_dict = DataLoader.haddWeights(self.pltcfg.DATASETS, self.pltcfg.DATAPATH)
+            
     def get_totcf(self, resolution=0):
         """Load all cutflow tables for all datasets from output directory and combine them into one. 
         Scaled by luminosity in self.pltcfg currently.
@@ -47,11 +56,11 @@ class DataLoader():
         tot_raw_list = []
         tot_wgt_list = []
         for process in self.wgt_dict.keys():
-            wgt_path = pjoin(pltcfg.PLOTDATA, process, f'{process}_wgtcf.csv')
+            wgt_path = glob_files(pjoin(pltcfg.PLOTDATA, process), startpattern=process, endpattern='wgtcf.csv')[0]
             wgt_df = process_file(wgt_path, process, resolution)
             tot_wgt_list.append(wgt_df)
 
-            raw_path = pjoin(pltcfg.PLOTDATA, process, f'{process}_rawcf.csv')
+            raw_path = glob_files(pjoin(pltcfg.PLOTDATA, process), startpattern=process, endpattern='rawcf.csv')[0]
             raw_df = process_file(raw_path, process, resolution)
             tot_raw_list.append(raw_df)
 
@@ -64,7 +73,8 @@ class DataLoader():
         return raw_df, wgt_df
 
     def get_objs(self):
-        """Writes the selected, concated objects to root files."""
+        """Writes the selected, concated objects to root files.
+        Get from processes in pltcfg only, regardless of the entries in weight dictionary."""
         pltcfg = self.pltcfg
         outdir = pjoin(pltcfg.OUTPUTDIR, 'objlimited')
         checkpath(outdir)
@@ -150,27 +160,33 @@ class DataLoader():
         return None
     
     @staticmethod
-    def write_obj(writable, filelist, objnames, extra=None) -> None:
+    def write_obj(writable, filelist, objnames, extra=[]) -> None:
         """Writes the selected, concated objects to root files.
         Parameters:
         - `writable`: the uproot.writable directory
         - `filelist`: list of root files to extract info from
         - `objnames`: list of objects to load. Required to be entered in the selection config file.
         - `extra`: list of extra branches to save"""
-        all_names = objnames + extra if extra is not None else objnames
-        all_data = {name: [] for name in all_names}
+
+        all_names = objnames + extra
+        print(all_names)
+        all_data = {name: [] for name in objnames}
+        all_data['extra'] = {name: [] for name in extra}
         for file in filelist:
             evts = load_fields(file)
+            print(f"events loaded for file {file}")
             for name in all_names:
                 if name in objnames:
                     obj = Object(evts, name)
                     zipped = obj.getzipped()
                     all_data[name].append(zipped)
                 else:
-                    all_data[name].append(evts[name])
+                    all_data['extra'][name].append(evts[name])
         for name, arrlist in all_data.items():
-            writable[name] = ak.concatenate(arrlist)
-        return None
+            if name != 'extra':
+                writable[name] = ak.concatenate(arrlist)
+            else:
+                writable['extra'] = {branchname: ak.concatenate(arrlist[branchname]) for branchname in arrlist.keys()}
 
 def find_branches(file_path, object_list, tree_name, extra=[]) -> list:
     """Return a list of branches for objects in object_list
@@ -195,7 +211,7 @@ def find_branches(file_path, object_list, tree_name, extra=[]) -> list:
     return branches
 
 def load_fields(file, branch_names=None, tree_name='Events', lib='ak'):
-    """Load specific fields. If the file is a list, concatenate the data from all files.
+    """Load specific fields if any. Otherwise load all. If the file is a list, concatenate the data from all files.
     
     Parameters:
     - file: path to the root file or list of paths
