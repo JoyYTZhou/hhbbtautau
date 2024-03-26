@@ -101,13 +101,12 @@ class CFCombiner():
         
 class DataPlotter():
     def __init__(self, cleancfg, plotsetting):
-        self.cleancfg = cleancfg
         self.plotcfg = plotsetting
-        with open(pjoin(self.cleancfg.DATAPATH, 'wgt_total.json'), 'r') as f:
+        with open(pjoin(cleancfg.DATAPATH, 'wgt_total.json'), 'r') as f:
             self.wgt_dict = json.load(f)
         self.data_dict = {}
         self.getdata()
-        self.datadir = pjoin(self.cleancfg.PLOTDATA, 'objlimited')
+        self.datadir = pjoin(cleancfg.PLOTDATA, 'objlimited')
         self.resolution = cleancfg.RESOLUTION
 
     @staticmethod
