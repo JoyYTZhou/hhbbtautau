@@ -1,9 +1,8 @@
-from analysis.plotutility import CFCombiner
 from utils.rootutil import DataLoader
-from config.selectionconfig import plotsetting as pltsetting
+from config.selectionconfig import cleansetting
 
 def hadd():
-    dl = DataLoader(pltsetting)
+    dl = DataLoader(cleansetting)
     dl()
 
 if __name__ == '__main__':

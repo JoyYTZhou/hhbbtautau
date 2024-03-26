@@ -21,8 +21,14 @@ dasksetting = Dynaconf(
     settings_file=['config/dasksetting.toml']
 )
 
-plotsetting = Dynaconf(
+cleansetting = Dynaconf(
     root_path=root_path,
     environments=True,
-    settings_file=['config/plotconfig.toml']
+    settings_file=['config/dataclean.toml']
+)
+
+cleansetting = Dynaconf(
+    root_path=root_path,
+    environments=True,
+    settings_file=['config/plotsetting.yaml']
 )

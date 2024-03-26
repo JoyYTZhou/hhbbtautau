@@ -16,29 +16,29 @@ runcom = subprocess.run
 
 class DataLoader():
     """Class for loading and hadding data from skims/predefined selections produced directly by Processor."""
-    def __init__(self, pltcfg) -> None:
-        self.pltcfg = pltcfg
+    def __init__(self, cleancfg) -> None:
+        self.cleancfg = cleancfg
         self.get_wgt()
     
     def __call__(self):
-        if self.pltcfg.REFRESH:
-            DataLoader.hadd_roots(self.pltcfg, self.wgt_dict)
+        if self.cleancfg.REFRESH:
+            DataLoader.hadd_roots(self.cleancfg, self.wgt_dict)
             self.hadd_cfs()
         # self.get_objs()
         self.get_totcf()
     
     def get_wgt(self):
         """Compute/Load weights needed for these datasets. Save if needed."""
-        from_load = self.pltcfg.FROM_LOAD
+        from_load = self.cleancfg.FROM_LOAD
         if from_load:
-            with open(pjoin(self.pltcfg.DATAPATH, 'wgt_total.json'), 'r') as f:
+            with open(pjoin(self.cleancfg.DATAPATH, 'wgt_total.json'), 'r') as f:
                 self.wgt_dict = json.load(f)        
         else:
-            self.wgt_dict = DataLoader.haddWeights(self.pltcfg.DATASETS, self.pltcfg.DATAPATH)
+            self.wgt_dict = DataLoader.haddWeights(self.cleancfg.DATASETS, self.cleancfg.DATAPATH)
             
     def get_totcf(self, resolution=0):
         """Load all cutflow tables for all datasets from output directory and combine them into one. 
-        Scaled by luminosity in self.pltcfg currently.
+        Scaled by luminosity in self.cleancfg currently.
         
         Parameters
         - `resolution`: resolution of the cutflow table. 0 keep process level. 1 keep dataset level (specific channels etc.)
@@ -52,16 +52,16 @@ class DataLoader():
             if resolution == 0:
                 df = df.sum(axis=1).to_frame(name=process)
             return df
-        pltcfg = self.pltcfg
+        cleancfg = self.cleancfg
         tot_raw_list = []
         tot_wgt_list = []
         for process in self.wgt_dict.keys():
-            wgt_path = glob_files(pjoin(pltcfg.PLOTDATA, process), startpattern=process, endpattern='wgtcf.csv')[0]
+            wgt_path = glob_files(pjoin(cleancfg.PLOTDATA, process), startpattern=process, endpattern='wgtcf.csv')[0]
             if wgt_path: 
                 wgt_df = process_file(wgt_path, process, resolution)
                 tot_wgt_list.append(wgt_df)
 
-            raw_path = glob_files(pjoin(pltcfg.PLOTDATA, process), startpattern=process, endpattern='rawcf.csv')[0]
+            raw_path = glob_files(pjoin(cleancfg.PLOTDATA, process), startpattern=process, endpattern='rawcf.csv')[0]
             if raw_path: 
                 raw_df = process_file(raw_path, process, resolution)
                 tot_raw_list.append(raw_df)
@@ -69,47 +69,47 @@ class DataLoader():
         raw_df = pd.concat(tot_raw_list, axis=1)
         wgt_df = pd.concat(tot_wgt_list, axis=1)
 
-        raw_df.to_csv(pjoin(pltcfg.OUTPUTDIR, 'final_raw_data.csv'))
-        wgt_df.to_csv(pjoin(pltcfg.OUTPUTDIR, 'final_wgt_data.csv'))
+        raw_df.to_csv(pjoin(cleancfg.OUTPUTDIR, 'final_raw_data.csv'))
+        wgt_df.to_csv(pjoin(cleancfg.OUTPUTDIR, 'final_wgt_data.csv'))
 
         return raw_df, wgt_df
 
     def get_objs(self):
         """Writes the selected, concated objects to root files.
-        Get from processes in pltcfg only, regardless of the entries in weight dictionary."""
-        pltcfg = self.pltcfg
-        outdir = pjoin(pltcfg.OUTPUTDIR, 'objlimited')
+        Get from processes in cleancfg only, regardless of the entries in weight dictionary."""
+        cleancfg = self.cleancfg
+        outdir = pjoin(cleancfg.OUTPUTDIR, 'objlimited')
         checkpath(outdir)
-        for process in pltcfg.DATASETS:
+        for process in cleancfg.DATASETS:
             for ds in self.wgt_dict[process].keys():
-                datadir = pjoin(pltcfg.PLOTDATA, process)
+                datadir = pjoin(cleancfg.PLOTDATA, process)
                 files = glob_files(datadir, startpattern=ds, endpattern='.root')
                 destination = pjoin(outdir, f"{ds}_limited.root")
                 with uproot.recreate(destination) as output:
                     print(f"Writing limited data to file {destination}")
-                    DataLoader.write_obj(output, files, pltcfg.PLOT_VARS, pltcfg.EXTRA_VARS)
+                    DataLoader.write_obj(output, files, cleancfg.PLOT_VARS, cleancfg.EXTRA_VARS)
     
     def hadd_cfs(self):
         """Hadd cutflow tables"""
-        pltcfg = self.pltcfg
+        cleancfg = self.cleancfg
         for process, dsitems in self.wgt_dict.items():
             rawdflist = []
             wgtdflist = []
-            condorpath = pjoin(pltcfg.CONDORPATH, process)
-            outpath = pjoin(pltcfg.OUTPUTDIR, process)
+            condorpath = pjoin(cleancfg.CONDORPATH, process)
+            outpath = pjoin(cleancfg.OUTPUTDIR, process)
             checkpath(outpath)
-            indir = pltcfg.INPUTDIR
+            indir = cleancfg.INPUTDIR
             for ds in dsitems.keys():
                 raw_df = combine_cf(pjoin(indir, process), ds, output=False)
                 rawdflist.append(raw_df)
                 wgt = self.wgt_dict[process][ds]
-                wgtdflist.append(weight_cf(ds, wgt, raw_df, save=False, lumi=self.pltcfg.LUMI))
+                wgtdflist.append(weight_cf(ds, wgt, raw_df, save=False, lumi=self.cleancfg.LUMI))
             pd.concat(rawdflist, axis=1).to_csv(pjoin(outpath, f"{process}_rawcf.csv"))
             pd.concat(wgtdflist, axis=1).to_csv(pjoin(outpath, f"{process}_wgtcf.csv"))
             
-            if pltcfg.CONDOR_TRANSFER:
+            if cleancfg.CONDOR_TRANSFER:
                 transferfiles(outpath, condorpath, endpattern='.csv')
-                if pltcfg.CLEAN: delfiles(outpath, pattern='*.csv')
+                if cleancfg.CLEAN: delfiles(outpath, pattern='*.csv')
 
     @staticmethod
     def haddWeights(regexlist, grepdir, output=True, from_raw=True):
@@ -139,29 +139,29 @@ class DataLoader():
         return wgt_dict
 
     @staticmethod
-    def hadd_roots(pltcfg, wgt_dict) -> None:
+    def hadd_roots(cleancfg, wgt_dict) -> None:
         """Hadd root files of datasets into appropriate size based on plot setting. 
         
         Parameters
-        - `pltcfg`: plot setting
+        - `cleancfg`: plot setting
         - `wgt_dict`: dictionary of weights for each process
         """
-        batch_size = pltcfg.HADD_BATCH
-        indir = pltcfg.INPUTDIR
+        batch_size = cleancfg.HADD_BATCH
+        indir = cleancfg.INPUTDIR
         for process, dsitems in wgt_dict.items():
-            outdir = pjoin(pltcfg.OUTPUTDIR, process)
+            outdir = pjoin(cleancfg.OUTPUTDIR, process)
             checkpath(outdir)
             ds_dir = pjoin(indir, process)
-            condorpath = pjoin(pltcfg.CONDORPATH, process)
+            condorpath = pjoin(cleancfg.CONDORPATH, process)
             for ds in dsitems.keys():
                 root_files = glob_files(ds_dir, ds, '.root')
                 for i in range(0, len(root_files), batch_size):
                     batch_files = root_files[i:i+batch_size]
                     outname = pjoin(outdir, f"{ds}_{i//batch_size+1}.root") 
                     call_hadd(outname, batch_files)
-                if pltcfg.CONDOR_TRANSFER:
+                if cleancfg.CONDOR_TRANSFER:
                     transferfiles(outdir, condorpath, endpattern='.root')
-                    if pltcfg.CLEAN: delfiles(outdir, pattern='*.root')
+                    if cleancfg.CLEAN: delfiles(outdir, pattern='*.root')
         return None
     
     @staticmethod
