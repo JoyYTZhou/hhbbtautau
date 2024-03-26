@@ -106,12 +106,10 @@ class DataPlotter():
         with open(pjoin(self.cleancfg.DATAPATH, 'wgt_total.json'), 'r') as f:
             self.wgt_dict = json.load(f)
         self.data_dict = {}
+        self.getdata()
         self.datadir = pjoin(self.cleancfg.PLOTDATA, 'objlimited')
+        self.resolution = cleancfg.RESOLUTION
 
-    def __call__(self):
-        if self.cleancfg.REFRESH:
-            pass
-    
     @staticmethod
     def iterdata(func):
         @wraps(func)
@@ -121,8 +119,7 @@ class DataPlotter():
                 if dsitems:
                     for ds in dsitems.keys():
                         root_file = dsitems[ds]
-                        flat_wgt = self.wgt_dict[process][ds]
-                        results.append(func(self, root_file, flat_wgt, *args, **kwargs))
+                        results.append(func(self, root_file, process, ds, *args, **kwargs))
             return results
         return wrapper
 
@@ -131,12 +128,20 @@ class DataPlotter():
         rootfile = glob_files(self.datadir, startpattern=ds, endpattern='.root')[0]
         if not process in self.data_dict.keys(): self.data_dict[process] = {}
         else: self.data_dict[process][ds] = rootfile
-        
-    def plotall(self, root_file, flat_wgt, per_evt_wgt='Generator_weight'):
-        pass
     
     @iterdata
-    def computewgt(self, root_file, flat_wgt, per_evt_wgt='Generator_weight', *args, **kwargs):
+    def getobj(self, root_file, process, ds, obj_name):
+        events = load_fields(root_file, tree_name=obj_name)
+        return events
+    
+    @iterdata
+    def getlabels(self, root_file, process, ds):
+        label = process if self.resolution == 'process' else ds
+        return label
+    
+    @iterdata
+    def computewgt(self, root_file, process, ds, per_evt_wgt='Generator_weight', *args, **kwargs):
+        flat_wgt = self.wgt_dict[process][ds]
         wgt_arr = load_fields(root_file, tree_name='extra')[per_evt_wgt] * flat_wgt
         return wgt_arr
         
@@ -147,9 +152,6 @@ class DataPlotter():
         for i, obj_arr in enumerate(evts):
             var = DataPlotter.sortobj(obj_arr, sort_by=obj_cfg['sort_by'], sort_what=var)[indx]
             list_of_hists[i] = self.deal_overflow(var, var_cfg['bins'], var_cfg['range'], weights=wgt_arrs[i])
-        
-
-
     
     @staticmethod
     def deal_overflow(arr, bins, range, weights=None):
