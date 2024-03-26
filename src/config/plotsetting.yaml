@@ -1,0 +1,7 @@
+default:
+  Tau:
+    sort_by: Pt
+    var:
+      Pt:
+        range: [0, 300]
+        bins: 135

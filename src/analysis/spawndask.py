@@ -10,7 +10,7 @@ from utils.filesysutil import glob_files, initLogger
 from config.selectionconfig import runsetting as rs
 from config.selectionconfig import dasksetting as daskcfg
 
-logger = initLogger(__name__, rs.PROCESS_NAME)
+logger = initLogger(__name__.split('.')[-1], rs.PROCESS_NAME)
 evtselclass = switch_selections(rs.SEL_NAME)
 with open("src/data/data.json", 'r') as data:
     realmeta = json.load(data)
@@ -25,6 +25,7 @@ def job(fn, i, dataset, eventSelection=evtselclass):
     """
     proc = Processor(rs, dataset, eventSelection)
     logger.info(f"Processing filename {fn}")
+    print(f"Processing filename {fn}")
     try: 
         proc.runfile(fn, i)
         logger.info(f"Execution finished for file index {i} in {dataset}!")
@@ -40,7 +41,7 @@ def runfutures(client):
     futures = submitjobs(client)
     if futures is not None: process_futures(futures)
     
-def loadmeta(save=False):
+def loadmeta():
     """Load metadata from input file"""
     if rs.INPUTFILE_PATH.endswith('.json'):
         with open(rs.INPUTFILE_PATH, 'r') as samplepath:
