@@ -59,6 +59,8 @@ def loadmeta():
         loaded = realmeta[rs.PROCESS_NAME]
         for dataset in loaded.keys():
             loaded[dataset]['filelist'] = glob_files(rs.INPUTFILE_PATH, startpattern=dataset, endpattern='.root')
+    else:
+        raise TypeError("Check INPUTFILE_PATH in runsetting.toml. It's not of a valid format!")
     return loaded
 
 def submitfutures(client):
