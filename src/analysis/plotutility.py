@@ -76,20 +76,47 @@ class DataPlotter():
         pass
     
     def plotobj(self, objname, attridict):
+        """Plot the object attribute based on the attribute dictionary.
+        
+        Parameters
+        - `objname`: the object to be loaded and plotted
+        - `attridict`: a dictionary of attributes to be plotted
+        """
         evts = self.getobj(objname)
         objplotter = ObjectPlotter(objname, self.plotcfg[objname], self.wgt, self.labels, evts)
-            
-    
+        for att, options in attridict.items():
+            histlist, bins = objplotter.histobj(att, 
+                                                options.pop('objindx', 0), 
+                                                options.pop('bins', 10), 
+                                                options.pop('range', (0,200)), 
+                                                sort_by=options.pop('sort_by', 'pt'))
+            objplotter.plot_var(histlist, bins,
+                                legend=self.labels, 
+                                xlabel=options.pop('xlabel', 'GeV'),
+                                range=options.pop('range', (0,200)),
+                                save=options.pop('save', True), 
+                                title=options.pop('title', ''),
+                                save_name=pjoin(self.outdir, options.pop('save_name', 'plot.png')),
+                                **options)
+        return None
         
 class ObjectPlotter():
     def __init__(self, objname, plotcfg, wgt, labels, evts):
         self.objname = objname
         self.objcfg = plotcfg
         self.wgt = wgt
-        self.labels = labels
         self.evts = evts
     
-    def histobj(self, varname, objindx, bins_no, range, sort_by='pt'):
+    def histobj(self, varname, objindx, bins_no, range, sort_by):
+        """Returns a list of histograms for the object attribute.
+        
+        Parameters
+        - `varname`: the attribute to be histogrammed
+        - `objindx`: the index of the object in the object array
+        - `bins_no`: number of bins
+        - `range`: range of the histogram
+        - `sort_by`: the attribute to sort by
+        """
         evts = self.evts
         wgt_arrs = self.wgt
         list_of_hists = [None] * len(evts)
@@ -103,9 +130,10 @@ class ObjectPlotter():
         return list_of_hists, bin_edges
     
     @staticmethod
-    def plot_var(hist, bin_edges, legend, xlabel, range, save=True, title='', save_name='plot.png', **kwargs):
+    def plot_var(hist, bin_edges, legend, xlabel, range, save, **kwargs):
         fig, ax = plt.subplots(figsize=(18, 10))
-        if title: ax.set_title(title)
+        ax.set_title(kwargs.pop('title', 'plot'))
+        save_name = kwargs.pop('save_name', 'plot.png')
         hep.style.use("CMS")
         hep.histplot(
             hist,
