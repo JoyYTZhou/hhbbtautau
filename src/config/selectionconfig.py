@@ -27,7 +27,7 @@ cleansetting = Dynaconf(
     settings_file=['config/dataclean.toml']
 )
 
-cleansetting = Dynaconf(
+plotsetting = Dynaconf(
     root_path=root_path,
     environments=True,
     settings_file=['config/plotsetting.yaml']

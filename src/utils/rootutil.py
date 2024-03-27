@@ -9,7 +9,7 @@ import pandas as pd
 from analysis.selutility import Object
 from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles
 from utils.datautil import checkevents, find_branches
-from utils.cutflowutil import weight_cf, combine_cf
+from utils.cutflowutil import weight_cf, combine_cf, efficiency
 
 pjoin = os.path.join
 runcom = subprocess.run
@@ -38,7 +38,7 @@ class DataLoader():
             
     def get_totcf(self, resolution=0):
         """Load all cutflow tables for all datasets from output directory and combine them into one. 
-        Scaled by luminosity in self.cleancfg currently.
+        Scaled by luminosity in self.cleancfg currently. Get cutflows from CONDORPATH. Results saved to LOCALOUTPUT.
         
         Parameters
         - `resolution`: resolution of the cutflow table. 0 keep process level. 1 keep dataset level (specific channels etc.)
@@ -48,20 +48,21 @@ class DataLoader():
         """
         def process_file(path, process, resolution):
             """Read and process a file based on resolution."""
-            df = pd.read_csv(path)
+            df = pd.read_csv(path, index_col=0)
             if resolution == 0:
                 df = df.sum(axis=1).to_frame(name=process)
             return df
         cleancfg = self.cleancfg
         tot_raw_list = []
         tot_wgt_list = []
-        for process in self.wgt_dict.keys():
-            wgt_path = glob_files(pjoin(cleancfg.PLOTDATA, process), startpattern=process, endpattern='wgtcf.csv')[0]
+        for process in self.cleancfg.DATASETS:
+            print(process)
+            wgt_path = glob_files(pjoin(cleancfg.CONDORPATH, process), startpattern=process, endpattern='wgtcf.csv')[0]
             if wgt_path: 
                 wgt_df = process_file(wgt_path, process, resolution)
                 tot_wgt_list.append(wgt_df)
 
-            raw_path = glob_files(pjoin(cleancfg.PLOTDATA, process), startpattern=process, endpattern='rawcf.csv')[0]
+            raw_path = glob_files(pjoin(cleancfg.CONDORPATH, process), startpattern=process, endpattern='rawcf.csv')[0]
             if raw_path: 
                 raw_df = process_file(raw_path, process, resolution)
                 tot_raw_list.append(raw_df)
@@ -69,20 +70,24 @@ class DataLoader():
         raw_df = pd.concat(tot_raw_list, axis=1)
         wgt_df = pd.concat(tot_wgt_list, axis=1)
 
-        raw_df.to_csv(pjoin(cleancfg.OUTPUTDIR, 'final_raw_data.csv'))
-        wgt_df.to_csv(pjoin(cleancfg.OUTPUTDIR, 'final_wgt_data.csv'))
+        raw_df.to_csv(pjoin(cleancfg.LOCALOUTPUT, 'final_raw_data.csv'))
+        wgt_df.to_csv(pjoin(cleancfg.LOCALOUTPUT, 'final_wgt_data.csv'))
+        efficiency_df = efficiency(cleancfg.LOCALOUTPUT, wgt_df, overall=False, append=False, save=True, save_name='stepwise')
+        efficiency_df = efficiency(cleancfg.LOCALOUTPUT, wgt_df, overall=True, append=False, save=True, save_name='tot')
 
         return raw_df, wgt_df
 
     def get_objs(self):
         """Writes the selected, concated objects to root files.
-        Get from processes in cleancfg only, regardless of the entries in weight dictionary."""
+        Get from processes in cleancfg only, regardless of the entries in weight dictionary.
+        Results saved to LOCALOUTPUT/objlimited
+        """
         cleancfg = self.cleancfg
-        outdir = pjoin(cleancfg.OUTPUTDIR, 'objlimited')
+        outdir = pjoin(cleancfg.LOCALOUTPUT, 'objlimited')
         checkpath(outdir)
         for process in cleancfg.DATASETS:
             for ds in self.wgt_dict[process].keys():
-                datadir = pjoin(cleancfg.PLOTDATA, process)
+                datadir = pjoin(cleancfg.CONDORPATH, process)
                 files = glob_files(datadir, startpattern=ds, endpattern='.root')
                 destination = pjoin(outdir, f"{ds}_limited.root")
                 with uproot.recreate(destination) as output:
@@ -90,13 +95,14 @@ class DataLoader():
                     DataLoader.write_obj(output, files, cleancfg.PLOT_VARS, cleancfg.EXTRA_VARS)
     
     def hadd_cfs(self):
-        """Hadd cutflow tables"""
+        """Hadd cutflow tables, saved to LOCALOUTPUT.
+        Transfer to CONDORPATH if needed."""
         cleancfg = self.cleancfg
         for process, dsitems in self.wgt_dict.items():
             rawdflist = []
             wgtdflist = []
             condorpath = pjoin(cleancfg.CONDORPATH, process)
-            outpath = pjoin(cleancfg.OUTPUTDIR, process)
+            outpath = pjoin(cleancfg.LOCALOUTPUT, process)
             checkpath(outpath)
             indir = cleancfg.INPUTDIR
             for ds in dsitems.keys():
@@ -149,7 +155,7 @@ class DataLoader():
         batch_size = cleancfg.HADD_BATCH
         indir = cleancfg.INPUTDIR
         for process, dsitems in wgt_dict.items():
-            outdir = pjoin(cleancfg.OUTPUTDIR, process)
+            outdir = pjoin(cleancfg.LOCALOUTPUT, process)
             checkpath(outdir)
             ds_dir = pjoin(indir, process)
             condorpath = pjoin(cleancfg.CONDORPATH, process)

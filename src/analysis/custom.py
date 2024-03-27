@@ -58,18 +58,16 @@ class mockskimEvtSel(BaseEventSelections):
         
 class prelimEvtSel(BaseEventSelections):
     """Custom event selection class for the preliminary event selection."""
-    def selectlep(self, events):
-        tau = Object(events, 'Tau')
-        self.objsel.add(name="OSTau", selection=tau.osmask())
-        return None
-
-    def selectjet(self, events):
+    def setevtsel(self, events):
         jet = Object(events, 'Jet')
         j_mask = (jet.ptmask(opr.ge) &
-                  jet.absetamask(opr.le))
+                  jet.absetamask(opr.le) & 
+                  jet.numselmask(opr.ge, jet.custommask('btag', opr.ge))) 
+
         j_nummask = jet.numselmask(opr.ge, j_mask)
-        
-        self.objsel.add_multiple({"JetSelection": j_nummask})
+
+        self.objsel.add(name="Jet Selection", selection=j_nummask)
+
         return None
 
 class fineEvtSel(BaseEventSelections):

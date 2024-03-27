@@ -50,6 +50,8 @@ def loadmeta():
         if rs.RESUME: 
             if isinstance(rs.DSINDX, int):
                 sliced_dict = dict(islice(metadata.items(), rs.DSINDX, None))
+            elif isinstance(rs.DSINDX, list):
+                sliced_dict = {key: metadata[key] for key in rs.DSINDX if key in metadata}
             elif isinstance(rs.DSINDX, str):
                 pass
             loaded = sliced_dict
