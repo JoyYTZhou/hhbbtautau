@@ -16,10 +16,16 @@ def iterdata(func):
     def wrapper(instance, *args, **kwargs):
         results = []
         for process, dsitems in instance.data_dict.items():
-            if dsitems:
-                for ds in dsitems.keys():
-                    root_file = dsitems[ds]
-                    results.append(func(instance, root_file, process, ds, *args, **kwargs))
+                if instance.resolution:
+                    for ds in dsitems.keys():
+                        root_file = dsitems[ds]
+                        results.append(func(instance, root_file, process, ds, *args, **kwargs))
+                else:
+                    result = []
+                    for ds in dsitems.keys():
+                        root_file = dsitems[ds]
+                        result.append(func(instance, root_file, process, ds, *args, **kwargs))
+                    results.append(ak.concatenate(result, axis=0))
         return results
     return wrapper
     
@@ -31,7 +37,7 @@ class DataPlotter():
             self.wgt_dict = json.load(f)
         self.data_dict = {}
         self.getdata()
-        self.resolution = cleancfg.RESOLUTION
+        self.resolution = 1 if cleancfg.RESOLUTION == 'dataset' else 0
         self.labels = self.getlabels()
         self.wgt = self.getwgt()
 
@@ -40,7 +46,7 @@ class DataPlotter():
         result = glob_files(self.datadir, startpattern=ds, endpattern='.root')
         if result:
             rootfile = result[0]
-            if not process in self.data_dict.keys(): 
+            if not process in self.data_dict: 
                 self.data_dict[process] = {}
             if rootfile: self.data_dict[process][ds] = rootfile
     
@@ -49,38 +55,18 @@ class DataPlotter():
         events = load_fields(root_file, tree_name=obj_name)
         return events
     
-    @iterdata
-    def getlabels(self, root_file, process, ds):
-        label = process if self.resolution == 'process' else ds
-        return label
+    def getlabels(self):
+        if self.resolution:
+            flattened_keys = [key for subdict in self.data_dict.values() for key in subdict.keys()]
+            return flattened_keys
+        else:
+            return list(self.data_dict.keys())
     
     @iterdata
     def getwgt(self, root_file, process, ds, per_evt_wgt='Generator_weight', lumi=5000, *args, **kwargs):
         flat_wgt = self.wgt_dict[process][ds] * lumi
         wgt_arr = load_fields(root_file, tree_name='extra')[per_evt_wgt] * flat_wgt
         return wgt_arr
-    
-    @staticmethod
-    def concatevts(labels, objs, wgts):
-        concatedobjs = {}
-        concatedwgts = {}
-        for label, wgt, obj in zip(labels, wgts, objs):
-            if label in concatedobjs: 
-                concatedobjs[label].append(obj)
-                concatedwgts[label].append(wgt)
-            else:
-                concatedwgts[label] = [wgt]
-                concatedobjs[label] = [obj]
-        
-        objlist = []
-        wgtlist = []
-        lablist = []
-        for label in concatedobjs.keys():
-            objlist.append(ak.concatenate(concatedobjs[label], axis=0))
-            wgtlist.append(ak.concatenate(concatedwgts[label], axis=0))
-            lablist.append(label)
-
-        return objlist, wgtlist, lablist
             
     def savewgt(self):
         """Save weighted selected events number to a csv."""
