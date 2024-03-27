@@ -1,7 +1,8 @@
 default:
   Tau:
-    sort_by: Pt
+    sort_by: pt
     var:
       Pt:
         range: [0, 300]
         bins: 135
+        xlabel: r'$p_{T}$ [GeV]'
