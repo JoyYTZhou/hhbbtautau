@@ -1,15 +1,16 @@
 import mplhep as hep
 import matplotlib.pyplot as plt
-import os
 import json
-import shutil
-from utils.filesysutil import *
-from utils.cutflowutil import *
+from utils.filesysutil import checkpath, glob_files
 from utils.rootutil import load_fields
 from functools import wraps
 from utils.datautil import arr_handler, iterwgt
 from analysis.selutility import Object
 import awkward as ak
+import os
+import numpy as np
+
+pjoin = os.path.join
 
 def iterdata(func):
     @wraps(func)
@@ -40,6 +41,8 @@ class DataPlotter():
         self.resolution = 1 if cleancfg.RESOLUTION == 'dataset' else 0
         self.labels = self.getlabels()
         self.wgt = self.getwgt()
+        self.outdir = pjoin(cleancfg.LOCALOUTPUT, 'plots')
+        checkpath(self.outdir)
 
     @iterwgt
     def getdata(self, process, ds):
@@ -72,9 +75,10 @@ class DataPlotter():
         """Save weighted selected events number to a csv."""
         pass
     
-    def plotobj(self, objname):
+    def plotobj(self, objname, attridict):
         evts = self.getobj(objname)
         objplotter = ObjectPlotter(objname, self.plotcfg[objname], self.wgt, self.labels, evts)
+            
     
         
 class ObjectPlotter():
