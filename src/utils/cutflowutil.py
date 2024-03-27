@@ -108,3 +108,26 @@ def overalleff(cfdf):
     eff_df.replace([np.inf, -np.inf], np.nan, inplace=True)
     eff_df.fillna(1, inplace=True)
     return eff_df
+
+def sort_cf(ds_list, srcdir, outdir, save=True):
+    """Create a multi index table that contains all channel cutflows for all datasets.
+    :param ds_list: list of strings of dataset
+    :param srcdir: output cutflow source directory
+    """
+    multi_indx = []
+    df_list = [None]*len(ds_list)
+    for i, ds in enumerate(ds_list):
+        ds_dir = os.path.join(srcdir, ds)
+        ds_cf = combine_cf(ds_dir, ds, save=False, outpath=None)
+        efficiency(outdir=None, cfdf=ds_cf, save=False)
+        df_list[i] = ds_cf
+        multi_indx += [(ds, indx) for indx in ds_cf.index]
+    
+    allds_cf = pd.concat(df_list)
+    allds_cf.index = pd.MultiIndex.from_tuples(multi_indx, names=['Process', 'Selection'])
+
+    if save: 
+        finame = os.path.join(outdir, 'cutflow_table.csv')
+        allds_cf.to_csv(finame)
+
+    return allds_cf
