@@ -1,18 +1,18 @@
 [LPCJUPYTER]
 DATAPATH = "/uscms/home/joyzhou/work/hhbbtautau/src/data/preprocessed"
-INPUTDIR = "/store/user/joyzhou/skim" # Data from processor
+INPUTDIR = "/store/user/joyzhou/skim_jet" # Data from processor
 LOCALOUTPUT = "/uscms/home/joyzhou/nobackup/hadded"
 CONDOR_TRANSFER = true 
-CONDORPATH = "/store/user/joyzhou/hadded"
-REFRESH = false # whether to hadd roots and csv
-HADD_BATCH = 30
-CLEAN = true
-FROM_LOAD = false
-DATASETS = ['DYJets', 'ZH', 'ggF', 'WW', 'WZ', 'SingleH']
+CONDORPATH = "/store/user/joyzhou/skim_jet"
+REFRESH = false # of now impact as of now
+HADD_BATCH = 5
+CLEANCSV = false
+CLEANROOT = true
+DATASETS = ['DYJets', 'ZH', 'ggF', 'WW', 'SingleH']
 TREENAME = 'Events'
 PLOT_VARS = ['Tau', 'Jet', 'FatJet', "GenPart"]
 EXTRA_VARS = ['Generator_weight', 'nLHEReweightingWeight', 'LHEReweightingWeight']
-LUMI = 73400 # pb^-1
+LUMI = 5000 # pb^-1
 FROM_RAW = true # of no impact as of now
 RESOLUTION = 'process'
 

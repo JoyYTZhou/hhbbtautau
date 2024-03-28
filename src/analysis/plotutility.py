@@ -34,7 +34,7 @@ class DataPlotter():
     def __init__(self, cleancfg, plotsetting):
         self.plotcfg = plotsetting
         self._datadir = pjoin(cleancfg.LOCALOUTPUT, 'objlimited')
-        self.wgt_dict = DataLoader.haddWeights(self.cleancfg.DATASETS, self.cleancfg.DATAPATH, from_raw=False)
+        self.wgt_dict = DataLoader.haddWeights(cleancfg.DATAPATH, from_raw=False)
         self.data_dict = {}
         self.getdata()
         self.resolution = 1 if cleancfg.RESOLUTION == 'dataset' else 0
@@ -65,8 +65,13 @@ class DataPlotter():
             return list(self.data_dict.keys())
     
     @iterdata
-    def getwgt(self, root_file, process, ds, per_evt_wgt='Generator_weight', lumi=5000, *args, **kwargs):
-        flat_wgt = self.wgt_dict[process][ds] * lumi
+    def getwgt(self, root_file, process, ds, per_evt_wgt='Generator_weight', lumi=5000, **kwargs):
+        signalname = kwargs.get("signal", 'ggF')
+        if process == 'ggF': 
+            factor = kwargs.get('factor', 100)
+        else:
+            factor = 1
+        flat_wgt = self.wgt_dict[process][ds] * lumi * factor
         wgt_arr = load_fields(root_file, tree_name='extra')[per_evt_wgt] * flat_wgt
         return wgt_arr
             
