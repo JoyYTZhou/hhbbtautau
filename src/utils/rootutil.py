@@ -22,7 +22,7 @@ class DataLoader():
     
     def __call__(self):
         if self.cleancfg.REFRESH:
-            DataLoader.hadd_roots(self.cleancfg, self.wgt_dict)
+            # DataLoader.hadd_roots(self.cleancfg, self.wgt_dict)
             self.hadd_cfs()
         # self.get_objs()
         self.get_totcf()
@@ -34,7 +34,7 @@ class DataLoader():
             with open(pjoin(self.cleancfg.DATAPATH, 'wgt_total.json'), 'r') as f:
                 self.wgt_dict = json.load(f)        
         else:
-            self.wgt_dict = DataLoader.haddWeights(self.cleancfg.DATASETS, self.cleancfg.DATAPATH)
+            self.wgt_dict = DataLoader.haddWeights(self.cleancfg.DATASETS, self.cleancfg.DATAPATH, from_raw=false)
             
     def get_totcf(self, resolution=0):
         """Load all cutflow tables for all datasets from output directory and combine them into one. 
@@ -53,29 +53,23 @@ class DataLoader():
                 df = df.sum(axis=1).to_frame(name=process)
             return df
         cleancfg = self.cleancfg
-        tot_raw_list = []
-        tot_wgt_list = []
-        for process in self.cleancfg.DATASETS:
-            print(process)
-            wgt_path = glob_files(pjoin(cleancfg.CONDORPATH, process), startpattern=process, endpattern='wgtcf.csv')[0]
-            if wgt_path: 
-                wgt_df = process_file(wgt_path, process, resolution)
-                tot_wgt_list.append(wgt_df)
+        
+        returned = [None] * 2
+        for i, name in enumerate(['raw', 'wgt']):
+            tot_wgt_list = []
+            for process in self.cleancfg.DATASETS:
+                wgt_path = glob_files(pjoin(cleancfg.CONDORPATH, process), startpattern=process, endpattern=f'{name}cf.csv')[0]
+                if wgt_path: 
+                    wgt_df = process_file(wgt_path, process, resolution)
+                    tot_wgt_list.append(wgt_df)
+            wgt_df = pd.concat(tot_wgt_list, axis=1)
+            wgt_df.to_csv(pjoin(cleancfg.LOCALOUTPUT, f'final_{name}_data.csv'))
+            returned[i] = wgt_df
 
-            raw_path = glob_files(pjoin(cleancfg.CONDORPATH, process), startpattern=process, endpattern='rawcf.csv')[0]
-            if raw_path: 
-                raw_df = process_file(raw_path, process, resolution)
-                tot_raw_list.append(raw_df)
-
-        raw_df = pd.concat(tot_raw_list, axis=1)
-        wgt_df = pd.concat(tot_wgt_list, axis=1)
-
-        raw_df.to_csv(pjoin(cleancfg.LOCALOUTPUT, 'final_raw_data.csv'))
-        wgt_df.to_csv(pjoin(cleancfg.LOCALOUTPUT, 'final_wgt_data.csv'))
         efficiency_df = efficiency(cleancfg.LOCALOUTPUT, wgt_df, overall=False, append=False, save=True, save_name='stepwise')
         efficiency_df = efficiency(cleancfg.LOCALOUTPUT, wgt_df, overall=True, append=False, save=True, save_name='tot')
 
-        return raw_df, wgt_df
+        return returned
 
     def get_objs(self):
         """Writes the selected, concated objects to root files.
@@ -94,7 +88,7 @@ class DataLoader():
                     print(f"Writing limited data to file {destination}")
                     DataLoader.write_obj(output, files, cleancfg.PLOT_VARS, cleancfg.EXTRA_VARS)
     
-    def hadd_cfs(self):
+    def hadd_cfs(self, outname=''):
         """Hadd cutflow tables, saved to LOCALOUTPUT.
         Transfer to CONDORPATH if needed."""
         cleancfg = self.cleancfg
@@ -110,8 +104,8 @@ class DataLoader():
                 rawdflist.append(raw_df)
                 wgt = self.wgt_dict[process][ds]
                 wgtdflist.append(weight_cf(ds, wgt, raw_df, save=False, lumi=self.cleancfg.LUMI))
-            pd.concat(rawdflist, axis=1).to_csv(pjoin(outpath, f"{process}_rawcf.csv"))
-            pd.concat(wgtdflist, axis=1).to_csv(pjoin(outpath, f"{process}_wgtcf.csv"))
+            pd.concat(rawdflist, axis=1).to_csv(pjoin(outpath, f"{process}_{outname}rawcf.csv"))
+            pd.concat(wgtdflist, axis=1).to_csv(pjoin(outpath, f"{process}_{outname}wgtcf.csv"))
             
             if cleancfg.CONDOR_TRANSFER:
                 transferfiles(outpath, condorpath, endpattern='.csv')

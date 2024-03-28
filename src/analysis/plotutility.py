@@ -2,7 +2,7 @@ import mplhep as hep
 import matplotlib.pyplot as plt
 import json
 from utils.filesysutil import checkpath, glob_files
-from utils.rootutil import load_fields
+from utils.rootutil import load_fields, DataLoader
 from functools import wraps
 from utils.datautil import arr_handler, iterwgt
 from analysis.selutility import Object
@@ -33,9 +33,8 @@ def iterdata(func):
 class DataPlotter():
     def __init__(self, cleancfg, plotsetting):
         self.plotcfg = plotsetting
-        self.datadir = pjoin(cleancfg.LOCALOUTPUT, 'objlimited')
-        with open(pjoin(cleancfg.DATAPATH, 'wgt_total.json'), 'r') as f:
-            self.wgt_dict = json.load(f)
+        self._datadir = pjoin(cleancfg.LOCALOUTPUT, 'objlimited')
+        self.wgt_dict = DataLoader.haddWeights(self.cleancfg.DATASETS, self.cleancfg.DATAPATH, from_raw=False)
         self.data_dict = {}
         self.getdata()
         self.resolution = 1 if cleancfg.RESOLUTION == 'dataset' else 0
@@ -46,7 +45,7 @@ class DataPlotter():
 
     @iterwgt
     def getdata(self, process, ds):
-        result = glob_files(self.datadir, startpattern=ds, endpattern='.root')
+        result = glob_files(self._datadir, startpattern=ds, endpattern='.root')
         if result:
             rootfile = result[0]
             if not process in self.data_dict: 
@@ -88,7 +87,7 @@ class DataPlotter():
             histlist, bins = objplotter.histobj(att, 
                                                 options.pop('objindx', 0), 
                                                 options.pop('bins', 10), 
-                                                options.pop('range', (0,200)), 
+                                                options.get('range', (0,200)), 
                                                 sort_by=options.pop('sort_by', 'pt'))
             objplotter.plot_var(histlist, bins,
                                 legend=self.labels, 
