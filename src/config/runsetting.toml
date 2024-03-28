@@ -30,9 +30,9 @@ TRANSFER = true
 TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
 COPY_LOCAL = true
 COPY_DIR = "temp"
-STEP_SIZE = '200MB'
+STEP_SIZE = '150MB'
 RESUME = true
-DSINDX = ['ZZto2Nu2Q']
+DSINDX = ['TTto4Q']
 FINDX = 0
 
 [LPCJUPYTER]

@@ -13,7 +13,9 @@ TREENAME = 'Events'
 PLOT_VARS = ['Tau', 'Jet', 'FatJet', "GenPart"]
 EXTRA_VARS = ['Generator_weight', 'nLHEReweightingWeight', 'LHEReweightingWeight']
 LUMI = 73400 # pb^-1
+FROM_RAW = true # of no impact as of now
 RESOLUTION = 'process'
+
 
 [LPCCONDOR]
 DATAPATH = "src/data/preprocessed"
