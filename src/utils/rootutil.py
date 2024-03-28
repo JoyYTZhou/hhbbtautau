@@ -21,22 +21,21 @@ class DataLoader():
         self.get_wgt()
     
     def __call__(self):
-        if self.cleancfg.REFRESH:
-            # DataLoader.hadd_roots(self.cleancfg, self.wgt_dict)
-            self.hadd_cfs()
-        # self.get_objs()
-        self.get_totcf()
+        # DataLoader.hadd_roots(self.cleancfg, self.wgt_dict)
+        # self.hadd_cfs()
+        self.get_objs()
+        # self.get_totcf()
     
     def get_wgt(self):
         """Compute/Load weights needed for these datasets. Save if needed."""
-        from_load = self.cleancfg.FROM_LOAD
-        if from_load:
-            with open(pjoin(self.cleancfg.DATAPATH, 'wgt_total.json'), 'r') as f:
+        wgtpath = pjoin(self.cleancfg.DATAPATH, 'wgt_total.json')
+        if os.path.exists(wgtpath):
+            with open(wgtpath, 'r') as f:
                 self.wgt_dict = json.load(f)        
         else:
-            self.wgt_dict = DataLoader.haddWeights(self.cleancfg.DATASETS, self.cleancfg.DATAPATH, from_raw=false)
+            self.wgt_dict = DataLoader.haddWeights(self.cleancfg.DATAPATH, from_raw=False)
             
-    def get_totcf(self, resolution=0):
+    def get_totcf(self, resolution=0, appendname=''):
         """Load all cutflow tables for all datasets from output directory and combine them into one. 
         Scaled by luminosity in self.cleancfg currently. Get cutflows from CONDORPATH. Results saved to LOCALOUTPUT.
         
@@ -53,7 +52,7 @@ class DataLoader():
                 df = df.sum(axis=1).to_frame(name=process)
             return df
         cleancfg = self.cleancfg
-        
+        lumi = int(cleancfg.LUMI / 1000)
         returned = [None] * 2
         for i, name in enumerate(['raw', 'wgt']):
             tot_wgt_list = []
@@ -63,11 +62,11 @@ class DataLoader():
                     wgt_df = process_file(wgt_path, process, resolution)
                     tot_wgt_list.append(wgt_df)
             wgt_df = pd.concat(tot_wgt_list, axis=1)
-            wgt_df.to_csv(pjoin(cleancfg.LOCALOUTPUT, f'final_{name}_data.csv'))
+            wgt_df.to_csv(pjoin(cleancfg.LOCALOUTPUT, f'final_{appendname}{name}_{lumi}data.csv'))
             returned[i] = wgt_df
 
-        efficiency_df = efficiency(cleancfg.LOCALOUTPUT, wgt_df, overall=False, append=False, save=True, save_name='stepwise')
-        efficiency_df = efficiency(cleancfg.LOCALOUTPUT, wgt_df, overall=True, append=False, save=True, save_name='tot')
+        efficiency_df = efficiency(cleancfg.LOCALOUTPUT, wgt_df, overall=False, append=False, save=True, save_name=f'{appendname}stepwise')
+        efficiency_df = efficiency(cleancfg.LOCALOUTPUT, wgt_df, overall=True, append=False, save=True, save_name=f'{appendname}tot')
 
         return returned
 
@@ -92,31 +91,33 @@ class DataLoader():
         """Hadd cutflow tables, saved to LOCALOUTPUT.
         Transfer to CONDORPATH if needed."""
         cleancfg = self.cleancfg
-        for process, dsitems in self.wgt_dict.items():
+        processes = cleancfg.DATASETS
+        for process in processes:
             rawdflist = []
             wgtdflist = []
             condorpath = pjoin(cleancfg.CONDORPATH, process)
             outpath = pjoin(cleancfg.LOCALOUTPUT, process)
             checkpath(outpath)
             indir = cleancfg.INPUTDIR
-            for ds in dsitems.keys():
+            for ds in self.wgt_dict[process].keys():
                 raw_df = combine_cf(pjoin(indir, process), ds, output=False)
                 rawdflist.append(raw_df)
                 wgt = self.wgt_dict[process][ds]
                 wgtdflist.append(weight_cf(ds, wgt, raw_df, save=False, lumi=self.cleancfg.LUMI))
-            pd.concat(rawdflist, axis=1).to_csv(pjoin(outpath, f"{process}_{outname}rawcf.csv"))
-            pd.concat(wgtdflist, axis=1).to_csv(pjoin(outpath, f"{process}_{outname}wgtcf.csv"))
+            lumi = self.cleancfg.LUMI / 1000 # fb^-1
+            pd.concat(rawdflist, axis=1).to_csv(pjoin(outpath, f"{process}_{outname}{lumi}_rawcf.csv"))
+            pd.concat(wgtdflist, axis=1).to_csv(pjoin(outpath, f"{process}_{outname}{lumi}_wgtcf.csv"))
             
             if cleancfg.CONDOR_TRANSFER:
                 transferfiles(outpath, condorpath, endpattern='.csv')
-                if cleancfg.CLEAN: delfiles(outpath, pattern='*.csv')
+                if cleancfg.CLEANCSV:
+                    delfiles(outpath, pattern='*.csv')
 
     @staticmethod
-    def haddWeights(regexlist, grepdir, output=True, from_raw=True):
+    def haddWeights(grepdir, output=True, from_raw=True):
         """Function for self use only, grep weights from a list of json files formatted in a specific way.
         
         Parameters
-        - `regexlist`: list of strings of dataset names
         - `grepdir`: directory where the json files are located
         - `output`: whether to save the weights into a json file
         - `from_raw`: whether to compute weights based on number of raw events instead of weighted
@@ -148,12 +149,13 @@ class DataLoader():
         """
         batch_size = cleancfg.HADD_BATCH
         indir = cleancfg.INPUTDIR
-        for process, dsitems in wgt_dict.items():
+        processes = cleancfg.DATASETS
+        for process in processes:
             outdir = pjoin(cleancfg.LOCALOUTPUT, process)
             checkpath(outdir)
             ds_dir = pjoin(indir, process)
-            condorpath = pjoin(cleancfg.CONDORPATH, process)
-            for ds in dsitems.keys():
+            condorpath = pjoin(f'{indir}_hadded', process)
+            for ds in wgt_dict[processes].keys():
                 root_files = glob_files(ds_dir, ds, '.root')
                 for i in range(0, len(root_files), batch_size):
                     batch_files = root_files[i:i+batch_size]
@@ -161,7 +163,7 @@ class DataLoader():
                     call_hadd(outname, batch_files)
                 if cleancfg.CONDOR_TRANSFER:
                     transferfiles(outdir, condorpath, endpattern='.root')
-                    if cleancfg.CLEAN: delfiles(outdir, pattern='*.root')
+                    if cleancfg.CLEANROOT: delfiles(outdir, pattern='*.root')
         return None
     
     @staticmethod
