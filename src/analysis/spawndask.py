@@ -11,6 +11,7 @@ from config.selectionconfig import runsetting as rs
 from config.selectionconfig import dasksetting as daskcfg
 
 logger = initLogger(__name__.split('.')[-1], rs.PROCESS_NAME)
+
 evtselclass = switch_selections(rs.SEL_NAME)
 with open("src/data/data.json", 'r') as data:
     realmeta = json.load(data)
