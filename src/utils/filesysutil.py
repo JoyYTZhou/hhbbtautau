@@ -31,10 +31,10 @@ def glob_files(dirname, startpattern='', endpattern='', **kwargs):
             files = glob.glob(pjoin(dirname, pattern)) 
     return sorted(files)
 
-def checkpath(dirname):
+def checkpath(dirname, raiseError=False):
     """Check if a directory exists. If not will create one."""
     if dirname.startswith('/store/user/'):
-        checkcondorpath(dirname)
+        checkcondorpath(dirname, raiseError)
     else:
         checklocalpath(dirname)
 
@@ -141,11 +141,11 @@ def check_missing(pattern, fileno, dirtocheck, endpattern='.root', return_indice
         toreturn = [pattern for i, pattern in enumerate(patterns) if not any(pattern in file for file in fileset)] 
     return toreturn
 
-def checkcondorpath(dirname):
+def checkcondorpath(dirname, raiseError=False):
     """Check if a condor path exists. If not will create one."""
     check_dir_cmd = f"xrdfs {PREFIX} stat {dirname}"
     create_dir_cmd = f"xrdfs {PREFIX} mkdir -p {dirname}"
-    proc = runcom(check_dir_cmd, shell=True, capture_output=True, text=True) 
+    proc = runcom(check_dir_cmd, shell=True, capture_output=True, text=True, check=raiseError) 
     if proc.returncode != 0:
         runcom(create_dir_cmd, shell=True)
     else:
