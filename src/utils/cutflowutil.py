@@ -49,7 +49,7 @@ def add_selcutflow(cutflowlist, save=True, outpath=None):
     if save: result.to_csv(outpath)
     return result
 
-def weight_cf(dsname, wgt, raw_cf, save=False, outname=None, lumi=50):
+def weight_cf(wgt_dict, raw_cf, save=False, outname=None, lumi=50):
     """Calculate weighted table based on raw table.
     
     Parameters
@@ -61,8 +61,8 @@ def weight_cf(dsname, wgt, raw_cf, save=False, outname=None, lumi=50):
     Return
     - `wgt_df`: weighted cutflow table
     """ 
-    wgt_df = raw_cf * wgt * lumi
-    wgt_df.columns = [dsname]
+    weights = {key: wgt*lumi for key, wgt in wgt_dict.items()}
+    wgt_df = raw_cf.mul(weights)
     if save and outname is not None: wgt_df.to_csv(outname)
     return wgt_df
 

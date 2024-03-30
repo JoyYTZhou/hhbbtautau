@@ -87,9 +87,9 @@ class DataPlotter():
         - `attridict`: a dictionary of attributes to be plotted
         """
         evts = self.getobj(objname)
-        objplotter = ObjectPlotter(objname, self.plotcfg[objname], self.wgt, self.labels, evts)
+        objplotter = ObjectPlotter(objname, self.wgt, self.labels, evts)
         for att, options in attridict.items():
-            histlist, bins = objplotter.histobj(att, 
+            histlist, bins = objplotter.histobj(options.pop('varname', 'pt'), 
                                                 options.pop('objindx', 0), 
                                                 options.pop('bins', 10), 
                                                 options.get('range', (0,200)), 
@@ -105,9 +105,8 @@ class DataPlotter():
         return None
         
 class ObjectPlotter():
-    def __init__(self, objname, plotcfg, wgt, labels, evts):
+    def __init__(self, objname, wgt, labels, evts):
         self.objname = objname
-        self.objcfg = plotcfg
         self.wgt = wgt
         self.evts = evts
     

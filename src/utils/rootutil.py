@@ -92,26 +92,32 @@ class DataLoader():
         Transfer to CONDORPATH if needed."""
         cleancfg = self.cleancfg
         processes = cleancfg.DATASETS
+        indir = cleancfg.INPUTDIR
         for process in processes:
             rawdflist = []
-            wgtdflist = []
-            condorpath = pjoin(cleancfg.CONDORPATH, process)
+            condorpath = pjoin(f'{indir}_hadded', process)
             outpath = pjoin(cleancfg.LOCALOUTPUT, process)
             checkpath(outpath)
-            indir = cleancfg.INPUTDIR
             for ds in self.wgt_dict[process].keys():
-                raw_df = combine_cf(pjoin(indir, process), ds, output=False)
+                raw_df = combine_cf(inputdir=pjoin(indir, process), dsname=ds, output=False)
                 rawdflist.append(raw_df)
-                wgt = self.wgt_dict[process][ds]
-                wgtdflist.append(weight_cf(ds, wgt, raw_df, save=False, lumi=self.cleancfg.LUMI))
-            lumi = self.cleancfg.LUMI / 1000 # fb^-1
-            pd.concat(rawdflist, axis=1).to_csv(pjoin(outpath, f"{process}_{outname}{lumi}_rawcf.csv"))
-            pd.concat(wgtdflist, axis=1).to_csv(pjoin(outpath, f"{process}_{outname}{lumi}_wgtcf.csv"))
-            
-            if cleancfg.CONDOR_TRANSFER:
-                transferfiles(outpath, condorpath, endpattern='.csv')
-                if cleancfg.CLEANCSV:
-                    delfiles(outpath, pattern='*.csv')
+            pd.concat(rawdflist, axis=1).to_csv(pjoin(outpath, f"{process}_{outname}_rawcf.csv"))
+            transferfiles(outpath, condorpath, endpattern='.csv')
+            if cleancfg.CLEANCSV: delfiles(outpath, pattern='*.csv')
+    
+    def weight_rawcf(self):
+        cleancfg = self.cleancfg
+        indir = cleancfg.INPUTDIR
+        lumi = cleancfg.LUMI
+        for process in self.cleancfg.DATASETS:
+            outpath = pjoin(cleancfg.LOCALOUTPUT, process)
+            condorpath = pjoin(f'{indir}_hadded', process)
+            checkpath(condorpath, True)
+            rawcf = glob_files(condorpath, startpattern=process, endpattern='rawcf.csv')[0]
+            weight_cf(self.wgt_dict[process], rawcf, save=True, 
+                      outname=pjoin(outpath, f"{process}_{lumi}_wgtcf.csv"))
+            transferfiles(outpath, condorpath, startpattern=process, endpattern='.csv') 
+            if cleancfg.CLEANCSV: delfiles(outpath, pattern='*.csv')
 
     @staticmethod
     def haddWeights(grepdir, output=True, from_raw=True):
@@ -155,15 +161,15 @@ class DataLoader():
             checkpath(outdir)
             ds_dir = pjoin(indir, process)
             condorpath = pjoin(f'{indir}_hadded', process)
-            for ds in wgt_dict[processes].keys():
+            print(process)
+            for ds in wgt_dict[process].keys():
                 root_files = glob_files(ds_dir, ds, '.root')
                 for i in range(0, len(root_files), batch_size):
                     batch_files = root_files[i:i+batch_size]
                     outname = pjoin(outdir, f"{ds}_{i//batch_size+1}.root") 
                     call_hadd(outname, batch_files)
-                if cleancfg.CONDOR_TRANSFER:
-                    transferfiles(outdir, condorpath, endpattern='.root')
-                    if cleancfg.CLEANROOT: delfiles(outdir, pattern='*.root')
+            transferfiles(outdir, condorpath, endpattern='.root')
+            if cleancfg.CLEANROOT: delfiles(outdir, pattern='*.root')
         return None
     
     @staticmethod
