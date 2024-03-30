@@ -87,7 +87,7 @@ class DataLoader():
                     print(f"Writing limited data to file {destination}")
                     DataLoader.write_obj(output, files, cleancfg.PLOT_VARS, cleancfg.EXTRA_VARS)
     
-    def hadd_cfs(self, outname=''):
+    def hadd_cfs(self):
         """Hadd cutflow tables, saved to LOCALOUTPUT.
         Transfer to CONDORPATH if needed."""
         cleancfg = self.cleancfg
@@ -97,11 +97,11 @@ class DataLoader():
             rawdflist = []
             condorpath = pjoin(f'{indir}_hadded', process)
             outpath = pjoin(cleancfg.LOCALOUTPUT, process)
-            checkpath(outpath)
+            checkpath(outpath, raiseError=False)
             for ds in self.wgt_dict[process].keys():
                 raw_df = combine_cf(inputdir=pjoin(indir, process), dsname=ds, output=False)
                 rawdflist.append(raw_df)
-            pd.concat(rawdflist, axis=1).to_csv(pjoin(outpath, f"{process}_{outname}_rawcf.csv"))
+            pd.concat(rawdflist, axis=1).to_csv(pjoin(outpath, f"{process}_rawcf.csv"))
             transferfiles(outpath, condorpath, endpattern='.csv')
             if cleancfg.CLEANCSV: delfiles(outpath, pattern='*.csv')
     
@@ -113,9 +113,9 @@ class DataLoader():
             outpath = pjoin(cleancfg.LOCALOUTPUT, process)
             condorpath = pjoin(f'{indir}_hadded', process)
             checkpath(condorpath, True)
-            rawcf = glob_files(condorpath, startpattern=process, endpattern='rawcf.csv')[0]
+            rawcf = pd.read_csv(glob_files(condorpath, startpattern=process, endpattern='rawcf.csv')[0], index_col=0)
             weight_cf(self.wgt_dict[process], rawcf, save=True, 
-                      outname=pjoin(outpath, f"{process}_{lumi}_wgtcf.csv"))
+                      outname=pjoin(outpath, f"{process}_{int(lumi/1000)}_wgtcf.csv"))
             transferfiles(outpath, condorpath, startpattern=process, endpattern='.csv') 
             if cleancfg.CLEANCSV: delfiles(outpath, pattern='*.csv')
 
