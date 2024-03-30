@@ -12,7 +12,7 @@ DATASETS = ['ZZ']
 TREENAME = 'Events'
 PLOT_VARS = ['Tau', 'Jet', 'FatJet', "GenPart"]
 EXTRA_VARS = ['Generator_weight', 'nLHEReweightingWeight', 'LHEReweightingWeight']
-LUMI = 5000 # pb^-1
+LUMI = 73400 # pb^-1 to match xsection
 RESOLUTION = 'process'
 
 

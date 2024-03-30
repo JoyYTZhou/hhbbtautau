@@ -36,10 +36,10 @@ def checkpath(dirname, raiseError=False):
     if dirname.startswith('/store/user/'):
         checkcondorpath(dirname, raiseError)
     else:
-        checklocalpath(dirname)
+        checklocalpath(dirname, raiseError)
 
 def transferfiles(srcpath, destpath, startpattern='', endpattern=''):
-    """Transfer files between local and condor system. Will check if srcpath and destpath exist.
+    """Transfer files between local and condor system. Will check if destpath exist.
     
     Parameters:
     - `srcpath`: source path (local/remote)
@@ -108,11 +108,14 @@ def delfilelist(filelist):
             print(f"Error deleting {file}: {e}")
     return None
     
-def checklocalpath(pathstr):
+def checklocalpath(pathstr, raiseError=False):
     """Check if a local path exists. If not will create one."""
     path = Path(pathstr) 
     if not path.exists():
-        path.mkdir(parents=True, exist_ok=True)
+        if raiseError:
+            raise FileNotFoundError(f"this file {pathstr} does not exist.")
+        else:
+            path.mkdir(parents=True, exist_ok=True)
 
 def cpfcondor(srcpath, localpath):
     """Copy a root file FROM condor to LOCAL."""
