@@ -53,8 +53,7 @@ def weight_cf(wgt_dict, raw_cf, save=False, outname=None, lumi=50):
     """Calculate weighted table based on raw table.
     
     Parameters
-    - `dsname`: name of the dataset
-    - `wgt`: weight of the dataset
+    - `wgt_dict`: dictionary of weights
     - `raw_cf`: raw cutflow table
     - `lumi`: luminosity (pb^-1)
 

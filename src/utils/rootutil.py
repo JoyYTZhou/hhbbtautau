@@ -106,6 +106,7 @@ class DataLoader():
             if cleancfg.CLEANCSV: delfiles(outpath, pattern='*.csv')
     
     def weight_rawcf(self):
+        """Returns the weighted cutflow tables for all datasets."""
         cleancfg = self.cleancfg
         indir = cleancfg.INPUTDIR
         lumi = cleancfg.LUMI
