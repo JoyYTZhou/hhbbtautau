@@ -37,10 +37,6 @@ def job(fn, i, dataset, eventSelection=evtselclass):
     except TypeError as e:
         logger.error(f"TypeError encountered for file index {i} in {dataset}: {e}", exc_info=True)
         return False
-
-def runfutures(client):
-    futures = submitjobs(client)
-    if futures is not None: process_futures(futures)
     
 def loadmeta():
     """Load metadata from input file"""
@@ -95,7 +91,9 @@ def submitjobs(client):
     """
     result = None
     if client is None or (not daskcfg.SPAWN_FUTURE): result = submitloops()
-    else: result = submitfutures(client)
+    else: 
+        futures = submitfutures(client)
+        result = process_futures(futures)
     return result
 
 def testsubmit():
