@@ -13,6 +13,7 @@ import numpy as np
 pjoin = os.path.join
 
 def iterdata(func):
+    """Wrapper that Returns a list of results from the function for each dataset."""
     @wraps(func)
     def wrapper(instance, *args, **kwargs):
         results = []
@@ -45,6 +46,7 @@ class DataPlotter():
 
     @iterwgt
     def getdata(self, process, ds):
+        """Returns the root files for the datasets."""
         result = glob_files(self._datadir, startpattern=ds, endpattern='.root')
         if result:
             rootfile = result[0]
@@ -54,10 +56,12 @@ class DataPlotter():
     
     @iterdata
     def getobj(self, root_file, process, ds, obj_name):
+        """Returns the object from the root file."""
         events = load_fields(root_file, tree_name=obj_name)
         return events
     
     def getlabels(self):
+        """Returns the labels for the datasets."""
         if self.resolution:
             flattened_keys = [key for subdict in self.data_dict.values() for key in subdict.keys()]
             return flattened_keys
@@ -66,6 +70,7 @@ class DataPlotter():
     
     @iterdata
     def getwgt(self, root_file, process, ds, per_evt_wgt='Generator_weight', lumi=5000, **kwargs):
+        """Returns the weights for the datasets."""
         signalname = kwargs.get("signal", 'ggF')
         if process == 'ggF': 
             factor = kwargs.get('factor', 100)
@@ -134,6 +139,7 @@ class ObjectPlotter():
     
     @staticmethod
     def plot_var(hist, bin_edges, legend, xlabel, range, save, **kwargs):
+        """Plot the object attribute."""
         fig, ax = plt.subplots(figsize=(18, 10))
         ax.set_title(kwargs.pop('title', 'plot'))
         save_name = kwargs.pop('save_name', 'plot.png')
