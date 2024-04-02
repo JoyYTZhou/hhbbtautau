@@ -2,9 +2,13 @@ import os, subprocess
 import numpy as np
 import pandas as pd
 from utils.filesysutil import glob_files 
+from coffea.analysis_tools import PackedSelection
 
 pjoin = os.path.join
 runcom = subprocess.run
+
+class weightedSelection(PackedSelection):
+    pass
 
 def load_csvs(dirname, startpattern):
     """Load csv files matching a pattern into a list of DataFrames."""

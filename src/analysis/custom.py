@@ -16,7 +16,6 @@ class mockskimEvtSel(BaseEventSelections):
     def setevtsel(self, events):
         electron = Object(events, "Electron")
         muon = Object(events, "Muon")
-        tau = Object(events, "Tau")
 
         e_mask = (electron.ptmask(opr.ge) & \
                 electron.custommask('cbtightid', opr.ge) & \
@@ -34,39 +33,31 @@ class mockskimEvtSel(BaseEventSelections):
                 muon.custommask('isoid', opr.ge))
         muon_nummask = muon.numselmask(opr.eq, m_mask)
 
-        tau_mask = (tau.ptmask(opr.ge) & \
-                    tau.absetamask(opr.le) & \
-                    tau.osmask())
-
-        tau_nummask = tau.numselmask(opr.ge, tau_mask)
-
         self.objsel.add_multiple({"Electron Veto": elec_nummask,
-                                "Muon Veto": muon_nummask,
-                                "Tau Selections": tau_nummask})
-  
-        jet = Object(events, 'Jet')
-        j_mask = (jet.ptmask(opr.ge) &
-                  jet.absetamask(opr.le))
+                                "Muon Veto": muon_nummask})
 
-        j_nummask = jet.numselmask(opr.ge, j_mask)
-        btagmask = jet.numselmask(opr.ge, jet.custommask('btag', opr.ge))
-
-        self.objsel.add_multiple({"Jet Selection": j_nummask,
-                                  "Jet Btag": btagmask})
 
         return None 
         
 class prelimEvtSel(BaseEventSelections):
     """Custom event selection class for the preliminary event selection."""
     def setevtsel(self, events):
+        tau = Object(events, "Tau")
+        tau_mask = (tau.ptmask(opr.ge) & \
+                    tau.absetamask(opr.le) & \
+                    tau.osmask())
+
+        tau_nummask = tau.numselmask(opr.ge, tau_mask)
+  
         jet = Object(events, 'Jet')
         j_mask = (jet.ptmask(opr.ge) &
-                  jet.absetamask(opr.le) & 
-                  jet.numselmask(opr.ge, jet.custommask('btag', opr.ge))) 
+                  jet.absetamask(opr.le) &
+                  jet.custommask('btag', opr.ge))
 
         j_nummask = jet.numselmask(opr.ge, j_mask)
 
-        self.objsel.add(name="Jet Selection", selection=j_nummask)
+        self.objsel.add_multiple({"Tau Selection", tau_nummask, 
+                                  "Jet Selection", j_nummask})
 
         return None
 

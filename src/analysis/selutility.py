@@ -2,7 +2,7 @@
 import awkward as ak
 import dask_awkward as dak
 import dask
-from coffea.analysis_tools import PackedSelection
+from utils.cutflowutil import weightedSelection
 from utils.datautil import arr_handler
 import vector as vec
 import pandas as pd
@@ -25,7 +25,7 @@ class BaseEventSelections:
         """Initialize the event selection object with the given selection configurations."""
         self._objselcfg = objcfg
         self._mapcfg = mapcfg
-        self.objsel = PackedSelection()
+        self.objsel = weightedSelection()
         self.cutflow = None
         self.cfobj = None
     
@@ -102,7 +102,7 @@ class Object():
         self._selcfg = kwargs.get('selcfg', default_objsel[name])
         self._mapcfg = kwargs.get('mapcfg', default_mapcfg[name])
         self.events = events
-        self.cutflow = kwargs.get('cutflow', PackedSelection())
+        self.cutflow = kwargs.get('cutflow', weightedSelection())
         self.fields = list(self.mapcfg.keys())
 
     @property
