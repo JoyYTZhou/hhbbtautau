@@ -16,7 +16,7 @@ class weightedCutflow(Cutflow):
         self._names = names
         self._nevonecut = nevonecut
         self._nevcutflow = nevcutflow
-        self._wgtvcutflow = wgtevcutflow
+        self._wgtevcutflow = wgtevcutflow
         self._masksonecut = masksonecut
         self._maskscutflow = maskscutflow
         self._delayed_mode = delayed_mode
@@ -33,6 +33,8 @@ class weightedCutflow(Cutflow):
                     The number of events that survive each cut alone as a list of integers or delayed integers
                 nevcutflow : list of integers or dask_awkward.lib.core.Scalar objects
                     The number of events that survive the cumulative cutflow as a list of integers or delayed integers
+                wgtevcutflow: list of integers or dask_awesome.lib.core.Scalar objects
+                    The number of events that survive the weighted cutflow as a list of integers or delayed integers
                 masksonecut : list of boolean numpy.ndarray or dask_awkward.lib.core.Array objects
                     The boolean mask vectors of which events pass each cut alone as a list of materialized or delayed boolean arrays
                 maskscutflow : list of boolean numpy.ndarray or dask_awkward.lib.core.Array objects
@@ -40,13 +42,14 @@ class weightedCutflow(Cutflow):
         """
         CutflowResult = namedtuple(
             "CutflowResult",
-            ["labels", "nevonecut", "nevcutflow", "masksonecut", "maskscutflow"],
+            ["labels", "nevonecut", "nevcutflow", "wgtevcutflow", "masksonecut", "maskscutflow"],
         )
         labels = ["initial"] + list(self._names)
         return CutflowResult(
             labels,
             self._nevonecut,
             self._nevcutflow,
+            self._wgtevcutflow,
             self._masksonecut,
             self._maskscutflow,
         )
