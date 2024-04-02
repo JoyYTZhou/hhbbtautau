@@ -20,12 +20,6 @@ class DataLoader():
         self.cleancfg = cleancfg
         self.get_wgt()
     
-    def __call__(self):
-        # DataLoader.hadd_roots(self.cleancfg, self.wgt_dict)
-        # self.hadd_cfs()
-        self.get_objs()
-        # self.get_totcf()
-    
     def get_wgt(self):
         """Compute/Load weights needed for these datasets. Save if needed."""
         wgtpath = pjoin(self.cleancfg.DATAPATH, 'wgt_total.json')
@@ -35,7 +29,7 @@ class DataLoader():
         else:
             self.wgt_dict = DataLoader.haddWeights(self.cleancfg.DATAPATH, from_raw=False)
             
-    def get_totcf(self, resolution=0, appendname=''):
+    def get_totraw(self, dirbase=None, resolution=0, appendname=''):
         """Load all cutflow tables for all datasets from output directory and combine them into one. 
         Get cutflows from CONDORPATH. Results saved to LOCALOUTPUT.
         
@@ -45,30 +39,34 @@ class DataLoader():
         Returns
         - Tuple of two dataframes (raw, weighted) of cutflows
         """
-        def process_file(path, process, resolution):
-            """Read and process a file based on resolution."""
-            df = pd.read_csv(path, index_col=0)
-            if resolution == 0:
-                df = df.sum(axis=1).to_frame(name=process)
-            return df
         cleancfg = self.cleancfg
-        lumi = int(cleancfg.LUMI / 1000)
-        returned = [None] * 2
-        for i, name in enumerate(['raw', 'wgt']):
-            tot_wgt_list = []
-            for process in self.cleancfg.DATASETS:
-                wgt_path = glob_files(pjoin(cleancfg.CONDORPATH, process), startpattern=process, endpattern=f'{name}cf.csv')[0]
-                if wgt_path: 
-                    wgt_df = process_file(wgt_path, process, resolution)
-                    tot_wgt_list.append(wgt_df)
-            wgt_df = pd.concat(tot_wgt_list, axis=1)
-            wgt_df.to_csv(pjoin(cleancfg.LOCALOUTPUT, f'final_{appendname}{name}_{lumi}data.csv'))
-            returned[i] = wgt_df
-
-        efficiency_df = efficiency(cleancfg.LOCALOUTPUT, wgt_df, overall=False, append=False, save=True, save_name=f'{appendname}stepwise')
-        efficiency_df = efficiency(cleancfg.LOCALOUTPUT, wgt_df, overall=True, append=False, save=True, save_name=f'{appendname}tot')
-
-        return returned
+        tot_raw_list = []
+        for process in self.cleancfg.DATASETS:
+            path_to_glob = pjoin(f"{cleancfg.INPUTDIR}_hadded", process) if dirbase is None else dirbase
+            raw_path = glob_files(path_to_glob, startpattern=process, endpattern=f'rawcf.csv')[0]
+            if raw_path: 
+                raw_df = DataLoader.process_file(raw_path, process, resolution)
+                tot_raw_list.append(raw_df)
+        total_df = pd.concat(tot_raw_list, axis=1)
+        total_df.to_csv(pjoin(cleancfg.LOCALOUTPUT, f'final_{appendname}rawdata.csv'))
+        return total_df
+    
+    def get_totwgt(self, dirbase=None, resolution=0):
+        """Calculate weighted cutflow tables for all datasets."""
+        cleancfg = self.cleancfg
+        tot_wgt_list = []
+        luminosity = cleancfg.LUMI
+        for process in self.cleancfg.DATASETS:
+            path_to_glob = pjoin(cleancfg.LOCALOUTPUT, process) if dirbase is None else dirbase
+            wgt_path = glob_files(path_to_glob, startpattern=process, endpattern=f'rawcf.csv')[0]
+            if wgt_path: 
+                wgt_df = DataLoader.process_file(wgt_path, process, resolution)
+                tot_wgt_list.append(wgt_df)
+        total_df = pd.concat(tot_wgt_list, axis=1)
+        total_df.to_csv(pjoin(cleancfg.LOCALOUTPUT, f'final_{int(luminosity/1000)}_wgtdata.csv'))
+        efficiency_df = efficiency(cleancfg.LOCALOUTPUT, wgt_df, overall=False, append=False, save=True, save_name=f'stepwise')
+        efficiency_df = efficiency(cleancfg.LOCALOUTPUT, wgt_df, overall=True, append=False, save=True, save_name=f'tot')
+        return total_df
 
     def get_objs(self):
         """Writes the selected, concated objects to root files.
@@ -199,6 +197,14 @@ class DataLoader():
                 writable[name] = ak.concatenate(arrlist)
             else:
                 writable['extra'] = {branchname: ak.concatenate(arrlist[branchname]) for branchname in arrlist.keys()}
+    
+    @staticmethod
+    def process_file(path, process, resolution):
+        """Read and process a file based on resolution."""
+        df = pd.read_csv(path, index_col=0)
+        if resolution == 0:
+            df = df.sum(axis=1).to_frame(name=process)
+        return df
 
 def find_branches(file_path, object_list, tree_name, extra=[]) -> list:
     """Return a list of branches for objects in object_list
