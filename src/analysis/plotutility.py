@@ -1,6 +1,5 @@
 import mplhep as hep
 import matplotlib.pyplot as plt
-import json
 from utils.filesysutil import checkpath, glob_files
 from utils.rootutil import load_fields, DataLoader
 from functools import wraps

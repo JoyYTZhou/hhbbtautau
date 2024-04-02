@@ -2,13 +2,110 @@ import os, subprocess
 import numpy as np
 import pandas as pd
 from utils.filesysutil import glob_files 
-from coffea.analysis_tools import PackedSelection
+from coffea.analysis_tools import PackedSelection, Cutflow
+import dask_awkward
+from collections import namedtuple
 
 pjoin = os.path.join
 runcom = subprocess.run
 
+class weightedCutflow(Cutflow):
+    def __init__(
+        self, names, nevonecut, nevcutflow, wgtevcutflow, masksonecut, maskscutflow, delayed_mode
+    ):
+        self._names = names
+        self._nevonecut = nevonecut
+        self._nevcutflow = nevcutflow
+        self._wgtvcutflow = wgtevcutflow
+        self._masksonecut = masksonecut
+        self._maskscutflow = maskscutflow
+        self._delayed_mode = delayed_mode
+
+    def result(self):
+        """Returns the results of the cutflow as a namedtuple
+
+        Returns
+        -------
+            result : CutflowResult
+                A namedtuple with the following attributes:
+
+                nevonecut : list of integers or dask_awkward.lib.core.Scalar objects
+                    The number of events that survive each cut alone as a list of integers or delayed integers
+                nevcutflow : list of integers or dask_awkward.lib.core.Scalar objects
+                    The number of events that survive the cumulative cutflow as a list of integers or delayed integers
+                masksonecut : list of boolean numpy.ndarray or dask_awkward.lib.core.Array objects
+                    The boolean mask vectors of which events pass each cut alone as a list of materialized or delayed boolean arrays
+                maskscutflow : list of boolean numpy.ndarray or dask_awkward.lib.core.Array objects
+                    The boolean mask vectors of which events pass the cumulative cutflow a list of materialized or delayed boolean arrays
+        """
+        CutflowResult = namedtuple(
+            "CutflowResult",
+            ["labels", "nevonecut", "nevcutflow", "masksonecut", "maskscutflow"],
+        )
+        labels = ["initial"] + list(self._names)
+        return CutflowResult(
+            labels,
+            self._nevonecut,
+            self._nevcutflow,
+            self._masksonecut,
+            self._maskscutflow,
+        )
+
 class weightedSelection(PackedSelection):
-    pass
+    def cutflow(self, perevtwgt, *names):
+        """Compute the cutflow for a set of selections
+
+        Returns an object which can return a list of the number of events that pass all the previous selections including the current one
+        after each named selection is applied consecutively. The first element
+        of the returned list is the total number of events before any selections are applied.
+        The last element is the final number of events that pass after all the selections are applied.
+        Can also return a cutflow histogram as a ``hist.Hist`` object where the bin heights are the number of events of the cutflow list.
+        If the PackedSelection is in delayed mode, the elements of the list will be dask_awkward Arrays that can be computed whenever the user wants.
+        If the histogram is requested, those delayed arrays will be computed in the process in order to set the bin heights.
+
+        Parameters
+        ----------
+            ``perevtwgt`` : dask.array.Array that represents the weights of the events
+            ``*names`` : args
+                The named selections to use, need to be a subset of the selections already added
+
+        Returns
+        -------
+            res: coffea.analysis_tools.Cutflow
+                A wrapper class for the results, see the documentation for that class for more details
+        """
+        for cut in names:
+            if not isinstance(cut, str) or cut not in self._names:
+                raise ValueError(
+                    "All arguments must be strings that refer to the names of existing selections"
+                )
+
+        masksonecut, maskscutflow = [], []
+        for i, cut in enumerate(names):
+            mask1 = self.any(cut)
+            mask2 = self.all(*(names[: i + 1]))
+            masksonecut.append(mask1)
+            maskscutflow.append(mask2)
+
+        if not self.delayed_mode:
+            nevonecut = [len(self._data)]
+            nevcutflow = [len(self._data)]
+            wgtevcutflow = [len(self._data)]
+            nevonecut.extend(np.sum(masksonecut, axis=1))
+            nevcutflow.extend(np.sum(maskscutflow, axis=1))
+            wgtevcutflow.extend(np.sum(maskscutflow, axis=1))
+
+        else:
+            nevonecut = [dask_awkward.count(self._data, axis=0)]
+            nevcutflow = [dask_awkward.count(self._data, axis=0)]
+            wgtevcutflow = [dask_awkward.count(self._data, axis=0)] 
+            nevonecut.extend([dask_awkward.sum(mask1) for mask1 in masksonecut])
+            nevcutflow.extend([dask_awkward.sum(mask2) for mask2 in maskscutflow])
+            wgtevcutflow.extend([dask_awkward.sum(perevtwgt[mask2]) for mask2 in maskscutflow])
+
+        return weightedCutflow(
+            names, nevonecut, nevcutflow, wgtevcutflow, masksonecut, maskscutflow, self.delayed_mode
+        )
 
 def load_csvs(dirname, startpattern):
     """Load csv files matching a pattern into a list of DataFrames."""
