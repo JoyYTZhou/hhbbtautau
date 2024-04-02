@@ -178,8 +178,8 @@ def spawnCondor(default=False):
 
 def spawnLocal():
     """Spawn dask client for local cluster"""
-    cluster = LocalCluster(processes=daskcfg.SPAWN_PROCESS, threads_per_worker=daskcfg.THREADS_NO)
-    cluster.adapt(minimum=1, maximum=3)
+    cluster = LocalCluster(processes=daskcfg.SPAWN_PROCESS, prothreads_per_worker=daskcfg.THREADS_NO)
+    cluster.adapt(minimum=1, maximum=4)
     client = Client(cluster)
     print("successfully created a dask client in local cluster!")
     print("===================================")
