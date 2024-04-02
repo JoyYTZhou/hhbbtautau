@@ -21,13 +21,8 @@ class DataLoader():
         self.get_wgt()
     
     def get_wgt(self):
-        """Compute/Load weights needed for these datasets. Save if needed."""
-        wgtpath = pjoin(self.cleancfg.DATAPATH, 'wgt_total.json')
-        if os.path.exists(wgtpath):
-            with open(wgtpath, 'r') as f:
-                self.wgt_dict = json.load(f)        
-        else:
-            self.wgt_dict = DataLoader.haddWeights(self.cleancfg.DATAPATH, from_raw=False)
+        """Compute weights needed for these datasets. Save if needed."""
+        self.wgt_dict = DataLoader.haddWeights(self.cleancfg.DATAPATH, from_raw=True)
             
     def get_totraw(self, dirbase=None, resolution=0, appendname=''):
         """Load all cutflow tables for all datasets from output directory and combine them into one. 
