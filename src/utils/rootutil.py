@@ -37,7 +37,7 @@ class DataLoader():
             
     def get_totcf(self, resolution=0, appendname=''):
         """Load all cutflow tables for all datasets from output directory and combine them into one. 
-        Scaled by luminosity in self.cleancfg currently. Get cutflows from CONDORPATH. Results saved to LOCALOUTPUT.
+        Get cutflows from CONDORPATH. Results saved to LOCALOUTPUT.
         
         Parameters
         - `resolution`: resolution of the cutflow table. 0 keep process level. 1 keep dataset level (specific channels etc.)
@@ -105,20 +105,18 @@ class DataLoader():
             transferfiles(outpath, condorpath, endpattern='.csv')
             if cleancfg.CLEANCSV: delfiles(outpath, pattern='*.csv')
     
-    def weight_rawcf(self):
+    def weight_rawcf(self, dirbase=None):
         """Returns the weighted cutflow tables for all datasets."""
         cleancfg = self.cleancfg
         indir = cleancfg.INPUTDIR
         lumi = cleancfg.LUMI
         for process in self.cleancfg.DATASETS:
             outpath = pjoin(cleancfg.LOCALOUTPUT, process)
-            condorpath = pjoin(f'{indir}_hadded', process)
+            condorpath = pjoin(f'{indir}_hadded', process) if dirbase is None else pjoin(cleancfg.CONDORBASE, dirbase, process)
             checkpath(condorpath, True)
             rawcf = pd.read_csv(glob_files(condorpath, startpattern=process, endpattern='rawcf.csv')[0], index_col=0)
             weight_cf(self.wgt_dict[process], rawcf, save=True, 
                       outname=pjoin(outpath, f"{process}_{int(lumi/1000)}_wgtcf.csv"))
-            transferfiles(outpath, condorpath, startpattern=process, endpattern='.csv') 
-            if cleancfg.CLEANCSV: delfiles(outpath, pattern='*.csv')
 
     @staticmethod
     def haddWeights(grepdir, output=True, from_raw=True):
