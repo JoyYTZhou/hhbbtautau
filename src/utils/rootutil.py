@@ -42,7 +42,7 @@ class DataLoader():
         cleancfg = self.cleancfg
         tot_raw_list = []
         for process in self.cleancfg.DATASETS:
-            path_to_glob = pjoin(f"{cleancfg.INPUTDIR}_hadded", process) if dirbase is None else dirbase
+            path_to_glob = pjoin(f"{cleancfg.INPUTDIR}_hadded", process) if dirbase is None else pjoin(cleancfg.CONDORBASE, dirbase, process)
             raw_path = glob_files(path_to_glob, startpattern=process, endpattern=f'rawcf.csv')[0]
             if raw_path: 
                 raw_df = DataLoader.process_file(raw_path, process, resolution)
@@ -57,15 +57,15 @@ class DataLoader():
         tot_wgt_list = []
         luminosity = cleancfg.LUMI
         for process in self.cleancfg.DATASETS:
-            path_to_glob = pjoin(cleancfg.LOCALOUTPUT, process) if dirbase is None else dirbase
-            wgt_path = glob_files(path_to_glob, startpattern=process, endpattern=f'rawcf.csv')[0]
+            path_to_glob = pjoin(cleancfg.LOCALOUTPUT, process) if dirbase is None else pjoin(cleancfg.CONDORBASE, dirbase, process)
+            wgt_path = glob_files(path_to_glob, startpattern=process, endpattern=f'{int(luminosity/1000)}_wgtcf.csv')[0]
             if wgt_path: 
                 wgt_df = DataLoader.process_file(wgt_path, process, resolution)
                 tot_wgt_list.append(wgt_df)
         total_df = pd.concat(tot_wgt_list, axis=1)
         total_df.to_csv(pjoin(cleancfg.LOCALOUTPUT, f'final_{int(luminosity/1000)}_wgtdata.csv'))
-        efficiency_df = efficiency(cleancfg.LOCALOUTPUT, wgt_df, overall=False, append=False, save=True, save_name=f'stepwise')
-        efficiency_df = efficiency(cleancfg.LOCALOUTPUT, wgt_df, overall=True, append=False, save=True, save_name=f'tot')
+        efficiency_df = efficiency(cleancfg.LOCALOUTPUT, total_df, overall=False, append=False, save=True, save_name=f'stepwise')
+        efficiency_df = efficiency(cleancfg.LOCALOUTPUT, total_df, overall=True, append=False, save=True, save_name=f'tot')
         return total_df
 
     def get_objs(self):
@@ -78,22 +78,21 @@ class DataLoader():
         checkpath(outdir)
         for process in cleancfg.DATASETS:
             for ds in self.wgt_dict[process].keys():
-                datadir = pjoin(cleancfg.CONDORPATH, process)
+                datadir = pjoin(cleancfg.INPUTDIR, process)
                 files = glob_files(datadir, startpattern=ds, endpattern='.root')
                 destination = pjoin(outdir, f"{ds}_limited.root")
                 with uproot.recreate(destination) as output:
                     print(f"Writing limited data to file {destination}")
                     DataLoader.write_obj(output, files, cleancfg.PLOT_VARS, cleancfg.EXTRA_VARS)
     
-    def hadd_cfs(self):
-        """Hadd cutflow tables, saved to LOCALOUTPUT.
-        Transfer to CONDORPATH if needed."""
+    def hadd_cfs(self, transfer_base=None):
+        """Hadd cutflow table output from processor, saved to LOCALOUTPUT. Transfer to prenamed condorpath if needed."""
         cleancfg = self.cleancfg
         processes = cleancfg.DATASETS
         indir = cleancfg.INPUTDIR
         for process in processes:
             rawdflist = []
-            condorpath = pjoin(f'{indir}_hadded', process)
+            condorpath = pjoin(f'{indir}_hadded', process) if transfer_base is None else pjoin(cleancfg.CONDORBASE, transfer_base, process)
             outpath = pjoin(cleancfg.LOCALOUTPUT, process)
             checkpath(outpath, raiseError=False)
             for ds in self.wgt_dict[process].keys():
@@ -108,13 +107,14 @@ class DataLoader():
         cleancfg = self.cleancfg
         indir = cleancfg.INPUTDIR
         lumi = cleancfg.LUMI
-        for process in self.cleancfg.DATASETS:
+        for process in cleancfg.DATASETS:
             outpath = pjoin(cleancfg.LOCALOUTPUT, process)
             condorpath = pjoin(f'{indir}_hadded', process) if dirbase is None else pjoin(cleancfg.CONDORBASE, dirbase, process)
             checkpath(condorpath, True)
+            checkpath(outpath)
             rawcf = pd.read_csv(glob_files(condorpath, startpattern=process, endpattern='rawcf.csv')[0], index_col=0)
             weight_cf(self.wgt_dict[process], rawcf, save=True, 
-                      outname=pjoin(outpath, f"{process}_{int(lumi/1000)}_wgtcf.csv"))
+                      outname=pjoin(outpath, f"{process}_{int(lumi/1000)}_wgtcf.csv"), lumi=lumi)
 
     @staticmethod
     def haddWeights(grepdir, output=True, from_raw=True):
