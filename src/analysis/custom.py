@@ -6,7 +6,7 @@ import operator as opr
 
 def switch_selections(sel_name):
     selections = {
-        'skim': mockskimEvtSel,
+        'lepvetoskim': mockskimEvtSel,
         'prelim': prelimEvtSel
     }
     return selections.get(sel_name, BaseEventSelections)
@@ -35,7 +35,6 @@ class mockskimEvtSel(BaseEventSelections):
 
         self.objsel.add_multiple({"Electron Veto": elec_nummask,
                                 "Muon Veto": muon_nummask})
-
 
         return None 
         

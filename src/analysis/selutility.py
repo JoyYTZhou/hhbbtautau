@@ -29,9 +29,9 @@ class BaseEventSelections:
         self.cutflow = None
         self.cfobj = None
     
-    def __call__(self, events, **kwargs):
+    def __call__(self, events, wgtname='Generator_weight', **kwargs):
         """Apply all the selections in line on the events"""
-        return self.callevtsel(events, **kwargs)
+        return self.callevtsel(events, wgtname=wgtname, **kwargs)
 
     @property
     def objselcfg(self):
@@ -49,14 +49,16 @@ class BaseEventSelections:
         """
         pass
                         
-    def callevtsel(self, events, compute_veto=False):
+    def callevtsel(self, events, wgtname, compute_veto=False):
         """Apply all the selections in line on the events
+        Parameters
+        
         :return: passed events, vetoed events
         """
         self.setevtsel(events)
         if self.objsel.names:
             passed = events[self.objsel.all()]
-            self.cfobj = self.objsel.cutflow(*self.objsel.names)
+            self.cfobj = self.objsel.cutflow(events[wgtname], *self.objsel.names)
             self.cutflow = self.cfobj.result()
             if compute_veto: 
                 vetoed = events[~(self.objsel.all())]
@@ -75,7 +77,10 @@ class BaseEventSelections:
         :rtype: pandas.DataFrame
         """
         row_names = self.cutflow.labels
-        number = dask.compute(self.cutflow.nevcutflow)[0]
+        if self.cutflow.wgtevcutflow is not None:
+            number = dask.compute(self.cutflow.wgtevcutflow)[0]
+        else:
+            number = dask.compute(self.cutflow.nevcutflow)[0]
         df_cf = pd.DataFrame(data = number, index=row_names)
         return df_cf
 
