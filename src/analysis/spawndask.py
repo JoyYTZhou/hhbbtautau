@@ -3,6 +3,7 @@ from dask.distributed import as_completed
 import json as json
 import gc
 from itertools import islice
+import os
 
 from .custom import switch_selections
 from .processor import Processor
@@ -10,10 +11,15 @@ from utils.filesysutil import glob_files, initLogger
 from config.selectionconfig import runsetting as rs
 from config.selectionconfig import dasksetting as daskcfg
 
-logger = initLogger(__name__.split('.')[-1], rs.PROCESS_NAME)
+pjoin = os.path.join
 
+logger = initLogger(__name__.split('.')[-1], rs.PROCESS_NAME)
 evtselclass = switch_selections(rs.SEL_NAME)
-with open("src/data/data.json", 'r') as data:
+
+parent_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+datapath = pjoin(parent_directory, 'data', 'data.json')
+with open(datapath, 'r') as data:
     realmeta = json.load(data)
 
 def job(fn, i, dataset, eventSelection=evtselclass):
@@ -41,7 +47,8 @@ def job(fn, i, dataset, eventSelection=evtselclass):
 def loadmeta():
     """Load metadata from input file"""
     if rs.INPUTFILE_PATH.endswith('.json'):
-        with open(rs.INPUTFILE_PATH, 'r') as samplepath:
+        inputdatap = pjoin(parent_directory, rs.INPUTFILE_PATH)
+        with open(inputdatap, 'r') as samplepath:
             metadata = json.load(samplepath)
         loaded = metadata
         if rs.RESUME: 
@@ -178,7 +185,7 @@ def spawnCondor(default=False):
 
 def spawnLocal():
     """Spawn dask client for local cluster"""
-    cluster = LocalCluster(processes=daskcfg.SPAWN_PROCESS, prothreads_per_worker=daskcfg.THREADS_NO)
+    cluster = LocalCluster(processes=daskcfg.get('SPAWN_PROCESS', False), prothreads_per_worker=daskcfg.get('THREADS_NO', 4))
     cluster.adapt(minimum=1, maximum=4)
     client = Client(cluster)
     print("successfully created a dask client in local cluster!")

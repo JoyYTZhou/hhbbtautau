@@ -1,0 +1,60 @@
+2024-04-04 11:40:13,498 - spawndask - ERROR - TypeError encountered for file index 2 in ggF: string indices must be integers
+Traceback (most recent call last):
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/analysis/spawndask.py", line 37, in job
+    proc.runfile(fn, i)
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/analysis/processor.py", line 68, in runfile
+    passed = self.evtsel(events)
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/analysis/selutility.py", line 34, in __call__
+    return self.callevtsel(events, **kwargs)
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/analysis/selutility.py", line 59, in callevtsel
+    self.cfobj = self.objsel.cutflow(*self.objsel.names)
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/utils/cutflowutil.py", line 107, in cutflow
+    wgtevcutflow.extend([dask_awkward.sum(perevtwgt[mask2]) for mask2 in maskscutflow])
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/utils/cutflowutil.py", line 107, in <listcomp>
+    wgtevcutflow.extend([dask_awkward.sum(perevtwgt[mask2]) for mask2 in maskscutflow])
+TypeError: string indices must be integers
+2024-04-04 11:40:13,566 - spawndask - ERROR - TypeError encountered for file index 1 in ggF: string indices must be integers
+Traceback (most recent call last):
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/analysis/spawndask.py", line 37, in job
+    proc.runfile(fn, i)
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/analysis/processor.py", line 68, in runfile
+    passed = self.evtsel(events)
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/analysis/selutility.py", line 34, in __call__
+    return self.callevtsel(events, **kwargs)
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/analysis/selutility.py", line 59, in callevtsel
+    self.cfobj = self.objsel.cutflow(*self.objsel.names)
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/utils/cutflowutil.py", line 107, in cutflow
+    wgtevcutflow.extend([dask_awkward.sum(perevtwgt[mask2]) for mask2 in maskscutflow])
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/utils/cutflowutil.py", line 107, in <listcomp>
+    wgtevcutflow.extend([dask_awkward.sum(perevtwgt[mask2]) for mask2 in maskscutflow])
+TypeError: string indices must be integers
+2024-04-04 11:42:19,106 - spawndask - ERROR - TypeError encountered for file index 1 in ggF: string indices must be integers
+Traceback (most recent call last):
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/analysis/spawndask.py", line 37, in job
+    proc.runfile(fn, i)
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/analysis/processor.py", line 68, in runfile
+    passed = self.evtsel(events)
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/analysis/selutility.py", line 34, in __call__
+    return self.callevtsel(events, **kwargs)
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/analysis/selutility.py", line 59, in callevtsel
+    self.cfobj = self.objsel.cutflow(*self.objsel.names)
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/utils/cutflowutil.py", line 107, in cutflow
+    wgtevcutflow.extend([dask_awkward.sum(perevtwgt[mask2]) for mask2 in maskscutflow])
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/utils/cutflowutil.py", line 107, in <listcomp>
+    wgtevcutflow.extend([dask_awkward.sum(perevtwgt[mask2]) for mask2 in maskscutflow])
+TypeError: string indices must be integers
+2024-04-04 11:46:16,156 - spawndask - ERROR - TypeError encountered for file index 1 in ggF: string indices must be integers
+Traceback (most recent call last):
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/analysis/spawndask.py", line 37, in job
+    proc.runfile(fn, i)
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/analysis/processor.py", line 68, in runfile
+    passed = self.evtsel(events)
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/analysis/selutility.py", line 34, in __call__
+    return self.callevtsel(events, **kwargs)
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/analysis/selutility.py", line 59, in callevtsel
+    self.cfobj = self.objsel.cutflow(*self.objsel.names)
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/utils/cutflowutil.py", line 107, in cutflow
+    wgtevcutflow.extend([dask_awkward.sum(perevtwgt[mask2]) for mask2 in maskscutflow])
+  File "/uscms/home/joyzhou/work/hhbbtautau/src/utils/cutflowutil.py", line 107, in <listcomp>
+    wgtevcutflow.extend([dask_awkward.sum(perevtwgt[mask2]) for mask2 in maskscutflow])
+TypeError: string indices must be integers
