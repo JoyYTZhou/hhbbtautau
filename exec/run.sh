@@ -19,10 +19,12 @@ else
 fi
 
 source scripts/lpcsetup.sh
+# source /cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-centos8-gcc11-opt/setup.sh
 source scripts/sasetup.sh
 source ${ENV_NAME}/bin/activate
 
 export PYTHONPATH=$VIRTUAL_ENV/lib/python3.9/site-packages:$PYTHONPATH
+echo $PYTHONPATH
 export MPLCONFIGDIR=matplotlibconfig
 export PYTHONPATH=$PWD/src:$PYTHONPATH
 

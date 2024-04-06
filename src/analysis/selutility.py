@@ -21,8 +21,9 @@ class BaseEventSelections:
     - `objsel`: PackedSelection object to keep track of cutflow
     - `cutflow`: cutflow object
     """
-    def __init__(self, objcfg=default_objsel, mapcfg=default_mapcfg) -> None:
+    def __init__(self, trigcfg=default_trigsel, objcfg=default_objsel, mapcfg=default_mapcfg) -> None:
         """Initialize the event selection object with the given selection configurations."""
+        self._trigcfg = trigcfg
         self._objselcfg = objcfg
         self._mapcfg = mapcfg
         self.objsel = weightedSelection()
@@ -34,12 +35,19 @@ class BaseEventSelections:
         return self.callevtsel(events, wgtname=wgtname, **kwargs)
 
     @property
+    def trigcfg(self):
+        return self._trigcfg
+
+    @property
     def objselcfg(self):
         return self._objselcfg
     
     @property
     def mapcfg(self):
         return self._mapcfg
+    
+    def triggersel(self, events):
+        pass
 
     def setevtsel(self, events):
         """Custom function to set the object selections on event levels based on config.
@@ -55,11 +63,12 @@ class BaseEventSelections:
         
         :return: passed events, vetoed events
         """
+        self.triggersel(events)
         self.setevtsel(events)
         if self.objsel.names:
-            passed = events[self.objsel.all()]
             self.cfobj = self.objsel.cutflow(events[wgtname], *self.objsel.names)
             self.cutflow = self.cfobj.result()
+            passed = events[self.cutflow.maskscutflow[-1]]
             if compute_veto: 
                 vetoed = events[~(self.objsel.all())]
                 result = (passed, vetoed)

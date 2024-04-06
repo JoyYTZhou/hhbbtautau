@@ -3,6 +3,7 @@ from dask.distributed import as_completed
 import json as json
 import gc
 from itertools import islice
+import traceback
 import os
 
 from .custom import switch_selections
@@ -124,8 +125,10 @@ def process_futures(futures, results_file='futureresult.txt', errors_file='futur
         try:
             if future.exception():
                 error_msg = f"An error occurred: {future.exception()}"
+                tbextract = f"Traceback: {traceback.extract_tb(future.traceback())}"
                 logger.info(error_msg)
                 errors.append(error_msg)
+                errors.append(tbextract)
             else:
                 result = future.result()
                 processed_results.append(result)
@@ -185,7 +188,7 @@ def spawnCondor(default=False):
 
 def spawnLocal():
     """Spawn dask client for local cluster"""
-    cluster = LocalCluster(processes=daskcfg.get('SPAWN_PROCESS', False), prothreads_per_worker=daskcfg.get('THREADS_NO', 4))
+    cluster = LocalCluster(processes=daskcfg.get('SPAWN_PROCESS', False), threads_per_worker=daskcfg.get('THREADS_NO', 4))
     cluster.adapt(minimum=1, maximum=4)
     client = Client(cluster)
     print("successfully created a dask client in local cluster!")

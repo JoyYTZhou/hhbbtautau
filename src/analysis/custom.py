@@ -13,6 +13,13 @@ def switch_selections(sel_name):
 
 class mockskimEvtSel(BaseEventSelections):
     """Reduce event sizes"""
+    def triggersel(self, events):
+        for trigname, value in self.trigcfg.items():
+            if value:
+                self.objsel.add(trigname, events[trigname])
+            else:
+                continue
+
     def setevtsel(self, events):
         electron = Object(events, "Electron")
         muon = Object(events, "Muon")
@@ -24,7 +31,6 @@ class mockskimEvtSel(BaseEventSelections):
                 electron.absdzmask(opr.le)
                 )
         elec_nummask = electron.numselmask(opr.eq, e_mask)
-
         m_mask = (muon.ptmask(opr.ge) & \
                 muon.absdxymask(opr.le) & \
                 muon.absetamask(opr.le) & \
@@ -32,10 +38,8 @@ class mockskimEvtSel(BaseEventSelections):
                 muon.custommask('looseid', opr.eq) & \
                 muon.custommask('isoid', opr.ge))
         muon_nummask = muon.numselmask(opr.eq, m_mask)
-
         self.objsel.add_multiple({"Electron Veto": elec_nummask,
                                 "Muon Veto": muon_nummask})
-
         return None 
         
 class prelimEvtSel(BaseEventSelections):

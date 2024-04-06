@@ -1,8 +1,7 @@
 default:
   name: "tauhtauh"
   triggerselections: 
-    nFatJet: 1
-    nJet: 2
+    HLT_DoubleMediumChargedIsoPFTauHPS40_Trk1_eta2p1: true
   objselections:
     GenPart: null
     Electron: 
