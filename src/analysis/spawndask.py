@@ -70,9 +70,12 @@ def loadmeta():
 
 def submitfutures(client):
     metadata = loadmeta()
-    for dataset, info in metadata.items():
-        futures = [client.submit(job, fn, i, dataset) for i, fn in enumerate(info['filelist'])]
-        logger.info("Futures submitted!")
+    futures = []
+    for j, dataset, info in enumerate(metadata.items()):
+        if rs.RESUME and j==0:
+            futures.extend([client.submit(job, fn, i, dataset) for i, fn in enumerate(info['filelist']) if i >= rs.FINDX])
+        else:
+            futures.extend([client.submit(job, fn, i, dataset) for i, fn in enumerate(info['filelist'])])
     return futures
 
 def submitloops():
@@ -125,10 +128,10 @@ def process_futures(futures, results_file='futureresult.txt', errors_file='futur
         try:
             if future.exception():
                 error_msg = f"An error occurred: {future.exception()}"
-                tbextract = f"Traceback: {traceback.extract_tb(future.traceback())}"
+                print(future.traceback())
+                print(f"Traceback: {traceback.extract_tb(future.traceback())}")
                 logger.info(error_msg)
                 errors.append(error_msg)
-                errors.append(tbextract)
             else:
                 result = future.result()
                 processed_results.append(result)
