@@ -24,10 +24,12 @@ source scripts/sasetup.sh
 source ${ENV_NAME}/bin/activate
 
 export PYTHONPATH=$VIRTUAL_ENV/lib/python3.9/site-packages:$PYTHONPATH
-echo $PYTHONPATH
 export MPLCONFIGDIR=matplotlibconfig
 export PYTHONPATH=$PWD/src:$PYTHONPATH
 
+echo $PYTHONPATH
+
+source scripts/cleanpath.sh
 export ENV_FOR_DYNACONF=LPCCONDOR
 
 python3 src/main.py

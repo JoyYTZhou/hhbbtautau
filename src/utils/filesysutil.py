@@ -38,7 +38,7 @@ def checkpath(dirname, raiseError=False):
     else:
         checklocalpath(dirname, raiseError)
 
-def transferfiles(srcpath, destpath, startpattern='', endpattern=''):
+def transferfiles(srcpath, destpath, startpattern='', endpattern='', remove=False):
     """Transfer files between local and condor system. Will check if destpath exist.
     
     Parameters:
@@ -54,6 +54,7 @@ def transferfiles(srcpath, destpath, startpattern='', endpattern=''):
             checkcondorpath(destpath)
             for srcfile in glob_files(srcpath, startpattern, endpattern):
                 cpcondor(srcfile, f'{destpath}/{os.path.basename(srcfile)}')
+                if remove: os.remove(srcfile)
     elif isremote(srcpath):
         if isremote(destpath):
             raise ValueError("Destination path should be a local directory. Why are you transferring from EOS to EOS?")
@@ -123,10 +124,11 @@ def cpfcondor(srcpath, localpath):
     result = runcom(comstr, shell=True, capture_output=True, text=True)
     return result
 
-def cpcondor(srcpath, destpath):
+def cpcondor(srcpath, destpath, printout=False):
     """Copy srcpath (file/directory) FROM local to condor destpath"""
     comstr = f'xrdcp {srcpath} {destpath}' if destpath.startswith('root://') else f'xrdcp {srcpath} {PREFIX}/{destpath}' 
     result = runcom(comstr, shell=True, capture_output=True, text=True)
+    if printout: print(result)
     return result
 
 def isremote(pathstr):
