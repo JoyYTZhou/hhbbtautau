@@ -1,7 +1,6 @@
 from dask.distributed import Client, LocalCluster
 from dask.distributed import as_completed
 import json as json
-import gc
 from itertools import islice
 import traceback
 import os
@@ -32,11 +31,10 @@ def job(fn, i, dataset, eventSelection=evtselclass):
     - `eventSelection`: Custom Defined Event Selection Class
     """
     proc = Processor(rs, dataset, eventSelection)
-    logger.info(f"Processing filename {fn}")
     print(f"Processing filename {fn}")
     try: 
         proc.runfile(fn, i)
-        logger.info(f"Execution finished for file index {i} in {dataset}!")
+        print(f"Execution finished for file index {i} in {dataset}!")
         return True
     except ValueError as e:
         logger.error(f"ValueError encountered for file index {i} in {dataset}: {e}", exc_info=True)
@@ -71,7 +69,7 @@ def loadmeta():
 def submitfutures(client):
     metadata = loadmeta()
     futures = []
-    for j, dataset, info in enumerate(metadata.items()):
+    for j, (dataset, info) in enumerate(metadata.items()):
         if rs.RESUME and j==0:
             futures.extend([client.submit(job, fn, i, dataset) for i, fn in enumerate(info['filelist']) if i >= rs.FINDX])
         else:
@@ -89,10 +87,8 @@ def submitloops():
             if rs.RESUME and j==0:
                 if i >= rs.FINDX: 
                     job(file, i, dataset)
-                    gc.collect()
             else:
                 job(file, i, dataset)
-                gc.collect() 
     return None
 
 def submitjobs(client):

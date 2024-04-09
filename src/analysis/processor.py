@@ -4,7 +4,6 @@ from utils.filesysutil import *
 import uproot
 import pickle
 from .selutility import BaseEventSelections
-import shutil
 
 class Processor:
     """Process individual file or filesets given strings/dicts belonging to one dataset."""
@@ -63,23 +62,23 @@ class Processor:
         Returns:
         - messages for debugging
         """
-        msg = []
         events = self.loadfile(filename, suffix)
-        passed = self.evtsel(events)
+        events = self.evtsel(events)
         if write_npz:
             npzname = pjoin(self.outdir, f'cutflow_{suffix}.npz')
             self.evtsel.cfobj.to_npz(npzname)
         if write_method == 'dask':
-            self.writedask(passed, suffix, delayed)
+            self.writedask(events, suffix, delayed)
         elif write_method == 'dataframe':
-            self.writeobj(passed, suffix)
+            self.writeobj(events, suffix)
         elif write_method == 'pickle':
-            self.writepickle(passed, suffix, delayed)
+            self.writepickle(events, suffix, delayed)
             pass
         elif write_method == None:
             pass
         else:
             raise ValueError("Write method not supported")
+        print("Output written to disk")
 
         cutflow_name = f'{self.dataset}_cutflow_{suffix}.csv'
         checkpath(self.outdir)
@@ -87,15 +86,12 @@ class Processor:
         cutflow_df = self.evtsel.cf_to_df() 
         cutflow_df.to_csv(localpath)
 
-        del cutflow_df, events, passed
+        del cutflow_df, events
 
         if self.rtcfg.TRANSFER:
             condorpath = f'{self.rtcfg.TRANSFER_PATH}/{cutflow_name}'
-            cpcondor(localpath, condorpath)
-        msg.append(f"file {filename} processed successfully!")
+            cpcondor(localpath, condorpath, printout=True)
         if self.rtcfg.COPY_LOCAL: delfiles(self.rtcfg.COPY_DIR)
-
-        return '\n'.join(msg)
 
     def writedask(self, passed, suffix, delayed=True, fields=None):
         """Wrapper around uproot.dask_write(),
@@ -108,8 +104,7 @@ class Processor:
             pass
 
         if self.rtcfg.TRANSFER:
-            transferfiles(self.outdir, self.rtcfg.TRANSFER_PATH)
-            shutil.rmtree(self.outdir)
+            transferfiles(self.outdir, self.rtcfg.TRANSFER_PATH, remove=True)
         
     def writepickle(self, passed, suffix, delayed):
         finame = pjoin(self.outdir, f"{self.dataset}_{suffix}.pkl")

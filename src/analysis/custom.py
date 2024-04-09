@@ -3,6 +3,7 @@
 # TECHNICALLY THIS SHOULD BE THE ONLY FILE THAT NEEDS TO BE MODIFIED FOR CUSTOM EVENT SELECTIONS
 from .selutility import BaseEventSelections, Object
 import operator as opr
+import dask_awkward as dak
 
 def switch_selections(sel_name):
     selections = {
@@ -21,23 +22,25 @@ class mockskimEvtSel(BaseEventSelections):
                 continue
 
     def setevtsel(self, events):
-        electron = Object(events, "Electron")
         muon = Object(events, "Muon")
-
+        electron = Object(events, "Electron")
         e_mask = (electron.ptmask(opr.ge) & \
                 electron.custommask('cbtightid', opr.ge) & \
                 electron.absdxymask(opr.le) & \
                 electron.absetamask(opr.le) & \
                 electron.absdzmask(opr.le)
                 )
-        elec_nummask = electron.numselmask(opr.eq, e_mask)
+
+        elec_nummask = electron.numselmask(e_mask, opr.eq)
+
         m_mask = (muon.ptmask(opr.ge) & \
                 muon.absdxymask(opr.le) & \
                 muon.absetamask(opr.le) & \
                 muon.absdzmask(opr.le) & \
                 muon.custommask('looseid', opr.eq) & \
                 muon.custommask('isoid', opr.ge))
-        muon_nummask = muon.numselmask(opr.eq, m_mask)
+        muon_nummask = muon.numselmask(m_mask, opr.eq)
+
         self.objsel.add_multiple({"Electron Veto": elec_nummask,
                                 "Muon Veto": muon_nummask})
         return None 

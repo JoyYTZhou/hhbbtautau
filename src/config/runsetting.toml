@@ -5,46 +5,33 @@ PROCESS_NAME = "DYJets"
 OUTPUTDIR_PATH = "@format {env[OUTPUTPATH]}"
 TRANSFER = false
 
-[LPCLOCAL]
-PROCESS_NAME = "SingleH"
-TREE_NAME = "Events"
-CONDORPATH = "/store/user/joyzhou/output"
-SCRATCHPATH = "/uscmst1b_scratch/lpc1/3DayLifetime/joyzhou"
-INPUTFILE_PATH = "@format src/data/preprocessed/{this.PROCESS_NAME}.json"
-OUTPUTDIR_PATH = "@format {this.SCRATCHPATH}/output/{this.PROCESS_NAME}"
-TRANSFER = true
-TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
-COPY_LOCAL = true
-STEP_SIZE = '400MB'
-COPY_DIR = "@format {this.SCRATCHPATH}/temp"
-
 [LPCCONDOR]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
 TREE_NAME = "Events"
 SEL_NAME = 'lepvetoskim'
-CONDORPATH = "/store/user/joyzhou/skim"
 # INPUTFILE_PATH = "@format /store/user/joyzhou/hadded/{this.PROCESS_NAME}"
 INPUTFILE_PATH = "@format data/preprocessed/{this.PROCESS_NAME}.json"
 OUTPUTDIR_PATH = "@format outputs/{this.PROCESS_NAME}"
+CONDORPATH = "/store/user/joyzhou/lepskim"
 TRANSFER = true
 TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
-COPY_LOCAL = false
+COPY_LOCAL = true
 COPY_DIR = "temp"
 STEP_SIZE = '120MB'
 RESUME = true
 DSINDX = 0
-FINDX = 255
+FINDX = 256
 
 [LPCJUPYTER]
-PROCESS_NAME = "DYJets"
+PROCESS_NAME = "ggF"
 TREE_NAME = "Events"
 SEL_NAME = 'lepvetoskim'
-CONDORPATH = "/store/user/joyzhou/output"
+CONDORPATH = "/store/user/joyzhou"
 INPUTFILE_PATH = "@format data/preprocessed/{this.PROCESS_NAME}.json"
 OUTPUTDIR_PATH = "/uscms/home/joyzhou/nobackup/tests"
-TRANSFER = false
+TRANSFER = true
 TRANSFER_PATH = "@format {this.CONDORPATH}/tests"
-COPY_LOCAL = true
+COPY_LOCAL = false
 COPY_DIR = "/uscms/home/joyzhou/nobackup/temp"
 STEP_SIZE = '140MB'
 RESUME = false

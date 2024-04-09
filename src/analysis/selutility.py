@@ -74,10 +74,10 @@ class BaseEventSelections:
                 result = (passed, vetoed)
             else:
                 result = passed
+            return result
         else:
             raise UserWarning("Events selections not set, this is base selection!")
-            result = events
-        return result
+            return events
 
     def cf_to_df(self):
         """Return a dataframe for a single EventSelections.cutflow object.
@@ -86,11 +86,13 @@ class BaseEventSelections:
         :rtype: pandas.DataFrame
         """
         row_names = self.cutflow.labels
+        dfdata = {}
         if self.cutflow.wgtevcutflow is not None:
-            number = dask.compute(self.cutflow.wgtevcutflow)[0]
-        else:
-            number = dask.compute(self.cutflow.nevcutflow)[0]
-        df_cf = pd.DataFrame(data = number, index=row_names)
+            wgt_number = dask.compute(self.cutflow.wgtevcutflow)[0]
+            dfdata['wgt'] = wgt_number
+        number = dask.compute(self.cutflow.nevcutflow)[0]
+        dfdata['raw'] = number
+        df_cf = pd.DataFrame(dfdata, index=row_names)
         return df_cf
 
 class Object():
@@ -153,7 +155,7 @@ class Object():
         else:
             return op(self.events[aodname], selval)
 
-    def numselmask(self, op, mask):
+    def numselmask(self, mask, op):
         return op(dak.sum(mask, axis=1), self.selcfg.count)
 
     def ptmask(self, op):
