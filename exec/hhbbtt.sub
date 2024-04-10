@@ -6,7 +6,7 @@ NO_BACKUP = /uscms/home/joyzhou/nobackup
 universe = vanilla
 executable = $(MY_PATH)/exec/run.sh
 arguments = $(arg1)
-+SingularityImage = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/sft/docker/centos7:latest"
++SingularityImage = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/sft/docker/centos8:latest"
 
 log = dask_$(SUBMIT_TIME).log
 output = dask_$(SUBMIT_TIME).out

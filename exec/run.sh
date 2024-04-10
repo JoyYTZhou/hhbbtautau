@@ -16,20 +16,21 @@ else
     sed -i "s|${OLD_ENV_NAME}|${PWD}/${ENV_NAME}|g" ${ENV_NAME}/bin/activate
     sed -i "s|${OLD_ENV_NAME}|${PWD}/${ENV_NAME}|g" ${ENV_NAME}/bin/*
     export VIRTUAL_ENV=newcoffea
-fi
 
 source scripts/lpcsetup.sh
-# source /cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-centos8-gcc11-opt/setup.sh
-source scripts/sasetup.sh
+source scripts/envutil.sh
+source /cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-centos8-gcc11-opt/setup.sh
+
 source ${ENV_NAME}/bin/activate
 
 export PYTHONPATH=$VIRTUAL_ENV/lib/python3.9/site-packages:$PYTHONPATH
 export MPLCONFIGDIR=matplotlibconfig
 export PYTHONPATH=$PWD/src:$PYTHONPATH
+export PATH=$(remove_duplicates "$PATH")
+export PYTHONPATH=$(remove_duplicates "$PYTHONPATH")
 
 echo $PYTHONPATH
 
-source scripts/cleanpath.sh
 export ENV_FOR_DYNACONF=LPCCONDOR
 
 python3 src/main.py
