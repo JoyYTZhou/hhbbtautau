@@ -16,6 +16,7 @@ else
     sed -i "s|${OLD_ENV_NAME}|${PWD}/${ENV_NAME}|g" ${ENV_NAME}/bin/activate
     sed -i "s|${OLD_ENV_NAME}|${PWD}/${ENV_NAME}|g" ${ENV_NAME}/bin/*
     export VIRTUAL_ENV=newcoffea
+fi
 
 source scripts/lpcsetup.sh
 source scripts/envutil.sh
