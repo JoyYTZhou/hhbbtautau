@@ -17,10 +17,10 @@ TRANSFER = true
 TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
 COPY_LOCAL = true
 COPY_DIR = "temp"
-STEP_SIZE = '120MB'
-RESUME = true
+STEP_SIZE = false
+RESUME = false
 DSINDX = 0
-FINDX = 200
+FINDX = 256
 
 [LPCJUPYTER]
 PROCESS_NAME = "ggF"
