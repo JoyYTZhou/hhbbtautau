@@ -13,7 +13,7 @@ from config.selectionconfig import dasksetting as daskcfg
 
 pjoin = os.path.join
 
-logger = initLogger(__name__.split('.')[-1], rs.PROCESS_NAME)
+# logger = initLogger(__name__.split('.')[-1], rs.PROCESS_NAME)
 evtselclass = switch_selections(rs.SEL_NAME)
 
 parent_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -37,10 +37,10 @@ def job(fn, i, dataset, eventSelection=evtselclass):
         print(f"Execution finished for file index {i} in {dataset}!")
         return True
     except ValueError as e:
-        logger.error(f"ValueError encountered for file index {i} in {dataset}: {e}", exc_info=True)
+        print(f"ValueError encountered for file index {i} in {dataset}: {e}")
         return False
     except TypeError as e:
-        logger.error(f"TypeError encountered for file index {i} in {dataset}: {e}", exc_info=True)
+        print(f"TypeError encountered for file index {i} in {dataset}: {e}")
         return False
     
 def loadmeta():
@@ -81,8 +81,8 @@ def submitloops():
     Usually used for large file size."""
     metadata = loadmeta()
     for j, (dataset, info) in enumerate(metadata.items()):
-        logger.info(f"Processing {dataset}...")
-        logger.info(f"Expected to see {len(info['filelist'])} number of outputs")
+        print(f"Processing {dataset}...")
+        print(f"Expected to see {len(info['filelist'])} number of outputs")
         for i, file in enumerate(info['filelist']):
             if rs.RESUME and j==0:
                 if i >= rs.FINDX: 
@@ -97,7 +97,9 @@ def submitjobs(client):
     If not, fall back into a loop mode. Note that even in this mode, any dask computations will be managed by client.
     """
     result = None
-    if client is None or (not daskcfg.SPAWN_FUTURE): result = submitloops()
+    if client is None or (not daskcfg.SPAWN_FUTURE): 
+        print("Submit jobs in loops!")
+        result = submitloops()
     else: 
         futures = submitfutures(client)
         result = process_futures(futures)
@@ -109,7 +111,7 @@ def testsubmit():
     with open(rs.INPUTFILE_PATH, 'r') as samplepath:
         metadata = json.load(samplepath)
     for dataset, info in metadata.items():
-        logger.info(f"Processing {dataset}...")
+        print(f"Processing {dataset}...")
         client.submit(job, info['filelist'][0], 0, dataset)
     return client
 
@@ -126,14 +128,14 @@ def process_futures(futures, results_file='futureresult.txt', errors_file='futur
                 error_msg = f"An error occurred: {future.exception()}"
                 print(future.traceback())
                 print(f"Traceback: {traceback.extract_tb(future.traceback())}")
-                logger.info(error_msg)
+                print(error_msg)
                 errors.append(error_msg)
             else:
                 result = future.result()
                 processed_results.append(result)
         except Exception as e:
             error_msg = f"Error processing future result: {e}"
-            logger.info(error_msg)
+            print(error_msg)
             errors.append(error_msg)
     with open(results_file, 'w') as f:
         for result in processed_results:

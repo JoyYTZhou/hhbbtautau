@@ -2,7 +2,6 @@
 # FROM JOY
 import os
 import time
-import logging
 
 PARENT_DIR = os.path.dirname(__file__) 
 from config.selectionconfig import dasksetting as dask_cfg
@@ -20,7 +19,8 @@ def main():
         client = spawnclient(default=False)
     else:
         client = None
-    
+        print("Not spawning client explicitly!")
+
     submitjobs(client)
 
     end_time = time.time()

@@ -1,16 +1,17 @@
 # Path variables
+OUTNAME = nonetype_debug
 MY_PATH = /uscms/homes/j/joyzhou/work/hhbbtautau
 NO_BACKUP = /uscms/home/joyzhou/nobackup
 
 # Job description
 universe = vanilla
-executable = $(MY_PATH)/exec/run.sh
+executable = $(MY_PATH)/exec/temp.sh
 arguments = $(arg1)
-+SingularityImage = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/sft/docker/centos8:latest"
++SingularityImage = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/sft/docker/centos7:latest"
 
-log = dask_$(SUBMIT_TIME).log
-output = dask_$(SUBMIT_TIME).out
-error = dask_$(SUBMIT_TIME).err
+log = $(OUTNAME).log
+output = $(OUTNAME).out
+error = $(SUBMIT_TIME).err
 stream_error = True
 stream_output = True
 
@@ -23,6 +24,6 @@ request_disk = 2GB
 transfer_input_files = $(MY_PATH)/src, $(MY_PATH)/scripts, $(NO_BACKUP)/newcoffea.tar.gz, $(MY_PATH)/.condor_config
 
 queue arg1 from (
-    ggF
+    ZH
 )
 

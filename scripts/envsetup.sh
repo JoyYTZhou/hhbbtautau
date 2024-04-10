@@ -6,11 +6,10 @@
 
 cd ~/work/hhbbtautau
 rm -r *.tar.gz
-source scripts/sasetup.sh
 cd ~/nobackup
-export ENV_NAME=newcoffea
+ENV_NAME=newcoffea8
 
-python -m venv ${ENV_NAME}
+python3 -m venv ${ENV_NAME}
 echo "creating new venv..."
 source ${ENV_NAME}/bin/activate
 

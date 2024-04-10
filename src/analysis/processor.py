@@ -86,11 +86,11 @@ class Processor:
         cutflow_df = self.evtsel.cf_to_df() 
         cutflow_df.to_csv(localpath)
 
-        del cutflow_df, events
-
         if self.rtcfg.TRANSFER:
             condorpath = f'{self.rtcfg.TRANSFER_PATH}/{cutflow_name}'
             cpcondor(localpath, condorpath, printout=True)
+
+        del cutflow_df, events
         if self.rtcfg.COPY_LOCAL: delfiles(self.rtcfg.COPY_DIR)
 
     def writedask(self, passed, suffix, delayed=True, fields=None):
