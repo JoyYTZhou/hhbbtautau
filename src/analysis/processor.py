@@ -29,7 +29,6 @@ class Processor:
         :return: The loaded file dict (and error messages if encountered)
         :rtype: dask_awkward.lib.core.Array
         """
-        msg = []
         user_step_size = uproot._util.unset if not self.rtcfg.STEP_SIZE else self.rtcfg.STEP_SIZE
         if self.rtcfg.COPY_LOCAL:
             destpath = pjoin(self.rtcfg.COPY_DIR, f"{self.dataset}_{suffix}.root")
@@ -40,7 +39,7 @@ class Processor:
                     step_size=user_step_size
                 )
             except OSError as e:
-                msg.append(f"Failed again to load file after copying: {e}")
+                print(f"Failed again to load file after copying: {e}")
                 events = None
         else:
             events = uproot.dask(
@@ -63,6 +62,8 @@ class Processor:
         - messages for debugging
         """
         events = self.loadfile(filename, suffix)
+        if events is None: 
+            return 1
         events = self.evtsel(events)
         if write_npz:
             npzname = pjoin(self.outdir, f'cutflow_{suffix}.npz')
@@ -92,6 +93,8 @@ class Processor:
 
         del cutflow_df, events
         if self.rtcfg.COPY_LOCAL: delfiles(self.rtcfg.COPY_DIR)
+        
+        return 0
 
     def writedask(self, passed, suffix, delayed=True, fields=None):
         """Wrapper around uproot.dask_write(),

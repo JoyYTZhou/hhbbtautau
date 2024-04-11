@@ -24,7 +24,7 @@ function LCG_sasetup {
     echo $release_version
 
     if [[ "$release_version" == 8.* ]]; then
-        version=x86_64-centos8-gcc11-opt
+        version=x86_64-centos7-gcc11-opt
     elif [[ "$release_version" == 9.* ]]; then
         version=x86_64-el9-gcc13-opt
     else
@@ -33,9 +33,9 @@ function LCG_sasetup {
 
     echo $version
 
-    source /cvmfs/sft.cern.ch/lcg/releases/LCG_104swan/Python/3.9.12/$version/Python-env.sh
+    source /cvmfs/sft.cern.ch/lcg/releases/LCG_105/Python/3.9.12/$version/Python-env.sh
     echo "Successfully sourced python package"
-    source /cvmfs/sft.cern.ch/lcg/releases/LCG_104swan/ROOT/6.28.04/$version/ROOT-env.sh
+    source /cvmfs/sft.cern.ch/lcg/releases/LCG_105/ROOT/6.30.02/$version/ROOT-env.sh
     echo "Successfully sourced ROOT software"
 }
 
