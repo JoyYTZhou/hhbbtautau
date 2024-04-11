@@ -5,7 +5,7 @@
 echo "Currently in $PWD"
 
 export PROCESS_NAME=$1
-export ENV_NAME=newcoffea
+export ENV_NAME=newcoffea_el9
 OLD_ENV_NAME=/uscms_data/d3/joyzhou/${ENV_NAME}
 
 if [ ! -z "${VIRTUAL_ENV}" ] && [ "$VIRTUAL_ENV" == "${ENV_NAME}" ]; then
@@ -15,12 +15,13 @@ else
     tar -xzf ${ENV_NAME}.tar.gz -C .
     sed -i "s|${OLD_ENV_NAME}|${PWD}/${ENV_NAME}|g" ${ENV_NAME}/bin/activate
     sed -i "s|${OLD_ENV_NAME}|${PWD}/${ENV_NAME}|g" ${ENV_NAME}/bin/*
-    export VIRTUAL_ENV=newcoffea
+    export VIRTUAL_ENV=${ENV_NAME}
 fi
 
 source scripts/lpcsetup.sh
 source scripts/envutil.sh
-source /cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-centos8-gcc11-opt/setup.sh
+
+source /cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-el9-gcc13-opt/setup.sh
 
 source ${ENV_NAME}/bin/activate
 

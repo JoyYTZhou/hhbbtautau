@@ -7,11 +7,12 @@ NO_BACKUP = /uscms/home/joyzhou/nobackup
 universe = vanilla
 executable = $(MY_PATH)/exec/temp.sh
 arguments = $(arg1)
-+SingularityImage = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/sft/docker/centos7:latest"
+# +SingularityImage = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/sft/docker/centos7:latest"
++SingularityImage = "/cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el9:x86_64"
 
 log = $(OUTNAME).log
 output = $(OUTNAME).out
-error = $(SUBMIT_TIME).err
+error = $(OUTNAME).err
 stream_error = True
 stream_output = True
 
@@ -21,7 +22,7 @@ when_to_transfer_output = ON_EXIT_OR_EVICT
 request_cpus = 2
 request_memory = 4GB
 request_disk = 2GB
-transfer_input_files = $(MY_PATH)/src, $(MY_PATH)/scripts, $(NO_BACKUP)/newcoffea.tar.gz, $(MY_PATH)/.condor_config
+transfer_input_files = $(MY_PATH)/src, $(MY_PATH)/scripts, $(NO_BACKUP)/newcoffea_el9.tar.gz, $(MY_PATH)/.condor_config
 
 queue arg1 from (
     ZH

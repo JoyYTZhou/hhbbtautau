@@ -5,7 +5,7 @@
 echo "Currently in $PWD"
 
 export PROCESS_NAME=$1
-export ENV_NAME=newcoffea
+export ENV_NAME=newcoffea_el9
 OLD_ENV_NAME=/uscms_data/d3/joyzhou/${ENV_NAME}
 
 if [ ! -z "${VIRTUAL_ENV}" ] && [ "$VIRTUAL_ENV" == "${ENV_NAME}" ]; then
@@ -15,7 +15,7 @@ else
     tar -xzf ${ENV_NAME}.tar.gz -C .
     sed -i "s|${OLD_ENV_NAME}|${PWD}/${ENV_NAME}|g" ${ENV_NAME}/bin/activate
     sed -i "s|${OLD_ENV_NAME}|${PWD}/${ENV_NAME}|g" ${ENV_NAME}/bin/*
-    export VIRTUAL_ENV=newcoffea
+    export VIRTUAL_ENV=${ENV_NAME}
 fi
 
 source scripts/lpcsetup.sh
@@ -26,7 +26,6 @@ source scripts/envutil.sh
 # echo "Successfully sourced python package"
 # source /cvmfs/sft.cern.ch/lcg/releases/LCG_104swan/ROOT/6.28.04/$version/ROOT-env.sh
 # echo "Successfully sourced ROOT software"
-
 LCG_sasetup
 
 source ${ENV_NAME}/bin/activate
@@ -40,7 +39,10 @@ export PYTHONPATH=$(remove_duplicates "$PYTHONPATH")
 echo $PYTHONPATH
 
 export ENV_FOR_DYNACONF=LPCCONDOR
+export DEBUG_ON=true
 
 echo "start executing main file"
+
+checkproxy
 python3 src/main.py
 # python3 src/plot.py

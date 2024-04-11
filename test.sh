@@ -2,7 +2,7 @@ source scripts/lpcsetup.sh
 source scripts/venv.sh
 
 export PYTHONPATH=$PWD/src:$PYTHONPATH
+export PROCESS_NAME=ZH
+export DEBUG_MODE=true
 
-export PROCESS_NAME=ggF
-
-python3 src/main.py > testresult.log 2>&1
+python3 src/main.py > testresult.log 2>&1 &

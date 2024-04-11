@@ -18,9 +18,26 @@ TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
 COPY_LOCAL = true
 COPY_DIR = "temp"
 STEP_SIZE = false
+RESUME = true
+DSINDX = 1
+FINDX = 2
+
+[LPCTEST]
+PROCESS_NAME = "@format {env[PROCESS_NAME]}"
+TREE_NAME = "Events"
+SEL_NAME = 'lepvetoskim'
+# INPUTFILE_PATH = "@format /store/user/joyzhou/hadded/{this.PROCESS_NAME}"
+INPUTFILE_PATH = "@format data/preprocessed/{this.PROCESS_NAME}.json"
+OUTPUTDIR_PATH = "/uscms/home/joyzhou/nobackup/tests"
+CONDORPATH = "/store/user/joyzhou/lepskim"
+TRANSFER = true
+TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
+COPY_LOCAL = true
+COPY_DIR = "/uscms/home/joyzhou/nobackup/temp"
+STEP_SIZE = '150MB'
 RESUME = false
-DSINDX = 0
-FINDX = 256
+DSINDX = 1
+FINDX = 0
 
 [LPCJUPYTER]
 PROCESS_NAME = "ggF"

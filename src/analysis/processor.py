@@ -32,7 +32,8 @@ class Processor:
         user_step_size = uproot._util.unset if not self.rtcfg.STEP_SIZE else self.rtcfg.STEP_SIZE
         if self.rtcfg.COPY_LOCAL:
             destpath = pjoin(self.rtcfg.COPY_DIR, f"{self.dataset}_{suffix}.root")
-            cpfcondor(filename, destpath)
+            cpresult = cpfcondor(filename, destpath)
+            print(cpresult)
             try:
                 events = uproot.dask(
                     files={destpath: self.treename},
@@ -89,7 +90,7 @@ class Processor:
 
         if self.rtcfg.TRANSFER:
             condorpath = f'{self.rtcfg.TRANSFER_PATH}/{cutflow_name}'
-            cpcondor(localpath, condorpath, printout=True)
+            cpcondor(localpath, condorpath)
 
         del cutflow_df, events
         if self.rtcfg.COPY_LOCAL: delfiles(self.rtcfg.COPY_DIR)
