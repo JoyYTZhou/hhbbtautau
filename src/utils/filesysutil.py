@@ -8,6 +8,7 @@ import logging
 runcom = subprocess.run
 pjoin = os.path.join
 PREFIX = "root://cmseos.fnal.gov"
+DEBUG_ON = os.getenv("DEBUG_MODE", False)
 
 def glob_files(dirname, startpattern='', endpattern='', **kwargs):
     """Returns a SORTED list of files matching a pattern in a directory. If both patterns are None, return all files.
@@ -122,13 +123,14 @@ def cpfcondor(srcpath, localpath):
     """Copy a root file FROM condor to LOCAL."""
     comstr = f'xrdcp {srcpath} {localpath}' if srcpath.startswith('root://') else f'xrdcp {PREFIX}/{srcpath} {localpath}'
     result = runcom(comstr, shell=True, capture_output=True, text=True)
+    if DEBUG_ON: print(result.stderr)
     return result
 
 def cpcondor(srcpath, destpath, printout=False):
     """Copy srcpath (file/directory) FROM local to condor destpath"""
     comstr = f'xrdcp {srcpath} {destpath}' if destpath.startswith('root://') else f'xrdcp {srcpath} {PREFIX}/{destpath}' 
     result = runcom(comstr, shell=True, capture_output=True, text=True)
-    if printout: print(result)
+    if DEBUG_ON: print(result.stderr)
     return result
 
 def isremote(pathstr):
