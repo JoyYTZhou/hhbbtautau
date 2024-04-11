@@ -7,7 +7,11 @@
 cd ~/work/hhbbtautau
 rm -r *.tar.gz
 cd ~/nobackup
-ENV_NAME=newcoffea8
+
+echo "=================================================="
+echo "Please enter the name of the new virtual environment: "
+read ENV_NAME
+echo "=================================================="
 
 python3 -m venv ${ENV_NAME}
 echo "creating new venv..."
