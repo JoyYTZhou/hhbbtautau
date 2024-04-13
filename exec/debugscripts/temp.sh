@@ -21,6 +21,11 @@ fi
 source scripts/lpcsetup.sh
 source scripts/envutil.sh
 
+# version=x86_64-centos7-gcc11-opt
+# source /cvmfs/sft.cern.ch/lcg/releases/LCG_104swan/Python/3.9.12/$version/Python-env.sh
+# echo "Successfully sourced python package"
+# source /cvmfs/sft.cern.ch/lcg/releases/LCG_104swan/ROOT/6.28.04/$version/ROOT-env.sh
+# echo "Successfully sourced ROOT software"
 LCG_sasetup
 
 source ${ENV_NAME}/bin/activate
@@ -34,6 +39,10 @@ export PYTHONPATH=$(remove_duplicates "$PYTHONPATH")
 echo $PYTHONPATH
 
 export ENV_FOR_DYNACONF=LPCCONDOR
+export DEBUG_ON=true
 
+echo "start executing main file"
+
+checkproxy
 python3 src/main.py
 # python3 src/plot.py
