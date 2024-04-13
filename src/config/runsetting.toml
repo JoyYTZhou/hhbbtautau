@@ -17,10 +17,10 @@ TRANSFER = true
 TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
 COPY_LOCAL = true
 COPY_DIR = "temp"
-STEP_SIZE = false
-RESUME = true
+STEP_SIZE = '150MB'
+RESUME = false
 DSINDX = 1
-FINDX = 2
+FINDX = 130
 
 [LPCTEST]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
