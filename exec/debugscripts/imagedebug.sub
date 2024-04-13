@@ -5,7 +5,7 @@ NO_BACKUP = /uscms/home/joyzhou/nobackup
 
 # Job description
 universe = vanilla
-executable = $(MY_PATH)/exec/imagedebug.sh
+executable = $(MY_PATH)/exec/debugscripts/imagedebug.sh
 arguments = $(arg1)
 +SingularityImage = "/cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el9:x86_64"
 
@@ -24,6 +24,6 @@ request_disk = 5GB
 transfer_input_files = $(MY_PATH)/src, $(MY_PATH)/scripts, $(NO_BACKUP)/newcoffea_el9.tar.gz
 
 queue arg1 from (
-    WW 
+    ZH
 )
 

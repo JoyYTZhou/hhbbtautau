@@ -71,6 +71,7 @@ function checkproxy {
         exit 1
     else
         echo "Proxy found at $X509_USER_PROXY"
+        voms-proxy-info -all
         return 0
     fi
 }

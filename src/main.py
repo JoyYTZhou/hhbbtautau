@@ -22,6 +22,7 @@ def main():
         print("Not spawning client explicitly!")
 
     submitjobs(client)
+    print(f"Proxy at: {os.environ.get('X509_USER_PROXY', "None")}")
 
     end_time = time.time()
     print(f"Execution time is {end_time - start_time} seconds")
