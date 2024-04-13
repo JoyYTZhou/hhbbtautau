@@ -142,11 +142,11 @@ def process_futures(futures, results_file='futureresult.txt', errors_file='futur
             errors.append(error_msg)
     with open(results_file, 'w') as f:
         for result in processed_results:
-            f.write(result + '\n')
+            f.write(str(result) + '\n')
     if errors:
         with open(errors_file, 'w') as f:
             for error in errors:
-                f.write(error + '\n')
+                f.write(str(error) + '\n')
     return processed_results, errors
 
 def spawnclient(default=False):

@@ -8,7 +8,7 @@ import logging
 runcom = subprocess.run
 pjoin = os.path.join
 PREFIX = "root://cmseos.fnal.gov"
-DEBUG_ON = os.getenv("DEBUG_MODE", False)
+DEBUG_ON = os.getenv("DEBUG_MODE", True)
 
 def glob_files(dirname, startpattern='', endpattern='', **kwargs):
     """Returns a SORTED list of files matching a pattern in a directory. If both patterns are None, return all files.
