@@ -4,6 +4,7 @@ import os
 import time
 
 PARENT_DIR = os.path.dirname(__file__) 
+from utils.filesysutil import checkx509
 from config.selectionconfig import dasksetting as dask_cfg
 from config.selectionconfig import runsetting as rs
 
@@ -20,10 +21,10 @@ def main():
     else:
         client = None
         print("Not spawning client explicitly!")
+    
+    checkx509()
 
     submitjobs(client)
-    print(f"Proxy at: {os.environ.get('X509_USER_PROXY', "None")}")
-
     end_time = time.time()
     print(f"Execution time is {end_time - start_time} seconds")
 

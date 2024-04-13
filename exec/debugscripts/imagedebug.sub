@@ -7,6 +7,7 @@ NO_BACKUP = /uscms/home/joyzhou/nobackup
 universe = vanilla
 executable = $(MY_PATH)/exec/debugscripts/imagedebug.sh
 arguments = $(arg1)
+# +SingularityImage = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/sft/docker/alma9:latest"
 +SingularityImage = "/cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el9:x86_64"
 
 log = $(OUTNAME).log

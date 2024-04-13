@@ -71,7 +71,9 @@ function checkproxy {
         exit 1
     else
         echo "Proxy found at $X509_USER_PROXY"
-        voms-proxy-info -all
+        export X509_CERT_DIR=/cvmfs/grid.cern.ch/etc/grid-security/certificates/
+        voms-proxy-info -path -debug
+        voms-proxy-info -file $X509_USER_PROXY -debug
         return 0
     fi
 }
