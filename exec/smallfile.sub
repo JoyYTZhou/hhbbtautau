@@ -1,7 +1,7 @@
 # Path variables
 MY_PATH = /uscms/homes/j/joyzhou/work/hhbbtautau
 NO_BACKUP = /uscms/home/joyzhou/nobackup
-OUTNAME = formalrun
+OUTNAME = smallfilerun
 
 # Job description
 universe = vanilla
@@ -17,14 +17,13 @@ stream_output = True
 should_transfer_files = YES
 when_to_transfer_output = ON_EXIT_OR_EVICT 
 
-request_cpus = 10
-request_memory = 22GB
-request_disk = 8GB
+request_cpus = 6
+request_memory = 16GB
+request_disk = 6GB
 transfer_input_files = $(MY_PATH)/src, $(MY_PATH)/scripts, $(NO_BACKUP)/newcoffea.tar.gz
 
 queue arg1 from (
-    DYJets
-    WWW
-    WZ
+    SingleH
+    ggF
 )
 

@@ -5,3 +5,4 @@ rm *.out
 rm *.err
 rm *error
 rm *.log
+rm *.txt
