@@ -7,7 +7,7 @@ import os
 
 from .custom import switch_selections
 from .processor import Processor
-from utils.filesysutil import glob_files, initLogger
+from utils.filesysutil import glob_files, initLogger, check_missing, checkpath
 from config.selectionconfig import runsetting as rs
 from config.selectionconfig import dasksetting as daskcfg
 
@@ -52,21 +52,30 @@ def loadmeta():
         inputdatap = pjoin(parent_directory, rs.INPUTFILE_PATH)
         with open(inputdatap, 'r') as samplepath:
             metadata = json.load(samplepath)
-        loaded = metadata
-        if rs.RESUME: 
-            if isinstance(rs.DSINDX, int):
-                sliced_dict = dict(islice(metadata.items(), rs.DSINDX, None))
-            elif isinstance(rs.DSINDX, list):
-                sliced_dict = {key: metadata[key] for key in rs.DSINDX if key in metadata}
-            elif isinstance(rs.DSINDX, str):
-                pass
-            loaded = sliced_dict
+        loaded = checkresumes(metadata)
     elif rs.INPUTFILE_PATH.startswith('/store/user/'):
         loaded = realmeta[rs.PROCESS_NAME]
         for dataset in loaded.keys():
             loaded[dataset]['filelist'] = glob_files(rs.INPUTFILE_PATH, startpattern=dataset, endpattern='.root')
     else:
         raise TypeError("Check INPUTFILE_PATH in runsetting.toml. It's not of a valid format!")
+    return loaded
+
+def checkresumes(metadata):
+    """Resume jobs from last checkpoint"""
+    statcode = checkpath(rs.TRANSFER_PATH, createdir=False)
+    if statcode != 0: 
+        loaded = metadata
+        return loaded
+    else:
+        loaded = {}
+        datasets = metadata.keys()
+        for ds in datasets:
+            fileno = len(metadata[ds]['filelist'])
+            fileindx = check_missing(ds, fileno, rs.TRANSFER_PATH)
+            if fileindx != []:
+                loaded[ds]['resumeindx'] = fileindx
+                loaded[ds]['filelist'] = metadata[ds]['filelist']
     return loaded
 
 def submitfutures(client):
