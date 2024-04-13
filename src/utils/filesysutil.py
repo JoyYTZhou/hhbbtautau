@@ -64,13 +64,21 @@ def transferfiles(srcpath, destpath, startpattern='', endpattern='', remove=Fals
             for srcfile in glob_files(srcpath, startpattern, endpattern):
                 cpfcondor(srcfile, f'{destpath}/')
 
+def checkx509():
+    proxy_position = os.environ.get("X509_USER_PROXY", default="None")
+    if proxy_position is None:
+        raise SystemError("Proxy not found. Immediately check proxy!")
+    print(f"Proxy at: {proxy_position}.")
+    proxy_directory = os.environ.get("X509_CERT_DIR", default="None")
+    if proxy_directory is None:
+        raise SystemError("Certificate directory not set. Immmediately check certificate directory!")
+    print(f"Certificate directory set to be {proxy_directory}.")
+
 def logresult(result, success_msg):
     if result.returncode == 0:
         logging.debug(success_msg)
     else:
-        # Ensure stderr is a string. Decode if it's bytes.
         stderr_message = result.stderr.decode('utf-8') if isinstance(result.stderr, bytes) else result.stderr
-        # Check if stderr is empty or None
         if not stderr_message:
             stderr_message = "No error message available."
         logging.info(f"Operation not successful! Return code: {result.returncode}. Here's the error message =========================\n{stderr_message}")
