@@ -32,10 +32,10 @@ def glob_files(dirname, startpattern='', endpattern='', **kwargs):
             files = glob.glob(pjoin(dirname, pattern)) 
     return sorted(files)
 
-def checkpath(dirname, raiseError=False):
+def checkpath(dirname, createdir=True, raiseError=False):
     """Check if a directory exists. If not will create one."""
     if dirname.startswith('/store/user/'):
-        checkcondorpath(dirname, raiseError)
+        checkcondorpath(dirname, createdir, raiseError=raiseError)
     else:
         checklocalpath(dirname, raiseError)
 
@@ -147,6 +147,10 @@ def isremote(pathstr):
     return is_remote
 
 def check_missing(pattern, fileno, dirtocheck, endpattern='.root', return_indices=True):
+    """Check missing output files in a directory based on pattern search.
+    
+    Return:
+    - list of missing files if return_indices=False. Otherwise, return list of missing indices."""
     existfiles = glob_files(dirtocheck, startpattern=pattern, endpattern=endpattern)
     fileset = set(existfiles)
     patterns = [f"{pattern}_{i}" for i in range(fileno)]
@@ -156,15 +160,22 @@ def check_missing(pattern, fileno, dirtocheck, endpattern='.root', return_indice
         toreturn = [pattern for i, pattern in enumerate(patterns) if not any(pattern in file for file in fileset)] 
     return toreturn
 
-def checkcondorpath(dirname, raiseError=False):
-    """Check if a condor path exists. If not will create one."""
+def checkcondorpath(dirname, createdir=True, raiseError=False):
+    """Check if a condor path exists and potentially create one.
+    Parameters:
+    `dirname`: directory path to check
+    `createdir`: if True, create the directory if it doesn't exist. If false, return stat code. 
+    `raiseError`: if True, raise an error if the directory doesn't exist."""
     check_dir_cmd = f"xrdfs {PREFIX} stat {dirname}"
     create_dir_cmd = f"xrdfs {PREFIX} mkdir -p {dirname}"
     proc = runcom(check_dir_cmd, shell=True, capture_output=True, text=True, check=raiseError) 
     if proc.returncode != 0:
-        runcom(create_dir_cmd, shell=True)
+        if createdir:
+            runcom(create_dir_cmd, shell=True)
+        else:
+            return proc.returncode
     else:
-        return True
+        return 0
 
 def delfiles(dirname, pattern='*.root'):
     """Delete all files in a directory with a specific pattern."""
