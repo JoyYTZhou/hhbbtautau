@@ -35,9 +35,9 @@ def glob_files(dirname, startpattern='', endpattern='', **kwargs):
 def checkpath(dirname, createdir=True, raiseError=False):
     """Check if a directory exists. If not will create one."""
     if dirname.startswith('/store/user/'):
-        checkcondorpath(dirname, createdir, raiseError=raiseError)
+        return checkcondorpath(dirname, createdir, raiseError=raiseError)
     else:
-        checklocalpath(dirname, raiseError)
+        return checklocalpath(dirname, raiseError)
 
 def transferfiles(srcpath, destpath, startpattern='', endpattern='', remove=False):
     """Transfer files between local and condor system. Will check if destpath exist.
