@@ -113,9 +113,8 @@ def submitjobs(client):
     if client is None or (not daskcfg.SPAWN_FUTURE): 
         print("Submit jobs in loops!")
         for ds, dsitems in loaded.items():
-            if dsitems != {}:
-                    resumeindx = dsitems.get('resumeindx', None)
-                    submitloops(ds, dsitems['filelist'], resumeindx)
+            resumeindx = dsitems.get('resumeindx', None)
+            submitloops(ds, dsitems['filelist'], resumeindx)
         return 0
     else: 
         for ds, dsitems in loaded.items():
