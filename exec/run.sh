@@ -34,6 +34,10 @@ export PYTHONPATH=$(remove_duplicates "$PYTHONPATH")
 echo $PYTHONPATH
 
 export ENV_FOR_DYNACONF=LPCCONDOR
+export DEBUG_ON=true
+
+echo "start executing main file"
+checkproxy
 
 python3 src/main.py
 # python3 src/plot.py
