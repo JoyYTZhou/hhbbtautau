@@ -71,6 +71,7 @@ def checkresumes(metadata):
         loaded = {}
         datasets = metadata.keys()
         for ds in datasets:
+            loaded[ds] = {}
             fileno = len(metadata[ds]['filelist'])
             fileindx = check_missing(ds, fileno, rs.TRANSFER_PATH)
             if fileindx != []:
@@ -78,29 +79,26 @@ def checkresumes(metadata):
                 loaded[ds]['filelist'] = metadata[ds]['filelist']
     return loaded
 
-def submitfutures(client):
-    metadata = loadmeta()
+def submitfutures(client, ds, filelist, indx):
     futures = []
-    for j, (dataset, info) in enumerate(metadata.items()):
-        if rs.RESUME and j==0:
-            futures.extend([client.submit(job, fn, i, dataset) for i, fn in enumerate(info['filelist']) if i >= rs.FINDX])
-        else:
-            futures.extend([client.submit(job, fn, i, dataset) for i, fn in enumerate(info['filelist'])])
+    if indx is None:
+        futures.extend([client.submit(job, fn, i, ds) for i, fn in enumerate(filelist)])
+    else:
+        futures.extend([client.submit(job, fn, i, ds) for i, fn in zip(indx, filelist)])
     return futures
 
-def submitloops():
+def submitloops(ds, filelist, indx):
     """Put file processing in loops, i.e. one file by one file.
     Usually used for large file size."""
-    metadata = loadmeta()
-    for j, (dataset, info) in enumerate(metadata.items()):
-        print(f"Processing {dataset}...")
-        print(f"Expected to see {len(info['filelist'])} number of outputs")
-        for i, file in enumerate(info['filelist']):
-            if rs.RESUME and j==0:
-                if i >= rs.FINDX: 
-                    job(file, i, dataset)
-            else:
-                job(file, i, dataset)
+    print(f"Processing {ds}...")
+    print(f"Expected to see {len(filelist)} number of outputs")
+    failed = 0
+    if indx is None:
+        for i, file in enumerate(filelist):
+            job(file, i, ds) 
+    else:
+        for i, file in zip(indx, filelist):
+            job(file, i, ds)
     return None
 
 def submitjobs(client):
@@ -108,14 +106,19 @@ def submitjobs(client):
     If a valid client is found and future mode is true, submit simultaneously run jobs.
     If not, fall back into a loop mode. Note that even in this mode, any dask computations will be managed by client.
     """
-    result = None
+    loaded = loadmeta()
     if client is None or (not daskcfg.SPAWN_FUTURE): 
         print("Submit jobs in loops!")
-        result = submitloops()
+        for ds, dsitems in loaded.items():
+            resumeindx = dsitems.get('resumeindx', None)
+            submitloops(ds, dsitems['filelist'], resumeindx)
+        return 0
     else: 
-        futures = submitfutures(client)
-        result = process_futures(futures)
-    return result
+        for ds, dsitems in loaded.items():
+            resumeindx = dsitems.get('resumeindx', None)
+            futures = submitfutures(client, ds, dsitems['filelist'], resumeindx)
+            result = process_futures(futures)
+        return 0
 
 def testsubmit():
     client = spawnclient()

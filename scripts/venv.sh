@@ -15,3 +15,4 @@ export PATH=$(remove_duplicates "$PATH")
 export PYTHONPATH=$(remove_duplicates "$PYTHONPATH")
 
 export ENV_FOR_DYNACONF=LPCTEST
+alias jup='jupyter notebook --no-browser --port=2001'

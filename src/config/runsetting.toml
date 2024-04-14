@@ -18,9 +18,6 @@ TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
 COPY_LOCAL = true
 COPY_DIR = "temp"
 STEP_SIZE = '150MB'
-RESUME = false
-DSINDX = 1
-FINDX = 130
 
 [LPCTEST]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
@@ -30,27 +27,8 @@ SEL_NAME = 'lepvetoskim'
 INPUTFILE_PATH = "@format data/preprocessed/{this.PROCESS_NAME}.json"
 OUTPUTDIR_PATH = "/uscms/home/joyzhou/nobackup/tests"
 CONDORPATH = "/store/user/joyzhou/lepskim"
-TRANSFER = true
+TRANSFER = false
 TRANSFER_PATH = "@format {this.CONDORPATH}/{this.PROCESS_NAME}"
 COPY_LOCAL = true
 COPY_DIR = "/uscms/home/joyzhou/nobackup/temp"
 STEP_SIZE = '150MB'
-RESUME = false
-DSINDX = 1
-FINDX = 0
-
-[LPCJUPYTER]
-PROCESS_NAME = "ggF"
-TREE_NAME = "Events"
-SEL_NAME = 'lepvetoskim'
-CONDORPATH = "/store/user/joyzhou"
-INPUTFILE_PATH = "@format data/preprocessed/{this.PROCESS_NAME}.json"
-OUTPUTDIR_PATH = "/uscms/home/joyzhou/nobackup/tests"
-TRANSFER = true
-TRANSFER_PATH = "@format {this.CONDORPATH}/tests"
-COPY_LOCAL = false
-COPY_DIR = "/uscms/home/joyzhou/nobackup/temp"
-STEP_SIZE = '140MB'
-RESUME = false
-DSINDX = 0
-FINDX = 0
