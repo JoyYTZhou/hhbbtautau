@@ -32,8 +32,7 @@ class Processor:
         user_step_size = uproot._util.unset if not self.rtcfg.STEP_SIZE else self.rtcfg.STEP_SIZE
         if self.rtcfg.COPY_LOCAL:
             destpath = pjoin(self.rtcfg.COPY_DIR, f"{self.dataset}_{suffix}.root")
-            cpresult = cpfcondor(filename, destpath)
-            print(cpresult)
+            cpfcondor(filename, destpath)
             try:
                 events = uproot.dask(
                     files={destpath: self.treename},

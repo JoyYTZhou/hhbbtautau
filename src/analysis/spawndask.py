@@ -71,12 +71,14 @@ def checkresumes(metadata):
         loaded = {}
         datasets = metadata.keys()
         for ds in datasets:
-            loaded[ds] = {}
             fileno = len(metadata[ds]['filelist'])
             fileindx = check_missing(ds, fileno, rs.TRANSFER_PATH)
             if fileindx != []:
+                loaded[ds] = {}
                 loaded[ds]['resumeindx'] = fileindx
                 loaded[ds]['filelist'] = metadata[ds]['filelist']
+    if loaded == {}: 
+        raise FileExistsError("All the files have been processed for this process!")
     return loaded
 
 def submitfutures(client, ds, filelist, indx):
@@ -84,21 +86,22 @@ def submitfutures(client, ds, filelist, indx):
     if indx is None:
         futures.extend([client.submit(job, fn, i, ds) for i, fn in enumerate(filelist)])
     else:
-        futures.extend([client.submit(job, fn, i, ds) for i, fn in zip(indx, filelist)])
+        futures.extend([client.submit(job, filelist[i], i, ds) for i in indx])
     return futures
 
 def submitloops(ds, filelist, indx):
     """Put file processing in loops, i.e. one file by one file.
     Usually used for large file size."""
     print(f"Processing {ds}...")
-    print(f"Expected to see {len(filelist)} number of outputs")
     failed = 0
     if indx is None:
+        print(f"Expected to see {len(filelist)} number of outputs")
         for i, file in enumerate(filelist):
             job(file, i, ds) 
     else:
-        for i, file in zip(indx, filelist):
-            job(file, i, ds)
+        print(f"Expected to see {len(indx)} number of outputs")
+        for i in indx:
+            job(filelist[i], i, ds)
     return None
 
 def submitjobs(client):
@@ -110,8 +113,9 @@ def submitjobs(client):
     if client is None or (not daskcfg.SPAWN_FUTURE): 
         print("Submit jobs in loops!")
         for ds, dsitems in loaded.items():
-            resumeindx = dsitems.get('resumeindx', None)
-            submitloops(ds, dsitems['filelist'], resumeindx)
+            if dsitems != {}:
+                    resumeindx = dsitems.get('resumeindx', None)
+                    submitloops(ds, dsitems['filelist'], resumeindx)
         return 0
     else: 
         for ds, dsitems in loaded.items():
