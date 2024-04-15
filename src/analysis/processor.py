@@ -86,13 +86,17 @@ class Processor:
         localpath = pjoin(self.outdir, cutflow_name)
         cutflow_df = self.evtsel.cf_to_df() 
         cutflow_df.to_csv(localpath)
+        print("Cutflow written to local!")
 
         if self.rtcfg.TRANSFER:
             condorpath = f'{self.rtcfg.TRANSFER_PATH}/{cutflow_name}'
             cpcondor(localpath, condorpath)
+            print("Cutflow transferred to condor!")
 
         del cutflow_df, events
-        if self.rtcfg.COPY_LOCAL: delfiles(self.rtcfg.COPY_DIR)
+        if self.rtcfg.COPY_LOCAL: 
+            delfiles(self.rtcfg.COPY_DIR)
+            print("Files deleted!")
         
         return 0
 
