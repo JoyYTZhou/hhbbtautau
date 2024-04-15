@@ -99,6 +99,7 @@ def submitloops(ds, filelist, indx):
         for i, file in enumerate(filelist):
             job(file, i, ds) 
     else:
+        print(f"Starting with file number {indx[0]}............")
         print(f"Expected to see {len(indx)} number of outputs")
         for i in indx:
             job(filelist[i], i, ds)
