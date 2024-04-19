@@ -3,7 +3,7 @@
 # This script contains some functions to set up LPC environment for analysis quickly 
 # ===========================================================================================================
 
-function setup_dirname {
+function setup_dirname_local {
     export BASE_DIR=/uscms/home/joyzhou/work/hhbbtautau
     export LIB_DIR=${BASE_DIR}/scripts
     export SRC_DIR=${BASE_DIR}/src

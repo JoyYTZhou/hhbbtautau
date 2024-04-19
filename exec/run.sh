@@ -21,6 +21,7 @@ fi
 source scripts/lpcsetup.sh
 source scripts/envutil.sh
 
+export CONDOR_BASE=/store/user/joyzhou
 LCG_sasetup
 
 source ${ENV_NAME}/bin/activate
