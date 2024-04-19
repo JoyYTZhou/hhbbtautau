@@ -3,8 +3,8 @@ from config.selectionconfig import cleansetting
 
 def postprocess():
     dl = DataLoader(cleansetting)
-    dl.hadd_roots(cleancfg=cleansetting, wgt_dict=dl.wgt_dict)
     dl.hadd_cfs()
+    dl.hadd_roots(cleancfg=cleansetting, wgt_dict=dl.wgt_dict)
 
 def getcf():
     dl = DataLoader(cleansetting)

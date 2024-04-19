@@ -32,7 +32,3 @@ echo $PYTHONPATH
 export ENV_FOR_DYNACONF=LPCCONDOR
 export DEBUG_MODE=true
 checkproxy
-
-echo "start executing main file"
-python3 src/main.py
-# python3 src/plot.py

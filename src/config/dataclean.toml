@@ -1,14 +1,8 @@
 [LPCTEST]
-CONDORBASE = "/store/user/joyzhou" 
-DATAPATH = "/uscms/home/joyzhou/work/hhbbtautau/src/data/preprocessed"
-INPUTDIR = "@format {this.CONDORBASE}/lepskim" # Data from processor
+DATAPATH = "@format {env[DATA_DIR]}/preprocessed"
+INPUTDIR = "@format {env[CONDOR_BASE]}/lepskim"
 LOCALOUTPUT = "/uscms/home/joyzhou/nobackup/hadded"
-CONDOR_TRANSFER = true
-CONDORPATH = "/store/user/joyzhou/lepskim_hadded"
-REFRESH = false # of now impact as of now
 HADD_BATCH = 30
-CLEANCSV = false
-CLEANROOT = true
 # DATASETS = ['DYJets', 'SingleH', 'WW', 'WWW', 'WZ', 'ZH', 'ggF', 'ZZ']
 DATASETS = ['ggF']
 TREENAME = 'Events'

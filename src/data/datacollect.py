@@ -102,7 +102,7 @@ def add_weight(dspath, outputdir, dsname=None):
     
     return None
 
-def weight_fl(filelist):
+def weight_fl(filelist, retry=2):
     """Find the total number of raw events, weighted events in a list of files.
     
     Parameters
@@ -121,7 +121,9 @@ def weight_fl(filelist):
         xrd_file = xrootd_format(file, 'local')
         result = info_file(xrd_file)
         if isinstance(result, str): 
-            failed_list.append(xrd_file)
+            for trial in range(retry):
+                result = info_file(xrd_file)
+        if isinstance(result, str):
             continue
         n_raw, n_wgt = result
         wgt_tot += n_wgt
@@ -249,8 +251,8 @@ def produceCSV(datadir):
     
 if __name__ == "__main__":
     # query_MCsamples("data.json", "data_file.json", regex="NanoAODv")
-    # add_weight("data_file.json", "preprocessed", dsname=['TTbar'])
-    # print("Jobs finished!")
+    add_weight("data_file.json", "preprocessed")
+    print("Jobs finished!")
     produceCSV('preprocessed')
 
 
