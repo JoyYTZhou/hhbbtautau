@@ -9,7 +9,7 @@ function setup_dirname_local {
     export SRC_DIR=${BASE_DIR}/src
     export DATA_DIR=${SRC_DIR}/data
     export CONDOR_BASE=/store/user/joyzhou
-    echo "Successfully set up environment for $PWD"
+    echo "Successfully set up environment or $PWD"
 }
 
 function human_readable() {
