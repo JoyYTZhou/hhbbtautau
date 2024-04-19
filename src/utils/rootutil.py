@@ -22,7 +22,7 @@ class DataLoader():
     
     def get_wgt(self):
         """Compute weights needed for these datasets. Save if needed."""
-        self.wgt_dict = DataLoader.haddWeights(self.cleancfg.DATAPATH, from_raw=True)
+        self.wgt_dict = DataLoader.haddWeights(self.cleancfg.DATAPATH)
             
     def get_totraw(self, dirbase=None, resolution=0, appendname=''):
         """Load all cutflow tables for all datasets from output directory and combine them into one. 
@@ -89,11 +89,11 @@ class DataLoader():
             rawdflist = []
             condorpath = pjoin(f'{indir}_hadded', process) if transfer_base is None else pjoin(cleancfg.CONDORBASE, transfer_base, process)
             outpath = pjoin(cleancfg.LOCALOUTPUT, process)
-            checkpath(outpath, raiseError=False)
+            checkpath(outpath)
             for ds in self.wgt_dict[process].keys():
                 raw_df = combine_cf(inputdir=pjoin(indir, process), dsname=ds, output=False)
                 rawdflist.append(raw_df)
-            pd.concat(rawdflist, axis=1).to_csv(pjoin(outpath, f"{process}_rawcf.csv"))
+            pd.concat(rawdflist, axis=1).to_csv(pjoin(outpath, f"{process}_cf.csv"))
             transferfiles(outpath, condorpath, endpattern='.csv')
             if cleancfg.CLEANCSV: delfiles(outpath, pattern='*.csv')
     
@@ -112,13 +112,12 @@ class DataLoader():
                       outname=pjoin(outpath, f"{process}_{int(lumi/1000)}_wgtcf.csv"), lumi=lumi)
 
     @staticmethod
-    def haddWeights(grepdir, output=True, from_raw=True):
+    def haddWeights(grepdir):
         """Function for self use only, grep weights from a list of json files formatted in a specific way.
         
         Parameters
         - `grepdir`: directory where the json files are located
         - `output`: whether to save the weights into a json file
-        - `from_raw`: whether to compute weights based on number of raw events instead of weighted
         """
         wgt_dict = {}
         jsonfiles = glob_files(grepdir)
@@ -129,12 +128,9 @@ class DataLoader():
                     meta = json.load(f)
                     dsdict = {}
                     for dskey, dsval in meta.items():
-                        weight = dsval['xsection']/dsval['Raw Events'] if from_raw else dsval['Per Event']
+                        weight = dsval['Per Event']
                         dsdict[dskey] = weight
                     wgt_dict[ds] = dsdict
-        if output: 
-            with open(pjoin(grepdir, 'wgt_total.json'), 'w') as f:
-                json.dump(wgt_dict, f, indent=4)
         return wgt_dict
 
     @staticmethod

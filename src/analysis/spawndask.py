@@ -72,7 +72,7 @@ def checkresumes(metadata):
         datasets = metadata.keys()
         for ds in datasets:
             fileno = len(metadata[ds]['filelist'])
-            fileindx = check_missing(ds, fileno, rs.TRANSFER_PATH)
+            fileindx = check_missing(f'{ds}_cutflow', fileno, rs.TRANSFER_PATH, endpattern='.csv')
             if fileindx != []:
                 loaded[ds] = {}
                 loaded[ds]['resumeindx'] = fileindx

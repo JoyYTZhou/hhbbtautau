@@ -1,5 +1,6 @@
 # This file contains the Processor class, which is used to process individual files or filesets.
 # The behavior of the Processor class is highly dependent on run time configurations and the event selection class used.
+import uproot._util
 from utils.filesysutil import *
 import uproot
 import pickle
@@ -29,23 +30,24 @@ class Processor:
         :return: The loaded file dict (and error messages if encountered)
         :rtype: dask_awkward.lib.core.Array
         """
-        user_step_size = uproot._util.unset if not self.rtcfg.STEP_SIZE else self.rtcfg.STEP_SIZE
+        dask_args = {"files": {destpath: self.treename}}
+        if self.rtcfg.STEP_SIZE: 
+            dask_args["step_size"] = self.rtcfg.STEP_SIZE
+        elif self.rtcfg.STEP_NO:
+            dask_args["steps_per_file"] = self.rtcfg.STEP_NO
+        else: 
+            dask_args["step_size"] = uproot._util.unset
+
         if self.rtcfg.COPY_LOCAL:
             destpath = pjoin(self.rtcfg.COPY_DIR, f"{self.dataset}_{suffix}.root")
             cpfcondor(filename, destpath)
             try:
-                events = uproot.dask(
-                    files={destpath: self.treename},
-                    step_size=user_step_size
-                )
+                events = uproot.dask(dask_args)
             except OSError as e:
                 print(f"Failed again to load file after copying: {e}")
                 events = None
         else:
-            events = uproot.dask(
-                files={filename: self.treename},
-                step_size=user_step_size
-            ) 
+            events = uproot.dask(dask_args) 
         return events
     
     def runfile(self, filename, suffix, write_method='dask', delayed=False, write_npz=False):
