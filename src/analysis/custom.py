@@ -7,12 +7,12 @@ import dask_awkward as dak
 
 def switch_selections(sel_name):
     selections = {
-        'lepvetoskim': mockskimEvtSel,
+        'lepvetoskim': skimEvtSel,
         'prelim': prelimEvtSel
     }
     return selections.get(sel_name, BaseEventSelections)
 
-class mockskimEvtSel(BaseEventSelections):
+class skimEvtSel(BaseEventSelections):
     """Reduce event sizes"""
     def triggersel(self, events):
         for trigname, value in self.trigcfg.items():

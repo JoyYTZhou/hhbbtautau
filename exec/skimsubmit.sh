@@ -4,7 +4,7 @@
 # ===========================================================================================================
 
 source ../scripts/envutil.sh
-setup_dirname
+setup_dirname_local
 source ${LIB_DIR}/lpcsetup.sh
 
 echo "Name condor output directory"

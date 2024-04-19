@@ -10,11 +10,11 @@ class Processor:
     """Process individual file or filesets given strings/dicts belonging to one dataset."""
     def __init__(self, rt_cfg, dataset, evtselclass=BaseEventSelections, **kwargs):
         self._rtcfg = rt_cfg
-        self.treename = self.rtcfg.TREE_NAME
+        self.treename = self.rtcfg.get('TREE_NAME', 'Events')
         self.outdir = self.rtcfg.OUTPUTDIR_PATH
         self.dataset = dataset
         if self.rtcfg.COPY_LOCAL: checkpath(self.rtcfg.COPY_DIR)
-        if self.rtcfg.TRANSFER: 
+        if self.rtcfg.TRANSFER_PATH: 
             checkcondorpath(self.rtcfg.TRANSFER_PATH)
         checkpath(self.outdir)
         self.evtsel = evtselclass(**kwargs) 
@@ -90,7 +90,7 @@ class Processor:
         cutflow_df.to_csv(localpath)
         print("Cutflow written to local!")
 
-        if self.rtcfg.TRANSFER:
+        if self.rtcfg.TRANSFER_PATH:
             condorpath = f'{self.rtcfg.TRANSFER_PATH}/{cutflow_name}'
             cpcondor(localpath, condorpath)
             print("Cutflow transferred to condor!")
@@ -112,7 +112,7 @@ class Processor:
         else:
             pass
 
-        if self.rtcfg.TRANSFER:
+        if self.rtcfg.TRANSFER_PATH:
             transferfiles(self.outdir, self.rtcfg.TRANSFER_PATH, remove=True)
         
     def writepickle(self, passed, suffix, delayed):
@@ -122,6 +122,6 @@ class Processor:
                 pickle.dump(passed, f)
             else:
                 pickle.dump(passed.compute(), f)
-        if self.rtcfg.TRANSFER:
+        if self.rtcfg.TRANSFER_PATH:
             cpcondor(finame, pjoin(self.rtcfg.TRANSFER_PATH, f"{self.dataset}_{suffix}.pkl"))
         
