@@ -142,7 +142,10 @@ def combine_cf(inputdir, dsname, output=True, outpath=None):
     dfs = load_csvs(dirname=inputdir, startpattern=f'{dsname}_cutflow')
     concat_df = pd.concat(dfs)
     combined = concat_df.groupby(concat_df.index, sort=False).sum()
-    combined.columns = [dsname]
+    if combined.shape[1] != 1:
+        combined.columns = [f"{dsname}_{col}" for col in combined.columns]
+    else:
+        combined.columns = [dsname]
     if output and outpath is not None: combined.to_csv(outpath)
     return combined
 

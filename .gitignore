@@ -17,6 +17,7 @@ exec/*.log
 exec/*.err
 exec/*.pem
 exec/*.out
+exec/joblog/
 # Ignore error log directory
 exec/errors/
 # Ignore all log files

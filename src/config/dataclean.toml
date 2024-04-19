@@ -1,21 +1,21 @@
-[LPCJUPYTER]
+[LPCTEST]
 CONDORBASE = "/store/user/joyzhou" 
 DATAPATH = "/uscms/home/joyzhou/work/hhbbtautau/src/data/preprocessed"
-INPUTDIR = "@format {this.CONDORBASE}/hadded" # Data from processor
+INPUTDIR = "@format {this.CONDORBASE}/lepskim" # Data from processor
 LOCALOUTPUT = "/uscms/home/joyzhou/nobackup/hadded"
-CONDOR_TRANSFER = true 
-CONDORPATH = "/store/user/joyzhou/hadded"
+CONDOR_TRANSFER = true
+CONDORPATH = "/store/user/joyzhou/lepskim_hadded"
 REFRESH = false # of now impact as of now
-HADD_BATCH = 50
+HADD_BATCH = 30
 CLEANCSV = false
 CLEANROOT = true
 # DATASETS = ['DYJets', 'SingleH', 'WW', 'WWW', 'WZ', 'ZH', 'ggF', 'ZZ']
-DATASETS = ['ggF', 'ZZ']
+DATASETS = ['ggF']
 TREENAME = 'Events'
 PLOT_VARS = ['Tau', 'Jet', 'FatJet', "GenPart"]
 EXTRA_VARS = ['Generator_weight', 'nLHEReweightingWeight', 'LHEReweightingWeight']
-LUMI = 73400 # pb^-1 to match xsection
 RESOLUTION = 'process'
+SIGNAL = 'ggF'
 
 
 [LPCCONDOR]

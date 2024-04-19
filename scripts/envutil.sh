@@ -3,6 +3,24 @@
 # This script contains some functions to set up LPC environment for analysis quickly 
 # ===========================================================================================================
 
+function setup_dirname {
+    export BASE_DIR=/uscms/home/joyzhou/work/hhbbtautau
+    export LIB_DIR=${BASE_DIR}/scripts
+    export SRC_DIR=${BASE_DIR}/src
+    export DATA_DIR=${SRC_DIR}/data
+    export CONDOR_BASE=/store/user/joyzhou
+    echo "Successfully set up environment for $PWD"
+}
+
+function human_readable() {
+    size=$1
+    units=("B" "KB" "MB" "GB" "TB" "PB" "EB" "ZB" "YB")
+    for ((i=0; size>=1024 && i<${#units[@]}-1; i++)); do
+        size=$(bc <<< "scale=2; $size/1024")
+    done
+    echo "$size${units[$i]}"
+}
+
 function setup_LCG {
     if [ -f /etc/os-release ]; then
         . /etc/os-release
