@@ -5,6 +5,7 @@
 
 source scripts/envutil.sh
 setup_LCG
+setup_dirname_local
 ENV_NAME=newcoffea_el9
 
 export PYTHONPATH=~/nobackup/${ENV_NAME}/lib/python3.9/site-packages:$PYTHONPATH

@@ -37,17 +37,25 @@ for file in "${PROCESS_DATA}"/*.json; do
             continue_flag=true
         else 
             size=$(echo "$output" | grep -oP 'Size:\s+\K\d+')
-            if size -lt 1000000000; then
+            if [[ $size -lt 1000000000 ]]; then
                 echo "File size is less than 1GB. Initiating future jobs."
-                export DASK_FUTURE=true
-                export COPY_FILE=false
+                copyfile=false
             else
                 echo "File size is greater than 1GB. Submitting in loops."
+                copyfile=true
+            fi 
         fi
     done 
     if $continue_flag; then
         continue
     else 
+        echo "Writing to skim.sh ..."
+        cp skim.sh runtime/skim_${file}.sh
+
+        cat << EOF >> runtime/skim_${file}.sh
+        export PROCESS_NAME=${file}
+        export COPY_FILE=${copyfile}
+EOF
         echo "Submitting condor jobs."
     fi
   done
@@ -59,3 +67,4 @@ json_files=($(for f in "$DATA_DIR/preprocessed"/*.json; do basename "$f" .json; 
 for name in "${json_files[@]}"; do
     echo "Reading $name.json"
 done
+
