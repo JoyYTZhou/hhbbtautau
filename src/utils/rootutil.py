@@ -95,7 +95,7 @@ class DataLoader():
                 rawdflist.append(raw_df)
             pd.concat(rawdflist, axis=1).to_csv(pjoin(outpath, f"{process}_cf.csv"))
             transferfiles(outpath, condorpath, endpattern='.csv')
-            if cleancfg.CLEANCSV: delfiles(outpath, pattern='*.csv')
+            if cleancfg.get("CLEANCSV", False): delfiles(outpath, pattern='*.csv')
     
     def weight_rawcf(self, dirbase=None):
         """Returns the weighted cutflow tables for all datasets."""
@@ -148,7 +148,7 @@ class DataLoader():
             outdir = pjoin(cleancfg.LOCALOUTPUT, process)
             checkpath(outdir)
             ds_dir = pjoin(indir, process)
-            condorpath = pjoin(f'{indir}_hadded', process)
+            condorpath = cleancfg.CONDORPATH if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
             print(process)
             for ds in wgt_dict[process].keys():
                 root_files = glob_files(ds_dir, ds, '.root')
@@ -157,7 +157,7 @@ class DataLoader():
                     outname = pjoin(outdir, f"{ds}_{i//batch_size+1}.root") 
                     call_hadd(outname, batch_files)
             transferfiles(outdir, condorpath, endpattern='.root')
-            if cleancfg.CLEANROOT: delfiles(outdir, pattern='*.root')
+            if cleancfg.get("CLEANROOT", True): delfiles(outdir, pattern='*.root')
         return None
     
     @staticmethod
