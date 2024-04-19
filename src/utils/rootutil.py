@@ -7,7 +7,7 @@ import subprocess
 import pandas as pd
 
 from analysis.selutility import Object
-from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles
+from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, get_xrdfs_file_info
 from utils.datautil import checkevents, find_branches
 from utils.cutflowutil import weight_cf, combine_cf, efficiency
 
@@ -141,7 +141,6 @@ class DataLoader():
         - `cleancfg`: plot setting
         - `wgt_dict`: dictionary of weights for each process
         """
-        batch_size = cleancfg.HADD_BATCH
         indir = cleancfg.INPUTDIR
         processes = cleancfg.DATASETS
         for process in processes:
@@ -152,6 +151,8 @@ class DataLoader():
             print(process)
             for ds in wgt_dict[process].keys():
                 root_files = glob_files(ds_dir, ds, '.root')
+                size = get_xrdfs_file_info(root_files[0])[0]
+                batch_size = int(0.5*10**8/size)
                 for i in range(0, len(root_files), batch_size):
                     batch_files = root_files[i:i+batch_size]
                     outname = pjoin(outdir, f"{ds}_{i//batch_size+1}.root") 
