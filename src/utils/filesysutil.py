@@ -216,7 +216,11 @@ def list_xrdfs_files(remote_dir):
 def get_xrdfs_file_info(remote_file):
     """Get information (size, modification time) of a remote xrdfs file/dir.
     
-    Parameters"""
+    Parameters
+    ``remote_file``: remote file path
+    Returns
+    - size of the file in bytes (int)
+    - modification time of the file (str)"""
     cmd = ["xrdfs", PREFIX, "stat", remote_file]
     output = subprocess.check_output(cmd).decode()
     size = None

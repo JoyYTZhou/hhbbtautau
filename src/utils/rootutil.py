@@ -117,7 +117,6 @@ class DataLoader():
         
         Parameters
         - `grepdir`: directory where the json files are located
-        - `output`: whether to save the weights into a json file
         """
         wgt_dict = {}
         jsonfiles = glob_files(grepdir)
@@ -135,7 +134,7 @@ class DataLoader():
 
     @staticmethod
     def hadd_roots(cleancfg, wgt_dict) -> None:
-        """Hadd root files of datasets into appropriate size based on plot setting. 
+        """Hadd root files of datasets into appropriate size based on settings.
         
         Parameters
         - `cleancfg`: plot setting
@@ -145,10 +144,9 @@ class DataLoader():
         processes = cleancfg.DATASETS
         for process in processes:
             outdir = pjoin(cleancfg.LOCALOUTPUT, process)
-            checkpath(outdir)
+            checkpath(outdir, createdir=True)
             ds_dir = pjoin(indir, process)
             condorpath = cleancfg.CONDORPATH if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
-            print(process)
             for ds in wgt_dict[process].keys():
                 root_files = glob_files(ds_dir, ds, '.root', add_prefix=False)
                 size = get_xrdfs_file_info(root_files[0])[0]
