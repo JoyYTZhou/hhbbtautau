@@ -7,6 +7,8 @@ TRANSFER = false
 
 [SKIM]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
+COPY_LOCAL = "@format {env[COPY_FILE]}"
+COPY_DIR = "temp"
 
 [LPCCONDOR]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
@@ -16,8 +18,7 @@ INPUTFILE_PATH = "@format data/preprocessed/{this.PROCESS_NAME}.json"
 OUTPUTDIR_PATH = "@format outputs/{this.PROCESS_NAME}"
 TRANSFER_PATH = "@format {env[CONDOR_BASE]}/lepskim/{this.PROCESS_NAME}"
 COPY_LOCAL = true
-COPY_DIR = "temp"
-STEP_NO = 4
+STEP_NO = 8
 STEP_SIZE = false
 
 [LPCTEST]

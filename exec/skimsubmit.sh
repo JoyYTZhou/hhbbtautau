@@ -56,6 +56,7 @@ for file in "${PROCESS_DATA}"/*.json; do
         export PROCESS_NAME=${file}
         export COPY_FILE=${copyfile}
 EOF
+        cp skim.sub runtime/skim_${file}.sub
         echo "Submitting condor jobs."
     fi
   done
