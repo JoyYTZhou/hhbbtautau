@@ -40,32 +40,46 @@ for file in "${PROCESS_DATA}"/*.json; do
             if [[ $size -lt 1000000000 ]]; then
                 echo "File size is less than 1GB. Initiating future jobs."
                 copyfile=false
+                cpusno=8
+                memory=16GB
             else
                 echo "File size is greater than 1GB. Submitting in loops."
                 copyfile=true
+                if [[ $size -lt 20000000000 ]]; then
+                    cpusno=10
+                    memory=22GB
+                else
+                    cpusno=12
+                    memory=24GB
+                fi
             fi 
         fi
     done 
     if $continue_flag; then
         continue
     else 
-        echo "Writing to skim.sh ..."
+        echo "Creating new run job script for ${file}"
         cp skim.sh runtime/skim_${file}.sh
 
         cat << EOF >> runtime/skim_${file}.sh
         export PROCESS_NAME=${file}
         export COPY_FILE=${copyfile}
+        python3 src/main.py
 EOF
+        echo "Creating new submission job script for ${file}"
         cp skim.sub runtime/skim_${file}.sub
-        echo "Submitting condor jobs."
+        cat << EOF >> runtime/skim_${file}.sub
+        request_cpus = ${cpusno}
+        request_memory = ${memory}
+        request_disk = 5GB
+        queue
+EOF
     fi
   done
-    echo "Submitting ${file}"
-    python ${LIB_DIR}/submit.py -c ${file} -o ${CONDOR_BASE}/${condoroutput}
 done
 
-json_files=($(for f in "$DATA_DIR/preprocessed"/*.json; do basename "$f" .json; done))
-for name in "${json_files[@]}"; do
-    echo "Reading $name.json"
-done
+# json_files=($(for f in "$DATA_DIR/preprocessed"/*.json; do basename "$f" .json; done))
+# for name in "${json_files[@]}"; do
+#     echo "Reading $name.json"
+# done
 
