@@ -10,6 +10,7 @@ PLOT_VARS = ['Tau', 'Jet', 'FatJet', "GenPart"]
 EXTRA_VARS = ['Generator_weight', 'nLHEReweightingWeight', 'LHEReweightingWeight']
 RESOLUTION = 'process'
 SIGNAL = 'ggF'
+LUMI = 76.1 # fb^-1
 
 
 [LPCCONDOR]
