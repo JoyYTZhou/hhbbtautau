@@ -2,9 +2,9 @@
 DATAPATH = "@format {env[DATA_DIR]}/preprocessed"
 INPUTDIR = "@format {env[CONDOR_BASE]}/lepskim"
 LOCALOUTPUT = "/uscms/home/joyzhou/nobackup/hadded"
-HADD_BATCH = 30
 # DATASETS = ['DYJets', 'SingleH', 'WW', 'WWW', 'WZ', 'ZH', 'ggF', 'ZZ']
-DATASETS = ['ggF']
+DATASETS = ['DYJets', 'WW', 'WWW', 'WZ', 'ZH', 'ZZ']
+# DATASETS = ["ggF"]
 TREENAME = 'Events'
 PLOT_VARS = ['Tau', 'Jet', 'FatJet', "GenPart"]
 EXTRA_VARS = ['Generator_weight', 'nLHEReweightingWeight', 'LHEReweightingWeight']

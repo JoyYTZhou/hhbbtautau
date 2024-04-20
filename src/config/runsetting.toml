@@ -17,7 +17,7 @@ OUTPUTDIR_PATH = "@format outputs/{this.PROCESS_NAME}"
 TRANSFER_PATH = "@format {env[CONDOR_BASE]}/lepskim/{this.PROCESS_NAME}"
 COPY_LOCAL = true
 COPY_DIR = "temp"
-STEP_NO = 3
+STEP_NO = 4
 STEP_SIZE = false
 
 [LPCTEST]
