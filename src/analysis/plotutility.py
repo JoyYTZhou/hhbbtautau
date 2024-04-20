@@ -150,6 +150,7 @@ class ObjectPlotter():
             ax=ax,
             label=legend,
             stack=kwargs.pop("stack", True),
+            linewidth=3
             **kwargs
         )
         ax.set_xlabel(xlabel, fontsize=15)

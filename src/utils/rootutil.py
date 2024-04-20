@@ -7,12 +7,14 @@ import subprocess
 import pandas as pd
 
 from analysis.selutility import Object
-from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, get_xrdfs_file_info
+from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, get_xrdfs_file_info, check_missing
 from utils.datautil import checkevents, find_branches
 from utils.cutflowutil import weight_cf, combine_cf, efficiency
 
 pjoin = os.path.join
 runcom = subprocess.run
+
+PREFIX = "root://cmseos.fnal.gov"
 
 class DataLoader():
     """Class for loading and hadding data from skims/predefined selections produced directly by Processor."""
@@ -150,9 +152,11 @@ class DataLoader():
             condorpath = cleancfg.CONDORPATH if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
             print(process)
             for ds in wgt_dict[process].keys():
-                root_files = glob_files(ds_dir, ds, '.root')
+                root_files = glob_files(ds_dir, ds, '.root', add_prefix=False)
                 size = get_xrdfs_file_info(root_files[0])[0]
-                batch_size = int(0.5*10**8/size)
+                batch_size = int(10**8/size)
+                print(f"Merging in batches of {batch_size} individual root files!")
+                root_files = [PREFIX + "/" + f for f in root_files]
                 for i in range(0, len(root_files), batch_size):
                     batch_files = root_files[i:i+batch_size]
                     outname = pjoin(outdir, f"{ds}_{i//batch_size+1}.root") 

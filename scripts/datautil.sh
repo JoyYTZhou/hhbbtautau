@@ -13,3 +13,4 @@ function check_size {
     output=$(xrdfs $REDIRECTOR stat $FILENAME)
     size=$(echo "$output" | grep -oP 'Size:\s+\K\d+')
 }
+
