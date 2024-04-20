@@ -98,21 +98,19 @@ class DataLoader():
             pd.concat(rawdflist, axis=1).to_csv(pjoin(outpath, f"{process}_cf.csv"))
             transferfiles(outpath, condorpath, endpattern='.csv')
             if cleancfg.get("CLEANCSV", False): delfiles(outpath, pattern='*.csv')
-    
-    def weight_rawcf(self, dirbase=None):
-        """Returns the weighted cutflow tables for all datasets."""
-        cleancfg = self.cleancfg
+
+    @staticmethod
+    def format_cf(cleancfg):
         indir = cleancfg.INPUTDIR
         lumi = cleancfg.LUMI
+        resolve = (cleancfg.get("RESOLUTION", 'process') == 'process')
         for process in cleancfg.DATASETS:
             outpath = pjoin(cleancfg.LOCALOUTPUT, process)
-            condorpath = pjoin(f'{indir}_hadded', process) if dirbase is None else pjoin(cleancfg.CONDORBASE, dirbase, process)
-            checkpath(condorpath, True)
-            checkpath(outpath)
-            rawcf = pd.read_csv(glob_files(condorpath, startpattern=process, endpattern='rawcf.csv')[0], index_col=0)
-            weight_cf(self.wgt_dict[process], rawcf, save=True, 
-                      outname=pjoin(outpath, f"{process}_{int(lumi/1000)}_wgtcf.csv"), lumi=lumi)
-
+            dirbase = cleancfg.get("DIRBASE", 'hadded')
+            condorpath = pjoin(f'{indir}_{dirbase}', process)
+            cf = pd.read_csv(glob_files(condorpath, startpattern=process, endpattern='cf.csv')[0], index_col=0) 
+            if resolve:
+                pass
     @staticmethod
     def haddWeights(grepdir):
         """Function for self use only, grep weights from a list of json files formatted in a specific way.
