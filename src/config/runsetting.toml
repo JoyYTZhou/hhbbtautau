@@ -8,7 +8,6 @@ TRANSFER = false
 [SKIM]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
 COPY_LOCAL = "@format {env[COPY_FILE]}"
-COPY_DIR = "temp"
 
 [LPCCONDOR]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"

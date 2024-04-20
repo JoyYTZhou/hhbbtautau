@@ -13,7 +13,9 @@ class Processor:
         self.treename = self.rtcfg.get('TREE_NAME', 'Events')
         self.outdir = self.rtcfg.OUTPUTDIR_PATH
         self.dataset = dataset
-        if self.rtcfg.COPY_LOCAL: checkpath(self.rtcfg.COPY_DIR)
+        if self.rtcfg.COPY_LOCAL: 
+            self.copydir = self.rtcfg.get("COPY_DIR", 'temp')
+            checkpath(self.copydir, createdir=True)
         if self.rtcfg.TRANSFER_PATH: 
             checkcondorpath(self.rtcfg.TRANSFER_PATH)
         checkpath(self.outdir)
@@ -39,7 +41,7 @@ class Processor:
             dask_args["step_size"] = uproot._util.unset
 
         if self.rtcfg.COPY_LOCAL:
-            destpath = pjoin(self.rtcfg.COPY_DIR, f"{self.dataset}_{suffix}.root")
+            destpath = pjoin(self.copydir, f"{self.dataset}_{suffix}.root")
             cpfcondor(filename, destpath)
             dask_args["files"] = {destpath: self.treename}
             try:
@@ -99,7 +101,7 @@ class Processor:
 
         del cutflow_df, events
         if self.rtcfg.COPY_LOCAL: 
-            delfiles(self.rtcfg.COPY_DIR)
+            delfiles(self.copydir)
             print("Files deleted!")
         
         return 0

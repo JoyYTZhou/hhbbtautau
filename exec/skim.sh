@@ -1,10 +1,8 @@
 #!/bin/bash
 
-# This bash script is adapted from https://github.com/bu-cms/bucoffea/blob/master/bucoffea/execute/htcondor_wrap.sh
 
 echo "Currently in $PWD"
 
-export PROCESS_NAME=$1
 export ENV_NAME=newcoffea_el9
 OLD_ENV_NAME=/uscms_data/d3/joyzhou/${ENV_NAME}
 
@@ -29,6 +27,7 @@ export PYTHONPATH=$PWD/src:$PYTHONPATH
 export PATH=$(remove_duplicates "$PATH")
 export PYTHONPATH=$(remove_duplicates "$PYTHONPATH")
 echo $PYTHONPATH
-export ENV_FOR_DYNACONF=LPCCONDOR
+export ENV_FOR_DYNACONF=SKIM
 export DEBUG_MODE=true
+
 checkproxy
