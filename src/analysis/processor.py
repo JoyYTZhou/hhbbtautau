@@ -24,7 +24,7 @@ class Processor:
     @property
     def rtcfg(self):
         return self._rtcfg
-        
+    
     def loadfile(self, filename, suffix):
         """This is a wrapper function around uproot._dask. 
         I am writing this doc to humiliate myself in the future.
