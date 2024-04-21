@@ -1,0 +1,29 @@
+# Path variables
+MY_PATH = /uscms/homes/j/joyzhou/work/hhbbtautau
+NO_BACKUP = /uscms/home/joyzhou/nobackup
+OUTNAME = prerun
+
+# Job description
+universe = vanilla
+executable = $(MY_PATH)/exec/preselectrun.sh
+arguments = $(arg1)
++SingularityImage = "/cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el9:x86_64"
+
+log = joblog/$(OUTNAME)_$(arg1).log
+output = joblog/$(OUTNAME)_$(arg1).out
+error = joblog/$(OUTNAME)_$(arg1).err
+stream_error = True
+stream_output = True
+
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT_OR_EVICT 
+
+request_cpus = 5
+request_memory = 10GB
+request_disk = 2GB
+transfer_input_files = $(MY_PATH)/src, $(MY_PATH)/scripts, $(NO_BACKUP)/newcoffea_el9.tar.gz
+
+queue arg1 from (
+    ggF
+)
+

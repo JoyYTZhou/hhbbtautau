@@ -7,17 +7,20 @@ source ../scripts/envutil.sh
 setup_dirname_local
 source ${LIB_DIR}/lpcsetup.sh
 
+echo "------------------------------------------------------------"
 echo "Name condor output directory"
 read condoroutput
 
 echo "full condor path will be ${CONDOR_BASE}/${condoroutput}"
 
+echo "------------------------------------------------------------"
 xrdfs $PREFIX stat ${CONDOR_BASE}/${condoroutput}
-if $? -eq 0; then
+if [[ $? -eq 0 ]]; then
     echo "Directory already exists. This could be a resume job."
-    read -p "Do you want to continue? (y/n)" -n 1 -r
+    echo "Do you want to continue? (y/n)"
+    read -n 1 -r
 fi
-
+echo "------------------------------------------------------------"
 PROCESS_DATA=$DATA_DIR/preprocessed
 XRD_DIRECTOR=root://cmsxrootd.fnal.gov
 for file in "${PROCESS_DATA}"/*.json; do
@@ -26,13 +29,13 @@ for file in "${PROCESS_DATA}"/*.json; do
     continue_flag=false
     for key in $keys; do
         echo "Dataset name: $key"
-        filelist=($(jq -r ".$key.filelist[]" "$file"))
+        filelist=($(jq -r '."${key}".filelist[]' "$file"))
         random_index=$((RANDOM % ${#filelist[@]}))
         random_file=${filelist[$random_index]}
         random_file=${random_file#"${XRD_DIRECTOR}/"}
         echo "Querying file with index {$random_index}..."
         output=$(xrdfs $XRD_DIRECTOR stat $random_file)
-        if [ $? -ne 0 ]; then
+        if [[ $? -ne 0 ]]; then
             echo "XRD query failed for file ${random_file}... skipping. Not submitting condor jobs for {$file}"
             continue_flag=true
         else 

@@ -1,7 +1,6 @@
 from dask.distributed import Client, LocalCluster
 from dask.distributed import as_completed
 import json as json
-from itertools import islice
 import traceback
 import os
 

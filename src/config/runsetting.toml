@@ -9,20 +9,30 @@ TRANSFER = false
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
 COPY_LOCAL = "@format {env[COPY_FILE]}"
 
-[LPCCONDOR]
+[PRESELECT]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
-SEL_NAME = 'lepvetoskim'
+SEL_NAME = 'prelim'
 # INPUTFILE_PATH = "@format /store/user/joyzhou/hadded/{this.PROCESS_NAME}"
 INPUTFILE_PATH = "@format data/preprocessed/{this.PROCESS_NAME}.json"
 OUTPUTDIR_PATH = "@format outputs/{this.PROCESS_NAME}"
-TRANSFER_PATH = "@format {env[CONDOR_BASE]}/lepskim/{this.PROCESS_NAME}"
+TRANSFER_PATH = "@format {env[CONDOR_BASE]}/{this.SEL_NAME}/{this.PROCESS_NAME}"
 COPY_LOCAL = true
-STEP_NO = 8
-STEP_SIZE = false
+STEP_SIZE = '150MB'
+
+
+[LPCCONDOR]
+PROCESS_NAME = "@format {env[PROCESS_NAME]}"
+SEL_NAME = 'lepskim'
+# INPUTFILE_PATH = "@format /store/user/joyzhou/hadded/{this.PROCESS_NAME}"
+INPUTFILE_PATH = "@format data/preprocessed/{this.PROCESS_NAME}.json"
+OUTPUTDIR_PATH = "@format outputs/{this.PROCESS_NAME}"
+TRANSFER_PATH = "@format {env[CONDOR_BASE]}/{this.SEL_NAME}/{this.PROCESS_NAME}"
+COPY_LOCAL = true
+STEP_SIZE = '150MB'
 
 [LPCTEST]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
-SEL_NAME = 'lepvetoskim'
+SEL_NAME = 'lepskim'
 # INPUTFILE_PATH = "@format /store/user/joyzhou/hadded/{this.PROCESS_NAME}"
 INPUTFILE_PATH = "@format data/preprocessed/{this.PROCESS_NAME}.json"
 OUTPUTDIR_PATH = "/uscms/home/joyzhou/nobackup/tests"

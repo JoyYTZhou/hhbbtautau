@@ -7,24 +7,78 @@ import subprocess
 import pandas as pd
 
 from analysis.selutility import Object
+from config.selectionconfig import cleansetting as cleancfg
 from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, get_xrdfs_file_info, check_missing
 from utils.datautil import checkevents, find_branches
 from utils.cutflowutil import weight_cf, combine_cf, efficiency
-
+from functools import wraps
 pjoin = os.path.join
 runcom = subprocess.run
 
 PREFIX = "root://cmseos.fnal.gov"
 
+indir = cleancfg.INPUTDIR
+localout = cleancfg.LOCALOUTPUT
+
+def iterprocess(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        for process in cleancfg.DATASETS:
+            with open(pjoin(cleancfg.DATAPATH, f"{process}.json"), 'r') as jsonfile:
+                meta = json.load(jsonfile)
+            func(process, meta, *args, **kwargs)
+        return func
+    return wrapper
+
 class DataLoader():
     """Class for loading and hadding data from skims/predefined selections produced directly by Processor."""
-    def __init__(self, cleancfg) -> None:
-        self.cleancfg = cleancfg
+    def __init__(self) -> None:
         self.get_wgt()
     
+    @iterprocess 
+    @staticmethod
+    def hadd_roots(process, meta) -> None:
+        """Hadd root files of datasets into appropriate size based on settings.
+        
+        Parameters
+        - `cleancfg`: plot setting
+        - `wgt_dict`: dictionary of weights for each process
+        """
+        outdir = pjoin(localout, process)
+        checkpath(outdir, createdir=True)
+        ds_dir = pjoin(indir, process)
+        for ds in meta.keys():
+            condorpath = cleancfg.CONDORPATH if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
+            root_files = glob_files(ds_dir, ds, '.root', add_prefix=False)
+            size = get_xrdfs_file_info(root_files[0])[0]
+            batch_size = int(10**8/size)
+            print(f"Merging in batches of {batch_size} individual root files!")
+            root_files = [PREFIX + "/" + f for f in root_files]
+            for i in range(0, len(root_files), batch_size):
+                batch_files = root_files[i:i+batch_size]
+                outname = pjoin(outdir, f"{ds}_{i//batch_size+1}.root") 
+                call_hadd(outname, batch_files)
+        transferfiles(outdir, condorpath, endpattern='.root')
+        if cleancfg.get("CLEANROOT", True): delfiles(outdir, pattern='*.root')
+
+    @iterprocess
+    @staticmethod
+    def hadd_cfs(process, meta):
+        """Hadd cutflow table output from processor, saved to LOCALOUTPUT. Transfer to prenamed condorpath if needed."""
+        rawdflist = []
+        condorpath = cleancfg.CONDORPATH if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
+        outpath = pjoin(localout, process)
+        checkpath(outpath)
+        for ds in meta.keys():
+            raw_df = combine_cf(inputdir=pjoin(indir, process), dsname=ds, output=False)
+            rawdflist.append(raw_df)
+        pd.concat(rawdflist, axis=1).to_csv(pjoin(outpath, f"{process}_cf.csv"))
+        transferfiles(outpath, condorpath, endpattern='.csv')
+        if cleancfg.get("CLEANCSV", False): delfiles(outpath, pattern='*.csv')
+
     def get_wgt(self):
         """Compute weights needed for these datasets. Save if needed."""
-        self.wgt_dict = DataLoader.haddWeights(self.cleancfg.DATAPATH)
+        self.wgt_dict = DataLoader.haddWeights(cleancfg.DATAPATH)
             
     def get_totraw(self, dirbase=None, resolution=0, appendname=''):
         """Load all cutflow tables for all datasets from output directory and combine them into one. 
@@ -36,33 +90,31 @@ class DataLoader():
         Returns
         - Tuple of two dataframes (raw, weighted) of cutflows
         """
-        cleancfg = self.cleancfg
         tot_raw_list = []
-        for process in self.cleancfg.DATASETS:
+        for process in cleancfg.DATASETS:
             path_to_glob = pjoin(f"{cleancfg.INPUTDIR}_hadded", process) if dirbase is None else pjoin(cleancfg.CONDORBASE, dirbase, process)
             raw_path = glob_files(path_to_glob, startpattern=process, endpattern=f'rawcf.csv')[0]
             if raw_path: 
                 raw_df = DataLoader.process_file(raw_path, process, resolution)
                 tot_raw_list.append(raw_df)
         total_df = pd.concat(tot_raw_list, axis=1)
-        total_df.to_csv(pjoin(cleancfg.LOCALOUTPUT, f'final_{appendname}rawdata.csv'))
+        total_df.to_csv(pjoin(localout, f'final_{appendname}rawdata.csv'))
         return total_df
     
     def get_totwgt(self, dirbase=None, resolution=0):
         """Calculate weighted cutflow tables for all datasets."""
-        cleancfg = self.cleancfg
         tot_wgt_list = []
         luminosity = cleancfg.LUMI
-        for process in self.cleancfg.DATASETS:
-            path_to_glob = pjoin(cleancfg.LOCALOUTPUT, process) if dirbase is None else pjoin(cleancfg.CONDORBASE, dirbase, process)
+        for process in cleancfg.DATASETS:
+            path_to_glob = pjoin(localout, process) if dirbase is None else pjoin(cleancfg.CONDORBASE, dirbase, process)
             wgt_path = glob_files(path_to_glob, startpattern=process, endpattern=f'{int(luminosity/1000)}_wgtcf.csv')[0]
             if wgt_path: 
                 wgt_df = DataLoader.process_file(wgt_path, process, resolution)
                 tot_wgt_list.append(wgt_df)
         total_df = pd.concat(tot_wgt_list, axis=1)
-        total_df.to_csv(pjoin(cleancfg.LOCALOUTPUT, f'final_{int(luminosity/1000)}_wgtdata.csv'))
-        efficiency_df = efficiency(cleancfg.LOCALOUTPUT, total_df, overall=False, append=False, save=True, save_name=f'stepwise')
-        efficiency_df = efficiency(cleancfg.LOCALOUTPUT, total_df, overall=True, append=False, save=True, save_name=f'tot')
+        total_df.to_csv(pjoin(localout, f'final_{int(luminosity/1000)}_wgtdata.csv'))
+        efficiency_df = efficiency(localout, total_df, overall=False, append=False, save=True, save_name=f'stepwise')
+        efficiency_df = efficiency(localout, total_df, overall=True, append=False, save=True, save_name=f'tot')
         return total_df
 
     def get_objs(self):
@@ -70,8 +122,7 @@ class DataLoader():
         Get from processes in cleancfg only, regardless of the entries in weight dictionary.
         Results saved to LOCALOUTPUT/objlimited
         """
-        cleancfg = self.cleancfg
-        outdir = pjoin(cleancfg.LOCALOUTPUT, 'objlimited')
+        outdir = pjoin(localout, 'objlimited')
         checkpath(outdir)
         for process in cleancfg.DATASETS:
             for ds in self.wgt_dict[process].keys():
@@ -82,35 +133,29 @@ class DataLoader():
                     print(f"Writing limited data to file {destination}")
                     DataLoader.write_obj(output, files, cleancfg.PLOT_VARS, cleancfg.EXTRA_VARS)
     
-    def hadd_cfs(self, transfer_base=None):
-        """Hadd cutflow table output from processor, saved to LOCALOUTPUT. Transfer to prenamed condorpath if needed."""
-        cleancfg = self.cleancfg
-        processes = cleancfg.DATASETS
-        indir = cleancfg.INPUTDIR
-        for process in processes:
-            rawdflist = []
-            condorpath = pjoin(f'{indir}_hadded', process) if transfer_base is None else pjoin(cleancfg.CONDORBASE, transfer_base, process)
-            outpath = pjoin(cleancfg.LOCALOUTPUT, process)
-            checkpath(outpath)
-            for ds in self.wgt_dict[process].keys():
-                raw_df = combine_cf(inputdir=pjoin(indir, process), dsname=ds, output=False)
-                rawdflist.append(raw_df)
-            pd.concat(rawdflist, axis=1).to_csv(pjoin(outpath, f"{process}_cf.csv"))
-            transferfiles(outpath, condorpath, endpattern='.csv')
-            if cleancfg.get("CLEANCSV", False): delfiles(outpath, pattern='*.csv')
-
     @staticmethod
-    def format_cf(cleancfg):
-        indir = cleancfg.INPUTDIR
+    def merge_cf():
         lumi = cleancfg.LUMI
         resolve = (cleancfg.get("RESOLUTION", 'process') == 'process')
+        list_df = []
         for process in cleancfg.DATASETS:
-            outpath = pjoin(cleancfg.LOCALOUTPUT, process)
-            dirbase = cleancfg.get("DIRBASE", 'hadded')
-            condorpath = pjoin(f'{indir}_{dirbase}', process)
+            condorpath = cleancfg.CONDORPATH if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
             cf = pd.read_csv(glob_files(condorpath, startpattern=process, endpattern='cf.csv')[0], index_col=0) 
-            if resolve:
-                pass
+            if not resolve:
+                DataLoader.add_cfcol_by_kwd(cf, 'raw', f"{process}_raw")
+                DataLoader.add_cfcol_by_kwd(cf, 'wgt', f"{process}_wgt")
+            list_df.append(cf)
+        total_df = pd.concat(list_df, axis=1)
+        total_df.to_csv(localout, 'allcf.csv')
+        return total_df
+
+    @staticmethod
+    def add_cfcol_by_kwd(cfdf, keyword, name):
+        same_cols = cfdf.filter(like=keyword)
+        sumcol = same_cols.sum(axis=1)
+        cfdf = cfdf.drop(columns=same_cols)
+        cfdf[name] = sumcol
+
     @staticmethod
     def haddWeights(grepdir):
         """Function for self use only, grep weights from a list of json files formatted in a specific way.
@@ -122,44 +167,16 @@ class DataLoader():
         jsonfiles = glob_files(grepdir)
         for filename in jsonfiles:
             ds = os.path.basename(filename).rsplit('.json', 1)[0]
-            if ds != 'wgt_total':
-                with open(filename, 'r') as f:
-                    meta = json.load(f)
-                    dsdict = {}
-                    for dskey, dsval in meta.items():
-                        weight = dsval['Per Event']
-                        dsdict[dskey] = weight
-                    wgt_dict[ds] = dsdict
+            with open(filename, 'r') as f:
+                meta = json.load(f)
+                dsdict = {}
+                for dskey, dsval in meta.items():
+                    weight = dsval['Per Event']
+                    dsdict[dskey] = weight
+                wgt_dict[ds] = dsdict
         return wgt_dict
 
-    @staticmethod
-    def hadd_roots(cleancfg, wgt_dict) -> None:
-        """Hadd root files of datasets into appropriate size based on settings.
-        
-        Parameters
-        - `cleancfg`: plot setting
-        - `wgt_dict`: dictionary of weights for each process
-        """
-        indir = cleancfg.INPUTDIR
-        processes = cleancfg.DATASETS
-        for process in processes:
-            outdir = pjoin(cleancfg.LOCALOUTPUT, process)
-            checkpath(outdir, createdir=True)
-            ds_dir = pjoin(indir, process)
-            condorpath = cleancfg.CONDORPATH if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
-            for ds in wgt_dict[process].keys():
-                root_files = glob_files(ds_dir, ds, '.root', add_prefix=False)
-                size = get_xrdfs_file_info(root_files[0])[0]
-                batch_size = int(10**8/size)
-                print(f"Merging in batches of {batch_size} individual root files!")
-                root_files = [PREFIX + "/" + f for f in root_files]
-                for i in range(0, len(root_files), batch_size):
-                    batch_files = root_files[i:i+batch_size]
-                    outname = pjoin(outdir, f"{ds}_{i//batch_size+1}.root") 
-                    call_hadd(outname, batch_files)
-            transferfiles(outdir, condorpath, endpattern='.root')
-            if cleancfg.get("CLEANROOT", True): delfiles(outdir, pattern='*.root')
-        return None
+
     
     @staticmethod
     def write_obj(writable, filelist, objnames, extra=[]) -> None:

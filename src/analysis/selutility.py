@@ -150,10 +150,11 @@ class Object():
             raise ValueError(f"Nanoaodname is not given for {maskname} of object {self.name}")
         aodname = self.mapcfg[maskname]
         selval = self.selcfg[maskname]
+        aodarr = self.events[aodname]
         if func is not None:
-            return op(func(self.events[aodname]), selval)
+            return op(func(aodarr), selval)
         else:
-            return op(self.events[aodname], selval)
+            return op(aodarr, selval)
 
     def numselmask(self, mask, op):
         return op(dak.sum(mask, axis=1), self.selcfg.count)
@@ -173,17 +174,23 @@ class Object():
     def bdtidmask(self, op):
         return self.custommask("bdtid", op)
     
-    def osmask(self):
+    def evtosmask(self, selmask):
         """Create mask on events with OS objects.
-        !!! Note that this mask is applied per event, not per object"""
+        !!! Note that this mask is applied per event, not per object.
+        1 for events with 2 OS objects that pass selmask"""
         aodname = self.mapcfg['charge']
-        sum_charge = abs(dak.sum(self.events[aodname], axis=1))
-        mask = (sum_charge < dak.num(self.events[aodname], axis=1))
+        aodarr = self.events[aodname][selmask]
+        sum_charge = abs(dak.sum(aodarr, axis=1))
+        mask = (sum_charge < dak.num(aodarr, axis=1))
         return mask
     
     def getzipped(self):
         return Object.set_zipped(self.events, self.mapcfg)
     
+    @staticmethod
+    def jetid_ol_check(lep):
+        jetidx = lep
+
     @staticmethod
     def sortmask(dfarr, **kwargs):
         """Wrapper around awkward argsort function.
@@ -244,9 +251,8 @@ class Object():
         objdf = pd.DataFrame(dakarr_dict)
         return objdf
 
-    @staticmethod
-    def overlap(self, altobject):
-        pass
+    
+        
 
     def dRoverlap(self, altobject):
         pass
