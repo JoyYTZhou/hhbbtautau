@@ -149,9 +149,6 @@ def combine_cf(inputdir, dsname, output=True, outpath=None):
     if output and outpath is not None: combined.to_csv(outpath)
     return combined
 
-def extract_cf_by_kwd(cfdf, keyword):
-    return cfdf.filter(like=keyword).sum(axis=1)
-
 def add_selcutflow(cutflowlist, save=True, outpath=None):
     """Add cutflows sequentially.
     

@@ -21,7 +21,7 @@ default:
       isoid: 1
       count: 0
     Tau:
-      pt: 20
+      pt: 40
       eta: 2.3
       idvsjet: 5
       idvsmu: 1
@@ -32,7 +32,7 @@ default:
     Jet:
       pt: 20
       eta: 2.4
-      btag: 0.4
+      btag: 0.3196	
       count: 2
     FatJet:
       mass: 40
@@ -46,7 +46,7 @@ default:
       dxy: Tau_dxy
       dz: Tau_dz
       charge: Tau_charge
-      idvsjet: Tau_idDeepTau2017v2p1VSjet
+      idvsjet: Tau_idDeepTau2018v2p5VSjet
       idvsmu: Tau_idDeepTau2017v2p1VSmu
       idvse: Tau_idDeepTau2017v2p1VSe
     Electron:

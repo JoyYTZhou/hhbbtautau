@@ -33,9 +33,9 @@ class Processor:
         :rtype: dask_awkward.lib.core.Array
         """
         dask_args = {}
-        if self.rtcfg.STEP_SIZE: 
+        if self.rtcfg.get("STEP_SIZE", False): 
             dask_args["step_size"] = self.rtcfg.STEP_SIZE
-        elif self.rtcfg.STEP_NO:
+        elif self.rtcfg.get("STEP_NO", False):
             dask_args["steps_per_file"] = self.rtcfg.STEP_NO
         else: 
             dask_args["step_size"] = uproot._util.unset

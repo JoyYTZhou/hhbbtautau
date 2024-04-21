@@ -6,12 +6,12 @@ from functools import wraps
 
 def iterwgt(func):
     @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        for process, dsinfo in self.wgt_dict.items():
+    def wrapper(instance, *args, **kwargs):
+        for process, dsinfo in instance.wgt_dict.items():
             for ds in dsinfo.keys():
-                func(self, process, ds, *args, **kwargs)
+                func(instance, process, ds, *args, **kwargs)
     return wrapper
-
+    
 def get_compression(**kwargs):
     """Returns the compression algorithm to use for writing root files."""
     compression = kwargs.pop('compression', None)

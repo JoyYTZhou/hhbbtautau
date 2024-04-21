@@ -17,5 +17,6 @@ def getobj():
     dl.get_objs()
 
 if __name__ == '__main__':
-    postprocess()
+    # postprocess()
+    getobj
     
