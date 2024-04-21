@@ -47,6 +47,9 @@ class BaseEventSelections:
         return self._mapcfg
     
     def triggersel(self, events):
+        """Custom function to set the object selections on event levels based on config.
+        Mask should be N*bool 1-D array.
+        """
         pass
 
     def setevtsel(self, events):
@@ -187,9 +190,9 @@ class Object():
     def getzipped(self):
         return Object.set_zipped(self.events, self.mapcfg)
     
-    @staticmethod
-    def jetid_ol_check(lep):
-        jetidx = lep
+    def jetovcheck(self):
+        """Urgent!"""
+        aodname = self.mapcfg['jetidx']
 
     @staticmethod
     def sortmask(dfarr, **kwargs):
@@ -250,9 +253,6 @@ class Object():
             dakarr_dict.update({colname: ak.to_list(computed[field][:, index])})
         objdf = pd.DataFrame(dakarr_dict)
         return objdf
-
-    
-        
 
     def dRoverlap(self, altobject):
         pass
