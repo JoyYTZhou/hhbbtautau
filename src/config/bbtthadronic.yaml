@@ -34,6 +34,7 @@ default:
       eta: 2.4
       btag: 0.3196	
       count: 2
+      jetid: 3
     FatJet:
       mass: 40
       count: 1
@@ -45,6 +46,7 @@ default:
       mass: Tau_mass
       dxy: Tau_dxy
       dz: Tau_dz
+      jetidx: Tau_jetIdx
       charge: Tau_charge
       idvsjet: Tau_idDeepTau2018v2p5VSjet
       idvsmu: Tau_idDeepTau2017v2p1VSmu
@@ -77,7 +79,7 @@ default:
       mass: Jet_mass
       btag: Jet_btagDeepFlavB
       deepJetCvsB: Jet_btagDeepFlavCvB
-      jetID: Jet_jetId
+      jetid: Jet_jetId
     FatJet:
       pt: FatJet_pt
       eta: FatJet_eta

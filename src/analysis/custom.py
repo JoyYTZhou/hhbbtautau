@@ -55,7 +55,7 @@ class tauEvtSel(BaseEventSelections):
                     tau.absdzmask(opr.lt))
         
         tau_nummask = tau.numselmask(tau_mask, opr.ge)
-        self.objsel.add('>= 2 Taus', tau_nummask)
+        self.objsel.add('>= 1 Taus', tau_nummask)
         pass
  
 class prelimEvtSel(BaseEventSelections):
@@ -72,24 +72,22 @@ class prelimEvtSel(BaseEventSelections):
         tagger_mask = tau.custommask('idvsjet', opr.ge)
         tagger_nummask = tau.numselmask(opr.ge, (tagger_mask & tau_mask))
         self.objsel.add("2-tagged Tau Selection", tagger_nummask)
-
+        
         jet = Object(events, 'Jet')
         j_mask = (jet.ptmask(opr.ge) &
                   jet.absetamask(opr.le) &
-                  jet.custommask('btag', opr.ge))
+                  jet.custommask('btag', opr.ge) )
+
         j_nummask = jet.numselmask(opr.ge, j_mask)
         self.objsel.add("2 B-tagged Jets", j_nummask)
 
+        j_lepveto_mask = (jet.custommask('jetid', opr.eq))
+        j_vetonummask = jet.numselmask(opr.ge, j_lepveto_mask) 
+
+        self.objsel.add("Jet Idx TightLepVeto", j_vetonummask)
+
         # Beware: this should not be considered as candidate pair selections!
-        
-        tau_nummask = tau.evtosmask(tau_mask)
-
-  
-
-        self.objsel.add_multiple({"Tau Candidate Selection", tau_nummask, 
-                                  "Tau Tagger Selection", tagger_nummask,
-                                  "Jet Selection", j_nummask})
-
+        # tau_nummask = tau.evtosmask(tau_mask)
         return None
 
 class fineEvtSel(BaseEventSelections):
