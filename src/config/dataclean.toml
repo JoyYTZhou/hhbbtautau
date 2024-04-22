@@ -8,8 +8,8 @@ DATASETS = ['DYJets', 'WW', 'WWW', 'WZ', 'ZH', 'ZZ', 'ggF']
 TREENAME = 'Events'
 PLOT_VARS = ['Tau', 'Jet', 'FatJet', "GenPart"]
 EXTRA_VARS = ['Generator_weight', 'nLHEReweightingWeight', 'LHEReweightingWeight']
-RESOLUTION = 'process'
-SIGNAL = 'ggF'
+SIGNAL = ['ggF', 'ZH', 'ZZ']
+RESOLVE = false
 LUMI = 76.1 # fb^-1
 
 
