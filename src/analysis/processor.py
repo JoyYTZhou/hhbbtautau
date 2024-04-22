@@ -97,13 +97,11 @@ class Processor:
         if self.rtcfg.TRANSFER_PATH:
             condorpath = f'{self.rtcfg.TRANSFER_PATH}/{cutflow_name}'
             cpcondor(localpath, condorpath)
-            print("Cutflow transferred to condor!")
+            os.remove(cutflow_name)
 
         del cutflow_df, events
         if self.rtcfg.COPY_LOCAL: 
             delfiles(self.copydir)
-            print("Files deleted!")
-        
         return 0
 
     def writedask(self, passed, suffix, delayed=True, fields=None):
