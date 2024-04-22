@@ -20,6 +20,7 @@ PREFIX = "root://cmseos.fnal.gov"
 indir = cleancfg.INPUTDIR
 localout = cleancfg.LOCALOUTPUT
 lumi = cleancfg.LUMI
+resolve = cleancfg.get("RESOLVE", False)
 
 def iterprocess(func):
     @wraps(func)
@@ -78,8 +79,7 @@ class DataLoader():
         if cleancfg.get("CLEANCSV", False): delfiles(outpath, pattern='*.csv')
     
     @staticmethod
-    def merge_cf(signals=['ggF', 'ZH', 'ZZ']):
-        resolve = (cleancfg.get("RESOLUTION", 'process') == 'process')
+    def merge_cf(signals=['ggF', 'ZH', 'ZZ']) -> None:
         list_df = []
         wgt_dfdict= {}
         for process in cleancfg.DATASETS:
@@ -91,12 +91,13 @@ class DataLoader():
             list_df.append(cf)
             wgt_dfdict[process] = wgt_df
         total_df = pd.concat(list_df, axis=1)
-        step_wise = efficiency(localout, total_df, overall=False, append=False, save=True, save_name=f'stepwise') 
-        total_wise = efficiency(localout, total_df, overall=False, append=False, save=True, save_name=f'tot') 
+        efficiency(localout, total_df, overall=False, append=False, save=True, save_name=f'stepwise') 
+        efficiency(localout, total_df, overall=False, append=False, save=True, save_name=f'tot') 
         yield_df = pd.DataFrame(wgt_dfdict, index=total_df.index)
         DataLoader.process_yield(yield_df, signals)
         total_df.to_csv(pjoin(localout, 'allcf.csv'))
-        return total_df
+        yield_df.to_csv(pjoin(localout, 'yieldcf.csv'))
+        return None
     
     @staticmethod
     def process_yield(yield_df, signals) -> None:
