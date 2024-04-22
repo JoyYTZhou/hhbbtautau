@@ -15,5 +15,10 @@ export PYTHONPATH=$PWD/src:$PYTHONPATH
 export PATH=$(remove_duplicates "$PATH")
 export PYTHONPATH=$(remove_duplicates "$PYTHONPATH")
 
-export ENV_FOR_DYNACONF=LPCTEST
+echo "Enter Dynaconf environment name: "
+read env_name
+
+export ENV_FOR_DYNACONF=$env_name
+export DEBUG_MODE=false
+
 alias jup='jupyter notebook --no-browser --port=2001'

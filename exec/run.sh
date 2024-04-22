@@ -35,6 +35,7 @@ export PYTHONPATH=$(remove_duplicates "$PYTHONPATH")
 echo $PYTHONPATH
 
 export ENV_FOR_DYNACONF=LPCCONDOR
+export OUTPUT_BASE=$PWD
 export DEBUG_MODE=true
 
 echo "start executing main file"
