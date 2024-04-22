@@ -181,7 +181,7 @@ def weight_cf(wgt_dict, raw_cf, save=False, outname=None, lumi=50):
     if save and outname is not None: wgt_df.to_csv(outname)
     return wgt_df
 
-def efficiency(outdir, cfdf, overall=True, append=True, save=False, save_name='tot'):
+def efficiency(outdir, cfdf, overall=True,  save=False, save_name='tot'):
     """Add or return efficiency for the cutflow table.
     
     Parameters
@@ -198,22 +198,18 @@ def efficiency(outdir, cfdf, overall=True, append=True, save=False, save_name='t
         efficiency_df = overalleff(cfdf)
     efficiency_df *= 100
     efficiency_df.columns = [f'{col}_eff' for col in cfdf.columns]
-    if append:
-        for col in efficiency_df.columns:
-            cfdf[col] = efficiency_df[col]
-        return_df = cfdf
-    else:
-        return_df = efficiency_df
+    return_df = efficiency_df
     if save:
         finame = pjoin(outdir, f'{save_name}_eff.csv')
         return_df.to_csv(finame)
     return return_df
 
-def incrementaleff(cfdf):
-    """Return incremental efficiency for a table."""
-    eff_df = cfdf.div(cfdf.shift(1)).fillna(1)
+def incrementaleff(cfdf, column_name=None):
+    """Return incremental efficiency for a table/column"""
+    if column_name is not None: eff_df = cfdf.div(cfdf.shift(1)).fillna(1)
+    else: eff_df = cfdf[column_name].div(cfdf[column_name].shift(1)).fillna(1)
     eff_df.replace([np.inf, -np.inf], np.nan, inplace=True)
-    eff_df.fillna(1, inplace=True) 
+    eff_df.fillna(0, inplace=True) 
     return eff_df
 
 def overalleff(cfdf):

@@ -9,8 +9,8 @@ import pandas as pd
 from analysis.selutility import Object
 from config.selectionconfig import cleansetting as cleancfg
 from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, get_xrdfs_file_info, check_missing
-from utils.datautil import checkevents, find_branches
-from utils.cutflowutil import weight_cf, combine_cf, efficiency
+from utils.datautil import find_branches
+from utils.cutflowutil import combine_cf, efficiency, incrementaleff
 from functools import wraps
 pjoin = os.path.join
 runcom = subprocess.run
@@ -19,6 +19,7 @@ PREFIX = "root://cmseos.fnal.gov"
 
 indir = cleancfg.INPUTDIR
 localout = cleancfg.LOCALOUTPUT
+lumi = cleancfg.LUMI
 
 def iterprocess(func):
     @wraps(func)
@@ -75,12 +76,52 @@ class DataLoader():
         pd.concat(rawdflist, axis=1).to_csv(pjoin(outpath, f"{process}_cf.csv"))
         transferfiles(outpath, condorpath, endpattern='.csv')
         if cleancfg.get("CLEANCSV", False): delfiles(outpath, pattern='*.csv')
-
+    
+    @staticmethod
+    def merge_cf(signals=['ggF', 'ZH', 'ZZ']):
+        resolve = (cleancfg.get("RESOLUTION", 'process') == 'process')
+        list_df = []
+        wgt_dfdict= {}
+        for process in cleancfg.DATASETS:
+            condorpath = cleancfg.CONDORPATH if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
+            cf = pd.read_csv(glob_files(condorpath, startpattern=process, endpattern='cf.csv')[0], index_col=0) 
+            if not resolve:
+                DataLoader.add_cfcol_by_kwd(cf, 'raw', f"{process}_raw")
+                wgt_df = DataLoader.add_cfcol_by_kwd(cf, 'wgt', f"{process}_wgt")
+            list_df.append(cf)
+            wgt_dfdict[process] = wgt_df
+        total_df = pd.concat(list_df, axis=1)
+        step_wise = efficiency(localout, total_df, overall=False, append=False, save=True, save_name=f'stepwise') 
+        total_wise = efficiency(localout, total_df, overall=False, append=False, save=True, save_name=f'tot') 
+        yield_df = pd.DataFrame(wgt_dfdict, index=total_df.index)
+        DataLoader.process_yield(yield_df, signals)
+        total_df.to_csv(pjoin(localout, 'allcf.csv'))
+        return total_df
+    
+    @staticmethod
+    def process_yield(yield_df, signals) -> None:
+        cols_list = yield_df.columns.tolist()
+        sig_list = [signal for signal in signals if signal in yield_df.columns]
+        bkg_list = [bkg for bkg in cols_list if bkg not in sig_list]
+        signal_sum = yield_df[sig_list].sum(axis=1)
+        bkg_sum = yield_df[bkg_list].sum(axis=1)
+        yield_df = yield_df[bkg_list.extend(sig_list)]
+        indx = yield_df.columns.get_loc(sig_list[-1])
+        yield_df.insert(indx+1, 'Tot Sig', signal_sum)
+        sig_eff = incrementaleff(yield_df, "Tot Sig")
+        yield_df.insert(indx+2, 'Sig Eff', sig_eff)
+        indx = yield_df.columns.get_loc(bkg_list[-1])
+        yield_df.insert(indx+1, 'Tot Bkg', bkg_sum)
+        bkg_eff = incrementaleff(yield_df, 'Tot Bkg')
+        yield_df.insert(indx+2, 'Bkg eff', bkg_eff)
+        return None
+        
+        
     def get_wgt(self):
         """Compute weights needed for these datasets. Save if needed."""
         self.wgt_dict = DataLoader.haddWeights(cleancfg.DATAPATH)
             
-    def get_totraw(self, dirbase=None, resolution=0, appendname=''):
+    def get_totraw(self, resolution=0, appendname=''):
         """Load all cutflow tables for all datasets from output directory and combine them into one. 
         Get cutflows from CONDORPATH. Results saved to LOCALOUTPUT.
         
@@ -92,8 +133,8 @@ class DataLoader():
         """
         tot_raw_list = []
         for process in cleancfg.DATASETS:
-            path_to_glob = pjoin(f"{cleancfg.INPUTDIR}_hadded", process) if dirbase is None else pjoin(cleancfg.CONDORBASE, dirbase, process)
-            raw_path = glob_files(path_to_glob, startpattern=process, endpattern=f'rawcf.csv')[0]
+            path_to_glob =  cleancfg.CONDORPATH if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
+            raw_path = glob_files(path_to_glob, startpattern=process, endpattern='.csv')[0]
             if raw_path: 
                 raw_df = DataLoader.process_file(raw_path, process, resolution)
                 tot_raw_list.append(raw_df)
@@ -132,22 +173,6 @@ class DataLoader():
                 with uproot.recreate(destination) as output:
                     print(f"Writing limited data to file {destination}")
                     DataLoader.write_obj(output, files, cleancfg.PLOT_VARS, cleancfg.EXTRA_VARS)
-    
-    @staticmethod
-    def merge_cf():
-        lumi = cleancfg.LUMI
-        resolve = (cleancfg.get("RESOLUTION", 'process') == 'process')
-        list_df = []
-        for process in cleancfg.DATASETS:
-            condorpath = cleancfg.CONDORPATH if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
-            cf = pd.read_csv(glob_files(condorpath, startpattern=process, endpattern='cf.csv')[0], index_col=0) 
-            if not resolve:
-                DataLoader.add_cfcol_by_kwd(cf, 'raw', f"{process}_raw")
-                DataLoader.add_cfcol_by_kwd(cf, 'wgt', f"{process}_wgt")
-            list_df.append(cf)
-        total_df = pd.concat(list_df, axis=1)
-        total_df.to_csv(localout, 'allcf.csv')
-        return total_df
 
     @staticmethod
     def add_cfcol_by_kwd(cfdf, keyword, name):
@@ -155,6 +180,7 @@ class DataLoader():
         sumcol = same_cols.sum(axis=1)
         cfdf = cfdf.drop(columns=same_cols)
         cfdf[name] = sumcol
+        return sumcol
 
     @staticmethod
     def haddWeights(grepdir):
