@@ -23,6 +23,7 @@ lumi = cleancfg.LUMI
 resolve = cleancfg.get("RESOLVE", False)
 
 def iterprocess(func):
+    """Decorator function that iterates over all processes in the cleancfg.DATASETS."""
     @wraps(func)
     def wrapper(*args, **kwargs):
         for process in cleancfg.DATASETS:
@@ -35,7 +36,7 @@ def iterprocess(func):
 class DataLoader():
     """Class for loading and hadding data from skims/predefined selections produced directly by Processor."""
     def __init__(self) -> None:
-        self.get_wgt()
+        pass
     
     @iterprocess 
     @staticmethod
@@ -65,8 +66,13 @@ class DataLoader():
 
     @iterprocess
     @staticmethod
-    def hadd_cfs(process, meta):
-        """Hadd cutflow table output from processor, saved to LOCALOUTPUT. Transfer to prenamed condorpath if needed."""
+    def hadd_cfs(process, meta) -> None:
+        """Hadd cutflow table output from processor, saved to LOCALOUTPUT. 
+        Transfer to prenamed condorpath if needed.
+        
+        Parameters
+        - `process`: Process
+        - `meta`: metadata for the process"""
         rawdflist = []
         condorpath = cleancfg.CONDORPATH if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
         outpath = pjoin(localout, process)
@@ -77,9 +83,15 @@ class DataLoader():
         pd.concat(rawdflist, axis=1).to_csv(pjoin(outpath, f"{process}_cf.csv"))
         transferfiles(outpath, condorpath, endpattern='.csv')
         if cleancfg.get("CLEANCSV", False): delfiles(outpath, pattern='*.csv')
+        return None
     
     @staticmethod
     def merge_cf(signals=['ggF', 'ZH', 'ZZ']) -> None:
+        """Merge all cutflow tables for all processes into one. Save to LOCALOUTPUT.
+        Output formatted cutflow table as well.
+        
+        Parameters
+        - `signals`: list of signal process names"""
         list_df = []
         wgt_dfdict= {}
         for process in cleancfg.DATASETS:
@@ -101,6 +113,10 @@ class DataLoader():
     
     @staticmethod
     def process_yield(yield_df, signals) -> None:
+        """Process the yield dataframe to include signal and background efficiencies.
+        Parameters
+        - `yield_df`: dataframe of yields
+        - `signals`: list of signal process names"""
         cols_list = yield_df.columns.tolist()
         sig_list = [signal for signal in signals if signal in yield_df.columns]
         bkg_list = [bkg for bkg in cols_list if bkg not in sig_list]
@@ -116,12 +132,22 @@ class DataLoader():
         bkg_eff = incrementaleff(yield_df, 'Tot Bkg')
         yield_df.insert(indx+2, 'Bkg eff', bkg_eff)
         return None
-        
-        
-    def get_wgt(self):
-        """Compute weights needed for these datasets. Save if needed."""
-        self.wgt_dict = DataLoader.haddWeights(cleancfg.DATAPATH)
-            
+
+    @staticmethod
+    def add_cfcol_by_kwd(cfdf, keyword, name) -> pd.Series:
+        """Add a column to the cutflow table by summing up all columns with the keyword.
+        Parameters
+        - `cfdf`: cutflow dataframe
+        - `keyword`: keyword to search for in the column names
+        - `name`: name of the new column
+        Return
+        - Series of the summed column"""
+        same_cols = cfdf.filter(like=keyword)
+        sumcol = same_cols.sum(axis=1)
+        cfdf = cfdf.drop(columns=same_cols)
+        cfdf[name] = sumcol
+        return sumcol
+ 
     def get_totraw(self, resolution=0, appendname=''):
         """Load all cutflow tables for all datasets from output directory and combine them into one. 
         Get cutflows from CONDORPATH. Results saved to LOCALOUTPUT.
@@ -175,14 +201,7 @@ class DataLoader():
                     print(f"Writing limited data to file {destination}")
                     DataLoader.write_obj(output, files, cleancfg.PLOT_VARS, cleancfg.EXTRA_VARS)
 
-    @staticmethod
-    def add_cfcol_by_kwd(cfdf, keyword, name):
-        same_cols = cfdf.filter(like=keyword)
-        sumcol = same_cols.sum(axis=1)
-        cfdf = cfdf.drop(columns=same_cols)
-        cfdf[name] = sumcol
-        return sumcol
-
+    
     @staticmethod
     def haddWeights(grepdir):
         """Function for self use only, grep weights from a list of json files formatted in a specific way.
