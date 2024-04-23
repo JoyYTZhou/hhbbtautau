@@ -98,7 +98,7 @@ class DataLoader():
             meta = getmeta(process)
             for ds in meta.keys():
                 scale_wgt = meta[ds]['Per Event']
-                sel_cols = cf.filter(like=ds)
+                sel_cols = cf.filter(like=ds).filter(like='wgt')
                 cf[sel_cols.columns] = sel_cols*scale_wgt
             if not resolve:
                 DataLoader.add_cfcol_by_kwd(cf, 'raw', f"{process}_raw")
