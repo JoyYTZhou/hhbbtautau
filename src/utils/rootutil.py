@@ -117,20 +117,14 @@ class DataLoader():
         Parameters
         - `yield_df`: dataframe of yields
         - `signals`: list of signal process names"""
-        cols_list = yield_df.columns.tolist()
         sig_list = [signal for signal in signals if signal in yield_df.columns]
-        bkg_list = [bkg for bkg in cols_list if bkg not in sig_list]
-        signal_sum = yield_df[sig_list].sum(axis=1)
-        bkg_sum = yield_df[bkg_list].sum(axis=1)
-        yield_df = yield_df[bkg_list.extend(sig_list)]
-        indx = yield_df.columns.get_loc(sig_list[-1])
-        yield_df.insert(indx+1, 'Tot Sig', signal_sum)
-        sig_eff = incrementaleff(yield_df, "Tot Sig")
-        yield_df.insert(indx+2, 'Sig Eff', sig_eff)
-        indx = yield_df.columns.get_loc(bkg_list[-1])
-        yield_df.insert(indx+1, 'Tot Bkg', bkg_sum)
-        bkg_eff = incrementaleff(yield_df, 'Tot Bkg')
-        yield_df.insert(indx+2, 'Bkg eff', bkg_eff)
+        bkg_list = yield_df.columns.difference(sig_list)
+        yield_df['Tot Sig'] = yield_df[sig_list].sum(axis=1)
+        yield_df['Sig Eff'] = incrementaleff(yield_df, "Tot Sig")
+        yield_df['Tot Bkg'] = yield_df[bkg_list].sum(axis=1)
+        yield_df['Bkg Eff'] = incrementaleff(yield_df, 'Tot Bkg')
+        new_order = list(bkg_list) + ['Tot Bkg', 'Bkg Eff'] + list(sig_list) + ['Tot Sig', 'Sig Eff']
+        yield_df = yield_df[new_order]
         return None
 
     @staticmethod
