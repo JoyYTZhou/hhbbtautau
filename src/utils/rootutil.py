@@ -20,11 +20,14 @@ localout = cleancfg.LOCALOUTPUT
 lumi = cleancfg.LUMI
 resolve = cleancfg.get("RESOLVE", False)
 
+checkpath(indir, createdir=False, raiseError=True)
+
 def iterprocess(func):
     """Decorator function that iterates over all processes in the cleancfg.DATASETS."""
     @wraps(func)
     def wrapper(*args, **kwargs):
         for process in cleancfg.DATASETS:
+            print(f"Processing {process} files ..................................................")
             with open(pjoin(cleancfg.DATAPATH, f"{process}.json"), 'r') as jsonfile:
                 meta = json.load(jsonfile)
             func(process, meta, *args, **kwargs)
@@ -36,8 +39,8 @@ class DataLoader():
     def __init__(self) -> None:
         pass
     
-    @iterprocess 
     @staticmethod
+    @iterprocess 
     def hadd_roots(process, meta) -> None:
         """Hadd root files of datasets into appropriate size based on settings.
         
@@ -62,8 +65,8 @@ class DataLoader():
         transferfiles(outdir, condorpath, endpattern='.root')
         if cleancfg.get("CLEANROOT", True): delfiles(outdir, pattern='*.root')
 
-    @iterprocess
     @staticmethod
+    @iterprocess
     def hadd_cfs(process, meta) -> None:
         """Hadd cutflow table output from processor, saved to LOCALOUTPUT. 
         Transfer to prenamed condorpath if needed.
@@ -76,6 +79,8 @@ class DataLoader():
         outpath = pjoin(localout, process)
         checkpath(outpath)
         for ds in meta.keys():
+            print(pjoin(indir, process))
+            print(f"Dealing with {ds} now ...............................")
             df = combine_cf(inputdir=pjoin(indir, process), dsname=ds, output=False)
             dflist.append(df)
         pd.concat(dflist, axis=1).to_csv(pjoin(outpath, f"{process}_cf.csv"))
@@ -112,6 +117,8 @@ class DataLoader():
         yield_df = DataLoader.process_yield(yield_df, signals)
         total_df.to_csv(pjoin(localout, 'allcf.csv'))
         yield_df.to_csv(pjoin(localout, 'yieldcf.csv'))
+        yield_df = DataLoader.scale_yield(yield_df)
+        yield_df.to_csv(pjoin(localout, 'scaledyield.csv'))
         return None
     
     @staticmethod
@@ -131,6 +138,12 @@ class DataLoader():
         return yield_df
 
     @staticmethod
+    def scale_yield(yield_df):
+        selcols = yield_df.columns.difference(yield_df.filter(like='Eff').columns)
+        yield_df[selcols] = yield_df[selcols] * lumi * 1000
+        return yield_df 
+
+    @staticmethod
     def add_cfcol_by_kwd(cfdf, keyword, name) -> pd.Series:
         """Add a column to the cutflow table by summing up all columns with the keyword.
 
@@ -147,27 +160,6 @@ class DataLoader():
         cfdf[name] = sumcol
         return sumcol
  
-    def get_totraw(self, resolution=0, appendname=''):
-        """Load all cutflow tables for all datasets from output directory and combine them into one. 
-        Get cutflows from CONDORPATH. Results saved to LOCALOUTPUT.
-        
-        Parameters
-        - `resolution`: resolution of the cutflow table. 0 keep process level. 1 keep dataset level (specific channels etc.)
-
-        Returns
-        - Tuple of two dataframes (raw, weighted) of cutflows
-        """
-        tot_raw_list = []
-        for process in cleancfg.DATASETS:
-            path_to_glob =  cleancfg.CONDORPATH if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
-            raw_path = glob_files(path_to_glob, startpattern=process, endpattern='.csv')[0]
-            if raw_path: 
-                raw_df = DataLoader.process_file(raw_path, process, resolution)
-                tot_raw_list.append(raw_df)
-        total_df = pd.concat(tot_raw_list, axis=1)
-        total_df.to_csv(pjoin(localout, f'final_{appendname}rawdata.csv'))
-        return total_df
-    
     def get_totwgt(self, dirbase=None, resolution=0):
         """Calculate weighted cutflow tables for all datasets."""
         tot_wgt_list = []

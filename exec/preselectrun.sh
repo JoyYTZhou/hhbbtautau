@@ -36,9 +36,9 @@ echo $PYTHONPATH
 
 export ENV_FOR_DYNACONF=PRESELECT
 export DEBUG_MODE=true
+export OUTPUT_BASE=$PWD
 
 echo "start executing main file"
 checkproxy
 
 python3 src/main.py
-# python3 src/plot.py

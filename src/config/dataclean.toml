@@ -1,10 +1,11 @@
 [LPCTEST]
+SELNAME = 'prelim'
 DATAPATH = "@format {env[DATA_DIR]}/preprocessed"
-INPUTDIR = "@format {env[CONDOR_BASE]}/lepskim"
+INPUTDIR = "@format {env[CONDOR_BASE]}/{this.SELNAME}"
 LOCALOUTPUT = "/uscms/home/joyzhou/nobackup/hadded"
 # DATASETS = ['DYJets', 'SingleH', 'WW', 'WWW', 'WZ', 'ZH', 'ggF', 'ZZ']
-DATASETS = ['DYJets', 'WW', 'WWW', 'WZ', 'ZH', 'ZZ', 'ggF']
-# DATASETS = ["ggF"]
+# DATASETS = ['ZH', 'ZZ', 'ggF']
+DATASETS = ["ZZ"]
 TREENAME = 'Events'
 PLOT_VARS = ['Tau', 'Jet', 'FatJet', "GenPart"]
 EXTRA_VARS = ['Generator_weight', 'nLHEReweightingWeight', 'LHEReweightingWeight']
