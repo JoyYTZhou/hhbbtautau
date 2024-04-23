@@ -7,8 +7,7 @@ def postprocess():
     dl.hadd_roots(cleancfg=cleansetting, wgt_dict=dl.wgt_dict)
 
 def getcf():
-    dl = DataLoader()
-    dl.merge_cf()
+    DataLoader.merge_cf()
 
 def getobj():
     dl = DataLoader()

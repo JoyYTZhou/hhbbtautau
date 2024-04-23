@@ -8,12 +8,10 @@ import pandas as pd
 
 from analysis.selutility import Object
 from config.selectionconfig import cleansetting as cleancfg
-from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, get_xrdfs_file_info, check_missing
-from utils.datautil import find_branches
+from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, get_xrdfs_file_info
+from utils.datautil import find_branches, pjoin, getmeta
 from utils.cutflowutil import combine_cf, efficiency, incrementaleff
 from functools import wraps
-pjoin = os.path.join
-runcom = subprocess.run
 
 PREFIX = "root://cmseos.fnal.gov"
 
@@ -73,14 +71,14 @@ class DataLoader():
         Parameters
         - `process`: Process
         - `meta`: metadata for the process"""
-        rawdflist = []
+        dflist = []
         condorpath = cleancfg.CONDORPATH if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
         outpath = pjoin(localout, process)
         checkpath(outpath)
         for ds in meta.keys():
-            raw_df = combine_cf(inputdir=pjoin(indir, process), dsname=ds, output=False)
-            rawdflist.append(raw_df)
-        pd.concat(rawdflist, axis=1).to_csv(pjoin(outpath, f"{process}_cf.csv"))
+            df = combine_cf(inputdir=pjoin(indir, process), dsname=ds, output=False)
+            dflist.append(df)
+        pd.concat(dflist, axis=1).to_csv(pjoin(outpath, f"{process}_cf.csv"))
         transferfiles(outpath, condorpath, endpattern='.csv')
         if cleancfg.get("CLEANCSV", False): delfiles(outpath, pattern='*.csv')
         return None
@@ -96,7 +94,12 @@ class DataLoader():
         wgt_dfdict= {}
         for process in cleancfg.DATASETS:
             condorpath = cleancfg.CONDORPATH if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
-            cf = pd.read_csv(glob_files(condorpath, startpattern=process, endpattern='cf.csv')[0], index_col=0) 
+            cf = pd.read_csv(glob_files(condorpath, startpattern=process, endpattern='cf.csv')[0], index_col=0)
+            meta = getmeta(process)
+            for ds in meta.keys():
+                scale_wgt = meta[ds]['Per Event']
+                sel_cols = cf.filter(like=ds)
+                cf[sel_cols.columns] = sel_cols*scale_wgt
             if not resolve:
                 DataLoader.add_cfcol_by_kwd(cf, 'raw', f"{process}_raw")
                 wgt_df = DataLoader.add_cfcol_by_kwd(cf, 'wgt', f"{process}_wgt")
@@ -106,13 +109,13 @@ class DataLoader():
         efficiency(localout, total_df, overall=False, save=True, save_name=f'stepwise') 
         efficiency(localout, total_df, overall=False, save=True, save_name=f'tot') 
         yield_df = pd.DataFrame(wgt_dfdict, index=total_df.index)
-        DataLoader.process_yield(yield_df, signals)
+        yield_df = DataLoader.process_yield(yield_df, signals)
         total_df.to_csv(pjoin(localout, 'allcf.csv'))
         yield_df.to_csv(pjoin(localout, 'yieldcf.csv'))
         return None
     
     @staticmethod
-    def process_yield(yield_df, signals) -> None:
+    def process_yield(yield_df, signals) -> pd.DataFrame:
         """Process the yield dataframe to include signal and background efficiencies.
         Parameters
         - `yield_df`: dataframe of yields
@@ -125,15 +128,17 @@ class DataLoader():
         yield_df['Bkg Eff'] = incrementaleff(yield_df, 'Tot Bkg')
         new_order = list(bkg_list) + ['Tot Bkg', 'Bkg Eff'] + list(sig_list) + ['Tot Sig', 'Sig Eff']
         yield_df = yield_df[new_order]
-        return None
+        return yield_df
 
     @staticmethod
     def add_cfcol_by_kwd(cfdf, keyword, name) -> pd.Series:
         """Add a column to the cutflow table by summing up all columns with the keyword.
+
         Parameters
         - `cfdf`: cutflow dataframe
         - `keyword`: keyword to search for in the column names
         - `name`: name of the new column
+
         Return
         - Series of the summed column"""
         same_cols = cfdf.filter(like=keyword)

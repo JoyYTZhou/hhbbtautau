@@ -10,7 +10,7 @@ pjoin = os.path.join
 PREFIX = "root://cmseos.fnal.gov"
 DEBUG_ON = os.environ.get("DEBUG_MODE", default=False)
 
-def glob_files(dirname, startpattern='', endpattern='', **kwargs):
+def glob_files(dirname, startpattern='', endpattern='', **kwargs) -> list:
     """Returns a SORTED list of files matching a pattern in a directory. If both patterns are None, return all files.
     
     Parameters
@@ -104,7 +104,7 @@ def initLogger(name, suffix):
 
     return logger
 
-def delfilelist(filelist):
+def delfilelist(filelist) -> None:
     """Remove a list of file"""
     for file_path in filelist:
         file = Path(file_path)

@@ -1,8 +1,12 @@
 import pandas as pd
 import awkward as ak
-import uproot
-import pickle
+import uproot, pickle, json, os
 from functools import wraps
+
+pjoin = os.path.join
+
+parent_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+datadir = pjoin(parent_directory, 'data', 'preprocessed')
 
 def iterwgt(func):
     @wraps(func)
@@ -11,6 +15,11 @@ def iterwgt(func):
             for ds in dsinfo.keys():
                 func(instance, process, ds, *args, **kwargs)
     return wrapper
+
+def getmeta(process) -> dict:
+    with open(pjoin(datadir, f"{process}.json"), 'r') as jsonfile:
+        meta = json.load(jsonfile)
+    return meta
     
 def get_compression(**kwargs):
     """Returns the compression algorithm to use for writing root files."""
