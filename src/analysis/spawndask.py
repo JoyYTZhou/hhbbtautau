@@ -38,9 +38,6 @@ def job(fn, i, dataset, eventSelection=evtselclass):
         else:
             print(f"Execution finished for file index {i} in {dataset}!")
         return returncode
-    except ValueError as e:
-        print(f"ValueError encountered for file index {i} in {dataset}: {e}")
-        return 1
     except TypeError as e:
         print(f"TypeError encountered for file index {i} in {dataset}: {e}")
         return 1

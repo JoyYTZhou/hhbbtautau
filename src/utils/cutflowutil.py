@@ -95,11 +95,11 @@ class weightedSelection(PackedSelection):
         if not self.delayed_mode:
             nevonecut = [len(self._data)]
             nevcutflow = [len(self._data)]
-            nevonecut.extend(np.sum(masksonecut, axis=1))
-            nevcutflow.extend(np.sum(maskscutflow, axis=1))
+            nevonecut.extend(np.sum(masksonecut, axis=1, initial=-0))
+            nevcutflow.extend(np.sum(maskscutflow, axis=1, initial=0))
             if perevtwgt is not None:
                 wgtevcutflow = [len(perevtwgt)]
-                wgtevcutflow.extend(np.sum(maskwgt, axis=1))
+                wgtevcutflow.extend(np.sum(maskwgt, axis=1, initial=0))
             else:
                 wgtevcutflow = None
 

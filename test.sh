@@ -1,7 +1,7 @@
 source scripts/venv.sh
 
 export PYTHONPATH=$PWD/src:$PYTHONPATH
-export PROCESS_NAME=ggF
+export PROCESS_NAME=ZZ
 export DEBUG_MODE=true
 export ENV_FOR_DYNACONF=PRESELECT
 
