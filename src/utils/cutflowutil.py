@@ -188,7 +188,6 @@ def efficiency(outdir, cfdf, overall=True,  save=False, save_name='tot'):
     - `outdir`: name of the output directory
     - `cfdf`: cutflow dataframe
     - `overall`: whether to calculate overall efficiency
-    - `append`: whether to append efficiency columns to the input dataframe
     - `save`: whether to save the efficiency table
     - `save_name`: name of the saved efficiency table. If none is given, it will be named 'tot_eff.csv'
     """
@@ -206,7 +205,7 @@ def efficiency(outdir, cfdf, overall=True,  save=False, save_name='tot'):
 
 def incrementaleff(cfdf, column_name=None):
     """Return incremental efficiency for a table/column"""
-    if column_name is not None: eff_df = cfdf.div(cfdf.shift(1)).fillna(1)
+    if column_name is None: eff_df = cfdf.div(cfdf.shift(1)).fillna(1)
     else: eff_df = cfdf[column_name].div(cfdf[column_name].shift(1)).fillna(1)
     eff_df.replace([np.inf, -np.inf], np.nan, inplace=True)
     eff_df.fillna(0, inplace=True) 

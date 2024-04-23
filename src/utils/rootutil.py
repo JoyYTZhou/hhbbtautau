@@ -91,8 +91,8 @@ class DataLoader():
             list_df.append(cf)
             wgt_dfdict[process] = wgt_df
         total_df = pd.concat(list_df, axis=1)
-        efficiency(localout, total_df, overall=False, append=False, save=True, save_name=f'stepwise') 
-        efficiency(localout, total_df, overall=False, append=False, save=True, save_name=f'tot') 
+        efficiency(localout, total_df, overall=False, save=True, save_name=f'stepwise') 
+        efficiency(localout, total_df, overall=False, save=True, save_name=f'tot') 
         yield_df = pd.DataFrame(wgt_dfdict, index=total_df.index)
         DataLoader.process_yield(yield_df, signals)
         total_df.to_csv(pjoin(localout, 'allcf.csv'))

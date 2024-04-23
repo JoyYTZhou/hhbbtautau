@@ -95,9 +95,10 @@ class Processor:
         print("Cutflow written to local!")
 
         if self.rtcfg.TRANSFER_PATH:
-            condorpath = f'{self.rtcfg.TRANSFER_PATH}/{cutflow_name}'
-            cpcondor(localpath, condorpath)
-            os.remove(cutflow_name)
+            if os.path.exists(localpath):
+                condorpath = f'{self.rtcfg.TRANSFER_PATH}/{cutflow_name}'
+                cpcondor(localpath, condorpath)
+                os.remove(localpath)
 
         del cutflow_df, events
         if self.rtcfg.COPY_LOCAL: 
