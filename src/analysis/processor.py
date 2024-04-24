@@ -68,14 +68,16 @@ class Processor:
         - messages for debugging
         """
         events = self.loadfile(filename, suffix)
+        rc = 0
         if events is None: 
-            return 1
+            rc = 1
+            return rc
         events = self.evtsel(events)
         if write_npz:
             npzname = pjoin(self.outdir, f'cutflow_{suffix}.npz')
             self.evtsel.cfobj.to_npz(npzname)
         if write_method == 'dask':
-            self.writedask(events, suffix, delayed)
+            rc = self.writedask(events, suffix, delayed)
         elif write_method == 'dataframe':
             self.writeobj(events, suffix)
         elif write_method == 'pickle':
@@ -103,20 +105,26 @@ class Processor:
         del cutflow_df, events
         if self.rtcfg.COPY_LOCAL: 
             delfiles(self.copydir)
-        return 0
+        return rc
 
-    def writedask(self, passed, suffix, delayed=True, fields=None):
+    def writedask(self, passed, suffix, delayed=True, fields=None) -> int:
         """Wrapper around uproot.dask_write(),
         transfer all root files generated to a destination location."""
+        rc = 0
         if fields is None:
             if delayed: uproot.dask_write(passed, destination=self.outdir, tree_name="Events", compute=False, prefix=f'{self.dataset}_{suffix}')
             else: 
-                uproot.dask_write(passed, destination=self.outdir, tree_name="Events", compute=True, prefix=f'{self.dataset}_{suffix}')
+                try:
+                    uproot.dask_write(passed, destination=self.outdir, tree_name="Events", compute=True, prefix=f'{self.dataset}_{suffix}')
+                except ValueError as e:
+                    print(f"dask_write encountered error {e} for file index {suffix}.")
+                    rc = 1
         else:
-            pass
+            rc=1
 
         if self.rtcfg.TRANSFER_PATH:
             transferfiles(self.outdir, self.rtcfg.TRANSFER_PATH, remove=True)
+        return rc
         
     def writepickle(self, passed, suffix, delayed):
         finame = pjoin(self.outdir, f"{self.dataset}_{suffix}.pkl")
