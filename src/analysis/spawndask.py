@@ -32,12 +32,12 @@ def job(fn, i, dataset, eventSelection=evtselclass):
     proc = Processor(rs, dataset, eventSelection)
     print(f"Processing filename {fn}")
     try: 
-        returncode = proc.runfile(fn, i)
-        if returncode !=0: 
+        rc = proc.runfile(fn, i)
+        if rc !=0: 
             print(f"File failed for file index {i} in {dataset}.")
         else:
             print(f"Execution finished for file index {i} in {dataset}!")
-        return returncode
+        return rc
     except TypeError as e:
         print(f"TypeError encountered for file index {i} in {dataset}: {e}")
         return 1
