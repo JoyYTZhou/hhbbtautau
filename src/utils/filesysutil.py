@@ -47,6 +47,7 @@ def transferfiles(srcpath, destpath, startpattern='', endpattern='', remove=Fals
     - `destpath`: destination path (remote/local)
     - `startpattern`: pattern to match the start of the file name
     - `endpattern`: pattern to match the end of the file name
+    - `remove`: mv/cp
     """
     if isremote(destpath):
         if isremote(srcpath):

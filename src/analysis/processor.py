@@ -120,7 +120,7 @@ class Processor:
                     print(f"dask_write encountered error {e} for file index {suffix}.")
                     rc = 1
         else:
-            rc=1
+            rc = 1
 
         if self.rtcfg.TRANSFER_PATH:
             transferfiles(self.outdir, self.rtcfg.TRANSFER_PATH, remove=True)

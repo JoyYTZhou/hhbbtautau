@@ -159,22 +159,6 @@ class DataLoader():
         cfdf = cfdf.drop(columns=same_cols)
         cfdf[name] = sumcol
         return sumcol
- 
-    def get_totwgt(self, dirbase=None, resolution=0):
-        """Calculate weighted cutflow tables for all datasets."""
-        tot_wgt_list = []
-        luminosity = cleancfg.LUMI
-        for process in cleancfg.DATASETS:
-            path_to_glob = pjoin(localout, process) if dirbase is None else pjoin(cleancfg.CONDORBASE, dirbase, process)
-            wgt_path = glob_files(path_to_glob, startpattern=process, endpattern=f'{int(luminosity/1000)}_wgtcf.csv')[0]
-            if wgt_path: 
-                wgt_df = DataLoader.process_file(wgt_path, process, resolution)
-                tot_wgt_list.append(wgt_df)
-        total_df = pd.concat(tot_wgt_list, axis=1)
-        total_df.to_csv(pjoin(localout, f'final_{int(luminosity/1000)}_wgtdata.csv'))
-        efficiency_df = efficiency(localout, total_df, overall=False, append=False, save=True, save_name=f'stepwise')
-        efficiency_df = efficiency(localout, total_df, overall=True, append=False, save=True, save_name=f'tot')
-        return total_df
 
     def get_objs(self):
         """Writes the selected, concated objects to root files.
@@ -192,7 +176,6 @@ class DataLoader():
                     print(f"Writing limited data to file {destination}")
                     DataLoader.write_obj(output, files, cleancfg.PLOT_VARS, cleancfg.EXTRA_VARS)
 
-    
     @staticmethod
     def haddWeights(grepdir):
         """Function for self use only, grep weights from a list of json files formatted in a specific way.
@@ -213,8 +196,6 @@ class DataLoader():
                 wgt_dict[ds] = dsdict
         return wgt_dict
 
-
-    
     @staticmethod
     def write_obj(writable, filelist, objnames, extra=[]) -> None:
         """Writes the selected, concated objects to root files.
