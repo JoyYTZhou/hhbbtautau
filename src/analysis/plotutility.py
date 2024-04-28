@@ -1,15 +1,18 @@
 import mplhep as hep
 import matplotlib.pyplot as plt
-from utils.filesysutil import checkpath, glob_files
-from utils.rootutil import load_fields, DataLoader
 from functools import wraps
-from utils.datautil import arr_handler, iterwgt
-from analysis.selutility import Object
 import awkward as ak
-import os
 import numpy as np
 
-pjoin = os.path.join
+from utils.datautil import arr_handler, iterwgt, getmeta
+from analysis.selutility import Object
+from utils.filesysutil import checkpath, glob_files, pjoin
+from utils.rootutil import load_fields, DataLoader
+from config.selectionconfig import cleansetting as cleancfg
+
+localout = cleancfg.LOCALOUTPUT
+resolve = cleancfg.get("RESOLVE", False)
+lumi = cleancfg.LUMI
 
 def iterdata(func):
     """Wrapper that Returns a list of results from the function for each dataset."""
@@ -31,23 +34,21 @@ def iterdata(func):
     return wrapper
     
 class DataPlotter():
-    def __init__(self, cleancfg, plotsetting):
-        self.plotcfg = plotsetting
-        self._datadir = pjoin(cleancfg.LOCALOUTPUT, 'objlimited')
+    def __init__(self):
+        self._datadir = pjoin(localout, 'objlimited')
         self.wgt_dict = DataLoader.haddWeights(cleancfg.DATAPATH, from_raw=False)
         self.data_dict = {}
         self.getdata()
-        self.resolution = 1 if cleancfg.RESOLUTION == 'dataset' else 0
         self.labels = self.getlabels()
         self.wgt = self.getwgt()
-        self.outdir = pjoin(cleancfg.LOCALOUTPUT, 'plots')
+        self.outdir = pjoin(localout, 'plots')
         checkpath(self.outdir)
 
     @iterwgt
     def getdata(self, process, ds):
         """Returns the root files for the datasets."""
         result = glob_files(self._datadir, startpattern=ds, endpattern='.root')
-        if result:
+        if result: 
             rootfile = result[0]
             if not process in self.data_dict: 
                 self.data_dict[process] = {}
@@ -61,7 +62,7 @@ class DataPlotter():
     
     def getlabels(self):
         """Returns the labels for the datasets."""
-        if self.resolution:
+        if resolve:
             flattened_keys = [key for subdict in self.data_dict.values() for key in subdict.keys()]
             return flattened_keys
         else:
@@ -71,7 +72,7 @@ class DataPlotter():
     def getwgt(self, root_file, process, ds, per_evt_wgt='Generator_weight', lumi=5000, **kwargs):
         """Returns the weights for the datasets."""
         signalname = kwargs.get("signal", 'ggF')
-        if process == 'ggF': 
+        if process == signalname: 
             factor = kwargs.get('factor', 100)
         else:
             factor = 1
@@ -79,10 +80,6 @@ class DataPlotter():
         wgt_arr = load_fields(root_file, tree_name='extra')[per_evt_wgt] * flat_wgt
         return wgt_arr
             
-    def savewgt(self):
-        """Save weighted selected events number to a csv."""
-        pass
-    
     def plotobj(self, objname, attridict):
         """Plot the object attribute based on the attribute dictionary.
         
