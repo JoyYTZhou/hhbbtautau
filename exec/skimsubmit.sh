@@ -21,6 +21,7 @@ if [[ $? -eq 0 ]]; then
     read -n 1 -r
 fi
 echo "------------------------------------------------------------"
+
 PROCESS_DATA=$DATA_DIR/preprocessed
 XRD_DIRECTOR=root://cmsxrootd.fnal.gov
 for file in "${PROCESS_DATA}"/*.json; do
@@ -71,10 +72,12 @@ for file in "${PROCESS_DATA}"/*.json; do
 EOF
         echo "Creating new submission job script for ${file}"
         cp skim.sub runtime/skim_${file}.sub
+
         cat << EOF >> runtime/skim_${file}.sub
         request_cpus = ${cpusno}
         request_memory = ${memory}
         request_disk = 5GB
+        executable = $(MY_PATH)/exec/runtime/skim_${file}.sh
         queue
 EOF
     fi
