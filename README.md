@@ -1,5 +1,5 @@
 # Simple analysis repo
 
 ## Work Progress
-Dask implementation IP
+Fixing minor memory leak issue; Implementing flattened output
 
