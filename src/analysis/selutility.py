@@ -139,7 +139,7 @@ class Object():
         return self._mapcfg
 
     def get_zipped(self):
-        return set_zipped(self.events, namemap=self._mapcfg, delayed=True)
+        return set_zipped(self.events, namemap=self._mapcfg)
 
     def custommask(self, maskname, op, func=None):
         """Create custom mask based on input.
@@ -188,8 +188,8 @@ class Object():
         1 for events with 2 OS objects that pass selmask"""
         aodname = self.mapcfg['charge']
         aodarr = self.events[aodname][selmask]
-        sum_charge = abs(dak.sum(aodarr, axis=1))
-        mask = (sum_charge < dak.num(aodarr, axis=1))
+        sum_charge = abs(ak.sum(aodarr, axis=1))
+        mask = (sum_charge < ak.num(aodarr, axis=1))
         return mask
     
     def getzipped(self, sort=True, sort_by='pt', **kwargs):
