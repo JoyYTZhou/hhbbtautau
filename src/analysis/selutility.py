@@ -194,7 +194,7 @@ class Object():
     
     def getzipped(self, sort=True, sort_by='pt', **kwargs):
         """Get zipped object."""
-        zipped = Object.set_zipped(self.events, self.mapcfg)
+        zipped = set_zipped(self.events, self.mapcfg)
         if sort:
             zipped = zipped[Object.sortmask(zipped[sort_by], **kwargs)]
         return zipped 
@@ -209,6 +209,7 @@ class Object():
 
     @staticmethod
     def osmask(zipped):
+        ak.sum(zipped['charge'], axis=1)
         return
 
     @staticmethod
@@ -265,13 +266,15 @@ class Object():
     def maskredmask(mask, op, count) -> ak.Array:
         return op(dak.sum(mask, axis=1), count)
 
-def set_zipped(events, namemap, delayed=False, sort=False, sort_name='pt'):
+def set_zipped(events, namemap, sort=False, sort_name='pt'):
     """Given events, read only object-related observables and zip them into dict."""
     zipped_dict = {}
     for name, nanoaodname in namemap.items():
         zipped_dict.update({name: events[nanoaodname]})
-    if delayed: zipped_object = dak.zip(zipped_dict)
-    else: zipped_object = ak.zip(zipped_dict)
+    if isinstance(events, dak.lib.core.Array):
+        zipped_object = dak.zip(zipped_dict)
+    else:
+        zipped_object = ak.zip(zipped_dict)
     return zipped_object
 
 def dRoverlap(vec, veclist, threshold=0.4):
