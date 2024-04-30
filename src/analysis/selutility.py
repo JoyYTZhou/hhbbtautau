@@ -6,7 +6,6 @@ from utils.cutflowutil import weightedSelection
 from utils.datautil import arr_handler
 import vector as vec
 import pandas as pd
-import operator as opr
 from config.selectionconfig import selectionsettings as selcfg
 
 default_trigsel = selcfg.triggerselections
@@ -27,6 +26,7 @@ class BaseEventSelections:
         self._objselcfg = objcfg
         self._mapcfg = mapcfg
         self.objsel = weightedSelection()
+        self.colobj = None
         self.cutflow = None
         self.cfobj = None
     
@@ -53,13 +53,13 @@ class BaseEventSelections:
         pass
 
     def setevtsel(self, events):
-        """Custom function to set the object selections on event levels based on config.
+        """Custom function to set the object selections based on config.
         Mask should be N*bool 1-D array.
 
         :param events: events loaded from a .root file
         """
         pass
-                        
+
     def callevtsel(self, events, wgtname, compute_veto=False):
         """Apply all the selections in line on the events
         Parameters
@@ -71,6 +71,9 @@ class BaseEventSelections:
         if self.objsel.names:
             self.cfobj = self.objsel.cutflow(events[wgtname], *self.objsel.names)
             self.cutflow = self.cfobj.result()
+        else:
+            raise ValueError("Events selections not set, this is base selection!")
+        if self.colobj is None:
             passed = events[self.cutflow.maskscutflow[-1]]
             if compute_veto: 
                 vetoed = events[~(self.objsel.all())]
@@ -79,8 +82,7 @@ class BaseEventSelections:
                 result = passed
             return result
         else:
-            raise UserWarning("Events selections not set, this is base selection!")
-            return events
+            return self.colobj
 
     def cf_to_df(self):
         """Return a dataframe for a single EventSelections.cutflow object.
@@ -97,7 +99,7 @@ class BaseEventSelections:
         dfdata['raw'] = number
         df_cf = pd.DataFrame(dfdata, index=row_names)
         return df_cf
-
+    
 class Object():
     """Object class for handling object selections.
 
@@ -136,6 +138,9 @@ class Object():
     def mapcfg(self):
         return self._mapcfg
 
+    def get_zipped(self):
+        return set_zipped(self.events, namemap=self._mapcfg, delayed=True)
+
     def custommask(self, maskname, op, func=None):
         """Create custom mask based on input.
         
@@ -160,7 +165,7 @@ class Object():
             return op(aodarr, selval)
 
     def numselmask(self, mask, op):
-        return op(dak.sum(mask, axis=1), self.selcfg.count)
+        return Object.maskredmask(mask, op, self.selcfg.count)
 
     def ptmask(self, op):
         return self.custommask('pt', op)
@@ -187,12 +192,24 @@ class Object():
         mask = (sum_charge < dak.num(aodarr, axis=1))
         return mask
     
-    def getzipped(self):
-        return Object.set_zipped(self.events, self.mapcfg)
+    def getzipped(self, sort=True, sort_by='pt', **kwargs):
+        """Get zipped object."""
+        zipped = Object.set_zipped(self.events, self.mapcfg)
+        if sort:
+            zipped = zipped[Object.sortmask(zipped[sort_by], **kwargs)]
+        return zipped 
+
+    def dRmask(self, threshold=0.4, **kwargs) -> ak.Array:
+        vecs = Object.fourvector(self.events, self.name, **kwargs)
+        return dRoverlap(vecs[0], vecs, threshold)
     
     def jetovcheck(self):
         """Urgent!"""
         aodname = self.mapcfg['jetidx']
+
+    @staticmethod
+    def osmask(zipped):
+        return
 
     @staticmethod
     def sortmask(dfarr, **kwargs):
@@ -208,7 +225,7 @@ class Object():
                    highlevel=kwargs.get('highlevel', True)
                    )
         return sortmask
-
+    
     @staticmethod
     def fourvector(events, field, sort=True, sortname='pt'):
         """Returns a fourvector from the events.
@@ -234,16 +251,6 @@ class Object():
         return object_LV
 
     @staticmethod
-    def set_zipped(events, namemap, delayed=False):
-        """Given events, read only object-related observables and zip them into dict."""
-        zipped_dict = {}
-        for name, nanoaodname in namemap.items():
-            zipped_dict.update({name: events[nanoaodname]})
-        if delayed: zipped_object = dak.zip(zipped_dict)
-        else: zipped_object = ak.zip(zipped_dict)
-        return zipped_object
-
-    @staticmethod
     def object_to_df(dakzipped, sortname, prefix='', ascending=False, index=0):
         """Take a dask zipped object, unzip it, compute it, flatten it into a dataframe"""
         computed, = dask.compute(dakzipped[dak.argsort(dakzipped[sortname], ascending=ascending)])
@@ -254,8 +261,22 @@ class Object():
         objdf = pd.DataFrame(dakarr_dict)
         return objdf
 
-    def dRoverlap(self, altobject):
-        pass
+    @staticmethod
+    def maskredmask(mask, op, count) -> ak.Array:
+        return op(dak.sum(mask, axis=1), count)
+
+def set_zipped(events, namemap, delayed=False, sort=False, sort_name='pt'):
+    """Given events, read only object-related observables and zip them into dict."""
+    zipped_dict = {}
+    for name, nanoaodname in namemap.items():
+        zipped_dict.update({name: events[nanoaodname]})
+    if delayed: zipped_object = dak.zip(zipped_dict)
+    else: zipped_object = ak.zip(zipped_dict)
+    return zipped_object
+
+def dRoverlap(vec, veclist, threshold=0.4):
+    return vec.deltaR(veclist) >= threshold
+
 
 
 

@@ -48,7 +48,7 @@ default:
       dz: Tau_dz
       jetidx: Tau_jetIdx
       charge: Tau_charge
-      idvsjet: Tau_idDeepTau2018v2p5VSjet
+      idvsjet: Tau_idDeepTau2017v2p1VSjet
       idvsmu: Tau_idDeepTau2017v2p1VSmu
       idvse: Tau_idDeepTau2017v2p1VSe
     Electron:
