@@ -56,12 +56,14 @@ class AEvtSel(BaseEventSelections):
         tau_mask = (tau.ptmask(opr.ge) & \
                     tau.absetamask(opr.le) & \
                     tau.absdzmask(opr.lt))
-        tau_zipped = tau.get_zipped()[tau_mask]
-        leading_tau = tau_zipped[0]
 
-        tau_nummask = tau.numselmask(tau_mask, opr.ge)
+        tau_nummask = tau.evtosmask(tau_mask)
         events = events[tau_nummask]
         self.objsel.add('>= 2 Taus', tau_nummask)
+
+        tau_zipped = tau.get_zipped()[tau_mask]
+        leading_tau = tau_zipped[:, 0]
+        subleading_cand = tau_zipped[:, 1:]
 
         tau = Object(events, "Tau")
 
