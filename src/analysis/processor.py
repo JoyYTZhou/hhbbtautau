@@ -43,15 +43,18 @@ class Processor:
         if self.rtcfg.COPY_LOCAL:
             destpath = pjoin(self.copydir, f"{self.dataset}_{suffix}.root")
             cpfcondor(filename, destpath)
-            dask_args["files"] = {destpath: self.treename}
-            try:
+            filename = destpath
+        dask_args["files"] = {filename: self.treename}
+
+        try:
+            if self.rtcfg.get("DELAYED_OPEN", True):
+                print("Delayed!")
                 events = uproot.dask(**dask_args)
-            except OSError as e:
-                print(f"Failed again to load file after copying: {e}")
-                events = None
-        else:
-            dask_args["files"] = {filename: self.treename} 
-            events = uproot.dask(**dask_args) 
+            else:
+                events = uproot.open(dask_args['files']).arrays()
+        except OSError as e:
+            print(f"Failure to load file {filename}: {e}")
+            events = None
         return events
     
     def runfile(self, filename, suffix, write_method='dask', delayed=False, write_npz=False):
@@ -82,12 +85,8 @@ class Processor:
             self.writeobj(events, suffix)
         elif write_method == 'pickle':
             self.writepickle(events, suffix, delayed)
-            pass
-        elif write_method == None:
-            pass
-        else:
+        elif write_method is not None:
             raise ValueError("Write method not supported")
-        print("Output written to disk")
 
         cutflow_name = f'{self.dataset}_cutflow_{suffix}.csv'
         checkpath(self.outdir)
@@ -101,8 +100,7 @@ class Processor:
                 condorpath = f'{self.rtcfg.TRANSFER_PATH}/{cutflow_name}'
                 cpcondor(localpath, condorpath)
                 os.remove(localpath)
-
-        del cutflow_df, events
+                
         if self.rtcfg.COPY_LOCAL: 
             delfiles(self.copydir)
         return rc

@@ -57,6 +57,7 @@ class AEvtSel(BaseEventSelections):
                     tau.absetamask(opr.le) & \
                     tau.absdzmask(opr.lt))
         tau_zipped = tau.get_zipped()[tau_mask]
+        leading_tau = tau_zipped[0]
 
         tau_nummask = tau.numselmask(tau_mask, opr.ge)
         events = events[tau_nummask]
