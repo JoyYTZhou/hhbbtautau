@@ -20,6 +20,18 @@ class weightedCutflow(Cutflow):
         self._masksonecut = masksonecut
         self._maskscutflow = maskscutflow
         self._delayed_mode = delayed_mode
+    
+    def __add__(self, cutflow2):
+        if self._delayed_mode != cutflow2._delayed_mode:
+            raise TypeError("Concatenation of delayed and computed cutflows are not supported now!")
+        names = self._names + cutflow2._names
+        nevonecut = self._nevonecut + cutflow2._nevonecut
+        nevcutflow = self._nevcutflow + cutflow2._nevcutflow
+        wgtevcutflow = self._wgtevcutflow + cutflow2._wgtevcutflow
+        masksonecut = self._masksonecut + cutflow2._masksonecut
+        maskscutflow = self._maskscutflow + cutflow2._maskscutflow
+
+        return weightedCutflow(names, nevonecut, nevcutflow, wgtevcutflow, masksonecut, maskscutflow, self._delayed_mode)
 
     def result(self):
         """Returns the results of the cutflow as a namedtuple
@@ -113,7 +125,6 @@ class weightedSelection(PackedSelection):
                 wgtevcutflow.extend([dask_awkward.sum(perevtwgt[mask2]) for mask2 in maskscutflow])
             else:
                 wgtevcutflow = None
-
 
         return weightedCutflow(
             names, nevonecut, nevcutflow, wgtevcutflow, masksonecut, maskscutflow, self.delayed_mode

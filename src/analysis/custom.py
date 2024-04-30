@@ -8,6 +8,7 @@ import dask_awkward as dak
 def switch_selections(sel_name):
     selections = {
         'lepskim': skimEvtSel,
+        'regionA': AEvtSel,
         'tauskim': tauEvtSel,
         'prelim': prelimEvtSel
     }
@@ -46,16 +47,35 @@ class skimEvtSel(BaseEventSelections):
                                 "Muon Veto": muon_nummask})
         return None 
         
-class tauEvtSel(BaseEventSelections):
-    """Custom event selection class for the preliminary event selection."""
-    def setevtsel(self, events):
+class AEvtSel(BaseEventSelections):
+    def triggersel(self, events):
+        return super().triggersel(events)
+
+    def tausel(self, events):
         tau = Object(events, "Tau")
         tau_mask = (tau.ptmask(opr.ge) & \
                     tau.absetamask(opr.le) & \
                     tau.absdzmask(opr.lt))
-        
+        tau_zipped = tau.get_zipped()[tau_mask]
+
         tau_nummask = tau.numselmask(tau_mask, opr.ge)
+        events = events[tau_nummask]
         self.objsel.add('>= 2 Taus', tau_nummask)
+
+        tau = Object(events, "Tau")
+
+        dR_mask = Object.dRmask(threshold=0.5)
+        tau_nummask = Object.maskredmask(dR_mask, opr.ge, 1)
+        events = events[tau_nummask]
+        self.objsel.add('dR >= 0.5', tau_nummask)
+        
+    def selevtsel(self, events):
+        pass
+
+class tauEvtSel(BaseEventSelections):
+    """Custom event selection class for the preliminary event selection."""
+    def setevtsel(self, events):
+        
         pass
  
 class prelimEvtSel(BaseEventSelections):
