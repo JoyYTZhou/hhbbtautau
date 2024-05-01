@@ -100,7 +100,7 @@ class BaseEventSelections:
         df_cf = pd.DataFrame(dfdata, index=row_names)
         return df_cf
     
-class Object():
+class Object:
     """Object class for handling object selections.
 
     Attributes
@@ -178,9 +178,6 @@ class Object():
 
     def absdzmask(self, op):
         return self.custommask('dz', op, abs)
-
-    def bdtidmask(self, op):
-        return self.custommask("bdtid", op)
     
     def evtosmask(self, selmask):
         """Create mask on events with OS objects.
@@ -191,13 +188,6 @@ class Object():
         sum_charge = abs(ak.sum(aodarr, axis=1))
         mask = (sum_charge < ak.num(aodarr, axis=1))
         return mask
-    
-    def getzipped(self, sort=True, sort_by='pt', **kwargs):
-        """Get zipped object."""
-        zipped = set_zipped(self.events, self.mapcfg)
-        if sort:
-            zipped = zipped[Object.sortmask(zipped[sort_by], **kwargs)]
-        return zipped 
 
     def dRmask(self, threshold=0.4, **kwargs) -> ak.Array:
         vecs = Object.fourvector(self.events, self.name, **kwargs)
@@ -207,10 +197,15 @@ class Object():
         """Urgent!"""
         aodname = self.mapcfg['jetidx']
 
-    @staticmethod
-    def osmask(zipped):
-        ak.sum(zipped['charge'], axis=1)
-        return
+    def getfourvec(self, **kwargs):
+        return Object.fourvector(self.events, self.name, **kwargs)
+    
+    def getzipped(self, sort=True, sort_by='pt', **kwargs):
+        """Get zipped object."""
+        zipped = set_zipped(self.events, self.mapcfg)
+        if sort:
+            zipped = zipped[Object.sortmask(zipped[sort_by], **kwargs)]
+        return zipped 
 
     @staticmethod
     def sortmask(dfarr, **kwargs):
@@ -240,12 +235,9 @@ class Object():
         Return
         - a fourvector object.
         """
-        object_ak = ak.zip({
-            "pt": events[field+"_pt"],
-            "eta": events[field+"_eta"],
-            "phi": events[field+"_phi"],
-            "M": events[field+"_mass"]
-            })
+        vec_type = ['pt', 'eta', 'phi', 'mass']
+        to_be_zipped = {cop: events[field+"_"+cop] for cop in vec_type}
+        object_ak = ak.zip(to_be_zipped)
         if sort:
             object_ak = object_ak[ak.argsort(object_ak[sortname], ascending=False)]
             object_LV = vec.Array(object_ak)
