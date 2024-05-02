@@ -9,7 +9,6 @@ from config.selectionconfig import runsetting as rs
 
 def main():
     gc.enable()
-    gc.set_debug(gc.DEBUG_LEAK)
     from analysis.spawndask import submitjobs
 
     if dask_cfg.SPAWN_CLIENT:
