@@ -21,26 +21,26 @@ class skimEvtSel(BaseEventSelections):
             if value:
                 self.objsel.add(trigname, events[trigname])
             else:
-                continue
+                self.objsel.add(trigname, events[~trigname])
 
     def setevtsel(self, events):
-        muon = Object(events, "Muon")
-        electron = Object(events, "Electron")
-        e_mask = (electron.ptmask(opr.ge) & \
-                electron.custommask('cbtightid', opr.ge) & \
-                electron.absdxymask(opr.le) & \
-                electron.absetamask(opr.le) & \
-                electron.absdzmask(opr.le)
+        muon = Object("Muon")
+        electron = Object("Electron")
+        e_mask = (electron.ptmask(events, opr.ge) & \
+                electron.custommask(events, 'cbtightid', opr.ge) & \
+                electron.absdxymask(events, opr.le) & \
+                electron.absetamask(events, opr.le) & \
+                electron.absdzmask(events, opr.le)
                 )
 
         elec_nummask = electron.numselmask(e_mask, opr.eq)
 
-        m_mask = (muon.ptmask(opr.ge) & \
-                muon.absdxymask(opr.le) & \
-                muon.absetamask(opr.le) & \
-                muon.absdzmask(opr.le) & \
-                muon.custommask('looseid', opr.eq) & \
-                muon.custommask('isoid', opr.ge))
+        m_mask = (muon.ptmask(events, opr.ge) & \
+                muon.absdxymask(events, opr.le) & \
+                muon.absetamask(events, opr.le) & \
+                muon.absdzmask(events, opr.le) & \
+                muon.custommask(events, 'looseid', opr.eq) & \
+                muon.custommask(events, 'isoid', opr.ge))
         muon_nummask = muon.numselmask(m_mask, opr.eq)
 
         self.objsel.add_multiple({"Electron Veto": elec_nummask,
