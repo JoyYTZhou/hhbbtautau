@@ -223,6 +223,8 @@ class Object:
         
         Parameters
         - `dfarr`: the data arr to be sorted
+
+        kwargs: see ak.argsort
         """
         dfarr = arr_handler(dfarr)
         sortmask = ak.argsort(dfarr, 
