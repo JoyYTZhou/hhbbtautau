@@ -6,6 +6,7 @@ from utils.cutflowutil import weightedSelection
 from utils.datautil import arr_handler
 import vector as vec
 import pandas as pd
+import operator as opr
 from config.selectionconfig import selectionsettings as selcfg
 
 default_trigsel = selcfg.triggerselections
@@ -112,17 +113,19 @@ class Object:
     - `selection`: PackedSelection object to keep track of more detailed cutflow
     """
 
-    def __init__(self, events, name, **kwargs):
+    def __init__(self, name, **kwargs):
         """Construct an object from provided events with given selection configuration.
         
         Parameters
         - `name`: name of the object
-        - `selcfg`: Selection configuration for the object
+
+        kwargs: 
+        - `selcfg`: selection configuration for the object
+        - `mapcfg`: mapping configuration for the object
         """
         self._name = name
         self._selcfg = kwargs.get('selcfg', default_objsel[name])
         self._mapcfg = kwargs.get('mapcfg', default_mapcfg[name])
-        self.events = events
         self.cutflow = kwargs.get('cutflow', weightedSelection())
         self.fields = list(self.mapcfg.keys())
 
@@ -138,13 +141,14 @@ class Object:
     def mapcfg(self):
         return self._mapcfg
 
-    def get_zipped(self):
-        return set_zipped(self.events, namemap=self._mapcfg)
+    def get_zipped(self, events):
+        return set_zipped(events, namemap=self._mapcfg)
 
-    def custommask(self, maskname, op, func=None):
+    def custommask(self, events, maskname, op, func=None):
         """Create custom mask based on input.
         
         Parameters
+        - `events`: events to apply the mask on
         - `maskname`: name of the mask
         - `op`: operator to use for the mask
         - `func`: function to apply to the data. Defaults to None.
@@ -158,7 +162,7 @@ class Object:
             raise ValueError(f"Nanoaodname is not given for {maskname} of object {self.name}")
         aodname = self.mapcfg[maskname]
         selval = self.selcfg[maskname]
-        aodarr = self.events[aodname]
+        aodarr = events[aodname]
         if func is not None:
             return op(func(aodarr), selval)
         else:
@@ -167,42 +171,42 @@ class Object:
     def numselmask(self, mask, op):
         return Object.maskredmask(mask, op, self.selcfg.count)
 
-    def ptmask(self, op):
-        return self.custommask('pt', op)
+    def ptmask(self, events, op):
+        return self.custommask(events, 'pt', op)
 
-    def absetamask(self, op):
-        return self.custommask('eta', op, abs)
+    def absetamask(self, events, op):
+        return self.custommask(events, 'eta', op, abs)
 
-    def absdxymask(self, op):
-        return self.custommask('dxy', op, abs)
+    def absdxymask(self, events, op):
+        return self.custommask(events, 'dxy', op, abs)
 
-    def absdzmask(self, op):
-        return self.custommask('dz', op, abs)
+    def absdzmask(self, events, op):
+        return self.custommask(events, 'dz', op, abs)
     
-    def evtosmask(self, selmask):
+    def evtosmask(self, events, selmask):
         """Create mask on events with OS objects.
         !!! Note that this mask is applied per event, not per object.
         1 for events with 2 OS objects that pass selmask"""
         aodname = self.mapcfg['charge']
-        aodarr = self.events[aodname][selmask]
+        aodarr = events[aodname][selmask]
         sum_charge = abs(ak.sum(aodarr, axis=1))
         mask = (sum_charge < ak.num(aodarr, axis=1))
         return mask
 
-    def dRmask(self, threshold=0.4, **kwargs) -> ak.Array:
-        vecs = Object.fourvector(self.events, self.name, **kwargs)
+    def dRmask(self, events, threshold=0.4, **kwargs) -> ak.Array:
+        vecs = Object.fourvector(events, self.name, **kwargs)
         return dRoverlap(vecs[0], vecs, threshold)
     
     def jetovcheck(self):
         """Urgent!"""
         aodname = self.mapcfg['jetidx']
 
-    def getfourvec(self, **kwargs):
-        return Object.fourvector(self.events, self.name, **kwargs)
+    def getfourvec(self, events, **kwargs):
+        return Object.fourvector(events, self.name, **kwargs)
     
-    def getzipped(self, sort=True, sort_by='pt', **kwargs):
+    def getzipped(self, events, sort=True, sort_by='pt', **kwargs):
         """Get zipped object."""
-        zipped = set_zipped(self.events, self.mapcfg)
+        zipped = set_zipped(events, self.mapcfg)
         if sort:
             zipped = zipped[Object.sortmask(zipped[sort_by], **kwargs)]
         return zipped 
@@ -223,23 +227,24 @@ class Object:
         return sortmask
     
     @staticmethod
-    def fourvector(events, field, sort=True, sortname='pt'):
+    def fourvector(events, fieldname, sort=True, sortname='pt', ascending=False):
         """Returns a fourvector from the events.
     
         Parameters
         - `events`: the events to extract the fourvector from. 
-        - `field`: the name of the field in the events that contains the fourvector information.
+        - `fieldname`: the name of the field in the events that contains the fourvector information.
         - `sort`: whether to sort the fourvector
         - `sortname`: the name of the field to sort the fourvector by.
+        - `ascending`: whether to sort the fourvector in ascending order.
 
         Return
         - a fourvector object.
         """
         vec_type = ['pt', 'eta', 'phi', 'mass']
-        to_be_zipped = {cop: events[field+"_"+cop] for cop in vec_type}
+        to_be_zipped = {cop: events[fieldname+"_"+cop] for cop in vec_type}
         object_ak = ak.zip(to_be_zipped)
         if sort:
-            object_ak = object_ak[ak.argsort(object_ak[sortname], ascending=False)]
+            object_ak = object_ak[ak.argsort(object_ak[sortname], ascending=ascending)]
             object_LV = vec.Array(object_ak)
         return object_LV
 
@@ -256,10 +261,25 @@ class Object:
 
     @staticmethod
     def maskredmask(mask, op, count) -> ak.Array:
+        """Reduces the mask to event level selections. 
+        
+        Parameters
+        - `mask`: the mask to be reduced
+        - `op`: the operator to be used for the reduction
+        - `count`: the count to be used for the reduction
+        """
         return op(dak.sum(mask, axis=1), count)
 
-def set_zipped(events, namemap, sort=False, sort_name='pt'):
-    """Given events, read only object-related observables and zip them into dict."""
+def set_zipped(events, namemap, sort=True, sort_name='pt') -> ak.highlevel.Array:
+    """Given events, read only object-related observables and zip them into ak. 
+    Then zip the dict into an object.
+    
+    Parameters
+    - `events`: events to extract the object from
+    - `namemap`: mapping configuration for the object
+    - `sort`: whether to sort the object
+    - `sort_name`: the name of the field to sort the object by
+    """
     zipped_dict = {}
     for name, nanoaodname in namemap.items():
         zipped_dict.update({name: events[nanoaodname]})
@@ -269,8 +289,17 @@ def set_zipped(events, namemap, sort=False, sort_name='pt'):
         zipped_object = ak.zip(zipped_dict)
     return zipped_object
 
-def dRoverlap(vec, veclist, threshold=0.4):
-    return vec.deltaR(veclist) >= threshold
+def dRoverlap(vec, veclist, threshold=0.4, op=opr.ge) -> ak.Array:
+    """Return deltaR mask. Default comparison threshold is 0.4. Default comparison is >=. 
+    
+    Parameters
+    - `vec`: the vector to compare with
+    - `veclist`: the list of vectors to compare against vec
+    - `threshold`: the threshold for the comparison
+    
+    Return
+    - a mask of the veclist that satisfies the comparison condition."""
+    return op(vec.deltaR(veclist), threshold)
 
 
 
