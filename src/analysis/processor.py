@@ -21,6 +21,7 @@ class Processor:
         checkpath(self.outdir)
         self.evtsel = evtselclass(**kwargs) 
 
+
     @property
     def rtcfg(self):
         return self._rtcfg

@@ -21,7 +21,7 @@ class skimEvtSel(BaseEventSelections):
             if value:
                 self.objsel.add(trigname, events[trigname])
             else:
-                continue
+                self.objsel.add(trigname, events[~trigname])
 
     def setevtsel(self, events):
         muon = Object(events, "Muon")

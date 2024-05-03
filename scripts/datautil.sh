@@ -14,3 +14,12 @@ function check_size {
     size=$(echo "$output" | grep -oP 'Size:\s+\K\d+')
 }
 
+function eosbackup {
+    echo "Enter the directory name to backup"
+    read DIRNAME
+    echo "===================================="
+    echo "The following directory will be copied"
+    echo /store/user/joyzhou/$DIRNAME
+    export EOS_MGM_URL=root://cmseos.fnal.gov
+    eos cp -r /eos/uscms/store/user/joyzhou/$DIRNAME/ /eos/uscms/store/user/joyzhou/backup/$DIRNAME/ >> eosbackup.log & 
+}
