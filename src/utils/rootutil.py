@@ -55,7 +55,7 @@ class DataLoader():
             condorpath = cleancfg.CONDORPATH if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
             root_files = glob_files(ds_dir, ds, '.root', add_prefix=False)
             size = get_xrdfs_file_info(root_files[0])[0]
-            batch_size = int(10**8/size)
+            batch_size = int(10**9/size)
             print(f"Merging in batches of {batch_size} individual root files!")
             root_files = [PREFIX + "/" + f for f in root_files]
             for i in range(0, len(root_files), batch_size):

@@ -103,15 +103,14 @@ class BaseEventSelections:
         return df_cf
     
 class Object:
-    """Object class for handling object selections.
+    """Object class for handling object selections, meant as an observer of the events.
 
     Attributes
     - `name`: name of the object
+    - `events`: a weak proxy of the events 
     - `selcfg`: selection configuration for the object
     - `mapcfg`: mapping configuration for the object
-    - `dakzipped`: dask zipped object
     - `fields`: list of fields in the object
-    - `selection`: PackedSelection object to keep track of more detailed cutflow
     """
 
     def __init__(self, events, name, **kwargs):
@@ -136,7 +135,7 @@ class Object:
         return self._events
     @events.setter
     def events(self, value):
-        return weakref.proxy(value)
+        self._events = weakref.proxy(value)
 
     @property
     def name(self):
@@ -210,9 +209,14 @@ class Object:
     def getfourvec(self, **kwargs):
         return Object.fourvector(self.events, self.name, **kwargs)
     
-    def getzipped(self, sort=True, sort_by='pt', **kwargs):
-        """Get zipped object."""
+    def getzipped(self, mask=None, sort=True, sort_by='pt', **kwargs):
+        """Get zipped object.
+        
+        Parameters
+        - `mask`: mask must be same dimension as any object attributes."""
         zipped = Object.set_zipped(self.events, self.mapcfg)
+        if mask is not None:
+            zipped = zipped[mask]
         if sort:
             zipped = zipped[Object.sortmask(zipped[sort_by], **kwargs)]
         return zipped 
@@ -235,7 +239,7 @@ class Object:
         return sortmask
     
     @staticmethod
-    def fourvector(events, fieldname, sort=True, sortname='pt', ascending=False):
+    def fourvector(events, fieldname, mask=None, sort=True, sortname='pt', ascending=False):
         """Returns a fourvector from the events.
     
         Parameters
@@ -250,7 +254,7 @@ class Object:
         """
         vec_type = ['pt', 'eta', 'phi', 'mass']
         to_be_zipped = {cop: events[fieldname+"_"+cop] for cop in vec_type}
-        object_ak = ak.zip(to_be_zipped)
+        object_ak = ak.zip(to_be_zipped) if mask is None else ak.zip(to_be_zipped)[mask] 
         if sort:
             object_ak = object_ak[ak.argsort(object_ak[sortname], ascending=ascending)]
             object_LV = vec.Array(object_ak)
