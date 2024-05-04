@@ -53,21 +53,28 @@ class AEvtSel(BaseEventSelections):
 
     def tausel(self, events):
         tau = Object(events, "Tau")
-        tau_mask = (tau.ptmask(opr.ge) & \
-                    tau.absetamask(opr.le) & \
-                    tau.absdzmask(opr.lt) & \
-                    tau.custommask('idvsjet', opr.ge))
+        
+        def tauobjmask(tau):
+            tau_mask = (tau.ptmask(opr.ge) & \
+                        tau.absetamask(opr.le) & \
+                        tau.absdzmask(opr.lt) & \
+                        tau.custommask('idvsjet', opr.ge))
+            return tau_mask
+
+        tau_mask = tauobjmask(tau)
         tau_nummask = tau.evtosmask(tau_mask)
-        events = events[tau_nummask]
         self.objsel.add('>= 2 Taus', tau_nummask)
-        tau_zipped = tau.get_zipped()[tau_mask]
+
+        events = events[tau_nummask]
+        tau.events = events
+        tau_mask = tauobjmask(tau)
+        tau_zipped = tau.getzipped()[tau_mask]
 
         leading_tau = tau_zipped[:, 0]
         subleading_cand = tau_zipped[:, 1:]
 
-        tau = Object(events, "Tau")
 
-        dR_mask = Object.dRmask(threshold=0.5)
+        dR_mask = tau.dRmask(threshold=0.5)
         tau_nummask = Object.maskredmask(dR_mask, opr.ge, 1)
         events = events[tau_nummask]
         self.objsel.add('dR >= 0.5', tau_nummask)
