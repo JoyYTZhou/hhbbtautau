@@ -75,7 +75,7 @@ class BaseEventSelections:
             self.cutflow = self.cfobj.result()
         else:
             raise ValueError("Events selections not set, this is base selection!")
-        if self.colobj is None:
+        if not self.objcollect:
             passed = events[self.cutflow.maskscutflow[-1]]
             if compute_veto: 
                 vetoed = events[~(self.objsel.all())]
@@ -84,7 +84,7 @@ class BaseEventSelections:
                 result = passed
             return result
         else:
-            return self.colobj
+            return self.objcollect_to_df() 
 
     def cf_to_df(self):
         """Return a dataframe for a single EventSelections.cutflow object.
@@ -101,6 +101,10 @@ class BaseEventSelections:
         dfdata['raw'] = number
         df_cf = pd.DataFrame(dfdata, index=row_names)
         return df_cf
+
+    def objcollect_to_df(self) -> pd.DataFrame:
+        listofdf = [Object.object_to_df(zipped, prefix+'_') for zipped, prefix in self.objcollect.items()]
+        return pd.concat(listofdf, axis=1)
     
 class Object:
     """Object class for handling object selections, meant as an observer of the events.
@@ -266,7 +270,7 @@ class Object:
         else: to_be_zipped = {cop: events[cop] for cop in vec_type} 
         object_ak = ak.zip(to_be_zipped) if mask is None else ak.zip(to_be_zipped)[mask] 
         if sort:
-            object_ak = object_ak[ak.argsort(object_ak[sortname], ascending=ascending, axis=-1)]
+            object_ak = object_ak[ak.argsort(object_ak[sortname], ascending=ascending, axis=axis)]
         object_LV = vec.Array(object_ak)
         return object_LV
 
@@ -289,14 +293,10 @@ class Object:
         return zipped_object
 
     @staticmethod
-    def object_to_df(dakzipped, sortname, prefix='', ascending=False, index=0):
-        """Take a dask zipped object, unzip it, compute it, flatten it into a dataframe"""
-        computed, = dask.compute(dakzipped[dak.argsort(dakzipped[sortname], ascending=ascending)])
-        dakarr_dict = {}
-        for i, field in enumerate(dakzipped.fields):
-            colname = prefix + "_" + field if prefix != '' else field
-            dakarr_dict.update({colname: ak.to_list(computed[field][:, index])})
-        objdf = pd.DataFrame(dakarr_dict)
+    def object_to_df(zipped, prefix=''):
+        """Take a zipped object, compute it if needed, turn it into a dataframe"""
+        zipped = arr_handler(zipped, allow_delayed=False)
+        objdf = ak.to_dataframe(zipped).add_prefix(prefix)
         return objdf
 
     @staticmethod
