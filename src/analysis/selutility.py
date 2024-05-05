@@ -209,10 +209,6 @@ class Object:
         subleading_lvs = object_lv[:,1:]
         dR_mask = Object.dRoverlap(leading_lv, subleading_lvs, threshold)
         return dR_mask
-    
-    def jetovcheck(self):
-        """Urgent!"""
-        aodname = self.mapcfg['jetidx']
 
     def getfourvec(self, **kwargs):
         """Get four vector for the object from the currently observed events."""
@@ -229,6 +225,10 @@ class Object:
         if sort:
             zipped = zipped[Object.sortmask(zipped[sort_by], **kwargs)]
         return zipped 
+    
+    def getldsd(self, **kwargs) -> tuple:
+        objs = self.getzipped(**kwargs) 
+        return (objs[:,0], objs[:,1:])
 
     @staticmethod
     def sortmask(dfarr, **kwargs):
@@ -248,7 +248,7 @@ class Object:
         return sortmask
     
     @staticmethod
-    def fourvector(events: 'ak.highLevel.Array', fieldname=None, mask=None, sort=True, sortname='pt', ascending=False, axis=-1):
+    def fourvector(events: 'ak.Array', fieldname=None, mask=None, sort=True, sortname='pt', ascending=False, axis=-1):
         """Returns a fourvector from the events.
     
         Parameters
@@ -271,7 +271,7 @@ class Object:
         return object_LV
 
     @staticmethod
-    def set_zipped(events, namemap) -> ak.highlevel.Array:
+    def set_zipped(events, namemap) -> ak.Array:
         """Given events, read only object-related observables and zip them into ak. 
         Then zip the dict into an object.
         
@@ -311,7 +311,7 @@ class Object:
         return op(ak.sum(mask, axis=1), count)
 
     @staticmethod
-    def dRoverlap(vec, veclist, threshold=0.4, op=opr.ge) -> ak.Array:
+    def dRoverlap(vec, veclist, threshold=0.4, op=opr.ge) -> ak.highlevel.Array:
         """Return deltaR mask. Default comparison threshold is 0.4. Default comparison is >=. 
         
         Parameters
@@ -322,7 +322,3 @@ class Object:
         Return
         - a mask of the veclist that satisfies the comparison condition."""
         return op(vec.deltaR(veclist), threshold)
-
-class Candidate:
-    def __init__(self) -> None:
-        pass
