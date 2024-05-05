@@ -28,7 +28,7 @@ class BaseEventSelections:
         self._objselcfg = objcfg
         self._mapcfg = mapcfg
         self.objsel = weightedSelection()
-        self.objcollect = None
+        self.objcollect = {}
         self.cutflow = None
         self.cfobj = None
     
@@ -203,6 +203,7 @@ class Object:
         return mask
     
     def dRmask(self, threshold, **kwargs):
+        """Haphazard way to select jet/lepton pairs."""
         object_lv = self.getfourvec(**kwargs)
         leading_lv = object_lv[:,0]
         subleading_lvs = object_lv[:,1:]
@@ -214,6 +215,7 @@ class Object:
         aodname = self.mapcfg['jetidx']
 
     def getfourvec(self, **kwargs):
+        """Get four vector for the object from the currently observed events."""
         return Object.fourvector(self.events, self.name, **kwargs)
     
     def getzipped(self, mask=None, sort=True, sort_by='pt', **kwargs):
@@ -246,7 +248,7 @@ class Object:
         return sortmask
     
     @staticmethod
-    def fourvector(events, fieldname, mask=None, sort=True, sortname='pt', ascending=False, axis=-1):
+    def fourvector(events: 'ak.highLevel.Array', fieldname=None, mask=None, sort=True, sortname='pt', ascending=False, axis=-1):
         """Returns a fourvector from the events.
     
         Parameters
@@ -260,11 +262,12 @@ class Object:
         - a fourvector object.
         """
         vec_type = ['pt', 'eta', 'phi', 'mass']
-        to_be_zipped = {cop: events[fieldname+"_"+cop] for cop in vec_type}
+        if fieldname is not None: to_be_zipped = {cop: events[fieldname+"_"+cop] for cop in vec_type}
+        else: to_be_zipped = {cop: events[cop] for cop in vec_type} 
         object_ak = ak.zip(to_be_zipped) if mask is None else ak.zip(to_be_zipped)[mask] 
         if sort:
             object_ak = object_ak[ak.argsort(object_ak[sortname], ascending=ascending, axis=-1)]
-            object_LV = vec.Array(object_ak)
+        object_LV = vec.Array(object_ak)
         return object_LV
 
     @staticmethod
@@ -305,7 +308,7 @@ class Object:
         - `op`: the operator to be used for the reduction
         - `count`: the count to be used for the reduction
         """
-        return op(dak.sum(mask, axis=1), count)
+        return op(ak.sum(mask, axis=1), count)
 
     @staticmethod
     def dRoverlap(vec, veclist, threshold=0.4, op=opr.ge) -> ak.Array:
