@@ -51,7 +51,7 @@ class AEvtSel(BaseEventSelections):
     def triggersel(self, events):
         return super().triggersel(events)
 
-    def tausel(self, events):
+    def tausel(self, events) -> None:
         tau = Object(events, "Tau")
         
         def tauobjmask(tau):
@@ -70,9 +70,7 @@ class AEvtSel(BaseEventSelections):
         tau_mask = tauobjmask(tau)
         
         # select two OS taus candidates
-        sorted_taus = tau.getzipped(mask=tau_mask)
-        leading_tau = sorted_taus[:,0]
-        subleading_cand = sorted_taus[:,1:]
+        leading_tau, subleading_cand = tau.getldsd(mask=tau_mask)
         os_mask = (subleading_cand['charge'] != leading_tau['charge'])
         subleading_cand = subleading_cand[os_mask]
 
@@ -88,9 +86,27 @@ class AEvtSel(BaseEventSelections):
         self.objcollect['Leading_Tau'] = leading_tau
         self.objcollect['Subleading_Tau'] = subleading_cand
 
+        return None
+    
+    def jetsel(self, events) -> None:
+        jet = Object(events, 'Jet')
+        
+        def jobjmask(jet):
+            j_mask = (jet.ptmask(opr.ge) &
+                  jet.absetamask(opr.le) &
+                  jet.custommask('btag', opr.ge))
+            return j_mask
+        
+        jet_mask = jobjmask(jet)
+        jet_nummask = jet.numselmask(jet_mask, opr.ge)
+        events = events[jet_nummask]
+
+        # start selecting candidate jets
+
+        return None
         
     def selevtsel(self, events):
-        pass
+        self.tausel()
 
 class tauEvtSel(BaseEventSelections):
     """Custom event selection class for the preliminary event selection."""
@@ -101,23 +117,9 @@ class tauEvtSel(BaseEventSelections):
 class prelimEvtSel(BaseEventSelections):
     """Custom event selection class for the preliminary event selection."""
     def setevtsel(self, events):
-        tau = Object(events, "Tau")
-        tau_mask = (tau.ptmask(opr.ge) & \
-                    tau.absetamask(opr.le) & \
-                    tau.absdzmask(opr.lt) & \
-                    tau.custommask('idvsjet', opr.ge))
-        
-        tau_nummask = tau.numselmask(tau_mask, opr.ge)
-        self.objsel.add('>= 2 Taus', tau_nummask)
 
-        tagger_mask = tau.custommask('idvsjet', opr.ge)
-        tagger_nummask = tau.numselmask((tagger_mask & tau_mask), opr.ge)
-        self.objsel.add("2-tagged Tau Selection", tagger_nummask)
-        
         jet = Object(events, 'Jet')
-        j_mask = (jet.ptmask(opr.ge) &
-                  jet.absetamask(opr.le) &
-                  jet.custommask('btag', opr.ge) )
+        
 
         j_nummask = jet.numselmask(j_mask, opr.ge)
         self.objsel.add("2 B-tagged Jets", j_nummask)
