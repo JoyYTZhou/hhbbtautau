@@ -28,7 +28,7 @@ class BaseEventSelections:
         self._objselcfg = objcfg
         self._mapcfg = mapcfg
         self.objsel = weightedSelection()
-        self.colobj = None
+        self.objcollect = None
         self.cutflow = None
         self.cfobj = None
     
@@ -173,21 +173,25 @@ class Object:
         else:
             return op(aodarr, selval)
 
-    def numselmask(self, mask, op):
-        return Object.maskredmask(mask, op, self.selcfg.count)
-
     def ptmask(self, op):
+        """Object Level mask for pt."""
         return self.custommask('pt', op)
 
     def absetamask(self, op):
+        """Object Level mask for |eta|."""
         return self.custommask('eta', op, abs)
 
     def absdxymask(self, op):
+        """Object Level mask for |dxy|."""
         return self.custommask('dxy', op, abs)
 
     def absdzmask(self, op):
+        """Object Level mask for |dz|."""
         return self.custommask('dz', op, abs)
     
+    def numselmask(self, mask, op):
+        return Object.maskredmask(mask, op, self.selcfg.count)
+
     def evtosmask(self, selmask):
         """Create mask on events with OS objects.
         !!! Note that this mask is applied per event, not per object.
@@ -197,10 +201,13 @@ class Object:
         sum_charge = abs(ak.sum(aodarr, axis=1))
         mask = (sum_charge < ak.num(aodarr, axis=1))
         return mask
-
-    def dRmask(self, threshold=0.4, **kwargs) -> ak.Array:
-        vecs = Object.fourvector(self.events, self.name, **kwargs)
-        return dRoverlap(vecs[0], vecs, threshold)
+    
+    def dRmask(self, threshold, **kwargs):
+        object_lv = self.getfourvec(**kwargs)
+        leading_lv = object_lv[:,0]
+        subleading_lvs = object_lv[:,1:]
+        dR_mask = Object.dRoverlap(leading_lv, subleading_lvs, threshold)
+        return dR_mask
     
     def jetovcheck(self):
         """Urgent!"""
@@ -239,7 +246,7 @@ class Object:
         return sortmask
     
     @staticmethod
-    def fourvector(events, fieldname, mask=None, sort=True, sortname='pt', ascending=False):
+    def fourvector(events, fieldname, mask=None, sort=True, sortname='pt', ascending=False, axis=-1):
         """Returns a fourvector from the events.
     
         Parameters
@@ -256,9 +263,27 @@ class Object:
         to_be_zipped = {cop: events[fieldname+"_"+cop] for cop in vec_type}
         object_ak = ak.zip(to_be_zipped) if mask is None else ak.zip(to_be_zipped)[mask] 
         if sort:
-            object_ak = object_ak[ak.argsort(object_ak[sortname], ascending=ascending)]
+            object_ak = object_ak[ak.argsort(object_ak[sortname], ascending=ascending, axis=-1)]
             object_LV = vec.Array(object_ak)
         return object_LV
+
+    @staticmethod
+    def set_zipped(events, namemap) -> ak.highlevel.Array:
+        """Given events, read only object-related observables and zip them into ak. 
+        Then zip the dict into an object.
+        
+        Parameters
+        - `events`: events to extract the object from
+        - `namemap`: mapping configuration for the object
+        """
+        zipped_dict = {}
+        for name, nanoaodname in namemap.items():
+            zipped_dict.update({name: events[nanoaodname]})
+        if isinstance(events, dak.lib.core.Array):
+            zipped_object = dak.zip(zipped_dict)
+        else:
+            zipped_object = ak.zip(zipped_dict)
+        return zipped_object
 
     @staticmethod
     def object_to_df(dakzipped, sortname, prefix='', ascending=False, index=0):
@@ -283,42 +308,18 @@ class Object:
         return op(dak.sum(mask, axis=1), count)
 
     @staticmethod
-    def set_zipped(events, namemap) -> ak.highlevel.Array:
-        """Given events, read only object-related observables and zip them into ak. 
-        Then zip the dict into an object.
+    def dRoverlap(vec, veclist, threshold=0.4, op=opr.ge) -> ak.Array:
+        """Return deltaR mask. Default comparison threshold is 0.4. Default comparison is >=. 
         
         Parameters
-        - `events`: events to extract the object from
-        - `namemap`: mapping configuration for the object
-        """
-        zipped_dict = {}
-        for name, nanoaodname in namemap.items():
-            zipped_dict.update({name: events[nanoaodname]})
-        if isinstance(events, dak.lib.core.Array):
-            zipped_object = dak.zip(zipped_dict)
-        else:
-            zipped_object = ak.zip(zipped_dict)
-        return zipped_object
+        - `vec`: the vector to compare with
+        - `veclist`: the list of vectors to compare against vec
+        - `threshold`: the threshold for the comparison
+        
+        Return
+        - a mask of the veclist that satisfies the comparison condition."""
+        return op(vec.deltaR(veclist), threshold)
 
-def dRoverlap(vec, veclist, threshold=0.4, op=opr.ge) -> ak.Array:
-    """Return deltaR mask. Default comparison threshold is 0.4. Default comparison is >=. 
-    
-    Parameters
-    - `vec`: the vector to compare with
-    - `veclist`: the list of vectors to compare against vec
-    - `threshold`: the threshold for the comparison
-    
-    Return
-    - a mask of the veclist that satisfies the comparison condition."""
-    return op(vec.deltaR(veclist), threshold)
-
-
-
-
-
-
-
-
-
-
-
+class Candidate:
+    def __init__(self) -> None:
+        pass

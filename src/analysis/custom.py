@@ -63,21 +63,27 @@ class AEvtSel(BaseEventSelections):
 
         tau_mask = tauobjmask(tau)
         tau_nummask = tau.evtosmask(tau_mask)
-        self.objsel.add('>= 2 Taus', tau_nummask)
+        self.objsel.add('>= 2 OS Taus', tau_nummask)
 
         events = events[tau_nummask]
         tau.events = events
         tau_mask = tauobjmask(tau)
-        tau_zipped = tau.getzipped()[tau_mask]
+        
+        taus = tau.getzipped(mask=tau_mask)
+        leading_tau = taus[:,0]
+        subleading_cand = taus[:,1:]
+        os_mask = (subleading_cand['charge'] != leading_tau['charge'])
+        subleading_cand = subleading_cand[os_mask]
 
-        leading_tau = tau_zipped[:, 0]
-        subleading_cand = tau_zipped[:, 1:]
+        leading_lv = Object.fourvector(leading_tau, 'Tau', sort=False)
+        subleading_lvs = Object.fourvector(subleading_cand, 'Tau', sort=False)
+        dR_mask = Object.dRoverlap(leading_lv, subleading_lvs, threshold=0.5)
 
-
-        dR_mask = tau.dRmask(threshold=0.5)
         tau_nummask = Object.maskredmask(dR_mask, opr.ge, 1)
-        events = events[tau_nummask]
+        leading_tau = leading_tau[tau_nummask]
+        subleading_cand = subleading_cand[tau_nummask]
         self.objsel.add('dR >= 0.5', tau_nummask)
+
         
     def selevtsel(self, events):
         pass
