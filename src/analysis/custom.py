@@ -83,8 +83,8 @@ class AEvtSel(BaseEventSelections):
         leading_tau = leading_tau[tau_nummask]
         subleading_cand = subleading_cand[tau_nummask][:,0]
         self.objsel.add('dR >= 0.5', tau_nummask)
-        self.objcollect['Leading_Tau'] = leading_tau
-        self.objcollect['Subleading_Tau'] = subleading_cand
+        self.objcollect['LeadingTau'] = leading_tau
+        self.objcollect['SubleadingTau'] = subleading_cand
 
         return None
     

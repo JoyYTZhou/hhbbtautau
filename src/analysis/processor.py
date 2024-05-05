@@ -4,7 +4,9 @@ import uproot._util
 from utils.filesysutil import *
 import uproot
 import pickle
+import pandas as pd
 from .selutility import BaseEventSelections
+import dask_awkward as dak
 
 class Processor:
     """Process individual file or filesets given strings/dicts belonging to one dataset."""
@@ -57,7 +59,7 @@ class Processor:
             events = None
         return events
     
-    def runfile(self, filename, suffix, write_method='dask', delayed=False, write_npz=False):
+    def runfile(self, filename, suffix, delayed=False, write_npz=False):
         """Run test selections on a single file dict.
 
         Parameters:
@@ -76,18 +78,10 @@ class Processor:
             rc = 1
             return rc
         events = self.evtsel(events)
+
         if write_npz:
             npzname = pjoin(self.outdir, f'cutflow_{suffix}.npz')
             self.evtsel.cfobj.to_npz(npzname)
-        if write_method == 'dask':
-            rc = self.writedask(events, suffix, delayed)
-        elif write_method == 'dataframe':
-            self.writeobj(events, suffix)
-        elif write_method == 'pickle':
-            self.writepickle(events, suffix, delayed)
-        elif write_method is not None:
-            raise ValueError("Write method not supported")
-
         cutflow_name = f'{self.dataset}_cutflow_{suffix}.csv'
         checkpath(self.outdir)
         localpath = pjoin(self.outdir, cutflow_name)
@@ -100,9 +94,23 @@ class Processor:
                 condorpath = f'{self.rtcfg.TRANSFER_PATH}/{cutflow_name}'
                 cpcondor(localpath, condorpath)
                 os.remove(localpath)
+        
+        rc = self.writeevts(events, suffix, delayed)
                 
         if self.rtcfg.COPY_LOCAL: 
             delfiles(self.copydir)
+        return rc
+    
+    def writeevts(self, *args, **kwargs) -> int:
+        passed = args[0]
+        if isinstance(passed, dak.lib.core.Array):
+            rc = self.writedask(*args, **kwargs)
+        elif isinstance(passed, pd.DataFrame):
+            rc = self.writedf(*args, **kwargs)
+        else:
+            rc = self.writepickle(*args, **kwargs)
+        if self.rtcfg.TRANSFER_PATH:
+            transferfiles(self.outdir, self.rtcfg.TRANSFER_PATH, remove=True)
         return rc
 
     def writedask(self, passed, suffix, delayed=True, fields=None) -> int:
@@ -119,10 +127,12 @@ class Processor:
                     rc = 1
         else:
             rc = 1
-
-        if self.rtcfg.TRANSFER_PATH:
-            transferfiles(self.outdir, self.rtcfg.TRANSFER_PATH, remove=True)
         return rc
+    
+    def writedf(self, passed: 'pd.DataFrame', suffix) -> int:
+        outname = pjoin(self.outdir, f'{self.dataset}_{suffix}.csv')
+        passed.to_csv(outname)
+        return 0
         
     def writepickle(self, passed, suffix, delayed):
         finame = pjoin(self.outdir, f"{self.dataset}_{suffix}.pkl")
@@ -131,6 +141,3 @@ class Processor:
                 pickle.dump(passed, f)
             else:
                 pickle.dump(passed.compute(), f)
-        if self.rtcfg.TRANSFER_PATH:
-            cpcondor(finame, pjoin(self.rtcfg.TRANSFER_PATH, f"{self.dataset}_{suffix}.pkl"))
-        

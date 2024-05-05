@@ -2,6 +2,7 @@ import pandas as pd
 import awkward as ak
 import uproot, pickle, json, os
 from functools import wraps
+import dask_awkward as dak
 
 pjoin = os.path.join
 
@@ -68,7 +69,7 @@ def load_data(source, **kwargs):
         raise UserWarning(f"This might not be a valid source. The data type is {type(source)}")
     return data
 
-def arr_handler(dfarr):
+def arr_handler(dfarr, allow_delayed=True) -> ak.Array:
     """Handle different types of data arrays to convert them to awkward arrays."""
     if isinstance(dfarr, pd.core.series.Series):
         try: 
@@ -80,6 +81,11 @@ def arr_handler(dfarr):
         raise ValueError("specify a column. This is a dataframe.")
     elif isinstance(dfarr, ak.highlevel.Array):
         return dfarr
+    elif isinstance(dfarr, dak.lib.core.Array):
+        if allow_delayed:
+            return dfarr
+        else:
+            return dfarr.compute()
     else:
         raise TypeError(f"This is of type {type(dfarr)}")
 
