@@ -23,7 +23,7 @@ default:
     Tau:
       pt: 40
       eta: 2.3
-      idvsjet: 5
+      idvsjet: 2
       idvsmu: 1
       idvse: 2
       dz: 0.2

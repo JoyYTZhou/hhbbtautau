@@ -63,7 +63,7 @@ class AEvtSel(BaseEventSelections):
 
         tau_mask = tauobjmask(tau)
         tau_nummask = tau.evtosmask(tau_mask)
-        self.objsel.add('>= 2 OS Taus', tau_nummask)
+        self.objsel.add('>= 2 OS VVloose Taus', tau_nummask)
 
         events = events[tau_nummask]
         tau.events = events
@@ -82,7 +82,7 @@ class AEvtSel(BaseEventSelections):
         tau_nummask = Object.maskredmask(dR_mask, opr.ge, 1)
         leading_tau = leading_tau[tau_nummask]
         subleading_cand = subleading_cand[tau_nummask][:,0]
-        self.objsel.add('dR >= 0.5', tau_nummask)
+        self.objsel.add('Tau dR >= 0.5', tau_nummask)
         self.objcollect['LeadingTau'] = leading_tau
         self.objcollect['SubleadingTau'] = subleading_cand
 
