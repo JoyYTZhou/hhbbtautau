@@ -120,7 +120,7 @@ class weightedSelection(PackedSelection):
             masksonecut = None
             maskscutflow = None
 
-            if not self.delayed_models:
+            if not self.delayed_mode:
                 nevcutflow = [len(self._perevtwgt)]
                 wgtevcutflow = [len(self._perevtwgt)]
                 for i, cut in enumerate(names):
