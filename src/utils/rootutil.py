@@ -99,20 +99,13 @@ class DataLoader():
         wgt_dfdict= {}
         for process in cleancfg.DATASETS:
             condorpath = pjoin(cleancfg.CONDORPATH, process) if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
-            cf = pd.read_csv(glob_files(condorpath, startpattern=process, endpattern='cf.csv')[0], index_col=0)
-            meta = getmeta(process)
-            for ds in meta.keys():
-                scale_wgt = meta[ds]['Per Event']
-                sel_cols = cf.filter(like=ds).filter(like='wgt')
-                cf[sel_cols.columns] = sel_cols*scale_wgt
-            if not resolve:
-                DataLoader.add_cfcol_by_kwd(cf, 'raw', f"{process}_raw")
-                wgt_df = DataLoader.add_cfcol_by_kwd(cf, 'wgt', f"{process}_wgt")
+            cf, wgt_df = DataLoader.load_cf(process, condorpath)
             list_df.append(cf)
             wgt_dfdict[process] = wgt_df
         total_df = pd.concat(list_df, axis=1)
-        efficiency(localout, total_df, overall=False, save=True, save_name=f'stepwise') 
-        efficiency(localout, total_df, overall=False, save=True, save_name=f'tot') 
+        wgt_total_df = total_df.filter(like='wgt')
+        efficiency(localout, wgt_total_df, overall=False, save=True, save_name=f'stepwise') 
+        efficiency(localout, wgt_total_df, overall=False, save=True, save_name=f'tot') 
         yield_df = pd.DataFrame(wgt_dfdict, index=total_df.index)
         yield_df = DataLoader.process_yield(yield_df, signals)
         total_df.to_csv(pjoin(localout, 'allcf.csv'))
@@ -122,11 +115,15 @@ class DataLoader():
         return None
     
     @staticmethod
-    def load_cf(process, datasrcpath):
+    def load_cf(process, datasrcpath) -> tuple:
         """Load cutflow tables for a process.
         Parameters
-        -`process`: the outermost level of grouping of datasets
-        -`datasrcpath`: path to the directory containing cutflow tables."""
+        -`process`: the name of the cutflow that will be grepped from datasrcpath
+        -`datasrcpath`: path to the directory containing cutflow tables.
+        
+        Returns
+        - cutflow dataframe, weight dataframe
+        """
         cf = pd.read_csv(glob_files(datasrcpath, startpattern=process, endpattern='cf.csv')[0], index_col=0)
         meta = getmeta(process)
         for ds in meta.keys():
