@@ -122,6 +122,23 @@ class DataLoader():
         return None
     
     @staticmethod
+    def load_cf(process, datasrcpath):
+        """Load cutflow tables for a process.
+        Parameters
+        -`process`: the outermost level of grouping of datasets
+        -`datasrcpath`: path to the directory containing cutflow tables."""
+        cf = pd.read_csv(glob_files(datasrcpath, startpattern=process, endpattern='cf.csv')[0], index_col=0)
+        meta = getmeta(process)
+        for ds in meta.keys():
+            scale_wgt = meta[ds]['Per Event']
+            sel_cols = cf.filter(like=ds).filter(like='wgt')
+            cf[sel_cols.columns] = sel_cols*scale_wgt
+        if not resolve:
+            DataLoader.add_cfcol_by_kwd(cf, 'raw', f"{process}_raw")
+            wgt_df = DataLoader.add_cfcol_by_kwd(cf, 'wgt', f"{process}_wgt")
+        return cf, wgt_df
+    
+    @staticmethod
     def process_yield(yield_df, signals) -> pd.DataFrame:
         """Process the yield dataframe to include signal and background efficiencies.
         Parameters
