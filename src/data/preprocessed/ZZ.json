@@ -3,7 +3,7 @@
         "string": [
             "/ZZto4L_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer22EENanoAODv11-126X_mcRun3_2022_realistic_postEE_v1-v2/NANOAODSIM"
         ],
-        "xsection": 1.325,
+        "xsection": 1.39,
         "filelist": [
             "root://cmsxrootd.fnal.gov//store/mc/Run3Summer22EENanoAODv11/ZZto4L_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/126X_mcRun3_2022_realistic_postEE_v1-v2/80000/35975bed-5d4c-41ab-8ff2-9d935694d696.root",
             "root://cmsxrootd.fnal.gov//store/mc/Run3Summer22EENanoAODv11/ZZto4L_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/126X_mcRun3_2022_realistic_postEE_v1-v2/80000/be273cd8-c9f6-47d6-9240-924a597ef4d8.root",
@@ -436,7 +436,7 @@
         "failedlist": [],
         "Raw Events": 50207496,
         "Wgt Events": 69812228.61073995,
-        "Per Event": 1.8979482912484496e-08
+        "Per Event": 1.991055188554977e-08
     },
     "ZZto2L2Nu": {
         "string": [

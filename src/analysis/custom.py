@@ -8,9 +8,9 @@ import dask_awkward as dak
 def switch_selections(sel_name):
     selections = {
         'lepskim': skimEvtSel,
+        'prelim': prelimEvtSel,
         'regionA': AEvtSel,
-        'tauskim': tauEvtSel,
-        'prelim': prelimEvtSel
+        'tauskim': tauEvtSel
     }
     return selections.get(sel_name, BaseEventSelections)
 
@@ -46,7 +46,29 @@ class skimEvtSel(BaseEventSelections):
         self.objsel.add_multiple({"Electron Veto": elec_nummask,
                                 "Muon Veto": muon_nummask})
         return None 
+
+class prelimEvtSel(BaseEventSelections):
+    def tausel(self, events) -> None:
+        tau = Object(events, "Tau")
+        def tauobjmask(tau):
+            tau_mask = (tau.ptmask(opr.ge) & \
+                        tau.absetamask(opr.le) & \
+                        tau.absdzmask(opr.lt) & \
+                        tau.custommask('idvsjet', opr.ge))
+            return tau_mask
+
+        tau_mask = tauobjmask(tau)
+        tau_nummask = tau.numselmask(tau_mask, opr.ge)
+        self.objsel.add('>= 2 Medium Taus', tau_nummask)
+    
+    def jetsel(self, events) -> None:
+        pass
+
+    def selevtsel(self, events) -> None:
+        self.tausel(events)
+        self.jetsel(events)
         
+               
 class AEvtSel(BaseEventSelections):
     def triggersel(self, events):
         return super().triggersel(events)
@@ -113,25 +135,7 @@ class tauEvtSel(BaseEventSelections):
     def setevtsel(self, events):
         
         pass
- 
-class prelimEvtSel(BaseEventSelections):
-    """Custom event selection class for the preliminary event selection."""
-    def setevtsel(self, events):
 
-        jet = Object(events, 'Jet')
-        
-
-        j_nummask = jet.numselmask(j_mask, opr.ge)
-        self.objsel.add("2 B-tagged Jets", j_nummask)
-
-        #j_lepveto_mask = (jet.custommask('jetid', opr.eq))
-        #j_vetonummask = jet.numselmask(j_lepveto_mask, opr.ge) 
-
-        #self.objsel.add("Jet Idx TightLepVeto", j_vetonummask)
-
-        # Beware: this should not be considered as candidate pair selections!
-        # tau_nummask = tau.evtosmask(tau_mask)
-        return None
 
 class fineEvtSel(BaseEventSelections):
     """Custom event selection class for the fine event selection."""
