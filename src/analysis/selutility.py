@@ -27,7 +27,7 @@ class BaseEventSelections:
         self._trigcfg = trigcfg
         self._objselcfg = objcfg
         self._mapcfg = mapcfg
-        self.objsel = weightedSelection()
+        self.objsel = None
         self.objcollect = {}
         self.cutflow = None
         self.cfobj = None
@@ -68,10 +68,11 @@ class BaseEventSelections:
         
         :return: passed events, vetoed events
         """
+        self.objsel = weightedSelection(events[wgtname])
         self.triggersel(events)
         self.setevtsel(events)
         if self.objsel.names:
-            self.cfobj = self.objsel.cutflow(events[wgtname], *self.objsel.names)
+            self.cfobj = self.objsel.cutflow(*self.objsel.names)
             self.cutflow = self.cfobj.result()
         else:
             raise ValueError("Events selections not set, this is base selection!")
