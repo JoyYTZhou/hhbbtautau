@@ -67,6 +67,15 @@ class weightedCutflow(Cutflow):
         )
 
 class weightedSelection(PackedSelection):
+    def __if_sequential(self):
+        flag = False
+        dimension = len(self.any(self._names[0]))
+        for name in self._names:
+            if len(self.any(name)) != dimension: 
+                flag=True
+                break
+        return flag
+
     def cutflow(self, perevtwgt, *names):
         """Compute the cutflow for a set of selections
 
@@ -95,7 +104,19 @@ class weightedSelection(PackedSelection):
                     "All arguments must be strings that refer to the names of existing selections"
                 )
 
+        sequential = self.__if_sequential()
+        
         masksonecut, maskscutflow, maskwgtcutflow = [], [], []
+
+        if sequential:
+            nevonecut = None
+            for i, cut in enumerate(names):
+                mask1 = self.any(cut)
+                maskwgt = perevtwgt[mask2]
+                masksonecut.append(mask1)
+                maskscutflow.append(mask2)
+                maskwgtcutflow.append(maskwgt) 
+
         for i, cut in enumerate(names):
             mask1 = self.any(cut)
             mask2 = self.all(*(names[: i + 1]))
