@@ -44,6 +44,17 @@ function setup_LCG {
     fi
 }
 
+function LPC_setup {
+    export VO_CMS_SW_DIR=/cvmfs/cms.cern.ch
+    export EOS_MGM_URL=root://cmseos.fnal.gov
+    source $VO_CMS_SW_DIR/cmsset_default.sh
+
+    print_env_variable() { var="$1"; [ -z "${!var}" ] && echo "$var is not set" || echo "$var has been set to ${!var}"; }
+
+    export PREFIX=root://cmseos.fnal.gov
+    print_env_variable "PREFIX"
+}
+
 function LCG_sasetup {
     if [ -f /etc/os-release ]; then
         . /etc/os-release

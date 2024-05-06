@@ -5,6 +5,7 @@
 
 source scripts/envutil.sh
 setup_LCG
+LPC_setup
 setup_dirname_local
 ENV_NAME=newcoffea_el9
 
