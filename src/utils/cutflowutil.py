@@ -67,6 +67,14 @@ class weightedCutflow(Cutflow):
         )
 
 class weightedSelection(PackedSelection):
+    def __init__(self, perevtwgt, dtype="uint32"):
+        """An inherited class that represents a set of selections on a set of events with weights
+        Parameters
+        - ``perevtwgt`` : dask.array.Array that represents the weights of the events
+        """
+        super().__init__(dtype)
+        self._perevtwgt = perevtwgt
+
     def __if_sequential(self):
         flag = False
         dimension = len(self.any(self._names[0]))
@@ -76,7 +84,7 @@ class weightedSelection(PackedSelection):
                 break
         return flag
 
-    def cutflow(self, perevtwgt, *names):
+    def cutflow(self, *names):
         """Compute the cutflow for a set of selections
 
         Returns an object which can return a list of the number of events that pass all the previous selections including the current one
@@ -89,7 +97,6 @@ class weightedSelection(PackedSelection):
 
         Parameters
         ----------
-            ``perevtwgt`` : dask.array.Array that represents the weights of the events
             ``*names`` : args
                 The named selections to use, need to be a subset of the selections already added
 
@@ -110,17 +117,22 @@ class weightedSelection(PackedSelection):
 
         if sequential:
             nevonecut = None
-            for i, cut in enumerate(names):
-                mask1 = self.any(cut)
-                maskwgt = perevtwgt[mask2]
-                masksonecut.append(mask1)
-                maskscutflow.append(mask2)
-                maskwgtcutflow.append(maskwgt) 
+            masksonecut = None
+            maskscutflow = None
+
+            if not self.delayed_models:
+                nevcutflow = [len(self._perevtwgt)]
+                wgtevcutflow = [len(self._perevtwgt)]
+                for i, cut in enumerate(names):
+                    nevcutflow.append(np.sum(self.any(cut), initial=0))
+                    wgtevcutflow.append(np.sum(self._perevtwgt[self.any(cut)], initial=0))
+            else:
+                pass
 
         for i, cut in enumerate(names):
             mask1 = self.any(cut)
             mask2 = self.all(*(names[: i + 1]))
-            maskwgt = perevtwgt[mask2]
+            maskwgt = self._perevtwgt[mask2]
             masksonecut.append(mask1)
             maskscutflow.append(mask2)
             maskwgtcutflow.append(maskwgt)
@@ -130,8 +142,8 @@ class weightedSelection(PackedSelection):
             nevcutflow = [len(self._data)]
             nevonecut.extend(np.sum(masksonecut, axis=1, initial=-0))
             nevcutflow.extend(np.sum(maskscutflow, axis=1, initial=0))
-            if perevtwgt is not None:
-                wgtevcutflow = [len(perevtwgt)]
+            if self._perevtwgt is not None:
+                wgtevcutflow = [len(self._perevtwgt)]
                 wgtevcutflow.extend(np.sum(maskwgt, axis=1, initial=0))
             else:
                 wgtevcutflow = None
