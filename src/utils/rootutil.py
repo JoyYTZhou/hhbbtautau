@@ -98,7 +98,7 @@ class DataLoader():
         list_df = []
         wgt_dfdict= {}
         for process in cleancfg.DATASETS:
-            condorpath = cleancfg.CONDORPATH if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
+            condorpath = pjoin(cleancfg.CONDORPATH, process) if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
             cf = pd.read_csv(glob_files(condorpath, startpattern=process, endpattern='cf.csv')[0], index_col=0)
             meta = getmeta(process)
             for ds in meta.keys():
