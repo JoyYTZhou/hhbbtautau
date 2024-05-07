@@ -120,14 +120,11 @@ class weightedSelection(PackedSelection):
             masksonecut = None
             maskscutflow = None
 
-            if not self.delayed_mode:
-                nevcutflow = [len(self._perevtwgt)]
-                wgtevcutflow = [len(self._perevtwgt)]
-                for i, cut in enumerate(names):
-                    nevcutflow.append(np.sum(self.any(cut), initial=0))
-                    wgtevcutflow.append(np.sum(self._perevtwgt[self.any(cut)], initial=0))
-            else:
-                pass
+            nevcutflow = [len(self._perevtwgt)]
+            wgtevcutflow = [len(self._perevtwgt)]
+            for i, cut in enumerate(names):
+                nevcutflow.append(np.sum(self.any(cut), initial=0))
+                wgtevcutflow.append(np.sum(self._perevtwgt[self.any(cut)], initial=0))
 
         for i, cut in enumerate(names):
             mask1 = self.any(cut)
@@ -153,9 +150,9 @@ class weightedSelection(PackedSelection):
             nevcutflow = [dask_awkward.count(self._data, axis=0)]
             nevonecut.extend([dask_awkward.sum(mask1) for mask1 in masksonecut])
             nevcutflow.extend([dask_awkward.sum(mask2) for mask2 in maskscutflow])
-            if perevtwgt is not None:
-                wgtevcutflow = [dask_awkward.sum(perevtwgt)] 
-                wgtevcutflow.extend([dask_awkward.sum(perevtwgt[mask2]) for mask2 in maskscutflow])
+            if self.perevtwgt is not None:
+                wgtevcutflow = [dask_awkward.sum(self.perevtwgt)] 
+                wgtevcutflow.extend([dask_awkward.sum(self.perevtwgt[mask2]) for mask2 in maskscutflow])
             else:
                 wgtevcutflow = None
 
