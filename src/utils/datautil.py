@@ -53,6 +53,7 @@ def load_pkl(filename):
     return data
 
 def load_data(source, **kwargs):
+    """Load a data file and return the data."""
     if isinstance(source, str):
         if source.endswith('.csv'):
             data = pd.read_csv(source, **kwargs)
