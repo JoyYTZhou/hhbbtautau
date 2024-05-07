@@ -64,6 +64,7 @@ class DataLoader():
                 call_hadd(outname, batch_files)
         transferfiles(outdir, condorpath, endpattern='.root')
         if cleancfg.get("CLEANROOT", True): delfiles(outdir, pattern='*.root')
+        return None
 
     @staticmethod
     @iterprocess
@@ -142,7 +143,10 @@ class DataLoader():
         """Process the yield dataframe to include signal and background efficiencies.
         Parameters
         - `yield_df`: dataframe of yields
-        - `signals`: list of signal process names"""
+        - `signals`: list of signal process names
+        
+        Return
+        - processed yield dataframe"""
         sig_list = [signal for signal in signals if signal in yield_df.columns]
         bkg_list = yield_df.columns.difference(sig_list)
         yield_df['Tot Sig'] = yield_df[sig_list].sum(axis=1)
@@ -154,7 +158,11 @@ class DataLoader():
         return yield_df
 
     @staticmethod
-    def scale_yield(yield_df):
+    def scale_yield(yield_df) -> pd.DataFrame:
+        """Scale the yield to luminosity.
+        
+        Parameters
+        - `yield_df`: dataframe of yields"""
         selcols = yield_df.columns.difference(yield_df.filter(like='Eff').columns)
         yield_df[selcols] = yield_df[selcols] * lumi * 1000
         return yield_df 
@@ -176,7 +184,7 @@ class DataLoader():
         cfdf[name] = sumcol
         return sumcol
 
-    def get_objs(self):
+    def get_objs(self) -> None:
         """Writes the selected, concated objects to root files.
         Get from processes in cleancfg only, regardless of the entries in weight dictionary.
         Results saved to LOCALOUTPUT/objlimited
