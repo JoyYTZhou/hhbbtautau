@@ -133,7 +133,6 @@
             "root://cmsxrootd.fnal.gov//store/mc/Run3Summer22EENanoAODv12/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/NANOAODSIM/forPOG_130X_mcRun3_2022_realistic_postEE_v6-v2/30000/8b452ed2-f308-4cce-86e0-b05a460d1182.root",
             "root://cmsxrootd.fnal.gov//store/mc/Run3Summer22EENanoAODv12/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/NANOAODSIM/forPOG_130X_mcRun3_2022_realistic_postEE_v6-v2/30000/e2e83209-7efd-4371-acfc-51ce542de79a.root"
         ],
-        "failedlist": [],
         "Raw Events": 94947242,
         "Wgt Events": 94947242.0,
         "Per Event": 5.853777195550346e-05

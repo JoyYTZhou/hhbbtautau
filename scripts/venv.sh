@@ -16,6 +16,7 @@ export PYTHONPATH=$PWD/src:$PYTHONPATH
 export PATH=$(remove_duplicates "$PATH")
 export PYTHONPATH=$(remove_duplicates "$PYTHONPATH")
 
+echo "===================================="
 echo "Enter Dynaconf environment name: "
 read env_name
 

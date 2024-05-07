@@ -6,7 +6,7 @@ default:
     GenPart: null
     Electron: 
       cbtightid: 1
-      mvaisoid: 0.8
+      mvaisoid: True
       pt: 25
       eta: 2.1
       dxy: 0.045
@@ -59,7 +59,7 @@ default:
       dxy: Electron_dxy
       dz: Electron_dz
       cbtightid: Electron_cutBased
-      mvaisoid: Electron_mvaIso
+      mvaisoid: Electron_mvaIso_WP90
       charge: Electron_charge
     Muon:
       pt: Muon_pt

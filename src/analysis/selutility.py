@@ -132,7 +132,7 @@ class Object:
         self._events = weakref.proxy(events)
         self._selcfg = kwargs.get('selcfg', default_objsel[name])
         self._mapcfg = kwargs.get('mapcfg', default_mapcfg[name])
-        self.cutflow = kwargs.get('cutflow', weightedSelection())
+        self._cutflow = kwargs.get('cutflow', None)
         self.fields = list(self.mapcfg.keys())
     
     @property
@@ -141,6 +141,10 @@ class Object:
     @events.setter
     def events(self, value):
         self._events = weakref.proxy(value)
+    
+    @property
+    def cutflow(self):
+        return self._cutflow
 
     @property
     def name(self):
