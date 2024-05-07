@@ -28,7 +28,6 @@ class skimEvtSel(BaseEventSelections):
         muon = Object(events, "Muon")
         electron = Object(events, "Electron")
         e_mask = (electron.ptmask(opr.ge) & \
-                electron.custommask('cbtightid', opr.ge) & \
                 electron.absdxymask(opr.le) & \
                 electron.absetamask(opr.le) & \
                 electron.absdzmask(opr.le) & \

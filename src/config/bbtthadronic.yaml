@@ -5,7 +5,6 @@ default:
   objselections:
     GenPart: null
     Electron: 
-      cbtightid: 1
       mvaisoid: True
       pt: 25
       eta: 2.1
