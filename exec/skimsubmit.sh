@@ -30,9 +30,9 @@ for file in "${PROCESS_DATA}"/*.json; do
     continue_flag=false
     for key in $keys; do
         echo "Dataset name: $key"
-        filelist=($(jq -r '."${key}".filelist[]' "$file"))
-        random_index=$((RANDOM % ${#filelist[@]}))
-        random_file=${filelist[$random_index]}
+        pfilelist=($(jq -r '."${key}".filelist' "$file"))
+        random_index=$((RANDOM % ${#pfilelist[@]}))
+        random_file=${pfilelist[$random_index]}
         random_file=${random_file#"${XRD_DIRECTOR}/"}
         echo "Querying file with index {$random_index}..."
         output=$(xrdfs $XRD_DIRECTOR stat $random_file)

@@ -127,3 +127,9 @@ function checkvom {
     echo "No VOMS proxy found."
     fi
 }
+
+function cplocal {
+    DIRNAME=$1
+    echo "Copying from condor to local ........................"
+    xrdcp -r root://cmseos.fnal.gov/${CONDOR_BASE}/${DIRNAME} ${OUTPUT_BASE}
+}

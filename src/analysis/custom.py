@@ -7,7 +7,7 @@ import dask_awkward as dak
 
 def switch_selections(sel_name):
     selections = {
-        'lepskim': skimEvtSel,
+        'vetoskim': skimEvtSel,
         'trialskim': trialEvtSel,
         'prelim': prelimEvtSel,
         'regionA': AEvtSel,
@@ -31,9 +31,9 @@ class skimEvtSel(BaseEventSelections):
                 electron.custommask('cbtightid', opr.ge) & \
                 electron.absdxymask(opr.le) & \
                 electron.absetamask(opr.le) & \
-                electron.absdzmask(opr.le)
+                electron.absdzmask(opr.le) & \
+                electron.custommask('mvaisoid', opr.eq)
                 )
-
         elec_nummask = electron.numselmask(e_mask, opr.eq)
 
         m_mask = (muon.ptmask(opr.ge) & \

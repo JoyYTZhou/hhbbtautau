@@ -25,7 +25,7 @@ STEP_NO = 1
 
 [LPCCONDOR]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
-SEL_NAME = 'trialskim'
+SEL_NAME = 'vetoskim'
 INPUTFILE_PATH = "@format data/preprocessed/{this.PROCESS_NAME}.json"
 OUTPUTDIR_PATH = "@format outputs/{this.PROCESS_NAME}"
 TRANSFER_PATH = "@format {env[CONDOR_BASE]}/{this.SEL_NAME}/{this.PROCESS_NAME}"
@@ -34,11 +34,10 @@ STEP_SIZE = '150MB'
 
 [LPCTEST]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
-SEL_NAME = 'lepskim'
+SEL_NAME = 'vetoskim'
 INPUTFILE_PATH = "@format data/preprocessed/{this.PROCESS_NAME}.json"
 OUTPUTDIR_PATH = "/uscms/home/joyzhou/nobackup/tests"
-CONDORPATH = "/store/user/joyzhou/lepskim"
-TRANSFER_PATH = "@format {env[CONDOR_BASE]}/lepskim/{this.PROCESS_NAME}"
+TRANSFER_PATH = "@format {env[CONDOR_BASE]}/tests/{this.SEL_NAME}/{this.PROCESS_NAME}"
 COPY_LOCAL = true
 COPY_DIR = "/uscms/home/joyzhou/nobackup/temp"
 STEP_NO = 3
