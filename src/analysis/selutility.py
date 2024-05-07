@@ -199,7 +199,12 @@ class Object:
         return self.custommask('dz', op, abs)
     
     def numselmask(self, mask, op):
+        """Returns event-level boolean mask."""
         return Object.maskredmask(mask, op, self.selcfg.count)
+    
+    def vetomask(self, mask):
+        """Returns the veto mask for events."""
+        return Object.maskredmask(mask, opr.eq, 0)
 
     def evtosmask(self, selmask):
         """Create mask on events with OS objects.
@@ -219,7 +224,7 @@ class Object:
         dR_mask = Object.dRoverlap(leading_lv, subleading_lvs, threshold)
         return dR_mask
 
-    def getfourvec(self, **kwargs):
+    def getfourvec(self, **kwargs) -> vec.Array:
         """Get four vector for the object from the currently observed events."""
         return Object.fourvector(self.events, self.name, **kwargs)
     
@@ -236,11 +241,12 @@ class Object:
         return zipped 
     
     def getldsd(self, **kwargs) -> tuple:
+        """Returns the leading object and the rest of the objects (aka subleading candidates)"""
         objs = self.getzipped(**kwargs) 
         return (objs[:,0], objs[:,1:])
 
     @staticmethod
-    def sortmask(dfarr, **kwargs):
+    def sortmask(dfarr, **kwargs) -> ak.Array:
         """Wrapper around awkward argsort function.
         
         Parameters
@@ -257,7 +263,7 @@ class Object:
         return sortmask
     
     @staticmethod
-    def fourvector(events: 'ak.Array', fieldname=None, mask=None, sort=True, sortname='pt', ascending=False, axis=-1):
+    def fourvector(events: 'ak.Array', fieldname=None, mask=None, sort=True, sortname='pt', ascending=False, axis=-1) -> vec.Array:
         """Returns a fourvector from the events.
     
         Parameters
@@ -298,7 +304,7 @@ class Object:
         return zipped_object
 
     @staticmethod
-    def object_to_df(zipped, prefix=''):
+    def object_to_df(zipped, prefix='') -> pd.DataFrame:
         """Take a zipped object, compute it if needed, turn it into a dataframe"""
         zipped = arr_handler(zipped, allow_delayed=False)
         objdf = ak.to_dataframe(zipped).add_prefix(prefix)
@@ -306,7 +312,8 @@ class Object:
 
     @staticmethod
     def maskredmask(mask, op, count) -> ak.Array:
-        """Reduces the mask to event level selections. 
+        """Reduces the mask to event level selections.
+        Count is the number of objects per event that should return true in the mask. 
         
         Parameters
         - `mask`: the mask to be reduced
