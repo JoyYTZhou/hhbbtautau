@@ -6,11 +6,9 @@ import os
 
 from .custom import switch_selections
 from .processor import Processor
-from utils.filesysutil import glob_files, initLogger, check_missing, checkpath
+from utils.filesysutil import glob_files, initLogger, check_missing, checkpath, pjoin
 from config.selectionconfig import runsetting as rs
 from config.selectionconfig import dasksetting as daskcfg
-
-pjoin = os.path.join
 
 # logger = initLogger(__name__.split('.')[-1], rs.PROCESS_NAME)
 evtselclass = switch_selections(rs.SEL_NAME)
