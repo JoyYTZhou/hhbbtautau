@@ -8,7 +8,6 @@ import dask_awkward as dak
 def switch_selections(sel_name):
     selections = {
         'vetoskim': skimEvtSel,
-        'trialskim': trialEvtSel,
         'prelim': prelimEvtSel,
         'regionA': AEvtSel,
         'tauskim': tauEvtSel
@@ -33,7 +32,7 @@ class skimEvtSel(BaseEventSelections):
                 electron.absdzmask(opr.le) & \
                 electron.custommask('mvaisoid', opr.eq)
                 )
-        elec_nummask = electron.numselmask(e_mask, opr.eq)
+        elec_nummask = electron.vetomask(e_mask)
 
         m_mask = (muon.ptmask(opr.ge) & \
                 muon.absdxymask(opr.le) & \
@@ -41,35 +40,11 @@ class skimEvtSel(BaseEventSelections):
                 muon.absdzmask(opr.le) & \
                 muon.custommask('looseid', opr.eq) & \
                 muon.custommask('isoid', opr.ge))
-        muon_nummask = muon.numselmask(m_mask, opr.eq)
+        muon_nummask = muon.vetomask(m_mask)
 
         self.objsel.add_multiple({"Electron Veto": elec_nummask,
                                 "Muon Veto": muon_nummask})
         return None 
-
-class trialEvtSel(skimEvtSel):
-    def setevtsel(self, events) -> None:
-        muon = Object(events, "Muon")
-        electron = Object(events, "Electron")
-        e_mask = (electron.ptmask(opr.ge) & \
-                electron.custommask('cbtightid', opr.ge) & \
-                electron.absdxymask(opr.le) & \
-                electron.absetamask(opr.le) & \
-                electron.absdzmask(opr.le)
-                )
-
-        elec_nummask = electron.numselmask(e_mask, opr.eq)
-
-        m_mask = (muon.ptmask(opr.ge) & \
-                muon.absdxymask(opr.le) & \
-                muon.absetamask(opr.le) & \
-                muon.absdzmask(opr.le) & \
-                muon.custommask('looseid', opr.eq))
-        muon_nummask = muon.numselmask(m_mask, opr.eq)
-
-        self.objsel.add_multiple({"Electron Veto": elec_nummask,
-                                "Muon Veto": muon_nummask})
-        return None
 
 class prelimEvtSel(BaseEventSelections):
     def tausel(self, events) -> None:
