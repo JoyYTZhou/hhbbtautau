@@ -23,10 +23,10 @@ def programchoice():
     if not any(vars(args).values()):
         parser.print_help
         parser.exit
-        
+
     return args
 
 if __name__ == '__main__':
     # postprocess()
     getcf()
-    
+
