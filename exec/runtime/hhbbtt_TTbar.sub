@@ -8,9 +8,9 @@ universe = vanilla
 executable = $(MY_PATH)/exec/run.sh
 +SingularityImage = "/cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el9:x86_64"
 
-log = joblog/$(OUTNAME)_$(arg1).log
-output = joblog/$(OUTNAME)_$(arg1)_($arg2).out
-error = joblog/$(OUTNAME)_$(arg1).err
+log = joblog/$(OUTNAME)_TTbar.log
+output = joblog/$(OUTNAME)_TTbar.out
+error = joblog/$(OUTNAME)_TTbar.err
 stream_error = True
 stream_output = True
 
@@ -22,4 +22,4 @@ request_memory = 24GB
 request_disk = 5GB
 
 arguments = TTbar $(arg2)
-queue arg2 from seq 0 2 |
+queue arg2 from (0)
