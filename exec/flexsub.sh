@@ -28,5 +28,8 @@ request_cpus = ${cpusno}
 request_memory = ${memory}
 request_disk = 5GB
 arguments = ${PROCESS_NAME} $(arg2)
+log = joblog/$(OUTNAME)_$(PROCESS_NAME)_$(arg2).log
+output = joblog/$(OUTNAME)_$(PROCESS_NAME)_$(arg2).out
+error = joblog/$(OUTNAME)_$(PROCESS_NAME)_$(arg2).err
 queue arg2 from seq 0 ${LEN} |
 EOF
