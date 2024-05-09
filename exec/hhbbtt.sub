@@ -6,7 +6,6 @@ OUTNAME = formalrun
 # Job description
 universe = vanilla
 executable = $(MY_PATH)/exec/run.sh
-arguments = $(arg1) $(arg2)
 +SingularityImage = "/cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el9:x86_64"
 
 log = joblog/$(OUTNAME)_$(arg1).log
