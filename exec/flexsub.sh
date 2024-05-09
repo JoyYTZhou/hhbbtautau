@@ -27,6 +27,6 @@ cat << EOF >> runtime/hhbbtt_$PROCESS_NAME.sub
 request_cpus = ${cpusno}
 request_memory = ${memory}
 request_disk = 5GB
-queue arg1 from $PROCESS_NAME
+arguments = ${PROCESS_NAME} $(arg2)
 queue arg2 from seq 0 ${LEN} |
 EOF
