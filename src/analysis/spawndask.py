@@ -40,12 +40,17 @@ def job(fn, i, dataset, eventSelection=evtselclass):
         print(f"TypeError encountered for file index {i} in {dataset}: {e}")
         return 1
     
-def loadmeta():
-    """Load metadata from input file"""
+def loadmeta(dsindx=None) -> dict:
+    """Load metadata from input file
+
+    Parameters
+    - `dsindx`: Index of datasets to process in json file. If None, process all datasets."""
     if rs.INPUTFILE_PATH.endswith('.json'):
         inputdatap = pjoin(parent_directory, rs.INPUTFILE_PATH)
         with open(inputdatap, 'r') as samplepath:
             metadata = json.load(samplepath)
+        if dsindx is not None:
+            metadata = {k: metadata[k] for k in list(metadata.keys())[dsindx]}
         loaded = checkresumes(metadata)
     elif rs.INPUTFILE_PATH.startswith('/store/user/'):
         loaded = realmeta[rs.PROCESS_NAME]
@@ -83,9 +88,14 @@ def submitfutures(client, ds, filelist, indx):
         futures.extend([client.submit(job, filelist[i], i, ds) for i in indx])
     return futures
 
-def submitloops(ds, filelist, indx):
+def submitloops(ds, filelist, indx) -> None:
     """Put file processing in loops, i.e. one file by one file.
-    Usually used for large file size."""
+    Usually used for large file size.
+    
+    Parameters
+    - `ds`: dataset name
+    - `filelist`: List of files to process
+    - `indx`: List of indexes to process"""
     print(f"Processing {ds}...")
     failed = 0
     if indx is None:
@@ -99,12 +109,12 @@ def submitloops(ds, filelist, indx):
             job(filelist[i], i, ds)
     return None
 
-def submitjobs(client):
+def submitjobs(client, dsindx=None) -> int:
     """Run jobs based on client settings.
     If a valid client is found and future mode is true, submit simultaneously run jobs.
-    If not, fall back into a loop mode. Note that even in this mode, any dask computations will be managed by client.
+    If not, fall back into a loop mode. Note that even in this mode, any dask computations will be managed by client explicitly or implicitly.
     """
-    loaded = loadmeta()
+    loaded = loadmeta(dsindx)
     if client is None or (not daskcfg.SPAWN_FUTURE): 
         print("Submit jobs in loops!")
         for ds, dsitems in loaded.items():
