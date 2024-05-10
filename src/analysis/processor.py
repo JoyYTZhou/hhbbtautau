@@ -105,6 +105,7 @@ class Processor:
         return rc
     
     def writeevts(self, *args, **kwargs) -> int:
+        """Write the events to a file."""
         passed = args[0]
         if isinstance(passed, dak.lib.core.Array):
             rc = self.writedask(*args, **kwargs)
@@ -133,6 +134,11 @@ class Processor:
         return rc
     
     def writedf(self, passed: 'pd.DataFrame', suffix) -> int:
+        """Writes a pandas DataFrame to a csv file.
+        
+        Parameters:
+        - `passed`: DataFrame to write
+        - `suffix`: index to append to filename"""
         outname = pjoin(self.outdir, f'{self.dataset}_{suffix}.csv')
         passed.to_csv(outname)
         return 0
