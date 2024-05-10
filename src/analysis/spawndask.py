@@ -1,12 +1,11 @@
 from dask.distributed import Client, LocalCluster
 from dask.distributed import as_completed
 import json as json
-import traceback
-import os
+import traceback, os, random
 
 from .custom import switch_selections
 from .processor import Processor
-from utils.filesysutil import glob_files, initLogger, check_missing, checkpath, pjoin
+from utils.filesysutil import glob_files, get_xrdfs_file_info, initLogger, check_missing, checkpath, pjoin
 from config.selectionconfig import runsetting as rs
 from config.selectionconfig import dasksetting as daskcfg
 
@@ -19,7 +18,7 @@ datapath = pjoin(parent_directory, 'data', 'data.json')
 with open(datapath, 'r') as data:
     realmeta = json.load(data)
 
-def job(fn, i, dataset, eventSelection=evtselclass):
+def job(fn, i, dataset, eventSelection=evtselclass) -> int:
     """Run the processor for a single file.
     Parameters
     - `fn`: The name of the file to process
@@ -61,7 +60,7 @@ def loadmeta(dsindx=None) -> dict:
         raise TypeError("Check INPUTFILE_PATH in runsetting.toml. It's not of a valid format!")
     return loaded
 
-def checkresumes(metadata):
+def checkresumes(metadata) -> dict:
     """Resume jobs from last checkpoint"""
     statcode = checkpath(rs.TRANSFER_PATH, createdir=False)
     if statcode != 0: 
@@ -83,7 +82,18 @@ def checkresumes(metadata):
         raise FileExistsError("All the files have been processed for this process!")
     return loaded
 
-def submitfutures(client, ds, filelist, indx):
+def submitfutures(client, ds, filelist, indx) -> list:
+    """Submit jobs as futures to client.
+    
+    Parameters
+    - `client`: Dask client
+    - `ds`: dataset name
+    - `filelist`: List of files to process
+    - `indx`: List of indices to process
+
+    Returns
+    list: List of futures for each file in the dataset.
+    """
     futures = []
     if indx is None:
         futures.extend([client.submit(job, fn, i, ds) for i, fn in enumerate(filelist)])
@@ -130,6 +140,20 @@ def submitjobs(client, dsindx=None) -> int:
             futures = submitfutures(client, ds, dsitems['filelist'], resumeindx)
             result = process_futures(futures)
         return 0
+
+def sampleloaded(loaded):
+    firstitem = loaded[next(iter(loaded))]
+    randindx = random.randint(0, len(firstitem['filelist']))
+    splitname = '//store'
+    filename = firstitem['filelist'][randindx]
+    if not finame.startswith('/store'):
+        splitted = filename.split(splitname, 1)
+        redir = splitted[0]
+        finame = '/store' + splitted[1]
+        size, mod_time = get_xrdfs_file_info(finame, redir)
+    else:
+        size, mod_time = get_xrdfs_file_info(filename)
+    
 
 def testsubmit():
     client = spawnclient()
