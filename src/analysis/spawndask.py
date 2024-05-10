@@ -50,7 +50,8 @@ def loadmeta(dsindx=None) -> dict:
         with open(inputdatap, 'r') as samplepath:
             metadata = json.load(samplepath)
         if dsindx is not None:
-            metadata = {k: metadata[k] for k in list(metadata.keys())[dsindx]}
+            dskey = list(metadata.keys())[dsindx]
+            metadata = {dskey: metadata[dskey]}
         loaded = checkresumes(metadata)
     elif rs.INPUTFILE_PATH.startswith('/store/user/'):
         loaded = realmeta[rs.PROCESS_NAME]
