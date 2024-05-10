@@ -142,6 +142,7 @@ def submitjobs(client, dsindx=None) -> int:
         return 0
 
 def sampleloaded(loaded):
+    """Sample a random file from loaded metadata"""
     firstitem = loaded[next(iter(loaded))]
     randindx = random.randint(0, len(firstitem['filelist']))
     splitname = '//store'
