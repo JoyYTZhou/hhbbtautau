@@ -13,7 +13,7 @@ LEN=$((INDX-1))
 
 if [ "$PROCESS_NAME" == "TTbar" ]; then
     cpusno=12
-    memory=24GB
+    memory=26GB
 elif [ "$PROCESS_NAME" == "SingleH" ]; then
     cpusno=8
     memory=16GB
@@ -22,7 +22,7 @@ else
     memory=20GB
 fi
 
-cp -f hhbbtt.sub runtime/hhbbtt_${PROCESS_NAME}.sub 
+cp -f hhbbtt.sub runtime/hhbbtt_${PROCESS_NAME}.sub
 cat << EOF >> runtime/hhbbtt_${PROCESS_NAME}.sub
 request_cpus = ${cpusno}
 request_memory = ${memory}

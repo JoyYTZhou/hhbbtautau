@@ -143,6 +143,13 @@ class Object:
         self._events = weakref.proxy(value)
     
     @property
+    def selcfg(self):
+        return self._selcfg
+    @selcfg.setter
+    def selcfg(self, value):
+        self._selcfg = weakref.proxy(value)
+    
+    @property
     def cutflow(self):
         return self._cutflow
 
