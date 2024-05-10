@@ -30,5 +30,3 @@ request_disk = 5GB
 PROCESS_NAME = ${PROCESS_NAME}
 queue arg2 from seq 0 ${LEN} |
 EOF
-
-condor_submit runtime/hhbbtt_${PROCESS_NAME}.sub 

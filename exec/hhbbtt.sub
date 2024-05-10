@@ -1,4 +1,6 @@
-# Path variables
+# bare bone of submission script for condor jobs
+# Updated by Joy Z. May 19 2024
+
 MY_PATH = /uscms/homes/j/joyzhou/work/hhbbtautau
 NO_BACKUP = /uscms/home/joyzhou/nobackup
 OUTNAME = formalrun
