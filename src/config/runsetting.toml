@@ -30,7 +30,7 @@ INPUTFILE_PATH = "@format data/preprocessed/{this.PROCESS_NAME}.json"
 OUTPUTDIR_PATH = "@format outputs/{this.PROCESS_NAME}"
 TRANSFER_PATH = "@format {env[CONDOR_BASE]}/{this.SEL_NAME}/{this.PROCESS_NAME}"
 COPY_LOCAL = true
-STEP_SIZE = '150MB'
+STEP_SIZE = '120MB'
 
 [LPCTEST]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
