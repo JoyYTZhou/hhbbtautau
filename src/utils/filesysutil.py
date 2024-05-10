@@ -149,7 +149,8 @@ def isremote(pathstr):
     return is_remote
 
 def check_missing(pattern, fileno, dirtocheck, endpattern='.root', return_indices=True):
-    """Check missing output files in a directory based on pattern search.
+    """Check missing output files in a directory based on pattern search. The output files in the directory are
+    expected to have names like ${pattern}_${i}, where i is the index of the file.
     
     Return:
     - list of missing files if return_indices=False. Otherwise, return list of missing indices."""

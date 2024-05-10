@@ -1,12 +1,12 @@
 # This file contains the Processor class, which is used to process individual files or filesets.
 # The behavior of the Processor class is highly dependent on run time configurations and the event selection class used.
 import uproot._util
-from utils.filesysutil import *
-import uproot
-import pickle
+import uproot, pickle, weakref
 import pandas as pd
-from .selutility import BaseEventSelections
 import dask_awkward as dak
+
+from utils.filesysutil import *
+from .selutility import BaseEventSelections
 
 class Processor:
     """Process individual file or filesets given strings/dicts belonging to one dataset."""
@@ -26,6 +26,9 @@ class Processor:
     @property
     def rtcfg(self):
         return self._rtcfg
+    @rtcfg.setter
+    def rtcfg(self, value):
+        self._rtcfg = weakref(value)
     
     def loadfile(self, filename, suffix):
         """This is a wrapper function around uproot._dask. 

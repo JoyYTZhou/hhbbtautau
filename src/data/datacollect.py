@@ -32,7 +32,7 @@ def xrootd_format(fpath, prefix):
         return f"file://{fpath}"
 
 def query_MCsamples(dspath, outputfn, regex=None):
-    """ Query xrootd to find all filepaths to a given set of dataset names.
+    """ Query xrootd to find all filepaths for a given set of dataset names.
     the result is saved to a new file.
 
     Parameters
@@ -53,7 +53,7 @@ def query_MCsamples(dspath, outputfn, regex=None):
             else:
                 filelist = list(chain.from_iterable(dasgo_query(query_fistr(s)) for s in ds_dict["string"] if regex in s))
             if filelist:
-                ds_dict["filelist"] = filelist
+                ds_dict["filelist"] = sorted(filelist)
             else:
                 keys_to_del.append(ds)
         for key in keys_to_del: del dataset_dict[key]
@@ -91,8 +91,8 @@ def add_weight(dspath, outputdir, dsname=None):
             for ds, ds_dict in dataset_dict.items():
                 print(f"locating {ds}")
                 raw_tot, wgt_tot, success_list, failed_list = weight_fl(ds_dict['filelist']) 
-                ds_dict['filelist'] = success_list
-                ds_dict['failedlist'] = failed_list
+                ds_dict['filelist'] = sorted(success_list)
+                ds_dict['failedlist'] = sorted(failed_list)
                 ds_dict["Raw Events"] = raw_tot
                 ds_dict["Wgt Events"] = wgt_tot
                 ds_dict["Per Event"] = ds_dict['xsection']/wgt_tot

@@ -72,7 +72,9 @@ def checkresumes(metadata):
         datasets = metadata.keys()
         for ds in datasets:
             fileno = len(metadata[ds]['filelist'])
-            fileindx = check_missing(f'{ds}_cutflow', fileno, rs.TRANSFER_PATH, endpattern='.csv')
+            fileindx1 = set(check_missing(f'{ds}_cutflow', fileno, rs.TRANSFER_PATH, endpattern='.csv'))
+            fileindx2 = set(check_missing(f'{ds}', fileno, rs.TRANSFER_PATH, endpattern='.root'))
+            fileindx = list(fileindx1.union(fileindx2))
             if fileindx != []:
                 loaded[ds] = {}
                 loaded[ds]['resumeindx'] = fileindx
@@ -96,7 +98,7 @@ def submitloops(ds, filelist, indx) -> None:
     Parameters
     - `ds`: dataset name
     - `filelist`: List of files to process
-    - `indx`: List of indexes to process"""
+    - `indx`: List of indices to process"""
     print(f"Processing {ds}...")
     failed = 0
     if indx is None:
