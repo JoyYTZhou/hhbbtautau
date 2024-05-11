@@ -18,8 +18,8 @@ elif [ "$PROCESS_NAME" == "SingleH" ]; then
     cpusno=8
     memory=16GB
 else
-    cpusno=10
-    memory=20GB
+    cpusno=12
+    memory=24GB
 fi
 
 cp -f hhbbtt.sub runtime/hhbbtt_${PROCESS_NAME}.sub

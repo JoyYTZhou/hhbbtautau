@@ -141,21 +141,21 @@ def submitjobs(client, dsindx=None) -> int:
             result = process_futures(futures)
         return 0
 
-def sampleloaded(loaded):
-    """Sample a random file from loaded metadata"""
+def sampleloaded(loaded) -> int:
+    """Sample a random file from loaded metadata."""
     firstitem = loaded[next(iter(loaded))]
     randindx = random.randint(0, len(firstitem['filelist']))
     splitname = '//store'
     filename = firstitem['filelist'][randindx]
-    if not finame.startswith('/store'):
+    if not filename.startswith('/store'):
         splitted = filename.split(splitname, 1)
         redir = splitted[0]
         finame = '/store' + splitted[1]
         size, mod_time = get_xrdfs_file_info(finame, redir)
     else:
         size, mod_time = get_xrdfs_file_info(filename)
+    return size
     
-
 def testsubmit():
     client = spawnclient()
     print(client.get_versions(check=True))
@@ -196,6 +196,17 @@ def process_futures(futures, results_file='futureresult.txt', errors_file='futur
             for error in errors:
                 f.write(str(error) + '\n')
     return processed_results, errors
+
+def spawnLocal(size):
+    """Spawn dask client for local cluster"""
+    size_mb = size/1024/1024
+    cluster = LocalCluster(processes=daskcfg.get('SPAWN_PROCESS', False), threads_per_worker=daskcfg.get('THREADS_NO', 4))
+    cluster.adapt(minimum=1, maximum=4)
+    client = Client(cluster)
+    print("successfully created a dask client in local cluster!")
+    print("===================================")
+    print(client)
+    return client
 
 def spawnclient(default=False):
     """Spawn appropriate client based on runsetting."""
@@ -238,12 +249,3 @@ def spawnCondor(default=False):
 
     return client
 
-def spawnLocal():
-    """Spawn dask client for local cluster"""
-    cluster = LocalCluster(processes=daskcfg.get('SPAWN_PROCESS', False), threads_per_worker=daskcfg.get('THREADS_NO', 4))
-    cluster.adapt(minimum=1, maximum=4)
-    client = Client(cluster)
-    print("successfully created a dask client in local cluster!")
-    print("===================================")
-    print(client)
-    return client

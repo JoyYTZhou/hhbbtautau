@@ -26,9 +26,6 @@ class Processor:
     @property
     def rtcfg(self):
         return self._rtcfg
-    @rtcfg.setter
-    def rtcfg(self, value):
-        self._rtcfg = weakref(value)
     
     def loadfile(self, filename, suffix):
         """This is a wrapper function around uproot._dask. 
