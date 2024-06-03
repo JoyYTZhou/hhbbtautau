@@ -13,19 +13,37 @@ class Processor:
     def __init__(self, rt_cfg, dataset, evtselclass=BaseEventSelections, **kwargs):
         self._rtcfg = rt_cfg
         self.treename = self.rtcfg.get('TREE_NAME', 'Events')
-        self.outdir = self.rtcfg.OUTPUTDIR_PATH
         self.dataset = dataset
-        if self.rtcfg.COPY_LOCAL: 
-            self.copydir = self.rtcfg.get("COPY_DIR", 'temp')
-            checkpath(self.copydir, createdir=True)
-        if self.rtcfg.TRANSFER_PATH: 
-            checkcondorpath(self.rtcfg.TRANSFER_PATH)
-        checkpath(self.outdir)
         self.evtsel = evtselclass(**kwargs) 
+        self.initdir()
 
     @property
     def rtcfg(self):
         return self._rtcfg
+    
+    @staticmethod
+    def inittransfer(selname, processname) -> str:
+        condorbase = os.environ.get("CONDOR_BASE", False)
+        if condorbase:
+            return pjoin(condorbase, selname, processname)
+        else:
+            raise EnvironmentError("Export condor base directory properly!")
+    
+    def initdir(self) -> None:
+        self.outdir = self.rtcfg.OUTPUTDIR_PATH
+        if self.rtcfg.get('TRANSFER', True): 
+            rtcfg_path = self.rtcfg.get('TRANSFER_PATH', False)
+            if rtcfg_path:
+                self.transfer = rtcfg_path
+            else:
+                selname = self.rtcfg.SEL_NAME
+                processname = self.rtcfg.PROCESS_NAME
+                self.transfer = Processor.inittransfer(selname, processname)
+        checkcondorpath(self.transfer)
+        if self.rtcfg.COPY_LOCAL: 
+            self.copydir = self.rtcfg.get("COPY_DIR", 'temp')
+            checkpath(self.copydir, createdir=True)
+        checkpath(self.outdir)
     
     def loadfile(self, filename, suffix):
         """This is a wrapper function around uproot._dask. 
@@ -89,9 +107,9 @@ class Processor:
         cutflow_df.to_csv(localpath)
         print("Cutflow written to local!")
 
-        if self.rtcfg.TRANSFER_PATH:
+        if self.transfer:
             if os.path.exists(localpath):
-                condorpath = f'{self.rtcfg.TRANSFER_PATH}/{cutflow_name}'
+                condorpath = f'{self.transfer}/{cutflow_name}'
                 cpcondor(localpath, condorpath)
                 os.remove(localpath)
         
@@ -110,8 +128,8 @@ class Processor:
             rc = self.writedf(*args, **kwargs)
         else:
             rc = self.writepickle(*args, **kwargs)
-        if self.rtcfg.TRANSFER_PATH:
-            transferfiles(self.outdir, self.rtcfg.TRANSFER_PATH, remove=True)
+        if self.transfer:
+            transferfiles(self.outdir, self.transfer, remove=True)
         return rc
 
     def writedask(self, passed, suffix, delayed=True, fields=None) -> int:
