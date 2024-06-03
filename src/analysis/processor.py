@@ -10,36 +10,21 @@ from .selutility import BaseEventSelections
 
 class Processor:
     """Process individual file or filesets given strings/dicts belonging to one dataset."""
-    def __init__(self, rt_cfg, dataset, evtselclass=BaseEventSelections, **kwargs):
+    def __init__(self, rt_cfg, dataset, transferP, evtselclass=BaseEventSelections, **kwargs):
         self._rtcfg = rt_cfg
         self.treename = self.rtcfg.get('TREE_NAME', 'Events')
         self.dataset = dataset
         self.evtsel = evtselclass(**kwargs) 
+        self.transfer = transferP
+        if self.transfer: checkcondorpath(self.transfer)
         self.initdir()
 
     @property
     def rtcfg(self):
         return self._rtcfg
     
-    @staticmethod
-    def inittransfer(selname, processname) -> str:
-        condorbase = os.environ.get("CONDOR_BASE", False)
-        if condorbase:
-            return pjoin(condorbase, selname, processname)
-        else:
-            raise EnvironmentError("Export condor base directory properly!")
-    
     def initdir(self) -> None:
         self.outdir = self.rtcfg.OUTPUTDIR_PATH
-        if self.rtcfg.get('TRANSFER', True): 
-            rtcfg_path = self.rtcfg.get('TRANSFER_PATH', False)
-            if rtcfg_path:
-                self.transfer = rtcfg_path
-            else:
-                selname = self.rtcfg.SEL_NAME
-                processname = self.rtcfg.PROCESS_NAME
-                self.transfer = Processor.inittransfer(selname, processname)
-        checkcondorpath(self.transfer)
         if self.rtcfg.COPY_LOCAL: 
             self.copydir = self.rtcfg.get("COPY_DIR", 'temp')
             checkpath(self.copydir, createdir=True)
