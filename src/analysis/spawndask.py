@@ -18,7 +18,27 @@ datapath = pjoin(parent_directory, 'data', 'data.json')
 with open(datapath, 'r') as data:
     realmeta = json.load(data)
 
-def job(fn, i, dataset, eventSelection=evtselclass) -> int:
+def inittransfer(selname, processname) -> str:
+    condorbase = os.environ.get("CONDOR_BASE", False)
+    if condorbase:
+        return pjoin(condorbase, selname, processname)
+    else:
+        raise EnvironmentError("Export condor base directory properly!")
+
+def getTransfer(rtcfg) -> str | bool:
+    if rtcfg.get('TRANSFER', True): 
+        rtcfg_path = rtcfg.get('TRANSFER_PATH', False)
+        if rtcfg_path:
+            transfer = rtcfg_path
+        else:
+            selname = rtcfg.SEL_NAME
+            processname = rtcfg.PROCESS_NAME
+            transfer = inittransfer(selname, processname)
+        return transfer
+    else:
+        return False
+
+def job(fn, i, dataset, transferP, eventSelection=evtselclass) -> int:
     """Run the processor for a single file.
     Parameters
     - `fn`: The name of the file to process
@@ -26,7 +46,7 @@ def job(fn, i, dataset, eventSelection=evtselclass) -> int:
     - `dataset`: The name of the dataset (same dataset has same xsection)
     - `eventSelection`: Custom Defined Event Selection Class
     """
-    proc = Processor(rs, dataset, eventSelection)
+    proc = Processor(rs, dataset, transferP, eventSelection)
     print(f"Processing filename {fn}")
     try: 
         rc = proc.runfile(fn, i)
@@ -65,24 +85,27 @@ def loadmeta(dsindx=None, inputpath=rs.INPUTFILE_PATH) -> dict:
 
 def checkresumes(metadata) -> dict:
     """Resume jobs from last checkpoint"""
-    statcode = checkpath(rs.TRANSFER_PATH, createdir=False)
-    if statcode != 0: 
-        loaded = metadata
-        return loaded
+    tsferP = getTransfer(rs)
+    if tsferP:
+        statcode = checkpath(tsferP, createdir=False)
+        if statcode != 0: 
+            loaded = metadata
+        else:
+            loaded = {}
+            datasets = metadata.keys()
+            for ds in datasets:
+                fileno = len(metadata[ds]['filelist'])
+                fileindx1 = set(check_missing(f'{ds}_cutflow', fileno, tsferP, endpattern='.csv'))
+                fileindx2 = set(check_missing(f'{ds}', fileno, tsferP, endpattern='.root'))
+                fileindx = list(fileindx1.union(fileindx2))
+                if fileindx != []:
+                    loaded[ds] = {}
+                    loaded[ds]['resumeindx'] = fileindx
+                    loaded[ds]['filelist'] = metadata[ds]['filelist']
+            if loaded == {}: 
+                raise FileExistsError("All the files have been processed for this process!")
     else:
-        loaded = {}
-        datasets = metadata.keys()
-        for ds in datasets:
-            fileno = len(metadata[ds]['filelist'])
-            fileindx1 = set(check_missing(f'{ds}_cutflow', fileno, rs.TRANSFER_PATH, endpattern='.csv'))
-            fileindx2 = set(check_missing(f'{ds}', fileno, rs.TRANSFER_PATH, endpattern='.root'))
-            fileindx = list(fileindx1.union(fileindx2))
-            if fileindx != []:
-                loaded[ds] = {}
-                loaded[ds]['resumeindx'] = fileindx
-                loaded[ds]['filelist'] = metadata[ds]['filelist']
-    if loaded == {}: 
-        raise FileExistsError("All the files have been processed for this process!")
+        loaded = metadata
     return loaded
 
 def submitfutures(client, ds, filelist, indx) -> list:
