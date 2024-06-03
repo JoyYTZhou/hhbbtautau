@@ -39,23 +39,26 @@ def job(fn, i, dataset, eventSelection=evtselclass) -> int:
         print(f"TypeError encountered for file index {i} in {dataset}: {e}")
         return 1
     
-def loadmeta(dsindx=None) -> dict:
-    """Load metadata from input file
-
+def loadmeta(dsindx=None, inputpath=rs.INPUTFILE_PATH) -> dict:
+    """Load metadata from input file, or straight from directories containing files to process.
+    
     Parameters
-    - `dsindx`: Index of datasets to process in json file. If None, process all datasets."""
-    if rs.INPUTFILE_PATH.endswith('.json'):
-        inputdatap = pjoin(parent_directory, rs.INPUTFILE_PATH)
+    - `dsindx`: Index of datasets to process in json file. If None, process all datasets.
+    
+    Return
+    """
+    if inputpath.endswith('.json'):
+        inputdatap = pjoin(parent_directory, inputpath)
         with open(inputdatap, 'r') as samplepath:
             metadata = json.load(samplepath)
         if dsindx is not None:
             dskey = list(metadata.keys())[dsindx]
             metadata = {dskey: metadata[dskey]}
         loaded = checkresumes(metadata)
-    elif rs.INPUTFILE_PATH.startswith('/store/user/'):
+    elif inputpath.startswith('/store/user/'):
         loaded = realmeta[rs.PROCESS_NAME]
         for dataset in loaded.keys():
-            loaded[dataset]['filelist'] = glob_files(rs.INPUTFILE_PATH, startpattern=dataset, endpattern='.root')
+            loaded[dataset]['filelist'] = glob_files(inputpath, startpattern=dataset, endpattern='.root')
     else:
         raise TypeError("Check INPUTFILE_PATH in runsetting.toml. It's not of a valid format!")
     return loaded
@@ -197,9 +200,9 @@ def process_futures(futures, results_file='futureresult.txt', errors_file='futur
                 f.write(str(error) + '\n')
     return processed_results, errors
 
-def spawnLocal(size):
+def spawnLocal():
     """Spawn dask client for local cluster"""
-    size_mb = size/1024/1024
+    # size_mb = size/1024/1024
     cluster = LocalCluster(processes=daskcfg.get('SPAWN_PROCESS', False), threads_per_worker=daskcfg.get('THREADS_NO', 4))
     cluster.adapt(minimum=1, maximum=4)
     client = Client(cluster)
