@@ -25,7 +25,7 @@ def inittransfer(selname, processname) -> str:
     else:
         raise EnvironmentError("Export condor base directory properly!")
 
-def getTransfer(rtcfg) -> str | bool:
+def getTransfer(rtcfg) -> str:
     if rtcfg.get('TRANSFER', True): 
         rtcfg_path = rtcfg.get('TRANSFER_PATH', False)
         if rtcfg_path:
@@ -36,7 +36,7 @@ def getTransfer(rtcfg) -> str | bool:
             transfer = inittransfer(selname, processname)
         return transfer
     else:
-        return False
+        return ''
 
 def job(fn, i, dataset, transferP, eventSelection=evtselclass) -> int:
     """Run the processor for a single file.
@@ -107,6 +107,13 @@ def checkresumes(metadata) -> dict:
     else:
         loaded = metadata
     return loaded
+
+def checkjobs() -> None:
+    metadt = loadmeta()
+    loaded = checkresumes(metadt)
+    if loaded: 
+        print("There are files left to be run.")
+    
 
 def submitfutures(client, ds, filelist, indx) -> list:
     """Submit jobs as futures to client.
