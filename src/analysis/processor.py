@@ -8,6 +8,38 @@ import dask_awkward as dak
 from utils.filesysutil import *
 from .selutility import BaseEventSelections
 
+def inittransfer(selname, processname) -> str:
+    """Initialize transfer path for condor jobs.
+    
+    Parameters
+    - `selname`: Selection name
+    - `processname`: Process name
+    
+    Returns
+    - `transfer`: Transfer path string"""
+    condorbase = os.environ.get("CONDOR_BASE", False)
+    if condorbase:
+        return pjoin(condorbase, selname, processname)
+    else:
+        raise EnvironmentError("Export condor base directory properly!")
+
+def getTransfer(rtcfg) -> str:
+    """Get transfer path for condor jobs
+
+    Parameters
+    - `rtcfg`: runsetting object"""
+    if rtcfg.get('TRANSFER', True): 
+        rtcfg_path = rtcfg.get('TRANSFER_PATH', False)
+        if rtcfg_path:
+            transfer = rtcfg_path
+        else:
+            selname = rtcfg.SEL_NAME
+            processname = rtcfg.PROCESS_NAME
+            transfer = inittransfer(selname, processname)
+        return transfer
+    else:
+        return ''
+
 class Processor:
     """Process individual file or filesets given strings/dicts belonging to one dataset."""
     def __init__(self, rt_cfg, dataset, transferP, evtselclass=BaseEventSelections, **kwargs):
