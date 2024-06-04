@@ -24,6 +24,9 @@ class Processor:
         return self._rtcfg
     
     def initdir(self) -> None:
+        """Initialize the output directory and copy directory if necessary.
+        If the copy directory is specified, it will be created and checked.
+        The output directory will be created and checked."""
         self.outdir = self.rtcfg.OUTPUTDIR_PATH
         if self.rtcfg.COPY_LOCAL: 
             self.copydir = self.rtcfg.get("COPY_DIR", 'temp')

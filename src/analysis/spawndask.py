@@ -19,6 +19,14 @@ with open(datapath, 'r') as data:
     realmeta = json.load(data)
 
 def inittransfer(selname, processname) -> str:
+    """Initialize transfer path for condor jobs.
+    
+    Parameters
+    - `selname`: Selection name
+    - `processname`: Process name
+    
+    Returns
+    - `transfer`: Transfer path string"""
     condorbase = os.environ.get("CONDOR_BASE", False)
     if condorbase:
         return pjoin(condorbase, selname, processname)
@@ -26,6 +34,10 @@ def inittransfer(selname, processname) -> str:
         raise EnvironmentError("Export condor base directory properly!")
 
 def getTransfer(rtcfg) -> str:
+    """Get transfer path for condor jobs
+
+    Parameters
+    - `rtcfg`: runsetting object"""
     if rtcfg.get('TRANSFER', True): 
         rtcfg_path = rtcfg.get('TRANSFER_PATH', False)
         if rtcfg_path:
@@ -109,6 +121,7 @@ def checkresumes(metadata) -> dict:
     return loaded
 
 def checkjobs() -> None:
+    """Check if there are files left to be run."""
     metadt = loadmeta()
     loaded = checkresumes(metadt)
     if loaded: 
