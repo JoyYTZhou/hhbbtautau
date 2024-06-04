@@ -4,12 +4,11 @@ import json as json
 import traceback, os, random
 
 from .custom import switch_selections
-from .processor import Processor
-from utils.filesysutil import glob_files, get_xrdfs_file_info, initLogger, check_missing, checkpath, pjoin
+from .processor import Processor, getTransfer
+from utils.filesysutil import glob_files, get_xrdfs_file_info, check_missing, checkpath, pjoin
 from config.selectionconfig import runsetting as rs
 from config.selectionconfig import dasksetting as daskcfg
 
-# logger = initLogger(__name__.split('.')[-1], rs.PROCESS_NAME)
 evtselclass = switch_selections(rs.SEL_NAME)
 
 parent_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -18,39 +17,9 @@ datapath = pjoin(parent_directory, 'data', 'data.json')
 with open(datapath, 'r') as data:
     realmeta = json.load(data)
 
-def inittransfer(selname, processname) -> str:
-    """Initialize transfer path for condor jobs.
-    
-    Parameters
-    - `selname`: Selection name
-    - `processname`: Process name
-    
-    Returns
-    - `transfer`: Transfer path string"""
-    condorbase = os.environ.get("CONDOR_BASE", False)
-    if condorbase:
-        return pjoin(condorbase, selname, processname)
-    else:
-        raise EnvironmentError("Export condor base directory properly!")
+transferP = getTransfer(rs)
 
-def getTransfer(rtcfg) -> str:
-    """Get transfer path for condor jobs
-
-    Parameters
-    - `rtcfg`: runsetting object"""
-    if rtcfg.get('TRANSFER', True): 
-        rtcfg_path = rtcfg.get('TRANSFER_PATH', False)
-        if rtcfg_path:
-            transfer = rtcfg_path
-        else:
-            selname = rtcfg.SEL_NAME
-            processname = rtcfg.PROCESS_NAME
-            transfer = inittransfer(selname, processname)
-        return transfer
-    else:
-        return ''
-
-def job(fn, i, dataset, transferP, eventSelection=evtselclass) -> int:
+def job(fn, i, dataset, transferP=transferP, eventSelection=evtselclass) -> int:
     """Run the processor for a single file.
     Parameters
     - `fn`: The name of the file to process
@@ -95,9 +64,8 @@ def loadmeta(dsindx=None, inputpath=rs.INPUTFILE_PATH) -> dict:
         raise TypeError("Check INPUTFILE_PATH in runsetting.toml. It's not of a valid format!")
     return loaded
 
-def checkresumes(metadata) -> dict:
+def checkresumes(metadata, tsferP=transferP) -> dict:
     """Resume jobs from last checkpoint"""
-    tsferP = getTransfer(rs)
     if tsferP:
         statcode = checkpath(tsferP, createdir=False)
         if statcode != 0: 
@@ -126,7 +94,6 @@ def checkjobs() -> None:
     loaded = checkresumes(metadt)
     if loaded: 
         print("There are files left to be run.")
-    
 
 def submitfutures(client, ds, filelist, indx) -> list:
     """Submit jobs as futures to client.
