@@ -88,12 +88,21 @@ def checkresumes(metadata, tsferP=transferP) -> dict:
         loaded = metadata
     return loaded
 
-def checkjobs() -> None:
+def checkjobs(tsferP=transferP) -> None:
     """Check if there are files left to be run."""
     metadt = loadmeta()
-    loaded = checkresumes(metadt)
-    if loaded: 
-        print("There are files left to be run.")
+    try: 
+        print(f"Checking {tsferP} for output files!")
+        loaded = checkresumes(metadt, tsferP)
+        if loaded:
+            for ds in loaded.keys():
+                if 'resumeindx' in loaded[ds]:
+                    filelen = len(loaded[ds]['resumeindx'])
+                else:
+                    filelen = len(loaded[ds]['filelist'])
+                print(f"There are {filelen} files left to be run in {ds}.")
+    except FileExistsError as e:
+        print("All the files have been processed!")
 
 def submitfutures(client, ds, filelist, indx) -> list:
     """Submit jobs as futures to client.
