@@ -29,7 +29,7 @@ class BaseEventSelections:
         self._mapcfg = mapcfg
         self.objsel = None
         self.objcollect = {}
-        self.cutflow = None
+        self.cfno = None
         self.cfobj = None
     
     def __call__(self, events, wgtname='Generator_weight', **kwargs):
@@ -73,11 +73,11 @@ class BaseEventSelections:
         self.setevtsel(events)
         if self.objsel.names:
             self.cfobj = self.objsel.cutflow(*self.objsel.names)
-            self.cutflow = self.cfobj.result()
+            self.cfno = self.cfobj.result()
         else:
             raise ValueError("Events selections not set, this is base selection!")
         if not self.objcollect:
-            passed = events[self.cutflow.maskscutflow[-1]]
+            passed = events[self.cfno.maskscutflow[-1]]
             if compute_veto: 
                 vetoed = events[~(self.objsel.all())]
                 result = (passed, vetoed)
@@ -93,12 +93,12 @@ class BaseEventSelections:
         :return: cutflow df
         :rtype: pandas.DataFrame
         """
-        row_names = self.cutflow.labels
+        row_names = self.cfno.labels
         dfdata = {}
-        if self.cutflow.wgtevcutflow is not None:
-            wgt_number = dask.compute(self.cutflow.wgtevcutflow)[0]
+        if self.cfno.wgtevcutflow is not None:
+            wgt_number = dask.compute(self.cfno.wgtevcutflow)[0]
             dfdata['wgt'] = wgt_number
-        number = dask.compute(self.cutflow.nevcutflow)[0]
+        number = dask.compute(self.cfno.nevcutflow)[0]
         dfdata['raw'] = number
         df_cf = pd.DataFrame(dfdata, index=row_names)
         return df_cf
@@ -106,6 +106,13 @@ class BaseEventSelections:
     def objcollect_to_df(self) -> pd.DataFrame:
         listofdf = [Object.object_to_df(zipped, prefix+'_') for zipped, prefix in self.objcollect.items()]
         return pd.concat(listofdf, axis=1)
+    
+    def selobjhelper(self, events, name, obj, mask):
+        self.objsel.add(name, mask)
+        events = events[mask]
+        obj.events = events
+        return obj, events
+        
     
 class Object:
     """Object class for handling object selections, meant as an observer of the events.
@@ -164,7 +171,7 @@ class Object:
     @property
     def mapcfg(self):
         return self._mapcfg
-
+        
     def custommask(self, maskname, op, func=None):
         """Create custom mask based on input.
         
@@ -223,13 +230,17 @@ class Object:
         mask = (sum_charge < ak.num(aodarr, axis=1))
         return mask
     
-    def dRmask(self, threshold, **kwargs):
-        """Haphazard way to select jet/lepton pairs."""
+    def dRwSelf(self, threshold, **kwargs):
+        """Haphazard way to select pairs of objects"""
         object_lv = self.getfourvec(**kwargs)
         leading_lv = object_lv[:,0]
         subleading_lvs = object_lv[:,1:]
         dR_mask = Object.dRoverlap(leading_lv, subleading_lvs, threshold)
         return dR_mask
+    
+    def dRwOther(self, vec, threshold, **kwargs):
+        object_lv = self.getfourvec(**kwargs)
+        return Object.dRoverlap(vec, object_lv, threshold)
 
     def getfourvec(self, **kwargs) -> vec.Array:
         """Get four vector for the object from the currently observed events."""
@@ -248,7 +259,8 @@ class Object:
         return zipped 
     
     def getldsd(self, **kwargs) -> tuple:
-        """Returns the leading object and the rest of the objects (aka subleading candidates)"""
+        """Returns the zipped leading object and the rest of the objects (aka subleading candidates).
+        All properties in obj setting included."""
         objs = self.getzipped(**kwargs) 
         return (objs[:,0], objs[:,1:])
 
@@ -330,7 +342,7 @@ class Object:
         return op(ak.sum(mask, axis=1), count)
 
     @staticmethod
-    def dRoverlap(vec, veclist, threshold=0.4, op=opr.ge) -> ak.highlevel.Array:
+    def dRoverlap(vec, veclist: 'vec.Array', threshold=0.4, op=opr.ge) -> ak.highlevel.Array:
         """Return deltaR mask. Default comparison threshold is 0.4. Default comparison is >=. 
         
         Parameters

@@ -131,13 +131,10 @@ class weightedSelection(PackedSelection):
         for i, cut in enumerate(names):
             mask1 = self.any(cut)
             mask2 = self.all(*(names[: i + 1]))
-            maskwgt = ak.to_numpy(self._perevtwgt[mask2])
-            print(f"{cut}: {maskwgt}")
+            maskwgt = self._perevtwgt[mask2]
             masksonecut.append(mask1)
             maskscutflow.append(mask2)
             maskwgtcutflow.append(maskwgt)
-        
-        print(f"After all the cuts, {len(maskwgtcutflow)}")
 
         if not self.delayed_mode:
             nevonecut = [len(self._data)]
@@ -146,7 +143,7 @@ class weightedSelection(PackedSelection):
             nevcutflow.extend(np.sum(maskscutflow, axis=1, initial=0))
             if self._perevtwgt is not None:
                 wgtevcutflow = [len(self._perevtwgt)]
-                wgtevcutflow.extend(np.sum(maskwgtcutflow, axis=1, initial=0))
+                wgtevcutflow.extend(np.sum(ak.to_numpy(maskwgtcutflow), axis=1, initial=0))
             else:
                 wgtevcutflow = None
 

@@ -34,9 +34,6 @@ default:
       btag: 0.3196
       count: 2
       jetid: 3
-    FatJet:
-      mass: 40
-      count: 1
   outputs:
     Tau:
       pt: Tau_pt

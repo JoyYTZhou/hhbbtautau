@@ -10,7 +10,6 @@ def switch_selections(sel_name):
         'vetoskim': skimEvtSel,
         'prelim': prelimEvtSel,
         'regionA': AEvtSel,
-        'tauskim': tauEvtSel
     }
     return selections.get(sel_name, BaseEventSelections)
 
@@ -53,21 +52,52 @@ class prelimEvtSel(BaseEventSelections):
             tau_mask = (tau.ptmask(opr.ge) & \
                         tau.absetamask(opr.le) & \
                         tau.absdzmask(opr.lt) & \
-                        tau.custommask('idvsjet', opr.ge))
+                        tau.custommask('idvsjet', opr.ge) & \
+                        tau.custommask('idvsmu', opr.ge) & \
+                        tau.custommask('idvse', opr.ge))
             return tau_mask
-
         tau_mask = tauobjmask(tau)
-        tau_nummask = tau.numselmask(tau_mask, opr.ge)
-        self.objsel.add('>= 2 Medium Taus', tau_nummask)
+        tau_nummask = tau.numselmask(tau_mask)
+        tau, events = self.selobjhelper(events, '>= 2 Medium hadronic Taus', tau, tau_nummask)
+        tau_mask = tauobjmask(tau)
+
+        leading_tau, subleading_cand = tau.getldsd(mask=tau_mask)
+        leading_lv = Object.fourvector(leading_tau, sort=False)
+        subleading_lvs = Object.fourvector(subleading_cand, sort=False)
+        dR_mask = Object.dRoverlap(leading_lv, subleading_lvs, threshold=0.5)
+
+        # make sure two candidates are separated enough
+        tau_nummask = Object.maskredmask(dR_mask, opr.ge, 1)
+        leading_tau = leading_tau[tau_nummask]
+        subleading_cand = subleading_cand[tau_nummask][:,0]
+        self.objsel.add('Tau dR >= 0.5', tau_nummask)
+        self.objcollect['LeadingTau'] = leading_tau
+        self.objcollect['SubleadingTau'] = subleading_cand
     
     def jetsel(self, events) -> None:
-        pass
+        jet = Object(events, 'Jet')
+        
+        def jobjmask(jet):
+            j_mask = (jet.ptmask(opr.ge) &
+                  jet.absetamask(opr.le) &
+                  jet.custommask('btag', opr.ge))
+            return j_mask
+        
+        jet_mask = jobjmask(jet)
+        jet_nummask = jet.numselmask(jet_mask, opr.ge)
+        events = events[jet_nummask]
+        jet.events = events
+        jet_mask = jobjmask(jet) 
+
+        # start selecting candidate jets
+        ld_j, sd_j = jet.getldsd(mask=jet_mask)
+        ld_vec = Object.fourvector(ld_j, sort=False)
+        sd_vec = Object.fourvector(sd_j, sort=False)
 
     def selevtsel(self, events) -> None:
         self.tausel(events)
         self.jetsel(events)
         
-               
 class AEvtSel(BaseEventSelections):
     def triggersel(self, events):
         return super().triggersel(events)
@@ -118,6 +148,7 @@ class AEvtSel(BaseEventSelections):
                   jet.custommask('btag', opr.ge))
             return j_mask
         
+        mask = jet.dRwOther()
         jet_mask = jobjmask(jet)
         jet_nummask = jet.numselmask(jet_mask, opr.ge)
         events = events[jet_nummask]
@@ -129,10 +160,6 @@ class AEvtSel(BaseEventSelections):
     def selevtsel(self, events):
         self.tausel()
 
-class tauEvtSel(BaseEventSelections):
-    """Custom event selection class for the preliminary event selection."""
-    def setevtsel(self, events):
-        
         pass
 
 
