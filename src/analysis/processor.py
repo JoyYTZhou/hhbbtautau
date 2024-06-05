@@ -29,7 +29,7 @@ def getTransfer(rtcfg) -> str:
     Parameters
     - `rtcfg`: runsetting object"""
     if rtcfg.get('TRANSFER', True): 
-        rtcfg_path = rtcfg.get('TRANSFER_PATH', False)
+        rtcfg_path = rtcfg.get('TRANSFER_PATH', '')
         if rtcfg_path:
             transfer = rtcfg_path
         else:
@@ -178,10 +178,8 @@ class Processor:
         passed.to_csv(outname)
         return 0
         
-    def writepickle(self, passed, suffix, delayed):
+    def writepickle(self, passed, suffix):
+        """Writes results to pkl"""
         finame = pjoin(self.outdir, f"{self.dataset}_{suffix}.pkl")
         with open(finame, 'wb') as f:
-            if delayed:
-                pickle.dump(passed, f)
-            else:
-                pickle.dump(passed.compute(), f)
+            pickle.dump(passed, f)

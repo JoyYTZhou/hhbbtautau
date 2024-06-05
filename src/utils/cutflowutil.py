@@ -1,6 +1,7 @@
 import os, subprocess
 import numpy as np
 import pandas as pd
+import awkward as ak
 from utils.filesysutil import glob_files 
 from coffea.analysis_tools import PackedSelection, Cutflow
 import dask_awkward
@@ -76,6 +77,7 @@ class weightedSelection(PackedSelection):
         self._perevtwgt = perevtwgt
 
     def __if_sequential(self):
+        """Return whether mask arrays have different dimensions."""
         flag = False
         dimension = len(self.any(self._names[0]))
         for name in self._names:
@@ -129,19 +131,22 @@ class weightedSelection(PackedSelection):
         for i, cut in enumerate(names):
             mask1 = self.any(cut)
             mask2 = self.all(*(names[: i + 1]))
-            maskwgt = self._perevtwgt[mask2]
+            maskwgt = ak.to_numpy(self._perevtwgt[mask2])
+            print(f"{cut}: {maskwgt}")
             masksonecut.append(mask1)
             maskscutflow.append(mask2)
             maskwgtcutflow.append(maskwgt)
+        
+        print(f"After all the cuts, {len(maskwgtcutflow)}")
 
         if not self.delayed_mode:
             nevonecut = [len(self._data)]
             nevcutflow = [len(self._data)]
-            nevonecut.extend(np.sum(masksonecut, axis=1, initial=-0))
+            nevonecut.extend(np.sum(masksonecut, axis=1, initial=0))
             nevcutflow.extend(np.sum(maskscutflow, axis=1, initial=0))
             if self._perevtwgt is not None:
                 wgtevcutflow = [len(self._perevtwgt)]
-                wgtevcutflow.extend(np.sum(maskwgt, axis=1, initial=0))
+                wgtevcutflow.extend(np.sum(maskwgtcutflow, axis=1, initial=0))
             else:
                 wgtevcutflow = None
 
