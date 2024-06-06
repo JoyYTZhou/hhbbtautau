@@ -25,7 +25,7 @@ class Object:
     - `fields`: list of fields in the object
     """
 
-    def __init__(self, events, name, **kwargs):
+    def __init__(self, events, name, weakrefEvt=True, **kwargs):
         """Construct an object from provided events with given selection configuration.
         
         Parameters
@@ -36,7 +36,8 @@ class Object:
         - `mapcfg`: mapping configuration for the object
         """
         self._name = name
-        self._events = weakref.proxy(events)
+        self.__weakref = weakrefEvt
+        self.events = events
         self._selcfg = kwargs.get('selcfg', default_objsel[name])
         self._mapcfg = kwargs.get('mapcfg', default_mapcfg[name])
         self._cutflow = kwargs.get('cutflow', None)
@@ -47,7 +48,10 @@ class Object:
         return self._events
     @events.setter
     def events(self, value):
-        self._events = weakref.proxy(value)
+        if self.__weakref:
+            self._events = weakref.proxy(value)
+        else:
+            self._events = value
     
     @property
     def selcfg(self):
@@ -344,17 +348,19 @@ class BaseEventSelections:
         return df_cf
 
     def objcollect_to_df(self) -> pd.DataFrame:
-        listofdf = [Object.object_to_df(zipped, prefix+'_') for zipped, prefix in self.objcollect.items()]
+        listofdf = [Object.object_to_df(zipped, prefix+'_') for prefix, zipped in self.objcollect.items()]
         return pd.concat(listofdf, axis=1)
     
-    def selobjhelper(self, events, name, obj, mask) -> tuple[Object, ak.Array]:
-        """Update"""
+    def selobjhelper(self, events, name, obj, mask: 'ak.Array') -> Object:
+        """Update event level and object level.
+        
+        - `mask`: event-shaped array."""
         print(f"Trying to add {name} mask!")
         self.objsel.add(name, mask)
-        events = events[mask]
         if self.objcollect:
             for key, val in self.objcollect.items():
                 self.objcollect[key] = val[mask]
+        events = events[mask]
         obj.events = events
         return obj, events
         
