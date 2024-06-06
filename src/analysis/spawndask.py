@@ -40,10 +40,11 @@ def job(fn, i, dataset, transferP=transferP, eventSelection=evtselclass) -> int:
         print(f"TypeError encountered for file index {i} in {dataset}: {e}")
         return 1
     
-def loadmeta(dsindx=None, inputpath=rs.INPUTFILE_PATH) -> dict:
+def loadmeta(filterfunc, dsindx=None, inputpath=rs.INPUTFILE_PATH) -> dict:
     """Load metadata from input file, or straight from directories containing files to process.
     
     Parameters
+    - `filterfunc`: function to filter files to run among meta files
     - `dsindx`: Index of datasets to process in json file. If None, process all datasets.
     
     Return
@@ -51,20 +52,20 @@ def loadmeta(dsindx=None, inputpath=rs.INPUTFILE_PATH) -> dict:
     if inputpath.endswith('.json'):
         inputdatap = pjoin(parent_directory, inputpath)
         with open(inputdatap, 'r') as samplepath:
-            metadata = json.load(samplepath)
+            loaded = json.load(samplepath)
         if dsindx is not None:
-            dskey = list(metadata.keys())[dsindx]
-            metadata = {dskey: metadata[dskey]}
-        loaded = checkresumes(metadata)
+            dskey = list(loaded.keys())[dsindx]
+            loaded = {dskey: loaded[dskey]}
     elif inputpath.startswith('/store/user/'):
         loaded = realmeta[rs.PROCESS_NAME]
         for dataset in loaded.keys():
             loaded[dataset]['filelist'] = glob_files(inputpath, startpattern=dataset, endpattern='.root')
     else:
         raise TypeError("Check INPUTFILE_PATH in runsetting.toml. It's not of a valid format!")
+    if filterfunc is not None: loaded = filterfunc(loaded)
     return loaded
 
-def checkresumes(metadata, tsferP=transferP) -> dict:
+def filterResume(metadata, tsferP=transferP) -> dict:
     """Resume jobs from last checkpoint"""
     if tsferP:
         statcode = checkpath(tsferP, createdir=False)
@@ -90,10 +91,9 @@ def checkresumes(metadata, tsferP=transferP) -> dict:
 
 def checkjobs(tsferP=transferP) -> None:
     """Check if there are files left to be run."""
-    metadt = loadmeta()
+    loaded = loadmeta()
     try: 
         print(f"Checking {tsferP} for output files!")
-        loaded = checkresumes(metadt, tsferP)
         if loaded:
             for ds in loaded.keys():
                 if 'resumeindx' in loaded[ds]:
