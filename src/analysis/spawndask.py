@@ -91,7 +91,7 @@ def filterResume(metadata, tsferP=transferP) -> dict:
 
 def checkjobs(tsferP=transferP) -> None:
     """Check if there are files left to be run."""
-    loaded = loadmeta()
+    loaded = loadmeta(filterResume)
     try: 
         print(f"Checking {tsferP} for output files!")
         if loaded:
@@ -149,7 +149,7 @@ def submitjobs(client, dsindx=None) -> int:
     If a valid client is found and future mode is true, submit simultaneously run jobs.
     If not, fall back into a loop mode. Note that even in this mode, any dask computations will be managed by client explicitly or implicitly.
     """
-    loaded = loadmeta(dsindx)
+    loaded = loadmeta(filterfunc=filterResume, dsindx=dsindx)
     if client is None or (not daskcfg.SPAWN_FUTURE): 
         print("Submit jobs in loops!")
         for ds, dsitems in loaded.items():
