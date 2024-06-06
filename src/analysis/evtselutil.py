@@ -1,119 +1,19 @@
 #!/usr/bin/env python
 import awkward as ak
 import dask_awkward as dak
-import dask
-from utils.cutflowutil import weightedSelection
-from utils.datautil import arr_handler
+import dask, weakref
 import vector as vec
 import pandas as pd
 import operator as opr
-import weakref
+
 from config.selectionconfig import selectionsettings as selcfg
+from utils.cutflowutil import weightedSelection
+from utils.datautil import arr_handler
 
 default_trigsel = selcfg.triggerselections
 default_objsel = selcfg.objselections
 default_mapcfg = selcfg.outputs
 
-class BaseEventSelections:
-    """Base class for event selections.
-    
-    Attributes
-    - `mapcfg`: mapping configuration {key=abbreviation, value=nanoaodname}
-    - `objsel`: PackedSelection object to keep track of cutflow
-    - `cutflow`: cutflow object
-    """
-    def __init__(self, trigcfg=default_trigsel, objcfg=default_objsel, mapcfg=default_mapcfg) -> None:
-        """Initialize the event selection object with the given selection configurations."""
-        self._trigcfg = trigcfg
-        self._objselcfg = objcfg
-        self._mapcfg = mapcfg
-        self.objsel = None
-        self.objcollect = {}
-        self.cfno = None
-        self.cfobj = None
-    
-    def __call__(self, events, wgtname='Generator_weight', **kwargs):
-        """Apply all the selections in line on the events"""
-        return self.callevtsel(events, wgtname=wgtname, **kwargs)
-
-    @property
-    def trigcfg(self):
-        return self._trigcfg
-
-    @property
-    def objselcfg(self):
-        return self._objselcfg
-    
-    @property
-    def mapcfg(self):
-        return self._mapcfg
-    
-    def triggersel(self, events):
-        """Custom function to set the object selections on event levels based on config.
-        Mask should be N*bool 1-D array.
-        """
-        pass
-
-    def setevtsel(self, events):
-        """Custom function to set the object selections based on config.
-        Mask should be N*bool 1-D array.
-
-        :param events: events loaded from a .root file
-        """
-        pass
-
-    def callevtsel(self, events, wgtname, compute_veto=False):
-        """Apply all the selections in line on the events
-        Parameters
-        
-        :return: passed events, vetoed events
-        """
-        self.objsel = weightedSelection(events[wgtname])
-        self.triggersel(events)
-        self.setevtsel(events)
-        if self.objsel.names:
-            self.cfobj = self.objsel.cutflow(*self.objsel.names)
-            self.cfno = self.cfobj.result()
-        else:
-            raise ValueError("Events selections not set, this is base selection!")
-        if not self.objcollect:
-            passed = events[self.cfno.maskscutflow[-1]]
-            if compute_veto: 
-                vetoed = events[~(self.objsel.all())]
-                result = (passed, vetoed)
-            else:
-                result = passed
-            return result
-        else:
-            return self.objcollect_to_df() 
-
-    def cf_to_df(self):
-        """Return a dataframe for a single EventSelections.cutflow object.
-        DASK GETS COMPUTED!
-        :return: cutflow df
-        :rtype: pandas.DataFrame
-        """
-        row_names = self.cfno.labels
-        dfdata = {}
-        if self.cfno.wgtevcutflow is not None:
-            wgt_number = dask.compute(self.cfno.wgtevcutflow)[0]
-            dfdata['wgt'] = wgt_number
-        number = dask.compute(self.cfno.nevcutflow)[0]
-        dfdata['raw'] = number
-        df_cf = pd.DataFrame(dfdata, index=row_names)
-        return df_cf
-
-    def objcollect_to_df(self) -> pd.DataFrame:
-        listofdf = [Object.object_to_df(zipped, prefix+'_') for zipped, prefix in self.objcollect.items()]
-        return pd.concat(listofdf, axis=1)
-    
-    def selobjhelper(self, events, name, obj, mask):
-        self.objsel.add(name, mask)
-        events = events[mask]
-        obj.events = events
-        return obj, events
-        
-    
 class Object:
     """Object class for handling object selections, meant as an observer of the events.
 
@@ -230,16 +130,16 @@ class Object:
         mask = (sum_charge < ak.num(aodarr, axis=1))
         return mask
     
-    def dRwSelf(self, threshold, **kwargs):
+    def dRwSelf(self, threshold, mask, **kwargs):
         """Haphazard way to select pairs of objects"""
-        object_lv = self.getfourvec(**kwargs)
+        object_lv = self.getfourvec(mask=mask, **kwargs)
         leading_lv = object_lv[:,0]
         subleading_lvs = object_lv[:,1:]
         dR_mask = Object.dRoverlap(leading_lv, subleading_lvs, threshold)
         return dR_mask
     
-    def dRwOther(self, vec, threshold, **kwargs):
-        object_lv = self.getfourvec(**kwargs)
+    def dRwOther(self, vec, threshold, mask, **kwargs):
+        object_lv = self.getfourvec(mask=mask, **kwargs)
         return Object.dRoverlap(vec, object_lv, threshold)
 
     def getfourvec(self, **kwargs) -> vec.Array:
@@ -282,12 +182,12 @@ class Object:
         return sortmask
     
     @staticmethod
-    def fourvector(events: 'ak.Array', fieldname=None, mask=None, sort=True, sortname='pt', ascending=False, axis=-1) -> vec.Array:
+    def fourvector(events: 'ak.Array', objname: 'str'=None, mask=None, sort=True, sortname='pt', ascending=False, axis=-1) -> vec.Array:
         """Returns a fourvector from the events.
     
         Parameters
         - `events`: the events to extract the fourvector from. 
-        - `fieldname`: the name of the field in the events that contains the fourvector information.
+        - `objname`: the name of the field in the events that contains the fourvector information.
         - `sort`: whether to sort the fourvector
         - `sortname`: the name of the field to sort the fourvector by.
         - `ascending`: whether to sort the fourvector in ascending order.
@@ -296,7 +196,7 @@ class Object:
         - a fourvector object.
         """
         vec_type = ['pt', 'eta', 'phi', 'mass']
-        if fieldname is not None: to_be_zipped = {cop: events[fieldname+"_"+cop] for cop in vec_type}
+        if objname is not None: to_be_zipped = {cop: events[objname+"_"+cop] for cop in vec_type}
         else: to_be_zipped = {cop: events[cop] for cop in vec_type} 
         object_ak = ak.zip(to_be_zipped) if mask is None else ak.zip(to_be_zipped)[mask] 
         if sort:
@@ -353,3 +253,109 @@ class Object:
         Return
         - a mask of the veclist that satisfies the comparison condition."""
         return op(vec.deltaR(veclist), threshold)
+
+class BaseEventSelections:
+    """Base class for event selections.
+    
+    Attributes
+    - `mapcfg`: mapping configuration {key=abbreviation, value=nanoaodname}
+    - `objsel`: WeightedSelection object to keep track of cutflow
+    - `cutflow`: cutflow object
+    """
+    def __init__(self, trigcfg=default_trigsel, objcfg=default_objsel, mapcfg=default_mapcfg) -> None:
+        """Initialize the event selection object with the given selection configurations."""
+        self._trigcfg = trigcfg
+        self._objselcfg = objcfg
+        self._mapcfg = mapcfg
+        self.objsel = None
+        self.objcollect = {}
+        self.cfno = None
+        self.cfobj = None
+    
+    def __call__(self, events, wgtname='Generator_weight', **kwargs):
+        """Apply all the selections in line on the events"""
+        return self.callevtsel(events, wgtname=wgtname, **kwargs)
+
+    @property
+    def trigcfg(self):
+        return self._trigcfg
+
+    @property
+    def objselcfg(self):
+        return self._objselcfg
+    
+    @property
+    def mapcfg(self):
+        return self._mapcfg
+    
+    def triggersel(self, events):
+        """Custom function to set the object selections on event levels based on config.
+        Mask should be N*bool 1-D array.
+        """
+        pass
+
+    def setevtsel(self, events):
+        """Custom function to set the object selections based on config.
+        Mask should be N*bool 1-D array.
+
+        :param events: events loaded from a .root file
+        """
+        pass
+
+    def callevtsel(self, events, wgtname, compute_veto=False):
+        """Apply all the selections in line on the events
+        Parameters
+        
+        :return: passed events, vetoed events
+        """
+        self.objsel = weightedSelection(events[wgtname])
+        self.triggersel(events)
+        self.setevtsel(events)
+        if self.objsel.names:
+            self.cfobj = self.objsel.cutflow(*self.objsel.names)
+            self.cfno = self.cfobj.result()
+        else:
+            raise ValueError("Events selections not set, this is base selection!")
+        if not self.objcollect:
+            passed = events[self.cfno.maskscutflow[-1]]
+            if compute_veto: 
+                vetoed = events[~(self.objsel.all())]
+                result = (passed, vetoed)
+            else:
+                result = passed
+            return result
+        else:
+            return self.objcollect_to_df() 
+
+    def cf_to_df(self):
+        """Return a dataframe for a single EventSelections.cutflow object.
+        DASK GETS COMPUTED!
+        :return: cutflow df
+        :rtype: pandas.DataFrame
+        """
+        row_names = self.cfno.labels
+        dfdata = {}
+        if self.cfno.wgtevcutflow is not None:
+            wgt_number = dask.compute(self.cfno.wgtevcutflow)[0]
+            dfdata['wgt'] = wgt_number
+        number = dask.compute(self.cfno.nevcutflow)[0]
+        dfdata['raw'] = number
+        df_cf = pd.DataFrame(dfdata, index=row_names)
+        return df_cf
+
+    def objcollect_to_df(self) -> pd.DataFrame:
+        listofdf = [Object.object_to_df(zipped, prefix+'_') for zipped, prefix in self.objcollect.items()]
+        return pd.concat(listofdf, axis=1)
+    
+    def selobjhelper(self, events, name, obj, mask) -> tuple[Object, ak.Array]:
+        """Update"""
+        print(f"Trying to add {name} mask!")
+        self.objsel.add(name, mask)
+        events = events[mask]
+        if self.objcollect:
+            for key, val in self.objcollect.items():
+                self.objcollect[key] = val[mask]
+        obj.events = events
+        return obj, events
+        
+    

@@ -5,7 +5,7 @@ import awkward as ak
 import numpy as np
 
 from utils.datautil import arr_handler, iterwgt, getmeta
-from analysis.selutility import Object
+from analysis.evtselutil import Object
 from utils.filesysutil import checkpath, glob_files, pjoin
 from utils.rootutil import load_fields, DataLoader
 from config.selectionconfig import cleansetting as cleancfg

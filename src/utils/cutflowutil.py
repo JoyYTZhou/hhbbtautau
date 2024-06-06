@@ -2,11 +2,12 @@ import os, subprocess
 import numpy as np
 import pandas as pd
 import awkward as ak
-from utils.filesysutil import glob_files 
 from coffea.analysis_tools import PackedSelection, Cutflow
+import coffea.util
 import dask_awkward
 from collections import namedtuple
 
+from utils.filesysutil import glob_files 
 pjoin = os.path.join
 runcom = subprocess.run
 
@@ -75,6 +76,31 @@ class weightedSelection(PackedSelection):
         """
         super().__init__(dtype)
         self._perevtwgt = perevtwgt
+    
+    def __add_eager(self, name, selection, fill_value):
+        """Add a new eager boolean array"""
+        selection = coffea.util._ensure_flat(selection, allow_missing=True)
+        if isinstance(selection, np.ma.MaskedArray):
+            selection = selection.filled(fill_value)
+        if selection.dtype != bool:
+            raise ValueError(f"Expected a boolean array, received {selection.dtype}")
+        if len(self._names) == 0:
+            self._data = np.zeros(len(selection), dtype=self._dtype)
+        if isinstance(selection, np.ndarray) and self.delayed_mode:
+            raise ValueError(
+                f"New selection '{name}' is not delayed while PackedSelection is!"
+            )
+        elif len(self._names) == self.maxitems:
+            raise RuntimeError(
+                f"Exhausted all slots in PackedSelection: {self}, consider a larger dtype or fewer selections"
+            )
+        np.bitwise_or(
+            self._data,
+            self._dtype.type(1 << len(self._names)),
+            where=selection,
+            out=self._data,
+        )
+        self._names.append(name)
 
     def __if_sequential(self):
         """Return whether mask arrays have different dimensions."""
@@ -85,7 +111,7 @@ class weightedSelection(PackedSelection):
                 flag=True
                 break
         return flag
-
+    
     def cutflow(self, *names):
         """Compute the cutflow for a set of selections
 
@@ -143,7 +169,7 @@ class weightedSelection(PackedSelection):
             nevcutflow.extend(np.sum(maskscutflow, axis=1, initial=0))
             if self._perevtwgt is not None:
                 wgtevcutflow = [len(self._perevtwgt)]
-                wgtevcutflow.extend(np.sum(ak.to_numpy(maskwgtcutflow), axis=1, initial=0))
+                wgtevcutflow.extend(np.sum(ak.to_np(maskwgtcutflow), axis=1, initial=0))
             else:
                 wgtevcutflow = None
 

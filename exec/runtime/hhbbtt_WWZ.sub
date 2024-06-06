@@ -1,0 +1,28 @@
+# bare bone of submission script for condor jobs
+# Updated by Joy Z. May 19 2024
+
+MY_PATH = /uscms/homes/j/joyzhou/work/hhbbtautau
+NO_BACKUP = /uscms/home/joyzhou/nobackup
+OUTNAME = formalrun
+
+# Job description
+universe = vanilla
+executable = $(MY_PATH)/exec/run.sh
++SingularityImage = "/cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el9:x86_64"
+
+stream_error = True
+stream_output = True
+
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT_OR_EVICT 
+transfer_input_files = $(MY_PATH)/src, $(MY_PATH)/scripts, $(NO_BACKUP)/newcoffea_el9.tar.gz
+
+arguments = $(PROCESS_NAME) $(arg2)
+log = joblog/$(OUTNAME)_$(PROCESS_NAME)_$(arg2).log
+output = joblog/$(OUTNAME)_$(PROCESS_NAME)_$(arg2).out
+error = joblog/$(OUTNAME)_$(PROCESS_NAME)_$(arg2).err
+request_cpus = 12
+request_memory = 24GB
+request_disk = 5GB
+PROCESS_NAME = WWZ
+queue arg2 from seq 0 0 |

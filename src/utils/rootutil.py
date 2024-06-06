@@ -6,7 +6,7 @@ import random
 import subprocess
 import pandas as pd
 
-from analysis.selutility import Object
+from analysis.evtselutil import Object
 from config.selectionconfig import cleansetting as cleancfg
 from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, get_xrdfs_file_info
 from utils.datautil import find_branches, pjoin, getmeta

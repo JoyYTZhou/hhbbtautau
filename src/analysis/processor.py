@@ -6,7 +6,7 @@ import pandas as pd
 import dask_awkward as dak
 
 from utils.filesysutil import *
-from .selutility import BaseEventSelections
+from .evtselutil import BaseEventSelections
 
 def inittransfer(selname, processname) -> str:
     """Initialize transfer path for condor jobs.
