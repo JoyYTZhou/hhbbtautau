@@ -351,12 +351,15 @@ class BaseEventSelections:
         listofdf = [Object.object_to_df(zipped, prefix+'_') for prefix, zipped in self.objcollect.items()]
         return pd.concat(listofdf, axis=1)
     
-    def selobjhelper(self, events, name, obj, mask: 'ak.Array') -> Object:
+    def selobjhelper(self, events, name, obj, mask: 'ak.Array', lastmask=None) -> Object:
         """Update event level and object level.
         
         - `mask`: event-shaped array."""
         print(f"Trying to add {name} mask!")
-        self.objsel.add(name, mask)
+        if lastmask is not None:
+            self.objsel.add_sequential(name, mask, lastmask)
+        else:
+            self.objsel.add(name, mask)
         if self.objcollect:
             for key, val in self.objcollect.items():
                 self.objcollect[key] = val[mask]

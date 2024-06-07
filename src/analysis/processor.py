@@ -139,15 +139,14 @@ class Processor:
             delfiles(self.copydir)
         return rc
     
-    def writeevts(self, *args, **kwargs) -> int:
+    def writeevts(self, passed, suffix, **kwargs) -> int:
         """Write the events to a file."""
-        passed = args[0]
         if isinstance(passed, dak.lib.core.Array):
-            rc = self.writedask(*args, **kwargs)
+            rc = self.writedask(passed, suffix, **kwargs)
         elif isinstance(passed, pd.DataFrame):
-            rc = self.writedf(*args, **kwargs)
+            rc = self.writedf(passed, suffix)
         else:
-            rc = self.writepickle(*args, **kwargs)
+            rc = self.writepickle(passed, suffix, **kwargs)
         if self.transfer:
             transferfiles(self.outdir, self.transfer, remove=True)
         return rc
