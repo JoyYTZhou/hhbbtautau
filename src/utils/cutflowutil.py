@@ -76,65 +76,7 @@ class weightedSelection(PackedSelection):
         """
         super().__init__(dtype)
         self._perevtwgt = perevtwgt
-    
-    def __if_sequential(self):
-        """Return whether mask arrays have different dimensions."""
-        flag = False
-        dimension = len(self.any(self._names[0]))
-        for name in self._names:
-            if len(self.any(name)) != dimension: 
-                flag=True
-                break
-        return flag
-   
-    def __add_delayed(self, name, selection, fill_value):
-        """Add a new delayed boolean array"""
-        selection = coffea.util._ensure_flat(selection, allow_missing=True)
-        sel_type = dask_awkward.type(selection)
-        if isinstance(sel_type, ak.types.OptionType):
-            selection = dask_awkward.fill_none(selection, fill_value)
-            sel_type = dask_awkward.type(selection)
-        if sel_type.primitive != "bool":
-            raise ValueError(f"Expected a boolean array, received {sel_type.primitive}")
-        if len(self._names) == 0:
-            self._data = dask_awkward.zeros_like(selection, dtype=self._dtype)
-        if isinstance(selection, dask_awkward.Array) and not self.delayed_mode:
-            raise ValueError(
-                f"New selection '{name}' is not eager while PackedSelection is!"
-            )
-        elif len(self._names) == self.maxitems:
-            raise RuntimeError(
-                f"Exhausted all slots in PackedSelection: {self}, consider a larger dtype or fewer selections"
-            )
-        elif not dask_awkward.lib.core.compatible_partitions(self._data, selection):
-            raise ValueError(
-                f"New selection '{name}' has a different partition structure than existing selections"
-            )
-        self._data = np.bitwise_or(
-            self._data,
-            selection * self._dtype.type(1 << len(self._names)),
-        )
-        self._names.append(name)
 
-    def __add_eager(self, name, selection, fill_value):
-        """Add a new eager boolean array"""
-        selection = coffea.util._ensure_flat(selection, allow_missing=True)
-        if isinstance(selection, np.ma.MaskedArray):
-            selection = selection.filled(fill_value)
-        if selection.dtype != bool:
-            raise ValueError(f"Expected a boolean array, received {selection.dtype}")
-        if len(self._names) == 0:
-            self._data = np.zeros(len(selection), dtype=self._dtype)
-        if isinstance(selection, np.ndarray) and self.delayed_mode:
-            raise ValueError(
-                f"New selection '{name}' is not delayed while PackedSelection is!"
-            )
-        elif len(self._names) == self.maxitems:
-            raise RuntimeError(
-                f"Exhausted all slots in PackedSelection: {self}, consider a larger dtype or fewer selections"
-            )
-        self._names.append(name) 
-    
     def add(self, name, selection, fill_value=False):
         """This method is EXACTLY THE SAME as in PackedSelection. Do this so that I don't have to do name mangling."""
         if isinstance(selection, dask.array.Array):
@@ -146,49 +88,58 @@ class weightedSelection(PackedSelection):
             self.__add_eager(name, selection, fill_value)
         elif isinstance(selection, dask_awkward.Array):
             self.__add_delayed(name, selection, fill_value)
-
+    
+    def add_sequential(self, name, thissel, lastsel, fill_value=False):
+        if isinstance(thissel, dask.array.Array) or isinstance(lastsel, dask.array.Array):
+            raise ValueError(
+                "Dask arrays are not supported, please convert them to dask_awkward.Array by using dask_awkward.from_dask_array()"
+            )
+        thissel = coffea.util._ensure_flat(thissel, allow_missing=True)
+        lastsel = coffea.util._ensure_flat(lastsel, allow_missing=True)
+        last1 = lastsel[lastsel==True]
+        result1 = last1 & thissel
+        result = np.full(lastsel.shape, False)
+        result[lastsel==True] = result1
+        if isinstance(result, np.ndarray):
+            self.__add_eager(name, result, fill_value)
+        elif isinstance(result, dask_awkward.Array):
+            self.__add_delayed(name, result, fill_value)
+    
     def cutflow(self, *names):
-        """Compute the cutflow for a set of selections
-
-        Returns an object which can return a list of the number of events that pass all the previous selections including the current one
-        after each named selection is applied consecutively. The first element
-        of the returned list is the total number of events before any selections are applied.
-        The last element is the final number of events that pass after all the selections are applied.
-        Can also return a cutflow histogram as a ``hist.Hist`` object where the bin heights are the number of events of the cutflow list.
-        If the PackedSelection is in delayed mode, the elements of the list will be dask_awkward Arrays that can be computed whenever the user wants.
-        If the histogram is requested, those delayed arrays will be computed in the process in order to set the bin heights.
-
-        Parameters
-        ----------
-            ``*names`` : args
-                The named selections to use, need to be a subset of the selections already added
-
-        Returns
-        -------
-            res: coffea.analysis_tools.Cutflow
-                A wrapper class for the results, see the documentation for that class for more details
-        """
         for cut in names:
             if not isinstance(cut, str) or cut not in self._names:
                 raise ValueError(
                     "All arguments must be strings that refer to the names of existing selections"
                 )
 
-        sequential = self.__if_sequential()
+        sequential = self._if_sequential
         
         masksonecut, maskscutflow, maskwgtcutflow = [], [], []
 
-        if sequential:
-            nevonecut = None
-            masksonecut = None
-            maskscutflow = None
+        # if sequential:
+        #     nevonecut = None
+        #     masksonecut = None
+        #     maskscutflow = None
+            
+        #     if not self.delayed_mode:
+        #         nevcutflow = [len(self._data)]
+        #         nevcutflow.extend([np.sum(self.any(cut), initial=0)] for cut in names)
+        #         if self._perevtwgt is not None:
+        #             wgtevcutflow = [np.sum(self._perevtwgt)]
+        #             wgtevcutflow.extend([np.sum(self._perevtwgt[self.any(cut)], initial=0)] for cut in names)
+        #         else:
+        #             wgtevcutflow = None
 
-            nevcutflow = [len(self._perevtwgt)]
-            wgtevcutflow = [len(self._perevtwgt)]
-            for i, cut in enumerate(names):
-                nevcutflow.append(np.sum(self.any(cut), initial=0))
-                wgtevcutflow.append(np.sum(self._perevtwgt[self.any(cut)], initial=0))
-
+        #     else:
+        #         nevcutflow = [dask_awkward.count(self._data, axis=0)]
+        #         nevcutflow.extend([dask_awkward.sum(cut) for cut in names])
+        #         if self._perevtwgt is not None:
+        #             wgtevcutflow = [dask_awkward.sum(self._perevtwgt)] 
+        #             wgtevcutflow.extend([dask_awkward.sum(self._perevtwgt[cut]) for cut in names])
+        #         else:
+        #             wgtevcutflow = None
+        
+        # else:
         for i, cut in enumerate(names):
             mask1 = self.any(cut)
             mask2 = self.all(*(names[: i + 1]))
@@ -203,7 +154,7 @@ class weightedSelection(PackedSelection):
             nevonecut.extend(np.sum(masksonecut, axis=1, initial=0))
             nevcutflow.extend(np.sum(maskscutflow, axis=1, initial=0))
             if self._perevtwgt is not None:
-                wgtevcutflow = [len(self._perevtwgt)]
+                wgtevcutflow = [np.sum(self._perevtwgt)]
                 wgtevcutflow.extend(np.sum(ak.to_numpy(maskwgtcutflow), axis=1, initial=0))
             else:
                 wgtevcutflow = None

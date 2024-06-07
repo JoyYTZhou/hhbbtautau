@@ -51,7 +51,7 @@ class prelimEvtSel(BaseEventSelections):
             tau_mask = (tau.ptmask(opr.ge) & \
                         tau.absetamask(opr.le) & \
                         tau.absdzmask(opr.lt) & \
-                        tau.custommask('idvsjet', opr.ge) & \
+                        # tau.custommask('idvsjet', opr.ge) & \
                         tau.custommask('idvsmu', opr.ge) & \
                         tau.custommask('idvse', opr.ge))
             return tau_mask
