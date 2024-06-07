@@ -97,7 +97,7 @@ class Processor:
             events = None
         return events
     
-    def runfile(self, filename, suffix, delayed=False, write_npz=False):
+    def runfile(self, filename: 'str', suffix, delayed=False, write_npz=False):
         """Run test selections on a single file dict.
 
         Parameters:
@@ -173,7 +173,7 @@ class Processor:
         Parameters:
         - `passed`: DataFrame to write
         - `suffix`: index to append to filename"""
-        outname = pjoin(self.outdir, f'{self.dataset}_{suffix}.csv')
+        outname = pjoin(self.outdir, f'{self.dataset}_output_{suffix}.csv')
         passed.to_csv(outname)
         return 0
         

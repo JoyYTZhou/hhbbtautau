@@ -45,13 +45,13 @@ class skimEvtSel(BaseEventSelections):
         return None 
 
 class prelimEvtSel(BaseEventSelections):
-    def tausel(self, events):
+    def setevtsel(self, events) -> None:
         tau = Object(events, "Tau", weakrefEvt=True)
         def tauobjmask(tau: 'Object'):
             tau_mask = (tau.ptmask(opr.ge) & \
                         tau.absetamask(opr.le) & \
                         tau.absdzmask(opr.lt) & \
-                        # tau.custommask('idvsjet', opr.ge) & \
+                        tau.custommask('idvsjet', opr.ge) & \
                         tau.custommask('idvsmu', opr.ge) & \
                         tau.custommask('idvse', opr.ge))
             return tau_mask
@@ -73,26 +73,21 @@ class prelimEvtSel(BaseEventSelections):
         sd_cand = sd_cand[tau_dRmask][:,0]
         self.objcollect['SubleadingTau'] = sd_cand
     
-    # def jetsel(self, events) -> None:
-    #     jet = Object(events, 'Jet')
+        jet = Object(events, 'Jet')
         
-    #     def jobjmask(jet: 'Object'):
-    #         j_mask = (jet.ptmask(opr.ge) &
-    #               jet.absetamask(opr.le) &
-    #               jet.custommask('btag', opr.ge))
-    #         tau_ldvec = Object.fourvector(self.objcollect['LeadingTau'])
-    #         tau_sdvec = Object.fourvector(self.objcollect['SubleadingTau'])
-    #         dR_mask = jet.dRwOther(tau_ldvec, 0.5) & jet.dRwOther(tau_sdvec, 0.5)
-    #         return j_mask & dR_mask
+        def jobjmask(jet: 'Object'):
+            j_mask = (jet.ptmask(opr.ge) &
+                  jet.absetamask(opr.le) &
+                  jet.custommask('btag', opr.ge))
+            tau_ldvec = Object.fourvector(self.objcollect['LeadingTau'])
+            tau_sdvec = Object.fourvector(self.objcollect['SubleadingTau'])
+            dR_mask = jet.dRwOther(tau_ldvec, 0.5) & jet.dRwOther(tau_sdvec, 0.5)
+            return j_mask & dR_mask
         
-    #     jet_mask = jobjmask(jet)
-    #     jet_nummask = jet.numselmask(jet_mask, opr.ge)
-    #     jet, events = self.selobjhelper(events, '>=2 Medium B-tagged jets', jet, jet_nummask)
+        jet_mask = jobjmask(jet)
+        jet_nummask = jet.numselmask(jet_mask, opr.ge)
+        jet, events = self.selobjhelper(events, '>=2 Medium B-tagged jets', jet, jet_nummask, tau_dRmask)
 
-    #     # start selecting candidate jets
-    #     ld_j, sd_j = jet.getldsd(mask=jobjmask(jet))
-    #     self.objcollect['LeadingBjet'] = ld_j
-    #     self.objcollect['SubleadingBjet'] = sd_j[:,0]
-
-    def setevtsel(self, events) -> None:
-        self.tausel(events)
+        ld_j, sd_j = jet.getldsd(mask=jobjmask(jet))
+        self.objcollect['LeadingBjet'] = ld_j
+        self.objcollect['SubleadingBjet'] = sd_j[:,0]

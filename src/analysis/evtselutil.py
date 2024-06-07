@@ -134,16 +134,16 @@ class Object:
         mask = (sum_charge < ak.num(aodarr, axis=1))
         return mask
     
-    def dRwSelf(self, threshold, mask, **kwargs):
+    def dRwSelf(self, threshold, **kwargs):
         """Haphazard way to select pairs of objects"""
-        object_lv = self.getfourvec(mask=mask, **kwargs)
+        object_lv = self.getfourvec(**kwargs)
         leading_lv = object_lv[:,0]
         subleading_lvs = object_lv[:,1:]
         dR_mask = Object.dRoverlap(leading_lv, subleading_lvs, threshold)
         return dR_mask
     
-    def dRwOther(self, vec, threshold, mask, **kwargs):
-        object_lv = self.getfourvec(mask=mask, **kwargs)
+    def dRwOther(self, vec, threshold, **kwargs):
+        object_lv = self.getfourvec(**kwargs)
         return Object.dRoverlap(vec, object_lv, threshold)
 
     def getfourvec(self, **kwargs) -> vec.Array:
