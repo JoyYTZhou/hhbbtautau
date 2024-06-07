@@ -76,18 +76,6 @@ class weightedSelection(PackedSelection):
         """
         super().__init__(dtype)
         self._perevtwgt = perevtwgt
-
-    def add(self, name, selection, fill_value=False):
-        """This method is EXACTLY THE SAME as in PackedSelection. Do this so that I don't have to do name mangling."""
-        if isinstance(selection, dask.array.Array):
-            raise ValueError(
-                "Dask arrays are not supported, please convert them to dask_awkward.Array by using dask_awkward.from_dask_array()"
-            )
-        selection = coffea.util._ensure_flat(selection, allow_missing=True)
-        if isinstance(selection, np.ndarray):
-            self.__add_eager(name, selection, fill_value)
-        elif isinstance(selection, dask_awkward.Array):
-            self.__add_delayed(name, selection, fill_value)
     
     def add_sequential(self, name, thissel, lastsel, fill_value=False):
         if isinstance(thissel, dask.array.Array) or isinstance(lastsel, dask.array.Array):
@@ -101,49 +89,23 @@ class weightedSelection(PackedSelection):
         result = np.full(lastsel.shape, False)
         result[lastsel==True] = result1
         if isinstance(result, np.ndarray):
-            self.__add_eager(name, result, fill_value)
+            self._PackedSelection__add_eager(name, result, fill_value)
         elif isinstance(result, dask_awkward.Array):
-            self.__add_delayed(name, result, fill_value)
+            self._PackedSelection__add_delayed(name, result, fill_value)
     
-    def cutflow(self, *names):
+    def cutflow(self, *names) -> weightedCutflow:
         for cut in names:
             if not isinstance(cut, str) or cut not in self._names:
                 raise ValueError(
                     "All arguments must be strings that refer to the names of existing selections"
                 )
 
-        sequential = self._if_sequential
-        
         masksonecut, maskscutflow, maskwgtcutflow = [], [], []
 
-        # if sequential:
-        #     nevonecut = None
-        #     masksonecut = None
-        #     maskscutflow = None
-            
-        #     if not self.delayed_mode:
-        #         nevcutflow = [len(self._data)]
-        #         nevcutflow.extend([np.sum(self.any(cut), initial=0)] for cut in names)
-        #         if self._perevtwgt is not None:
-        #             wgtevcutflow = [np.sum(self._perevtwgt)]
-        #             wgtevcutflow.extend([np.sum(self._perevtwgt[self.any(cut)], initial=0)] for cut in names)
-        #         else:
-        #             wgtevcutflow = None
-
-        #     else:
-        #         nevcutflow = [dask_awkward.count(self._data, axis=0)]
-        #         nevcutflow.extend([dask_awkward.sum(cut) for cut in names])
-        #         if self._perevtwgt is not None:
-        #             wgtevcutflow = [dask_awkward.sum(self._perevtwgt)] 
-        #             wgtevcutflow.extend([dask_awkward.sum(self._perevtwgt[cut]) for cut in names])
-        #         else:
-        #             wgtevcutflow = None
-        
-        # else:
         for i, cut in enumerate(names):
             mask1 = self.any(cut)
             mask2 = self.all(*(names[: i + 1]))
-            maskwgt = self._perevtwgt[mask2]
+            maskwgt = ak.to_numpy(self._perevtwgt[mask2])
             masksonecut.append(mask1)
             maskscutflow.append(mask2)
             maskwgtcutflow.append(maskwgt)
@@ -155,7 +117,7 @@ class weightedSelection(PackedSelection):
             nevcutflow.extend(np.sum(maskscutflow, axis=1, initial=0))
             if self._perevtwgt is not None:
                 wgtevcutflow = [np.sum(self._perevtwgt)]
-                wgtevcutflow.extend(np.sum(ak.to_numpy(maskwgtcutflow), axis=1, initial=0))
+                wgtevcutflow.extend([np.sum(maskwgt, initial=0) for maskwgt in maskwgtcutflow])
             else:
                 wgtevcutflow = None
 

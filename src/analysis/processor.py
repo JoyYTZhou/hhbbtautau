@@ -133,7 +133,7 @@ class Processor:
                 cpcondor(localpath, condorpath)
                 os.remove(localpath)
         
-        rc = self.writeevts(events, suffix, delayed)
+        rc = self.writeevts(events, suffix, delayed=delayed)
                 
         if self.rtcfg.COPY_LOCAL: 
             delfiles(self.copydir)
