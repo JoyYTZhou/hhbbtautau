@@ -67,10 +67,10 @@ class prelimEvtSel(BaseEventSelections):
         dR_mask = tau.dRwSelf(threshold=0.5, mask=tau_mask)
         sd_cand = sd_cand[dR_mask]
 
-        tau_nummask = Object.maskredmask(dR_mask, opr.ge, 1)
-        tau, events = self.selobjhelper(events,'Tau dR >= 0.5', tau, tau_nummask)
+        tau_dRmask = Object.maskredmask(dR_mask, opr.ge, 1)
+        tau, events = self.selobjhelper(events,'Tau dR >= 0.5', tau, tau_dRmask, tau_nummask)
 
-        sd_cand = sd_cand[tau_nummask][:,0]
+        sd_cand = sd_cand[tau_dRmask][:,0]
         self.objcollect['SubleadingTau'] = sd_cand
     
     # def jetsel(self, events) -> None:
