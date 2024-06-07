@@ -99,9 +99,7 @@ class weightedSelection(PackedSelection):
                 raise ValueError(
                     "All arguments must be strings that refer to the names of existing selections"
                 )
-
         masksonecut, maskscutflow, maskwgtcutflow = [], [], []
-
         for i, cut in enumerate(names):
             mask1 = self.any(cut)
             mask2 = self.all(*(names[: i + 1]))
@@ -135,10 +133,6 @@ class weightedSelection(PackedSelection):
         return weightedCutflow(
             names, nevonecut, nevcutflow, wgtevcutflow, masksonecut, maskscutflow, self.delayed_mode
         )
-
-class wgtAwkSelection(weightedSelection):
-    def __init__(self, perevtwgt, dtype="uint32"):
-        super().__init__(perevtwgt, dtype)
 
 def load_csvs(dirname, startpattern):
     """Load csv files matching a pattern into a list of DataFrames."""
