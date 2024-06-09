@@ -3,7 +3,7 @@
 # TECHNICALLY THIS SHOULD BE THE ONLY FILE THAT NEEDS TO BE MODIFIED FOR CUSTOM EVENT SELECTIONS
 from .evtselutil import BaseEventSelections, Object
 import operator as opr
-import dask_awkward as dak
+import numpy as np
 
 def switch_selections(sel_name):
     selections = {
@@ -68,7 +68,7 @@ class prelimEvtSel(BaseEventSelections):
         sd_cand = sd_cand[dR_mask]
 
         tau_dRmask = Object.maskredmask(dR_mask, opr.ge, 1)
-        tau, events = self.selobjhelper(events,'Tau dR >= 0.5', tau, tau_dRmask, tau_nummask)
+        tau, events = self.selobjhelper(events,'Tau dR >= 0.5', tau, tau_dRmask)
 
         sd_cand = sd_cand[tau_dRmask][:,0]
         self.objcollect['SubleadingTau'] = sd_cand
@@ -79,15 +79,16 @@ class prelimEvtSel(BaseEventSelections):
             j_mask = (jet.ptmask(opr.ge) &
                   jet.absetamask(opr.le) &
                   jet.custommask('btag', opr.ge))
-            tau_ldvec = Object.fourvector(self.objcollect['LeadingTau'])
-            tau_sdvec = Object.fourvector(self.objcollect['SubleadingTau'])
-            dR_mask = jet.dRwOther(tau_ldvec, 0.5) & jet.dRwOther(tau_sdvec, 0.5)
-            return j_mask & dR_mask
+            tau_ldvec = Object.fourvector(self.objcollect['LeadingTau'], sort=False)
+            tau_sdvec = Object.fourvector(self.objcollect['SubleadingTau'], sort=False)
+            jetdR_mask = jet.dRwOther(tau_ldvec, 0.5) & jet.dRwOther(tau_sdvec, 0.5)
+            return j_mask & jetdR_mask
         
         jet_mask = jobjmask(jet)
         jet_nummask = jet.numselmask(jet_mask, opr.ge)
-        jet, events = self.selobjhelper(events, '>=2 Medium B-tagged jets', jet, jet_nummask, tau_dRmask)
+        jet, events = self.selobjhelper(events, '>=2 Medium B-tagged jets', jet, jet_nummask)
 
-        ld_j, sd_j = jet.getldsd(mask=jobjmask(jet))
+        jet_mask = jobjmask(jet)
+        ld_j, sd_j = jet.getldsd(mask=jet_mask)
         self.objcollect['LeadingBjet'] = ld_j
         self.objcollect['SubleadingBjet'] = sd_j[:,0]

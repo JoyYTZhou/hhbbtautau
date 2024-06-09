@@ -25,4 +25,4 @@ request_cpus = 14
 request_memory = 28GB
 request_disk = 5GB
 PROCESS_NAME = TTbar
-queue arg2 from seq 0 2 |
+queue arg2 from seq 0 0 |

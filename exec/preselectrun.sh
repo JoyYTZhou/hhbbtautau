@@ -35,7 +35,7 @@ export PYTHONPATH=$(remove_duplicates "$PYTHONPATH")
 echo $PYTHONPATH
 
 export ENV_FOR_DYNACONF=PRESELECT
-export DEBUG_MODE=true
+export DEBUG_MODE=false
 export OUTPUT_BASE=$PWD
 
 echo "start executing main file"
