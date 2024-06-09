@@ -25,7 +25,5 @@ transfer_input_files = $(MY_PATH)/src, $(MY_PATH)/scripts, $(NO_BACKUP)/newcoffe
 
 queue arg1 from (
     ggF
-    ZH
-    ZZ
 )
 

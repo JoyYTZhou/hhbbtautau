@@ -266,11 +266,12 @@ class BaseEventSelections:
     - `objsel`: WeightedSelection object to keep track of cutflow
     - `cutflow`: cutflow object
     """
-    def __init__(self, trigcfg=default_trigsel, objcfg=default_objsel, mapcfg=default_mapcfg) -> None:
+    def __init__(self, sequential=True, trigcfg=default_trigsel, objcfg=default_objsel, mapcfg=default_mapcfg) -> None:
         """Initialize the event selection object with the given selection configurations."""
         self._trigcfg = trigcfg
         self._objselcfg = objcfg
         self._mapcfg = mapcfg
+        self._sequential = sequential
         self.objsel = None
         self.objcollect = {}
         self.cfno = None
@@ -319,7 +320,7 @@ class BaseEventSelections:
             self.cfobj = self.objsel.cutflow(*self.objsel.names)
             self.cfno = self.cfobj.result()
         else:
-            raise ValueError("Events selections not set, this is base selection!")
+            raise NotImplementedError("Events selections not set, this is base selection!")
         if not self.objcollect:
             passed = events[self.cfno.maskscutflow[-1]]
             if compute_veto: 
@@ -351,15 +352,15 @@ class BaseEventSelections:
         listofdf = [Object.object_to_df(zipped, prefix+'_') for prefix, zipped in self.objcollect.items()]
         return pd.concat(listofdf, axis=1)
     
-    def selobjhelper(self, events: ak.Array, name, obj: Object, mask: 'ak.Array', lastmask=None) -> tuple[Object, ak.Array]:
+    def selobjhelper(self, events: ak.Array, name, obj: Object, mask: 'ak.Array') -> tuple[Object, ak.Array]:
         """Update event level and object level.
         
         - `mask`: event-shaped array."""
         print(f"Trying to add {name} mask!")
-        if lastmask is not None:
+        if self._sequential and len(self.objsel.names) >= 1:
+            lastmask = self.objsel.any(self.objsel.names[-1])
             self.objsel.add_sequential(name, mask, lastmask)
-        else:
-            self.objsel.add(name, mask)
+        else: self.objsel.add(name, mask)
         if self.objcollect:
             for key, val in self.objcollect.items():
                 self.objcollect[key] = val[mask]

@@ -9,11 +9,11 @@ STEP_SIZE = '150MB'
 
 [PRESELECT]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
-SEL_NAME = 'regionA'
-INPUTFILE_PATH = "@format /store/user/joyzhou/lepskim_hadded/{this.PROCESS_NAME}"
+SEL_NAME = 'prelim'
+INPUTFILE_PATH = "@format /store/user/joyzhou/vetoskim_hadded/{this.PROCESS_NAME}"
 OUTPUTDIR_PATH = "@format {env[OUTPUT_BASE]}/outputs/{this.PROCESS_NAME}"
 COPY_LOCAL = false
-STEP_NO = 1
+STEP_SIZE = '150MB'
 
 [LPCCONDOR]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
