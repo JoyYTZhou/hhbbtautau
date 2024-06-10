@@ -91,6 +91,7 @@ class Processor:
                 print("Delayed!")
                 events = uproot.dask(**dask_args)
             else:
+                print("Not delayed!")
                 events = uproot.open(dask_args['files']).arrays()
         except OSError as e:
             print(f"Failure to load file {filename}: {e}")
