@@ -14,6 +14,7 @@ INPUTFILE_PATH = "@format /store/user/joyzhou/vetoskim_hadded/{this.PROCESS_NAME
 OUTPUTDIR_PATH = "@format {env[OUTPUT_BASE]}/outputs/{this.PROCESS_NAME}"
 COPY_LOCAL = false
 STEP_SIZE = '150MB'
+DELAYED_OPEN = false
 
 [LPCCONDOR]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
@@ -26,9 +27,9 @@ STEP_SIZE = '170MB'
 [LPCTEST]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
 SEL_NAME = 'prelim'
-INPUTFILE_PATH = "@format data/preprocessed/{this.PROCESS_NAME}.json"
+INPUTFILE_PATH = "@format /store/user/joyzhou/vetoskim_hadded/{this.PROCESS_NAME}"
 OUTPUTDIR_PATH = "/uscms/home/joyzhou/nobackup/tests"
 TRANSFER_PATH = "@format /store/user/joyzhou/tests/{this.PROCESS_NAME}"
-COPY_LOCAL = true
+COPY_LOCAL = false
 COPY_DIR = "/uscms/home/joyzhou/nobackup/temp"
 STEP_SIZE = false

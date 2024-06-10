@@ -18,8 +18,8 @@ else
     export VIRTUAL_ENV=${ENV_NAME}
 fi
 
-source scripts/lpcsetup.sh
 source scripts/envutil.sh
+LPC_setup
 
 export CONDOR_BASE=/store/user/joyzhou
 LCG_sasetup
