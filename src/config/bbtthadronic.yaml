@@ -36,10 +36,6 @@ default:
       jetid: 3
   outputs:
     Tau:
-      pt: Tau_pt
-      eta: Tau_eta
-      phi: Tau_phi
-      mass: Tau_mass
       dxy: Tau_dxy
       dz: Tau_dz
       jetidx: Tau_jetIdx
@@ -47,48 +43,27 @@ default:
       idvsjet: Tau_idDeepTau2017v2p1VSjet
       idvsmu: Tau_idDeepTau2017v2p1VSmu
       idvse: Tau_idDeepTau2017v2p1VSe
+      genflav: Tau_genPartFlav
     Electron:
-      pt: Electron_pt
-      eta: Electron_eta
-      phi: Electron_phi
-      mass: Electron_mass
-      dxy: Electron_dxy
-      dz: Electron_dz
       cbtightid: Electron_cutBased
       mvaisoid: Electron_mvaIso_WP90
       charge: Electron_charge
     Muon:
-      pt: Muon_pt
-      eta: Muon_eta
-      phi: Muon_phi
-      mass: Muon_mass
-      dxy: Muon_dxy
-      dz: Muon_dz
       looseid: Muon_looseId
       isoid: Muon_pfIsoId
       cbtightid: Muon_tightId
       charge: Muon_charge
     Jet:
-      pt: Jet_pt
-      eta: Jet_eta
-      phi: Jet_phi
-      mass: Jet_mass
       btag: Jet_btagDeepFlavB
       deepJetCvsB: Jet_btagDeepFlavCvB
       jetid: Jet_jetId
-    FatJet:
-      pt: FatJet_pt
-      eta: FatJet_eta
-      phi: FatJet_phi
-      mass: FatJet_mass
-      jetID: FatJet_jetId
     GenPart:
-      pt: GenPart_pt
-      eta: GenPart_eta
-      phi: GenPart_phi
-      mass: GenPart_mass
       pdgid: GenPart_pdgId
       motherid: GenPart_genPartIdxMother
+      charge: GenPart_charge
+    GenVisTau:
+      charge: GenVisTau_charge
+      motherid: GenVisTau_genPartIdxMother
 
 
 

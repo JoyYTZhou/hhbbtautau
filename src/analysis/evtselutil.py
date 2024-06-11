@@ -9,6 +9,7 @@ import operator as opr
 from config.selectionconfig import selectionsettings as selcfg
 from utils.cutflowutil import weightedSelection
 from utils.datautil import arr_handler
+from utils.rootutil import DataLoader
 
 default_trigsel = selcfg.triggerselections
 default_objsel = selcfg.objselections
@@ -76,24 +77,28 @@ class Object:
     def mapcfg(self):
         return self._mapcfg
         
-    def custommask(self, maskname, op, func=None):
+    def custommask(self, propname: 'str', op, func=None):
         """Create custom mask based on input.
         
         Parameters
         - `events`: events to apply the mask on
-        - `maskname`: name of the mask
+        - `propname`: name of the property mask is based on
         - `op`: operator to use for the mask
         - `func`: function to apply to the data. Defaults to None.
 
         Returns
         - `mask`: mask based on input
         """
-        if self.selcfg.get(maskname, None) is None:
-            raise ValueError(f"threshold value {maskname} is not given for object {self.name}")
-        if self.mapcfg.get(maskname, None) is None:
-            raise ValueError(f"Nanoaodname is not given for {maskname} of object {self.name}")
-        aodname = self.mapcfg[maskname]
-        selval = self.selcfg[maskname]
+        if self.selcfg.get(propname, None) is None:
+            raise ValueError(f"threshold value {propname} is not given for object {self.name}")
+        if not f'{self.name}_{propname}' in self.events.fields:
+            if self.mapcfg.get(propname, None) is None:
+                raise ValueError(f"Nanoaodname is not given for {propname} of object {self.name}")
+            else:
+                aodname = self.mapcfg[propname]
+        else:
+            aodname = f'{self.name}_{propname}' 
+        selval = self.selcfg[propname]
         aodarr = self.events[aodname]
         if func is not None:
             return op(func(aodarr), selval)
@@ -156,10 +161,8 @@ class Object:
         Parameters
         - `mask`: mask must be same dimension as any object attributes."""
         zipped = Object.set_zipped(self.events, self.mapcfg)
-        if mask is not None:
-            zipped = zipped[mask]
-        if sort:
-            zipped = zipped[Object.sortmask(zipped[sort_by], **kwargs)]
+        if mask is not None: zipped = zipped[mask]
+        if sort: zipped = zipped[Object.sortmask(zipped[sort_by], **kwargs)]
         return zipped 
     
     def getldsd(self, **kwargs) -> tuple:
@@ -199,9 +202,7 @@ class Object:
         Return
         - a fourvector object.
         """
-        vec_type = ['pt', 'eta', 'phi', 'mass']
-        if objname is not None: to_be_zipped = {cop: events[objname+"_"+cop] for cop in vec_type}
-        else: to_be_zipped = {cop: events[cop] for cop in vec_type} 
+        to_be_zipped = DataLoader.get_namemap(events, objname)
         object_ak = ak.zip(to_be_zipped) if mask is None else ak.zip(to_be_zipped)[mask] 
         if sort:
             object_ak = object_ak[ak.argsort(object_ak[sortname], ascending=ascending, axis=axis)]
@@ -209,7 +210,7 @@ class Object:
         return object_LV
 
     @staticmethod
-    def set_zipped(events, namemap) -> ak.Array:
+    def set_zipped(events, objname, namemap) -> ak.Array:
         """Given events, read only object-related observables and zip them into ak. 
         Then zip the dict into an object.
         
@@ -217,13 +218,8 @@ class Object:
         - `events`: events to extract the object from
         - `namemap`: mapping configuration for the object
         """
-        zipped_dict = {}
-        for name, nanoaodname in namemap.items():
-            zipped_dict.update({name: events[nanoaodname]})
-        if isinstance(events, dak.lib.core.Array):
-            zipped_object = dak.zip(zipped_dict)
-        else:
-            zipped_object = ak.zip(zipped_dict)
+        zipped_dict = DataLoader.get_namemap(events, objname, namemap)
+        zipped_object = dak.zip(zipped_dict) if isinstance(events, dak.lib.core.Array) else ak.zip(zipped_dict) 
         return zipped_object
 
     @staticmethod
