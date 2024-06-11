@@ -9,7 +9,6 @@ import operator as opr
 from config.selectionconfig import selectionsettings as selcfg
 from utils.cutflowutil import weightedSelection
 from utils.datautil import arr_handler
-from utils.rootutil import DataLoader
 
 default_trigsel = selcfg.triggerselections
 default_objsel = selcfg.objselections
@@ -160,7 +159,7 @@ class Object:
         
         Parameters
         - `mask`: mask must be same dimension as any object attributes."""
-        zipped = Object.set_zipped(self.events, self.mapcfg)
+        zipped = Object.set_zipped(self.events, self.name, self.mapcfg)
         if mask is not None: zipped = zipped[mask]
         if sort: zipped = zipped[Object.sortmask(zipped[sort_by], **kwargs)]
         return zipped 
@@ -202,7 +201,7 @@ class Object:
         Return
         - a fourvector object.
         """
-        to_be_zipped = DataLoader.get_namemap(events, objname)
+        to_be_zipped = Object.get_namemap(events, objname)
         object_ak = ak.zip(to_be_zipped) if mask is None else ak.zip(to_be_zipped)[mask] 
         if sort:
             object_ak = object_ak[ak.argsort(object_ak[sortname], ascending=ascending, axis=axis)]
@@ -218,7 +217,7 @@ class Object:
         - `events`: events to extract the object from
         - `namemap`: mapping configuration for the object
         """
-        zipped_dict = DataLoader.get_namemap(events, objname, namemap)
+        zipped_dict = Object.get_namemap(events, objname, namemap)
         zipped_object = dak.zip(zipped_dict) if isinstance(events, dak.lib.core.Array) else ak.zip(zipped_dict) 
         return zipped_object
 
@@ -253,6 +252,15 @@ class Object:
         Return
         - a mask of the veclist that satisfies the comparison condition."""
         return op(vec.deltaR(veclist), threshold)
+
+    @staticmethod
+    def get_namemap(events: 'ak.Array', col_name: 'str', namemap: 'dict' = {}):
+        vec_type = ['pt', 'eta', 'phi', 'mass']
+        to_be_zipped = {cop: events[col_name+"_"+cop] 
+                        for cop in vec_type} if col_name is not None else {cop: events[cop] for cop in vec_type}
+        if namemap: to_be_zipped.update({name: events[nanoaodname] 
+                       for name, nanoaodname in namemap.items()})
+        return to_be_zipped
 
 class BaseEventSelections:
     """Base class for event selections.
