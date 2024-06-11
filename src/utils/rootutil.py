@@ -183,15 +183,6 @@ class DataLoader():
         cfdf = cfdf.drop(columns=same_cols)
         cfdf[name] = sumcol
         return sumcol
-    
-    @staticmethod
-    def get_namemap(events: 'ak.Array', col_name: 'str', namemap: 'dict' = {}):
-        vec_type = ['pt', 'eta', 'phi', 'mass']
-        to_be_zipped = {cop: events[col_name+"_"+cop] 
-                        for cop in vec_type} if col_name is not None else {cop: events[cop] for cop in vec_type}
-        if namemap: to_be_zipped.update({name: events[nanoaodname] 
-                       for name, nanoaodname in namemap.items()})
-        return to_be_zipped
 
     def get_objs(self) -> None:
         """Writes the selected, concated objects to root files.
