@@ -183,6 +183,15 @@ class DataLoader():
         cfdf = cfdf.drop(columns=same_cols)
         cfdf[name] = sumcol
         return sumcol
+    
+    @staticmethod
+    def get_namemap(events: 'ak.Array', col_name: 'str', namemap: 'dict' = {}):
+        vec_type = ['pt', 'eta', 'phi', 'mass']
+        to_be_zipped = {cop: events[col_name+"_"+cop] 
+                        for cop in vec_type} if col_name is not None else {cop: events[cop] for cop in vec_type}
+        if namemap: to_be_zipped.update({name: events[nanoaodname] 
+                       for name, nanoaodname in namemap.items()})
+        return to_be_zipped
 
     def get_objs(self) -> None:
         """Writes the selected, concated objects to root files.
@@ -306,8 +315,8 @@ def load_fields(file, branch_names=None, tree_name='Events', lib='ak'):
         dfs = []
         emptylist = []
         for root_file in file:
-            if load_one(file):
-                dfs.append(load_one(file))
+            result = load_one(root_file)
+            if result: dfs.append(load_one(file))
             else: emptylist.append(root_file)
         combined_evts = ak.concatenate(dfs)
         returned = (combined_evts, emptylist)
@@ -315,6 +324,7 @@ def load_fields(file, branch_names=None, tree_name='Events', lib='ak'):
 
 def write_root(evts, destination, outputtree="Events", title="Events", compression=None):
     """Write arrays to root file. Highly inefficient methods in terms of data storage.
+
     Parameters
     - `evts`: awkward array to write
     - `destination`: path to the output root file
