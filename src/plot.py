@@ -21,8 +21,8 @@ def programchoice() -> argparse.Namespace:
 
     args = parser.parse_args()
     if not any(vars(args).values()):
-        parser.print_help
-        parser.exit
+        parser.print_help()
+        parser.exit()
 
     return args
 
