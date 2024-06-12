@@ -40,7 +40,7 @@ def job(fn, i, dataset, transferP=transferP, eventSelection=evtselclass) -> int:
         print(f"TypeError encountered for file index {i} in {dataset}: {e}")
         return 1
     
-def loadmeta(filterfunc, dsindx=None, inputpath=rs.INPUTFILE_PATH) -> dict:
+def loadmeta(filterfunc, dsindx=None, inputpath=rs.INPUTFILE_PATH, tsferP=transferP) -> dict:
     """Load metadata from input file, or straight from directories containing files to process.
     
     Parameters
@@ -62,7 +62,7 @@ def loadmeta(filterfunc, dsindx=None, inputpath=rs.INPUTFILE_PATH) -> dict:
             loaded[dataset]['filelist'] = glob_files(inputpath, startpattern=dataset, endpattern='.root')
     else:
         raise TypeError("Check INPUTFILE_PATH in runsetting.toml. It's not of a valid format!")
-    if filterfunc is not None: loaded = filterfunc(loaded)
+    if filterfunc is not None: loaded = filterfunc(loaded, tsferP)
     return loaded
 
 def filterResume(metadata, tsferP=transferP) -> dict:

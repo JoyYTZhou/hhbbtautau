@@ -103,7 +103,7 @@ class weightedSelection(PackedSelection):
         for i, cut in enumerate(names):
             mask1 = self.any(cut)
             mask2 = self.all(*(names[: i + 1]))
-            maskwgt = ak.to_numpy(self._perevtwgt[mask2])
+            maskwgt = self._perevtwgt[mask2]
             masksonecut.append(mask1)
             maskscutflow.append(mask2)
             maskwgtcutflow.append(maskwgt)
