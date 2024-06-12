@@ -122,11 +122,19 @@ class weightedSelection(PackedSelection):
         else:
             nevonecut = [dask_awkward.count(self._data, axis=0)]
             nevcutflow = [dask_awkward.count(self._data, axis=0)]
-            nevonecut.extend([dask_awkward.sum(mask1) for mask1 in masksonecut])
-            nevcutflow.extend([dask_awkward.sum(mask2) for mask2 in maskscutflow])
+            
+            def catchZeroArr(mask):
+                try:
+                    return dask_awkward.sum(mask)
+                except:
+                    return np.sum(mask.compute(), initial=0)
+
+            nevonecut.extend([catchZeroArr(mask1) for mask1 in masksonecut])
+            nevcutflow.extend([catchZeroArr(mask2) for mask2 in maskscutflow])
+
             if self._perevtwgt is not None:
-                wgtevcutflow = [dask_awkward.sum(self._perevtwgt)] 
-                wgtevcutflow.extend([dask_awkward.sum(self._perevtwgt[mask2]) for mask2 in maskscutflow])
+                wgtevcutflow = [catchZeroArr(self._perevtwgt)] 
+                wgtevcutflow.extend([catchZeroArr(self._perevtwgt[mask2]) for mask2 in maskscutflow])
             else:
                 wgtevcutflow = None
 
