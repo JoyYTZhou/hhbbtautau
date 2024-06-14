@@ -115,7 +115,7 @@ class weightedSelection(PackedSelection):
             nevcutflow.extend(np.sum(maskscutflow, axis=1, initial=0))
             if self._perevtwgt is not None:
                 wgtevcutflow = [np.sum(self._perevtwgt)]
-                wgtevcutflow.extend([np.sum(maskwgt, initial=0) for maskwgt in maskwgtcutflow])
+                wgtevcutflow.extend([np.sum(ak.to_numpy(maskwgt), initial=0) for maskwgt in maskwgtcutflow])
             else:
                 wgtevcutflow = None
 

@@ -92,3 +92,4 @@ class prelimEvtSel(BaseEventSelections):
         ld_j, sd_j = jet.getldsd(mask=jet_mask)
         self.objcollect['LeadingBjet'] = ld_j
         self.objcollect['SubleadingBjet'] = sd_j[:,0]
+        self.saveWeights(events)
