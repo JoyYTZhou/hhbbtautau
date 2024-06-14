@@ -371,5 +371,8 @@ class BaseEventSelections:
         events = events[mask]
         obj.events = events
         return obj, events
+    
+    def saveWeights(self, events: ak.Array, weights=['Generator_weight', 'LHEReweightingWeight']) -> None:
+        self.objcollect.update({weight: events[weight] for weight in weights})
         
     
