@@ -11,7 +11,6 @@ from config.selectionconfig import cleansetting as cleancfg
 from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, get_xrdfs_file_info
 from utils.datautil import find_branches, pjoin, getmeta
 from utils.cutflowutil import combine_cf, efficiency, incrementaleff
-from functools import wraps
 
 PREFIX = "root://cmseos.fnal.gov"
 
@@ -22,38 +21,48 @@ resolve = cleancfg.get("RESOLVE", False)
 
 checkpath(indir, createdir=False, raiseError=True)
 
-def iterprocess(func):
-    """Decorator function that iterates over all processes in the cleancfg.DATASETS."""
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        for process in cleancfg.DATASETS:
-            print(f"Processing {process} files ..................................................")
-            with open(pjoin(cleancfg.DATAPATH, f"{process}.json"), 'r') as jsonfile:
-                meta = json.load(jsonfile)
-            func(process, meta, *args, **kwargs)
-        return func
-    return wrapper
+def iterprocess(endpattern):
+    """Decorator function that iterates over all processes in the cleancfg.DATASETS, and
+    transfers all necessary files to condorpath."""
+    def inner(func):
+        def wrapper(*args, **kwargs):
+            for process in cleancfg.DATASETS:
+                dtdir = pjoin(indir, process)
+                checkpath(dtdir, createdir=False)
+                outdir = pjoin(localout, process)
+                checkpath(outdir, createdir=True)
+                print(f"Processing {process} files ..................................................")
+                condorpath = cleancfg.CONDORPATH if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
+                with open(pjoin(cleancfg.DATAPATH, f"{process}.json"), 'r') as jsonfile:
+                    meta = json.load(jsonfile)
+                startpattern = func(process, meta, dtdir, outdir, *args, **kwargs)
+                transferfiles(outdir, condorpath, endpattern=endpattern)
+                delfiles(outdir, pattern=f'{startpattern}*{endpattern}')
+        return wrapper
+    return inner
 
 class DataLoader():
     """Class for loading and hadding data from skims/predefined selections produced directly by Processor."""
     def __init__(self) -> None:
         pass
-    
+
     @staticmethod
-    @iterprocess 
-    def hadd_roots(process, meta) -> None:
+    @iterprocess
+    def hadd_outs(process, meta, format='root') -> None:
+        if format == 'root':
+            DataLoader.hadd_roots(process, meta)
+        elif format == 'csv':
+            pass
+   
+    @staticmethod
+    @iterprocess('.root')
+    def hadd_roots(process, meta, dtdir, outdir) -> str:
         """Hadd root files of datasets into appropriate size based on settings.
         
         Parameters
-        - `cleancfg`: plot setting
-        - `wgt_dict`: dictionary of weights for each process
         """
-        outdir = pjoin(localout, process)
-        checkpath(outdir, createdir=True)
-        ds_dir = pjoin(indir, process)
         for ds in meta.keys():
-            condorpath = cleancfg.CONDORPATH if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
-            root_files = glob_files(ds_dir, ds, '.root', add_prefix=False)
+            root_files = glob_files(dtdir, ds, '.root', add_prefix=False)
             size = get_xrdfs_file_info(root_files[0])[0]
             batch_size = int(10**9/size)
             print(f"Merging in batches of {batch_size} individual root files!")
@@ -62,13 +71,15 @@ class DataLoader():
                 batch_files = root_files[i:i+batch_size]
                 outname = pjoin(outdir, f"{ds}_{i//batch_size+1}.root") 
                 call_hadd(outname, batch_files)
-        transferfiles(outdir, condorpath, endpattern='.root')
-        if cleancfg.get("CLEANROOT", True): delfiles(outdir, pattern='*.root')
-        return None
+        return ''
 
     @staticmethod
-    @iterprocess
-    def hadd_cfs(process, meta) -> None:
+    def hadd_csvouts(process, meta) -> None:
+        pass
+        
+    @staticmethod
+    @iterprocess('.csv')
+    def hadd_cfs(process, meta, dtdir, outdir) -> str:
         """Hadd cutflow table output from processor, saved to LOCALOUTPUT. 
         Transfer to prenamed condorpath if needed.
         
@@ -76,18 +87,14 @@ class DataLoader():
         - `process`: Process
         - `meta`: metadata for the process"""
         dflist = []
-        condorpath = cleancfg.CONDORPATH if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
-        outpath = pjoin(localout, process)
-        checkpath(outpath)
         for ds in meta.keys():
-            print(pjoin(indir, process))
             print(f"Dealing with {ds} now ...............................")
-            df = combine_cf(inputdir=pjoin(indir, process), dsname=ds, output=False)
+            df = combine_cf(inputdir=dtdir, dsname=ds, output=False)
             dflist.append(df)
-        pd.concat(dflist, axis=1).to_csv(pjoin(outpath, f"{process}_cf.csv"))
-        transferfiles(outpath, condorpath, endpattern='.csv')
-        if cleancfg.get("CLEANCSV", False): delfiles(outpath, pattern='*.csv')
-        return None
+        dflist = DataLoader.collect_csvs(process, meta)
+        pd.concat(dflist, axis=1).to_csv(pjoin(outdir, f"{process}_cf.csv"))
+        return f'{process}_cf'
+    
     
     @staticmethod
     def merge_cf(signals=['ggF', 'ZH', 'ZZ']) -> None:

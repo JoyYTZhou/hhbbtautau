@@ -153,12 +153,14 @@ def hadd_csvs(pattern):
     dfs = load_csvs(pattern)
     return pd.concat(dfs, axis=1)
 
-def combine_cf(inputdir, dsname, output=True, outpath=None):
+def combine_cf(inputdir, dsname, keyword='cutflow', output=True, outpath=None):
     """Combines all cutflow tables in a source directory belonging to one datset and output them into output directory.
+    Essentially this will grep files of pattern "{dsname}_{keyword}*.csv" and combine them to one csv file.
     
     Parameters
     - `inputdir`: source directory
     - `dsname`: dataset name. 
+    - `keyword`: keyword in file names to search for
     - `output`: whether to save the combined table into a csv file
     - `outpath`: path to the output
     """
@@ -244,6 +246,7 @@ def overalleff(cfdf):
 
 def sort_cf(ds_list, srcdir, outdir, save=True):
     """Create a multi index table that contains all channel cutflows for all datasets.
+
     :param ds_list: list of strings of dataset
     :param srcdir: output cutflow source directory
     """
