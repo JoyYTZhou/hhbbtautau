@@ -4,7 +4,7 @@ import argparse
 
 def postprocess():
     DataLoader.hadd_cfs()
-    DataLoader.hadd_roots()
+    # DataLoader.hadd_roots()
 
 def getcf():
     DataLoader.merge_cf()
