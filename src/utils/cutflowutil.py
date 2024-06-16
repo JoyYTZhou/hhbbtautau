@@ -142,16 +142,14 @@ class weightedSelection(PackedSelection):
             names, nevonecut, nevcutflow, wgtevcutflow, masksonecut, maskscutflow, self.delayed_mode
         )
 
-def load_csvs(dirname, startpattern):
+def load_csvs(dirname, startpattern, func=None, *args, **kwargs) -> pd.DataFrame:
     """Load csv files matching a pattern into a list of DataFrames."""
     file_names = glob_files(dirname, startpattern=startpattern, endpattern='.csv')
     dfs = [pd.read_csv(file_name, index_col=0, header=0) for file_name in file_names] 
-    return dfs
-
-def hadd_csvs(pattern):
-    """return a combined DataFrame from csv files matching a pattern."""
-    dfs = load_csvs(pattern)
-    return pd.concat(dfs, axis=1)
+    if func is None:
+        return dfs
+    else:
+        return func(dfs, *args, **kwargs)
 
 def combine_cf(inputdir, dsname, keyword='cutflow', output=True, outpath=None):
     """Combines all cutflow tables in a source directory belonging to one datset and output them into output directory.
@@ -164,8 +162,8 @@ def combine_cf(inputdir, dsname, keyword='cutflow', output=True, outpath=None):
     - `output`: whether to save the combined table into a csv file
     - `outpath`: path to the output
     """
-    dfs = load_csvs(dirname=inputdir, startpattern=f'{dsname}_cutflow')
-    concat_df = pd.concat(dfs)
+    concat_df = load_csvs(dirname=inputdir, startpattern=f'{dsname}_cutflow', 
+                          func=lambda dfs: pd.concat(dfs))
     combined = concat_df.groupby(concat_df.index, sort=False).sum()
     if combined.shape[1] != 1:
         combined.columns = [f"{dsname}_{col}" for col in combined.columns]
