@@ -143,7 +143,13 @@ class weightedSelection(PackedSelection):
         )
 
 def load_csvs(dirname, startpattern, func=None, *args, **kwargs) -> pd.DataFrame:
-    """Load csv files matching a pattern into a list of DataFrames."""
+    """Load csv files matching a pattern into a list of DataFrames. Post process if func is provided.
+    
+    Parameters
+    - `dirname`: directory name to search for
+    - `startpattern`: pattern to match the file names
+    - `func`: function to apply to the list of DataFrames
+    """
     file_names = glob_files(dirname, startpattern=startpattern, endpattern='.csv')
     dfs = [pd.read_csv(file_name, index_col=0, header=0) for file_name in file_names] 
     if func is None:
@@ -215,9 +221,9 @@ def efficiency(outdir, cfdf, overall=True,  save=False, save_name='tot'):
     - `save_name`: name of the saved efficiency table. If none is given, it will be named 'tot_eff.csv'
     """
     if not overall:
-        efficiency_df = incrementaleff(cfdf)
+        efficiency_df = calc_eff(cfdf, type='incremental')
     else:
-        efficiency_df = overalleff(cfdf)
+        efficiency_df = calc_eff(cfdf, type='overall')
     efficiency_df *= 100
     efficiency_df.columns = [f'{col}_eff' for col in cfdf.columns]
     return_df = efficiency_df
@@ -226,20 +232,28 @@ def efficiency(outdir, cfdf, overall=True,  save=False, save_name='tot'):
         return_df.to_csv(finame)
     return return_df
 
-def incrementaleff(cfdf, column_name=None):
-    """Return incremental efficiency for a table/column"""
-    if column_name is None: eff_df = cfdf.div(cfdf.shift(1)).fillna(1)
-    else: eff_df = cfdf[column_name].div(cfdf[column_name].shift(1)).fillna(1)
-    eff_df.replace([np.inf, -np.inf], np.nan, inplace=True)
-    eff_df.fillna(0, inplace=True) 
-    return eff_df
+def calc_eff(cfdf, column_name=None, type='incremental'):
+    """Return efficiency for a table/column based on the specified type. Defaults to 
+    incremental efficiency calculation.
+    
+    Parameters
+    - `cfdf`: table/column to calculate efficiency on
+    - `column_name`: name of the column to calculate efficiency on
+    - `type`: type of efficiency calculation. 'incremental' or 'overall'
+    """
+    if type == 'incremental':
+        if column_name is None: 
+            eff_df = cfdf.div(cfdf.shift(1)).fillna(1)
+        else: 
+            eff_df = cfdf[column_name].div(cfdf[column_name].shift(1)).fillna(1)
+    elif type == 'overall':
+        first_row = cfdf.iloc[0]
+        eff_df = cfdf.div(first_row).fillna(1)
+    else:
+        raise ValueError("Invalid type. Expected 'incremental' or 'overall'.")
 
-def overalleff(cfdf):
-    """Return efficiency wrt total events."""
-    first_row = cfdf.iloc[0]
-    eff_df = cfdf.div(first_row).fillna(1)
     eff_df.replace([np.inf, -np.inf], np.nan, inplace=True)
-    eff_df.fillna(1, inplace=True)
+    eff_df.fillna(0 if type == 'incremental' else 1, inplace=True)
     return eff_df
 
 def sort_cf(ds_list, srcdir, outdir, save=True):
