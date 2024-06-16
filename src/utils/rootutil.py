@@ -10,7 +10,7 @@ from analysis.evtselutil import Object
 from config.selectionconfig import cleansetting as cleancfg
 from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, get_xrdfs_file_info
 from utils.datautil import find_branches, pjoin, getmeta
-from utils.cutflowutil import combine_cf, efficiency, incrementaleff, load_csvs
+from utils.cutflowutil import combine_cf, efficiency, calc_eff, load_csvs
 
 PREFIX = "root://cmseos.fnal.gov"
 
@@ -152,9 +152,9 @@ class DataLoader():
         sig_list = [signal for signal in signals if signal in yield_df.columns]
         bkg_list = yield_df.columns.difference(sig_list)
         yield_df['Tot Sig'] = yield_df[sig_list].sum(axis=1)
-        yield_df['Sig Eff'] = incrementaleff(yield_df, "Tot Sig")
+        yield_df['Sig Eff'] = calc_eff(yield_df, "Tot Sig")
         yield_df['Tot Bkg'] = yield_df[bkg_list].sum(axis=1)
-        yield_df['Bkg Eff'] = incrementaleff(yield_df, 'Tot Bkg')
+        yield_df['Bkg Eff'] = calc_eff(yield_df, 'Tot Bkg')
         new_order = list(bkg_list) + ['Tot Bkg', 'Bkg Eff'] + list(sig_list) + ['Tot Sig', 'Sig Eff']
         yield_df = yield_df[new_order]
         return yield_df
