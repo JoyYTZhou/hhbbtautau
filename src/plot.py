@@ -5,6 +5,7 @@ import argparse
 def postprocess():
     DataLoader.hadd_cfs()
     # DataLoader.hadd_roots()
+    DataLoader.hadd_csvouts()
 
 def getcf():
     DataLoader.merge_cf()

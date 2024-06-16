@@ -10,7 +10,7 @@ from analysis.evtselutil import Object
 from config.selectionconfig import cleansetting as cleancfg
 from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, get_xrdfs_file_info
 from utils.datautil import find_branches, pjoin, getmeta
-from utils.cutflowutil import combine_cf, efficiency, incrementaleff
+from utils.cutflowutil import combine_cf, efficiency, incrementaleff, load_csvs
 
 PREFIX = "root://cmseos.fnal.gov"
 
@@ -47,14 +47,6 @@ class DataLoader():
         pass
 
     @staticmethod
-    @iterprocess
-    def hadd_outs(process, meta, format='root') -> None:
-        if format == 'root':
-            DataLoader.hadd_roots(process, meta)
-        elif format == 'csv':
-            pass
-   
-    @staticmethod
     @iterprocess('.root')
     def hadd_roots(process, meta, dtdir, outdir) -> str:
         """Hadd root files of datasets into appropriate size based on settings.
@@ -74,8 +66,13 @@ class DataLoader():
         return ''
 
     @staticmethod
-    def hadd_csvouts(process, meta) -> None:
-        pass
+    @iterprocess('.csv')
+    def hadd_csvouts(process, meta, dtdir, outdir) -> None:
+        concat = lambda dfs: pd.concat(dfs, axis=0)
+        for ds in meta.keys():
+            df = load_csvs(dtdir, f'{ds}_output', func=concat)
+            df.to_csv(pjoin(outdir, f"{ds}_out.csv"))
+        return ''
         
     @staticmethod
     @iterprocess('.csv')
@@ -91,10 +88,8 @@ class DataLoader():
             print(f"Dealing with {ds} now ...............................")
             df = combine_cf(inputdir=dtdir, dsname=ds, output=False)
             dflist.append(df)
-        dflist = DataLoader.collect_csvs(process, meta)
         pd.concat(dflist, axis=1).to_csv(pjoin(outdir, f"{process}_cf.csv"))
         return f'{process}_cf'
-    
     
     @staticmethod
     def merge_cf(signals=['ggF', 'ZH', 'ZZ']) -> None:
