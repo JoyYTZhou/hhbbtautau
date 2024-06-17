@@ -94,6 +94,17 @@ class DataLoader():
         return f'{process}_cf'
     
     @staticmethod
+    def check_cf() -> None:
+        """Check the cutflow numbers against the number of events in the root files."""
+        for process in cleancfg.DATASETS:
+            condorpath = pjoin(cleancfg.CONDORPATH, process) if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
+            cf = DataLoader.load_cf(process, condorpath)[0]
+            if check_last_no(cf, f"{process}_raw", glob_files(condorpath, startpattern=process, endpattern='.root')):
+                print(f"Cutflow check for {process} passed!")
+            else:
+                print(f"Discrepancies between cutflow numbers and output number exist for {process}. Please double check selections.")
+                
+    @staticmethod
     def merge_cf(signals=['ggF', 'ZH', 'ZZ']) -> None:
         """Merge all cutflow tables for all processes into one. Save to LOCALOUTPUT.
         Output formatted cutflow table as well.
@@ -123,7 +134,8 @@ class DataLoader():
     
     @staticmethod
     def load_cf(process, datasrcpath) -> tuple:
-        """Load cutflow tables for a process.
+        """Load cutflow tables for one process.
+
         Parameters
         -`process`: the name of the cutflow that will be grepped from datasrcpath
         -`datasrcpath`: path to the directory containing cutflow tables.
@@ -138,8 +150,8 @@ class DataLoader():
             sel_cols = cf.filter(like=ds).filter(like='wgt')
             cf[sel_cols.columns] = sel_cols*scale_wgt
         if not resolve:
-            DataLoader.add_cfcol_by_kwd(cf, 'raw', f"{process}_raw")
-            wgt_df = DataLoader.add_cfcol_by_kwd(cf, 'wgt', f"{process}_wgt")
+            DataLoader.sum_kwd(cf, 'raw', f"{process}_raw")
+            wgt_df = DataLoader.sum_kwd(cf, 'wgt', f"{process}_wgt")
         return cf, wgt_df
     
     @staticmethod
@@ -172,7 +184,7 @@ class DataLoader():
         return yield_df 
 
     @staticmethod
-    def add_cfcol_by_kwd(cfdf, keyword, name) -> pd.Series:
+    def sum_kwd(cfdf, keyword, name) -> pd.Series:
         """Add a column to the cutflow table by summing up all columns with the keyword.
 
         Parameters
@@ -260,6 +272,29 @@ class DataLoader():
         if resolution == 0:
             df = df.sum(axis=1).to_frame(name=process)
         return df
+
+def check_last_no(df, col_name, rootfiles):
+    """Check if the last number in the cutflow table matches the number of events in the root files.
+    
+    Parameters
+    - `df`: cutflow dataframe
+    - `col_name`: name of the column to check
+    - `rootfiles`: list of root files
+    """
+    if isinstance(rootfiles, str):
+        rootfiles = [rootfiles]
+    
+    raw = 0
+    wgt = 0
+    for file in rootfiles:
+        thisraw, thiswgt = info_file(file) 
+        raw += thisraw
+        wgt += thiswgt
+    
+    print(f'Got {raw} events in root files!')
+    print(f'Got {df[col_name].iloc[-1]} events in cutflow table!')
+    
+    return df[col_name].iloc[-1] == raw
 
 def find_branches(file_path, object_list, tree_name, extra=[]) -> list:
     """Return a list of branches for objects in object_list
