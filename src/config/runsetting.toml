@@ -26,9 +26,9 @@ STEP_SIZE = '170MB'
 
 [LPCTEST]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
-SEL_NAME = 'prelim'
-INPUTFILE_PATH = "@format /store/user/joyzhou/vetoskim_hadded/{this.PROCESS_NAME}"
-# INPUTFILE_PATH = "@format data/preprocessed/{this.PROCESS_NAME}.json"
+SEL_NAME = 'vetoskim'
+# INPUTFILE_PATH = "@format /store/user/joyzhou/vetoskim_hadded/{this.PROCESS_NAME}"
+INPUTFILE_PATH = "@format data/preprocessed/{this.PROCESS_NAME}.json"
 OUTPUTDIR_PATH = "/uscms/home/joyzhou/nobackup/tests"
 TRANSFER_PATH = "@format /store/user/joyzhou/tests/{this.PROCESS_NAME}"
 COPY_LOCAL = true

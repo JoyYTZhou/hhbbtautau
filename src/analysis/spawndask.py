@@ -75,9 +75,14 @@ def filterResume(metadata, tsferP=transferP) -> dict:
             loaded = {}
             datasets = metadata.keys()
             for ds in datasets:
+                print(f"Checking {ds} ========================================================")
                 fileno = len(metadata[ds]['filelist'])
-                fileindx1 = set(check_missing(f'{ds}_cutflow', fileno, tsferP, endpattern='.csv'))
-                fileindx2 = set(check_missing(f'{ds}', fileno, tsferP, endpattern='.root'))
+                fileindx1 = check_missing(f'{ds}_cutflow', fileno, tsferP, endpattern='.csv')
+                if fileindx1: print(f"Missing cutflow tables for these files: {fileindx1}!")
+                fileindx1 = set(fileindx1)
+                fileindx2 = check_missing(f'{ds}', fileno, tsferP, endpattern='.root')
+                if fileindx2: print(f"Missing output for these files: {fileindx2} ")
+                fileindx2 = set(fileindx2)
                 fileindx = list(fileindx1.union(fileindx2))
                 if fileindx != []:
                     loaded[ds] = {}

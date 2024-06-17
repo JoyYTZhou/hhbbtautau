@@ -20,6 +20,7 @@ lumi = cleancfg.LUMI
 resolve = cleancfg.get("RESOLVE", False)
 
 checkpath(indir, createdir=False, raiseError=True)
+checkpath(localout, createdir=True)
 
 def iterprocess(endpattern):
     """Decorator function that iterates over all processes in the cleancfg.DATASETS, and
