@@ -210,7 +210,7 @@ def weight_cf(wgt_dict, raw_cf, save=False, outname=None, lumi=50):
     if save and outname is not None: wgt_df.to_csv(outname)
     return wgt_df
 
-def efficiency(outdir, cfdf, overall=True,  save=False, save_name='tot'):
+def efficiency(outdir, cfdf, overall=True, save=False, save_name='tot'):
     """Add or return efficiency for the cutflow table.
     
     Parameters
