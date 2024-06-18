@@ -4,10 +4,10 @@ from functools import wraps
 import awkward as ak
 import numpy as np
 
-from utils.datautil import arr_handler, iterwgt, getmeta
+from utils.datautil import arr_handler, iterwgt
 from analysis.evtselutil import Object
 from utils.filesysutil import checkpath, glob_files, pjoin
-from utils.rootutil import load_fields, DataLoader
+from utils.rootutil import load_fields
 from config.selectionconfig import cleansetting as cleancfg
 
 localout = cleancfg.LOCALOUTPUT
@@ -36,7 +36,7 @@ def iterdata(func):
 class DataPlotter():
     def __init__(self):
         self._datadir = pjoin(localout, 'objlimited')
-        self.wgt_dict = DataLoader.haddWeights(cleancfg.DATAPATH, from_raw=False)
+        self.wgt_dict = haddWeights(cleancfg.DATAPATH, from_raw=False)
         self.data_dict = {}
         self.getdata()
         self.labels = self.getlabels()
@@ -194,3 +194,22 @@ def makePretty(styler,color_code):
     css_indexes=f'background-color: {color_code}; color: white;'
     styler.applymap_index(lambda _: css_indexes, axis=1)
     return styler
+
+def haddWeights(grepdir):
+    """Function for self use only, grep weights from a list of json files formatted in a specific way.
+    
+    Parameters
+    - `grepdir`: directory where the json files are located
+    """
+    wgt_dict = {}
+    jsonfiles = glob_files(grepdir)
+    for filename in jsonfiles:
+        ds = os.path.basename(filename).rsplit('.json', 1)[0]
+        with open(filename, 'r') as f:
+            meta = json.load(f)
+            dsdict = {}
+            for dskey, dsval in meta.items():
+                weight = dsval['Per Event']
+                dsdict[dskey] = weight
+            wgt_dict[ds] = dsdict
+    return wgt_dict

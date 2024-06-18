@@ -11,7 +11,6 @@ from config.selectionconfig import cleansetting as cleancfg
 from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, get_xrdfs_file_info
 from utils.datautil import find_branches, pjoin, getmeta
 from utils.cutflowutil import combine_cf, efficiency, calc_eff, load_csvs
-from data.datacollect import info_file
 
 PREFIX = "root://cmseos.fnal.gov"
 
@@ -133,7 +132,7 @@ class DataLoader():
         return None
     
     @staticmethod
-    def load_cf(process, datasrcpath) -> tuple:
+    def load_cf(process, datasrcpath) -> tuple[pd.DataFrame]:
         """Load cutflow tables for one process.
 
         Parameters
@@ -149,8 +148,8 @@ class DataLoader():
             scale_wgt = meta[ds]['Per Event']
             sel_cols = cf.filter(like=ds).filter(like='wgt')
             cf[sel_cols.columns] = sel_cols*scale_wgt
+            print(f'cf columns before {cf.columns}')
         if not resolve:
-            DataLoader.sum_kwd(cf, 'raw', f"{process}_raw")
             wgt_df = DataLoader.sum_kwd(cf, 'wgt', f"{process}_wgt")
         return cf, wgt_df
     
@@ -216,25 +215,7 @@ class DataLoader():
                     print(f"Writing limited data to file {destination}")
                     DataLoader.write_obj(output, files, cleancfg.PLOT_VARS, cleancfg.EXTRA_VARS)
 
-    @staticmethod
-    def haddWeights(grepdir):
-        """Function for self use only, grep weights from a list of json files formatted in a specific way.
-        
-        Parameters
-        - `grepdir`: directory where the json files are located
-        """
-        wgt_dict = {}
-        jsonfiles = glob_files(grepdir)
-        for filename in jsonfiles:
-            ds = os.path.basename(filename).rsplit('.json', 1)[0]
-            with open(filename, 'r') as f:
-                meta = json.load(f)
-                dsdict = {}
-                for dskey, dsval in meta.items():
-                    weight = dsval['Per Event']
-                    dsdict[dskey] = weight
-                wgt_dict[ds] = dsdict
-        return wgt_dict
+
 
     @staticmethod
     def write_obj(writable, filelist, objnames, extra=[]) -> None:
@@ -285,11 +266,10 @@ def check_last_no(df, col_name, rootfiles):
         rootfiles = [rootfiles]
     
     raw = 0
-    wgt = 0
     for file in rootfiles:
-        thisraw, thiswgt = info_file(file) 
+        with uproot.open(file) as f:
+            thisraw = f.get("Events").num_entries
         raw += thisraw
-        wgt += thiswgt
     
     print(f'Got {raw} events in root files!')
     print(f'Got {df[col_name].iloc[-1]} events in cutflow table!')

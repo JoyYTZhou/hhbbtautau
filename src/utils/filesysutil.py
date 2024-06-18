@@ -187,7 +187,7 @@ def delfiles(dirname, pattern='*.root'):
         for fipath in dirpath.glob(pattern):
             fipath.unlink()
 
-def get_xrdfs_files(remote_dir, start_pattern, end_pattern, add_prefix=True):
+def get_xrdfs_files(remote_dir, start_pattern, end_pattern, add_prefix=True) -> list[str]:
     """Get the files in a remote directory that match a pattern. If both patterns==None, returns all files.
     
     Parameters:
@@ -209,7 +209,7 @@ def get_xrdfs_files(remote_dir, start_pattern, end_pattern, add_prefix=True):
             filtered_files = [f for f in all_files if f.split('/')[-1].startswith(start_pattern) and f.split('/')[-1].endswith(end_pattern)]
         return sorted(filtered_files)
 
-def list_xrdfs_files(remote_dir):
+def list_xrdfs_files(remote_dir) -> list[str]:
     """List files/dirs in a remote xrdfs directory using subprocess.run."""
     cmd = ["xrdfs", PREFIX, "ls", remote_dir]
     result = subprocess.run(cmd, capture_output=True, text=True, check=True)
