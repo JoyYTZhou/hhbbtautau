@@ -215,8 +215,6 @@ class DataLoader():
                     print(f"Writing limited data to file {destination}")
                     DataLoader.write_obj(output, files, cleancfg.PLOT_VARS, cleancfg.EXTRA_VARS)
 
-
-
     @staticmethod
     def write_obj(writable, filelist, objnames, extra=[]) -> None:
         """Writes the selected, concated objects to root files.
@@ -298,7 +296,7 @@ def find_branches(file_path, object_list, tree_name, extra=[]) -> list:
         branches.extend([name for name in extra if name in branch_names])
     return branches
 
-def load_fields(file, branch_names=None, tree_name='Events', lib='ak'):
+def load_fields(file, branch_names=None, tree_name='Events', lib='ak') -> tuple[ak.Array, list]:
     """Load specific fields if any. Otherwise load all. If the file is a list, concatenate the data from all files.
     
     Parameters:
@@ -320,17 +318,15 @@ def load_fields(file, branch_names=None, tree_name='Events', lib='ak'):
 
     returned = None
     if isinstance(file, str):
-        returned = load_one(file)
-    elif isinstance(file, list):
-        dfs = []
-        emptylist = []
-        for root_file in file:
-            result = load_one(root_file)
-            if result: dfs.append(load_one(file))
-            else: emptylist.append(root_file)
-        combined_evts = ak.concatenate(dfs)
-        returned = (combined_evts, emptylist)
-    return returned
+        file = [file]
+    dfs = []
+    emptylist = []
+    for root_file in file:
+        result = load_one(root_file)
+        if result: dfs.append(load_one(file))
+        else: emptylist.append(root_file)
+    combined_evts = ak.concatenate(dfs)
+    return combined_evts, emptylist
 
 def write_root(evts, destination, outputtree="Events", title="Events", compression=None):
     """Write arrays to root file. Highly inefficient methods in terms of data storage.

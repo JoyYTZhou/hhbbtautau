@@ -1,108 +1,98 @@
 import mplhep as hep
 import matplotlib.pyplot as plt
-from functools import wraps
-import awkward as ak
+import matplotlib as mpl
 import numpy as np
+import pandas as pd
+import os, json
 
 from utils.datautil import arr_handler, iterwgt
 from analysis.evtselutil import Object
 from utils.filesysutil import checkpath, glob_files, pjoin
+from utils.cutflowutil import load_csvs
 from utils.rootutil import load_fields
 from config.selectionconfig import cleansetting as cleancfg
 
-localout = cleancfg.LOCALOUTPUT
+indir = cleancfg.INPUTDIR
 resolve = cleancfg.get("RESOLVE", False)
 lumi = cleancfg.LUMI
+processes = cleancfg.DATASETS
+localout = cleancfg.LOCALOUTPUT
 
-def iterdata(func):
-    """Wrapper that Returns a list of results from the function for each dataset."""
-    @wraps(func)
-    def wrapper(instance, *args, **kwargs):
-        results = []
-        for process, dsitems in instance.data_dict.items():
-                if instance.resolution:
-                    for ds in dsitems.keys():
-                        root_file = dsitems[ds]
-                        results.append(func(instance, root_file, process, ds, *args, **kwargs))
-                else:
-                    result = []
-                    for ds in dsitems.keys():
-                        root_file = dsitems[ds]
-                        result.append(func(instance, root_file, process, ds, *args, **kwargs))
-                    results.append(ak.concatenate(result, axis=0))
-        return results
-    return wrapper
+colors = list(mpl.colormaps['Dark2'].colors) + list(mpl.colormaps['tab10'].colors)
     
-class DataPlotter():
-    def __init__(self):
-        self._datadir = pjoin(localout, 'objlimited')
-        self.wgt_dict = haddWeights(cleancfg.DATAPATH, from_raw=False)
+class CSVPlotter():
+    def __init__(self, datasource=pjoin(cleancfg.LOCALOUTPUT, 'datasource')):
+        self._datadir = datasource
+        self.wgt_dict = haddWeights(cleancfg.DATAPATH)
         self.data_dict = {}
-        self.getdata()
-        self.labels = self.getlabels()
-        self.wgt = self.getwgt()
+        # self.getdata()
+        self.labels = list(self.wgt_dict.keys())
         self.outdir = pjoin(localout, 'plots')
         checkpath(self.outdir)
+    
+    def postprocess(self, fitype='csv', per_evt_wgt='Generator_weight'):
+        list_of_df = []
+        for process in processes:
+            for ds in self.wgt_dict[process].keys():
+                rwfac = self.rwgt_fac(process, ds) 
+                def add_wgt(dfs):
+                    df = dfs[0]
+                    df['weight'] = df[per_evt_wgt] * rwfac
+                    df['process'] = process if not resolve else ds
+                    return df
+                if fitype == 'csv': 
+                    df = load_csvs(pjoin(self._datadir, process), f'{ds}_out', func=add_wgt)
+                    list_of_df.append(df)
+        return pd.concat(list_of_df, axis=0).reset_index().drop('index', axis=1) 
 
     @iterwgt
-    def getdata(self, process, ds):
+    def getdata(self, process, ds, file_type='.root'):
         """Returns the root files for the datasets."""
-        result = glob_files(self._datadir, startpattern=ds, endpattern='.root')
+        result = glob_files(self._datadir, startpattern=ds, endpattern=file_type)
         if result: 
             rootfile = result[0]
             if not process in self.data_dict: 
                 self.data_dict[process] = {}
             if rootfile: self.data_dict[process][ds] = rootfile
+        else:
+            raise FileNotFoundError(f"Check if there are any files of specified pattern in {self._datadir}.")
     
-    @iterdata
-    def getobj(self, root_file, process, ds, obj_name):
+    def getobj(self, file: 'str', process, ds, obj_name):
         """Returns the object from the root file."""
-        events = load_fields(root_file, tree_name=obj_name)
+        if file.endswith('.root'):
+            events = load_fields(file, tree_name=obj_name)
+        elif file.endswith('.csv'):
+            pass
         return events
     
-    def getlabels(self):
-        """Returns the labels for the datasets."""
-        if resolve:
-            flattened_keys = [key for subdict in self.data_dict.values() for key in subdict.keys()]
-            return flattened_keys
-        else:
-            return list(self.data_dict.keys())
-    
-    @iterdata
-    def getwgt(self, root_file, process, ds, per_evt_wgt='Generator_weight', lumi=5000, **kwargs):
-        """Returns the weights for the datasets."""
-        signalname = kwargs.get("signal", 'ggF')
+    def rwgt_fac(self, process, ds):
+        signalname = cleancfg.get("signal", 'ggF')
         if process == signalname: 
-            factor = kwargs.get('factor', 100)
+            factor = cleancfg.get('factor', 100)
         else:
-            factor = 1
-        flat_wgt = self.wgt_dict[process][ds] * lumi * factor
-        wgt_arr = load_fields(root_file, tree_name='extra')[per_evt_wgt] * flat_wgt
-        return wgt_arr
+            factor = 1 
+        flat_wgt = self.wgt_dict[process][ds] * lumi * 1000 * factor 
+        return flat_wgt
             
-    def plotobj(self, objname, attridict):
+    def plot_hist(self, evts, attridict: 'dict', group=['ZH', 'ggF', 'ZZ']):
         """Plot the object attribute based on the attribute dictionary.
         
         Parameters
         - `objname`: the object to be loaded and plotted
         - `attridict`: a dictionary of attributes to be plotted
         """
-        evts = self.getobj(objname)
-        objplotter = ObjectPlotter(objname, self.wgt, self.labels, evts)
-        for att, options in attridict.items():
-            histlist, bins = objplotter.histobj(options.pop('varname', 'pt'), 
-                                                options.pop('objindx', 0), 
-                                                options.pop('bins', 10), 
-                                                options.get('range', (0,200)), 
-                                                sort_by=options.pop('sort_by', 'pt'))
-            objplotter.plot_var(histlist, bins,
-                                legend=self.labels, 
-                                xlabel=options.pop('xlabel', 'GeV'),
-                                range=options.pop('range', (0,200)),
-                                save=options.pop('save', True), 
-                                title=options.pop('title', ''),
-                                save_name=pjoin(self.outdir, options.pop('save_name', 'plot.png')),
-                                **options)
+        for att, options in dict(attridict).items():
+            pltopts = options['plot']
+            histopts = options['hist']
+            bin_no = histopts.get('bins', 10)
+            bin_range = histopts.get('range', (0,200))
+            hist_list = []
+            for label in self.labels:
+                thisdf = evts[evts['process']==label]
+                hist, bins = ObjectPlotter.hist_overflow(thisdf[att], bin_no, bin_range, thisdf['weight'])
+                hist_list.append(hist)
+            ObjectPlotter.plot_var(hist_list, bins, label=self.labels, xrange=bin_range, title='', 
+                                   save_name=pjoin(self.outdir, f'{att}.png'), **pltopts)
         return None
         
 class ObjectPlotter():
@@ -128,38 +118,36 @@ class ObjectPlotter():
         for i, obj_arr in enumerate(evts):
             var = ObjectPlotter.sortobj(obj_arr, sort_by=sort_by, sort_what=varname)[:,objindx]
             if i==0:
-                list_of_hists[i], bin_edges = ObjectPlotter.deal_overflow(var, bins_no, range, weights=wgt_arrs[i])
+                list_of_hists[i], bin_edges = ObjectPlotter.hist_overflow(var, bins_no, range, weights=wgt_arrs[i])
             else:
-                list_of_hists[i] = ObjectPlotter.deal_overflow(var, bins_no, range, weights=wgt_arrs[i])[0]
+                list_of_hists[i] = ObjectPlotter.hist_overflow(var, bins_no, range, weights=wgt_arrs[i])[0]
         return list_of_hists, bin_edges
     
     @staticmethod
-    def plot_var(hist, bin_edges, legend, xlabel, range, save, **kwargs):
+    def plot_var(hist, bin_edges, label, xrange, title='plot', save=True, save_name='plot.png', **kwargs):
         """Plot the object attribute."""
-        fig, ax = plt.subplots(figsize=(18, 10))
-        ax.set_title(kwargs.pop('title', 'plot'))
-        save_name = kwargs.pop('save_name', 'plot.png')
+        fig, ax = plt.subplots(figsize=(16, 10))
+        ax.set_title(title)
         hep.style.use("CMS")
+        xlabel = kwargs.pop('xlabel', 'GeV')
+        ax.set_prop_cycle('color', colors)
         hep.histplot(
             hist,
             bins=bin_edges,
-            histtype=kwargs.pop("histtype", 'step'),
+            label=label,
             ax=ax,
-            label=legend,
-            stack=kwargs.pop("stack", True),
-            linewidth=3
-            **kwargs
-        )
-        ax.set_xlabel(xlabel, fontsize=15)
-        ax.set_ylabel("Events", fontsize=15)
-        ax.set_xlim(*range)
-        ax.legend(fontsize=15)
-        if save:
+            linewidth=3,
+            **kwargs)
+        ax.set_xlabel(xlabel, fontsize=20)
+        ax.set_ylabel("Events", fontsize=20)
+        ax.set_xlim(*xrange)
+        ax.legend(fontsize=18)
+        if kwargs.get('save', True):
             fig.savefig(save_name, dpi=300)
         fig.show() 
         
     @staticmethod
-    def deal_overflow(arr, bins, range, weights=None):
+    def hist_overflow(arr, bins: int, range: list[int, int], weights=None) -> tuple[np.ndarray, np.ndarray]:
         """Wrapper around numpy histogram function to deal with overflow.
         
         Parameters
@@ -195,7 +183,7 @@ def makePretty(styler,color_code):
     styler.applymap_index(lambda _: css_indexes, axis=1)
     return styler
 
-def haddWeights(grepdir):
+def haddWeights(grepdir) -> dict:
     """Function for self use only, grep weights from a list of json files formatted in a specific way.
     
     Parameters
