@@ -10,7 +10,6 @@ TREENAME = 'Events'
 PLOT_VARS = ['Tau', 'Jet', 'FatJet', "GenPart"]
 EXTRA_VARS = ['Generator_weight', 'nLHEReweightingWeight', 'LHEReweightingWeight']
 SIGNAL = ['ggF', 'ZH', 'ZZ']
-RESOLVE = false
 LUMI = 76.1 # fb^-1
 
 

@@ -132,7 +132,7 @@ def weight_fl(filelist, retry=2):
     
     return raw_tot, wgt_tot, success_list, failed_list
 
-def info_file(file) -> tuple[int, int] | str:
+def info_file(file) -> tuple[int, int]:
     """Return the number of raw events and weighted events of a file in a json dictionary
     with error handled."""
     nevents_wgt = 0
