@@ -74,7 +74,7 @@ class CSVPlotter():
         flat_wgt = self.wgt_dict[process][ds] * lumi * 1000 * factor 
         return flat_wgt
             
-    def plot_hist(self, evts, attridict: 'dict', group=['ZH', 'ggF', 'ZZ']):
+    def plot_hist(self, evts: 'pd.DataFrame', attridict: 'dict', group=['ZH', 'ggF', 'ZZ']):
         """Plot the object attribute based on the attribute dictionary.
         
         Parameters
@@ -87,10 +87,17 @@ class CSVPlotter():
             bin_no = histopts.get('bins', 10)
             bin_range = histopts.get('range', (0,200))
             hist_list = []
-            for label in self.labels:
-                thisdf = evts[evts['process']==label]
-                hist, bins = ObjectPlotter.hist_overflow(thisdf[att], bin_no, bin_range, thisdf['weight'])
-                hist_list.append(hist)
+            if group:
+                thisdf = evts[evts['process'].isin(group)]
+                otherdf = evts[~evts['process'].isin(group)]
+                thishist, bins = ObjectPlotter.hist_overflow(thisdf[att], bin_no, bin_range, thisdf['weight'])
+                thathist, bins = ObjectPlotter.hist_overflow(otherdf[att], bin_no, bin_range, otherdf['weight'])
+                hist_list = [thishist, thathist]
+            else:
+                for label in self.labels:
+                    thisdf = evts[evts['process']==label]
+                    hist, bins = ObjectPlotter.hist_overflow(thisdf[att], bin_no, bin_range, thisdf['weight'])
+                    hist_list.append(hist)
             ObjectPlotter.plot_var(hist_list, bins, label=self.labels, xrange=bin_range, title='', 
                                    save_name=pjoin(self.outdir, f'{att}.png'), **pltopts)
         return None
