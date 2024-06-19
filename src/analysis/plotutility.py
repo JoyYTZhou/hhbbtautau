@@ -66,8 +66,8 @@ class CSVPlotter():
         return events
     
     def rwgt_fac(self, process, ds):
-        signalname = cleancfg.get("signal", 'ggF')
-        if process == signalname: 
+        signalname = cleancfg.get("signal", ['ggF'])
+        if process in signalname: 
             factor = cleancfg.get('factor', 100)
         else:
             factor = 1 
@@ -93,12 +93,14 @@ class CSVPlotter():
                 thishist, bins = ObjectPlotter.hist_overflow(thisdf[att], bin_no, bin_range, thisdf['weight'])
                 thathist, bins = ObjectPlotter.hist_overflow(otherdf[att], bin_no, bin_range, otherdf['weight'])
                 hist_list = [thishist, thathist]
+                pltlabel = ['Signal', 'Background']
             else:
                 for label in self.labels:
                     thisdf = evts[evts['process']==label]
                     hist, bins = ObjectPlotter.hist_overflow(thisdf[att], bin_no, bin_range, thisdf['weight'])
                     hist_list.append(hist)
-            ObjectPlotter.plot_var(hist_list, bins, label=self.labels, xrange=bin_range, title='', 
+                pltlabel = self.labels
+            ObjectPlotter.plot_var(hist_list, bins, label=pltlabel, xrange=bin_range, title='', 
                                    save_name=pjoin(self.outdir, f'{att}.png'), **pltopts)
         return None
         
