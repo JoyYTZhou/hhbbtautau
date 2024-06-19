@@ -133,7 +133,7 @@ class ObjectPlotter():
         return list_of_hists, bin_edges
     
     @staticmethod
-    def plot_var(hist, bin_edges, label, xrange, title='plot', save=True, save_name='plot.png', **kwargs):
+    def plot_var(hist, bin_edges, label, xrange, title='plot', save_name='plot.png', **kwargs):
         """Plot the object attribute."""
         fig, ax = plt.subplots(figsize=(16, 10))
         ax.set_title(title)
@@ -151,8 +151,7 @@ class ObjectPlotter():
         ax.set_ylabel("Events", fontsize=20)
         ax.set_xlim(*xrange)
         ax.legend(fontsize=18)
-        if kwargs.get('save', True):
-            fig.savefig(save_name, dpi=300)
+        fig.savefig(save_name, dpi=300)
         fig.show() 
         
     @staticmethod
