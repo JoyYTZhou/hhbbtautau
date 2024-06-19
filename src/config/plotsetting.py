@@ -14,71 +14,63 @@ tau_pt = {
 }
 
 tau_eta = {
-    "LeadingEta": 
-        {'varname': 'eta',
-        'objindx': 0,
-        'bins': 135, 
-        'range': [-2.1,2.1],
-        'xlabel': r'Leading $\tau$ $\eta$',
-        'save': True,
-        'alpha': 0.95,
-        'stack': False,
-        'save_name': 'LeadingTauEta'},
-    "SubleadingEta": 
-        {'varname': 'eta',
-        'objindx': 1,
-        'bins': 135, 
-        'range': [-2.1,2.1],
-        'xlabel': r'Subleading $\tau$ $\eta$',
-        'save': True,
-        'alpha': 0.95,
-        'stack': False,
-        'save_name': 'SubleadingTauEta'}}
+    "LeadingTau_eta": {
+        "hist": {'bins': 135, 'range': [-2.1,2.1]},
+        "plot": {'histtype': 'step',
+                 'xlabel': r'Leading $\tau$ $\eta$',
+                 'alpha': 0.95,
+                 'stack': False}},
+    "SubleadingTau_eta": {
+        "hist": {'bins': 135, 'range': [-2.1,2.1]},
+        "plot": {'xlabel': r'Subleading $\tau$ $\eta$',
+                 'histtype': 'step',
+                 'alpha': 0.95,
+                 'stack': False}}
+}
 
-tau_dict = tau_eta | tau_pt
+bjet_pt = {
+    "LeadingBjet_pt": {
+        "hist": {'bins': 135, 'range': [0,300]},
+        "plot": {'xlabel': r'Leading Jet $P_t$ (GeV)',
+                 'alpha': 0.95,
+                 'stack': False,
+                 'histtype': 'step'}},
+    "SubleadingBjet_pt": {
+        "hist": {'bins': 135, 'range': [0,300]},
+        "plot": {'xlabel': r'Subleading Jet $P_t$ (GeV)',
+                 'histtype': 'step',
+                 'alpha': 0.95,
+                 'stack': False}}
+}
 
-jet_pt = {
-    "LeadingPt": 
-        {'varname': 'pt',
-        'objindx': 0,
-        'bins': 135, 
-        'range': [0,300],
-        'xlabel': r'Leading Jet $P_t$ (GeV)',
-        'save': True,
-        'alpha': 0.95,
-        'stack': False,
-        'save_name': 'LeadingJetPt'},
-    "SubleadingPt": 
-        {'varname': 'pt',
-        'objindx': 1,
-        'bins': 135, 
-        'range': [0,300],
-        'xlabel': r'Subleading Jet $P_t$ (GeV)',
-        'save': True,
-        'alpha': 0.95,
-        'stack': False,
-        'save_name': 'SubleadingJetPt'}}
+b_tag = {
+    "LeadingBjet_btag": {
+        "hist": {'bins': 10, 'range': [0,1]},
+        "plot": {'xlabel': r'Leading Jet B Tag Score',
+                 'alpha': 0.95,
+                 'stack': False,
+                 'histtype': 'step'}},
+    "SubleadingBjet_btag": {
+        "hist": {'bins': 10, 'range': [0,1]},
+        "plot": {'xlabel': r'Subleading Jet B Tag Score',
+                 'alpha': 0.95,
+                 'stack': False,
+                 'histtype': 'step'}},
+}
 
-jet_btag = {
-    "LeadingBtag": 
-        {'varname': 'btag',
-        'objindx': 0,
-        'bins': 10, 
-        'range': [0,1],
-        'xlabel': r'Leading Jet B Tag Score',
-        'save': True,
-        'alpha': 0.95,
-        'stack': False,
-        'save_name': 'LeadingJetBtag'},
-    "SubleadingBtag": 
-        {'varname': 'btag',
-        'objindx': 1,
-        'bins': 10, 
-        'range': [0,1],
-        'xlabel': r'Subleading Jet B Tag Score',
-        'save': True,
-        'alpha': 0.95,
-        'stack': False,
-        'save_name': 'SubleadingJetBtag'}}
+bjet_eta = {
+    "LeadingBjet_eta": {
+        "hist": {'bins': 135, 'range': [-2.1,2.1]},
+        "plot": {'histtype': 'step',
+                 'xlabel': r'Leading B-jet $\eta$',
+                 'alpha': 0.95,
+                 'stack': False}},
+    "SubleadingBjet_eta": {
+        "hist": {'bins': 135, 'range': [-2.1,2.1]},
+        "plot": {'histtype': 'step',
+                 'xlabel': r'Subleading B-jet $\eta$',
+                 'alpha': 0.95,
+                 'stack': False}}
+}
 
-jet_dict = jet_btag | jet_pt
+object_dict = tau_pt | tau_eta | bjet_eta | bjet_pt | b_tag
