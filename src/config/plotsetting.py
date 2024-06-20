@@ -28,6 +28,22 @@ tau_eta = {
                  'stack': False}}
 }
 
+tau_gen = {
+    "LeadingTau_genflav": {
+        "hist": {'bins': 6, 'range': [-0.5, 5.5]},
+        "plot": {'xlabel': r'Leading $\tau$ Gen Flavor',
+                 'alpha': 0.95,
+                 'stack': False,
+                 'histtype': 'step'}},
+    "SubleadingTau_genflav": {
+        "hist": {'bins': 6, 'range': [-0.5, 5.5]},
+        "plot": {'xlabel': r'Subleading $\tau$ Gen Flavor',
+                 'alpha': 0.95,
+                 'stack': False,
+                 'histtype': 'step'}},
+}
+
+
 bjet_pt = {
     "LeadingBjet_pt": {
         "hist": {'bins': 135, 'range': [0,300]},
@@ -53,6 +69,21 @@ b_tag = {
     "SubleadingBjet_btag": {
         "hist": {'bins': 10, 'range': [0,1]},
         "plot": {'xlabel': r'Subleading Jet B Tag Score',
+                 'alpha': 0.95,
+                 'stack': False,
+                 'histtype': 'step'}},
+}
+
+bjet_mass = {
+    "LeadingBjet_mass": {
+        "hist": {'bins': 135, 'range': [0,300]},
+        "plot": {'xlabel': r'Leading B-Jet Mass (GeV)',
+                 'alpha': 0.95,
+                 'stack': False,
+                 'histtype': 'step'}},
+    "SubleadingBjet_mass": {
+        "hist": {'bins': 135, 'range': [0,300]},
+        "plot": {'xlabel': r'Subleading B-Jet Mass (GeV)',
                  'alpha': 0.95,
                  'stack': False,
                  'histtype': 'step'}},
