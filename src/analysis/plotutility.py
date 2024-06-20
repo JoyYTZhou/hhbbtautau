@@ -43,7 +43,9 @@ class CSVPlotter():
                 if fitype == 'csv': 
                     df = load_csvs(pjoin(self._datadir, process), f'{ds}_out', func=add_wgt)
                     list_of_df.append(df)
-        return pd.concat(list_of_df, axis=0).reset_index().drop('index', axis=1) 
+        processed = pd.concat(list_of_df, axis=0).reset_index().drop('index', axis=1)
+        processed.to_csv(pjoin(self._datadir, 'processed.csv'))
+        return processed
 
     @iterwgt
     def getdata(self, process, ds, file_type='.root'):
