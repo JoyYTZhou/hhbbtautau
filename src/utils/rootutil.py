@@ -332,7 +332,7 @@ def write_root(evts, destination, outputtree="Events", title="Events", compressi
     """Write arrays to root file. Highly inefficient methods in terms of data storage.
 
     Parameters
-    - `evts`: awkward array to write
+    - `evts`: Array/DataFrame to write
     - `destination`: path to the output root file
     - `outputtree`: name of the tree to write to
     - `title`: title of the tree
