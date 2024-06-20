@@ -8,7 +8,7 @@ import numpy as np
 def switch_selections(sel_name):
     selections = {
         'vetoskim': skimEvtSel,
-        'prelim': prelimEvtSel
+        'prelim_looseb': prelimEvtSel
     }
     return selections.get(sel_name, BaseEventSelections)
 

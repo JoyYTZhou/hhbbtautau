@@ -152,7 +152,6 @@ class ObjectPlotter():
         ax.set_xlim(*xrange)
         ax.legend(fontsize=18)
         fig.savefig(save_name, dpi=300)
-        fig.show() 
         
     @staticmethod
     def hist_overflow(arr, bins: int, range: list[int, int], weights=None) -> tuple[np.ndarray, np.ndarray]:

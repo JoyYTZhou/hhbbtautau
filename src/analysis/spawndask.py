@@ -227,7 +227,7 @@ def process_futures(futures, results_file='futureresult.txt', errors_file='futur
 def spawnLocal():
     """Spawn dask client for local cluster"""
     # size_mb = size/1024/1024
-    cluster = LocalCluster(processes=daskcfg.get('SPAWN_PROCESS', False), threads_per_worker=daskcfg.get('THREADS_NO', 4))
+    cluster = LocalCluster(processes=daskcfg.get('SPAWN_PROCESS', False), threads_per_worker=daskcfg.get('THREADS_NO', 2))
     cluster.adapt(minimum=1, maximum=4)
     client = Client(cluster)
     print("successfully created a dask client in local cluster!")

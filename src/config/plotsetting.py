@@ -104,4 +104,4 @@ bjet_eta = {
                  'stack': False}}
 }
 
-object_dict = tau_pt | tau_eta | bjet_eta | bjet_pt | b_tag
+object_dict = tau_pt | tau_eta | bjet_eta | bjet_pt | b_tag | bjet_mass | tau_gen
