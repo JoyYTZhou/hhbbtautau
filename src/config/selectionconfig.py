@@ -26,3 +26,9 @@ cleansetting = Dynaconf(
     environments=True,
     settings_file=['config/dataclean.toml']
 )
+
+trainingsetting = Dynaconf(
+    root_path = root_path,
+    environments=True,
+    settings_files=['config/trainingsetting.toml']
+)
