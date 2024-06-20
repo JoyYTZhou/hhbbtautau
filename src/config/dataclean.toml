@@ -13,18 +13,3 @@ SIGNAL = ['ggF', 'ZH', 'ZZ']
 LUMI = 76.1 # fb^-1
 
 
-[LPCCONDOR]
-DATAPATH = "src/data/preprocessed"
-INPUTDIR = "/store/user/joyzhou/skim"
-CONDORPATH = "/store/user/joyzhou/hadded"
-OUTPUTDIR = "tempout"
-CONDOR_TRANSFER = true
-DATASETS = ["ggF"]
-EXTRA_VARS = ['Generator_weight', 'nLHEReweightingWeight', 'LHEReweightingWeight']
-TREENAME = "tree"
-CLEAN = false
-LUMI = 5000 # pb^-1
-
-
-
-
