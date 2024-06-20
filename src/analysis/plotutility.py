@@ -165,7 +165,7 @@ class ObjectPlotter():
         - `range`: range of the histogram
         """
         if isinstance(bins, int):
-            bins = np.linspace(*range, bins)
+            bins = np.linspace(*range, bins+1)
             min_edge = bins[0]
             max_edge = bins[-1]
         adjusted_data = np.clip(arr, min_edge, max_edge)

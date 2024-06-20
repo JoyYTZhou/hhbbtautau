@@ -6,10 +6,10 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 
-class DataLoader:
+class PrelimLoader():
     def __init__(self, file_path, target_column):
         self.target_column = target_column
-        self.data = self.load_data(file_path)
+        self.load_data(file_path)
         self.X = None
         self.y = None
         self.X_train = None
@@ -20,11 +20,10 @@ class DataLoader:
         
     def load_data(self, fipath):
         self.data = pd.read_csv(fipath)
-        
-    def preprocess_data(self, poslabel, neglabel, dropped: 'list[str]' = []):
-        self.X = self.data.drop(columns=[self.target_column]+dropped)
-        self.y = self.y.map({poslabel: 1, neglabel: 0})
+       
+    def preprocess_data(self, dropped: 'list[str]' = []):
         self.y = self.data[self.target_column]
+        self.X = self.data.drop(columns=[self.target_column]+dropped)
         self.X = self.scaler.fit_transform(self.X)
         
     def split_data(self, test_size=0.3, random_state=None):
@@ -38,17 +37,16 @@ class DataLoader:
         return self.X_test, self.y_test
     
 class SimpleClassifier(nn.Module):
-    def __init__(self, input_size, hidden_size, num_classes):
-        super(SimpleClassifier, self).__init__()
+    def __init__(self, hidden_size=128, num_classes=2):
+        super().__init__()
         self.model = nn.Sequential(
-            nn.Linear(input_size, hidden_size),
+            nn.LazyLinear(hidden_size),
             nn.ReLU(),
-            nn.Linear(hidden_size, num_classes)
+            nn.LazyLinear(num_classes)
         )
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
         self.train_loader = None
-
     
     def fit(self, X_train, y_train, batch_size=32, epochs=50):
         X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
