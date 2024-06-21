@@ -29,6 +29,10 @@ class PrelimLoader():
     def split_data(self, test_size=0.3, random_state=None):
         self.X_train, self.X_test, self.y_train, self.y_test = \
             train_test_split(self.X, self.y, test_size=test_size, random_state=random_state)
+        self.X_train = torch.tensor(self.X_train, dtype=torch.float32)
+        self.y_train = torch.tensor(self.y_train.to_numpy(), dtype=torch.long)
+        self.X_test = torch.tensor(self.X_test, dtype=torch.float32)
+        self.y_test = torch.tensor(self.y_test.to_numpy(), dtype=torch.long)
             
     def get_train_data(self):
         return self.X_train, self.y_train
@@ -49,9 +53,9 @@ class SimpleClassifier(nn.Module):
         self.train_loader = None
     
     def fit(self, X_train, y_train, batch_size=32, epochs=50):
-        X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
-        y_train_tensor = torch.tensor(y_train, dtype=torch.long)
-        
+        X_train_tensor = X_train
+        y_train_tensor = y_train 
+
         train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
         self.train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
         

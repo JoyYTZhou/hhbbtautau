@@ -1,8 +1,9 @@
 import pandas as pd
 import awkward as ak
-import uproot, pickle, json, os
+import uproot, pickle, os
 from functools import wraps
 import dask_awkward as dak
+from utils.filesysutil import glob_files
 
 pjoin = os.path.join
 
@@ -17,10 +18,24 @@ def iterwgt(func):
                 func(instance, process, ds, *args, **kwargs)
     return wrapper
 
-def getmeta(process) -> dict:
-    with open(pjoin(datadir, f"{process}.json"), 'r') as jsonfile:
-        meta = json.load(jsonfile)
-    return meta
+def haddWeights(grepdir) -> dict:
+    """Function for self use only, grep weights from a list of json files formatted in a specific way.
+    
+    Parameters
+    - `grepdir`: directory where the json files are located
+    """
+    wgt_dict = {}
+    jsonfiles = glob_files(grepdir)
+    for filename in jsonfiles:
+        ds = os.path.basename(filename).rsplit('.json', 1)[0]
+        with open(filename, 'r') as f:
+            meta = json.load(f)
+            dsdict = {}
+            for dskey, dsval in meta.items():
+                weight = dsval['Per Event']
+                dsdict[dskey] = weight
+            wgt_dict[ds] = dsdict
+    return wgt_dict
     
 def get_compression(**kwargs):
     """Returns the compression algorithm to use for writing root files."""
