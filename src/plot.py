@@ -5,8 +5,8 @@ import argparse
 
 def postprocess():
     DataLoader.hadd_cfs()
-    DataLoader.hadd_roots()
-    # DataLoader.hadd_csvouts()
+    # DataLoader.hadd_roots()
+    DataLoader.hadd_csvouts()
 
 def checkouts():
     DataLoader.check_cf()

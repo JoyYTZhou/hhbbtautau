@@ -148,7 +148,6 @@ class DataLoader():
             scale_wgt = meta[ds]['Per Event']
             sel_cols = cf.filter(like=ds).filter(like='wgt')
             cf[sel_cols.columns] = sel_cols*scale_wgt
-            print(f'cf columns before {cf.columns}')
         if not resolve:
             wgt_df = DataLoader.sum_kwd(cf, 'wgt', f"{process}_wgt")
         return cf, wgt_df
@@ -185,7 +184,7 @@ class DataLoader():
     @staticmethod
     def sum_kwd(cfdf, keyword, name) -> pd.Series:
         """Add a column to the cutflow table by summing up all columns with the keyword.
-
+, 'LHEReweightingWeight'
         Parameters
         - `cfdf`: cutflow dataframe
         - `keyword`: keyword to search for in the column names
@@ -225,7 +224,6 @@ class DataLoader():
         - `extra`: list of extra branches to save"""
 
         all_names = objnames + extra
-        print(all_names)
         all_data = {name: [] for name in objnames}
         all_data['extra'] = {name: [] for name in extra}
         for file in filelist:
