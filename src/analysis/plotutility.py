@@ -3,13 +3,14 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
 import pandas as pd
-import os, json
 
 from utils.datautil import arr_handler, iterwgt
 from analysis.evtselutil import Object
 from utils.filesysutil import checkpath, glob_files, pjoin
 from utils.cutflowutil import load_csvs
 from utils.rootutil import load_fields
+from utils.datautil import haddWeights
+
 from config.selectionconfig import cleansetting as cleancfg
 
 indir = cleancfg.INPUTDIR
@@ -183,7 +184,6 @@ class ObjectPlotter():
         """
         mask = Object.sortmask(data[sort_by], **kwargs)
         return arr_handler(data[sort_what])[mask]
-        
 
 # style a dataframe table
 def makePretty(styler,color_code):
@@ -192,21 +192,3 @@ def makePretty(styler,color_code):
     styler.applymap_index(lambda _: css_indexes, axis=1)
     return styler
 
-def haddWeights(grepdir) -> dict:
-    """Function for self use only, grep weights from a list of json files formatted in a specific way.
-    
-    Parameters
-    - `grepdir`: directory where the json files are located
-    """
-    wgt_dict = {}
-    jsonfiles = glob_files(grepdir)
-    for filename in jsonfiles:
-        ds = os.path.basename(filename).rsplit('.json', 1)[0]
-        with open(filename, 'r') as f:
-            meta = json.load(f)
-            dsdict = {}
-            for dskey, dsval in meta.items():
-                weight = dsval['Per Event']
-                dsdict[dskey] = weight
-            wgt_dict[ds] = dsdict
-    return wgt_dict

@@ -46,12 +46,10 @@ class Object:
     @property
     def events(self):
         return self._events
+
     @events.setter
     def events(self, value):
-        if self.__weakref:
-            self._events = weakref.proxy(value)
-        else:
-            self._events = value
+        self._events = weakref.proxy(value) if self.__weakref else value
     
     @property
     def selcfg(self):

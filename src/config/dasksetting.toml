@@ -12,7 +12,7 @@ PROCESS_NO = 2
 DISK = '8GB'
 
 [SKIM]
-SPAWN_CLIENT = true
+SPAWN_CLIENT = false
 SPAWN_CONDOR = false
 SPAWN_PROCESS = false
 SPAWN_FUTURE = false
