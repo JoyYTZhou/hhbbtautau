@@ -16,7 +16,7 @@ PREFIX = "root://cmseos.fnal.gov"
 
 indir = cleancfg.INPUTDIR
 localout = cleancfg.LOCALOUTPUT
-lumi = cleancfg.LUMI
+lumi = cleancfg.LUMI * 1000
 resolve = cleancfg.get("RESOLVE", False)
 wgt_dict = haddWeights(cleancfg.DATAPATH)
 
@@ -120,16 +120,12 @@ class DataLoader():
             wgt_dfdict[process] = cmbd
         resolved_all = pd.concat(resolved_list, axis=1)
         resolved_all.to_csv(pjoin(localout, "allDatasetCutflow.csv"))
-        resolved_all.filter(like='wgt', axis=1).to_csv
-        #wgt_total_df.columns = wgt_total_df.columns.str.replace('_wgt$', '', regex=True)
-        #efficiency(localout, wgt_total_df, overall=False, save=True, save_name=f'stepwise') 
-        #efficiency(localout, wgt_total_df, overall=True, save=True, save_name=f'tot')
-        #yield_df = pd.DataFrame(wgt_dfdict, index=total_df.index)
-        #yield_df = DataLoader.process_yield(yield_df, signals)
-        #wgt_total_df.to_csv(pjoin(localout, 'wgtallcf.csv'))
-        #yield_df = DataLoader.scale_yield(yield_df)
-        #yield_df.to_csv(pjoin(localout, 'scaledyield.csv'))
-        #return None
+        wgt_resolved = resolved_all.filter(like='wgt', axis=1)
+        wgt_resolved.columns = wgt_resolved.columns.str.replace('_wgt$', '', regex=True)
+        wgt_resolved.to_csv(pjoin(localout, "ResolvedWgtOnly.csv"))
+        yield_df = DataLoader.process_yield(pd.DataFrame(wgt_dfdict, index=wgt_resolved.index), 
+                                            signals)
+        yield_df.to_csv(pjoin(localout, 'scaledyield.csv'))
     
     @staticmethod
     def load_cf(process, datasrcpath, luminosity=lumi) -> tuple[pd.DataFrame]:
@@ -167,16 +163,6 @@ class DataLoader():
         new_order = list(bkg_list) + ['Tot Bkg', 'Bkg Eff'] + list(sig_list) + ['Tot Sig', 'Sig Eff']
         yield_df = yield_df[new_order]
         return yield_df
-
-    @staticmethod
-    def scale_yield(yield_df) -> pd.DataFrame:
-        """Scale the yield to luminosity.
-        
-        Parameters
-        - `yield_df`: dataframe of yields"""
-        selcols = yield_df.columns.difference(yield_df.filter(like='Eff').columns)
-        yield_df[selcols] = yield_df[selcols] * lumi * 1000
-        return yield_df 
 
     @staticmethod
     def sum_kwd(cfdf, keyword, name) -> pd.Series:
