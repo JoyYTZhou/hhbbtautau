@@ -3,6 +3,7 @@ import awkward as ak
 import uproot, pickle, os
 from functools import wraps
 import dask_awkward as dak
+import json
 from utils.filesysutil import glob_files
 
 pjoin = os.path.join
