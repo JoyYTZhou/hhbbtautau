@@ -1,4 +1,3 @@
-import os
 import uproot
 import json
 import awkward as ak
@@ -9,8 +8,9 @@ import pandas as pd
 from analysis.evtselutil import Object
 from config.selectionconfig import cleansetting as cleancfg
 from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, get_xrdfs_file_info
-from utils.datautil import find_branches, pjoin, getmeta
+from utils.datautil import find_branches, pjoin
 from utils.cutflowutil import combine_cf, efficiency, calc_eff, load_csvs
+from utils.datautil import haddWeights
 
 PREFIX = "root://cmseos.fnal.gov"
 
@@ -18,6 +18,7 @@ indir = cleancfg.INPUTDIR
 localout = cleancfg.LOCALOUTPUT
 lumi = cleancfg.LUMI
 resolve = cleancfg.get("RESOLVE", False)
+wgt_dict = haddWeights(cleancfg.DATAPATH)
 
 checkpath(indir, createdir=False, raiseError=True)
 checkpath(localout, createdir=True)
@@ -110,47 +111,43 @@ class DataLoader():
         
         Parameters
         - `signals`: list of signal process names"""
-        list_df = []
+        resolved_list = []
         wgt_dfdict= {}
         for process in cleancfg.DATASETS:
             condorpath = pjoin(cleancfg.CONDORPATH, process) if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
-            cf, wgt_df = DataLoader.load_cf(process, condorpath)
-            list_df.append(cf)
-            wgt_dfdict[process] = wgt_df
-        total_df = pd.concat(list_df, axis=1)
-        wgt_total_df = total_df.filter(like='wgt')
-        wgt_total_df.columns = wgt_total_df.columns.str.replace('_wgt$', '', regex=True)
-        efficiency(localout, wgt_total_df, overall=False, save=True, save_name=f'stepwise') 
-        efficiency(localout, wgt_total_df, overall=True, save=True, save_name=f'tot')
-        yield_df = pd.DataFrame(wgt_dfdict, index=total_df.index)
-        yield_df = DataLoader.process_yield(yield_df, signals)
-        total_df.to_csv(pjoin(localout, 'allcf.csv'))
-        wgt_total_df.to_csv(pjoin(localout, 'wgtallcf.csv'))
-        yield_df.to_csv(pjoin(localout, 'yieldcf.csv'))
-        yield_df = DataLoader.scale_yield(yield_df)
-        yield_df.to_csv(pjoin(localout, 'scaledyield.csv'))
-        return None
+            resolved, cmbd = DataLoader.load_cf(process, condorpath)
+            resolved_list.append(resolved)
+            wgt_dfdict[process] = cmbd
+        resolved_all = pd.concat(resolved_list, axis=1)
+        resolved_all.to_csv(pjoin(localout, "allDatasetCutflow.csv"))
+        resolved_all.filter(like='wgt', axis=1).to_csv
+        #wgt_total_df.columns = wgt_total_df.columns.str.replace('_wgt$', '', regex=True)
+        #efficiency(localout, wgt_total_df, overall=False, save=True, save_name=f'stepwise') 
+        #efficiency(localout, wgt_total_df, overall=True, save=True, save_name=f'tot')
+        #yield_df = pd.DataFrame(wgt_dfdict, index=total_df.index)
+        #yield_df = DataLoader.process_yield(yield_df, signals)
+        #wgt_total_df.to_csv(pjoin(localout, 'wgtallcf.csv'))
+        #yield_df = DataLoader.scale_yield(yield_df)
+        #yield_df.to_csv(pjoin(localout, 'scaledyield.csv'))
+        #return None
     
     @staticmethod
-    def load_cf(process, datasrcpath) -> tuple[pd.DataFrame]:
-        """Load cutflow tables for one process.
+    def load_cf(process, datasrcpath, luminosity=lumi) -> tuple[pd.DataFrame]:
+        """Load cutflow tables for one process containing datasets to be grouped tgt 
+        and scale it by xs * luminosity
 
         Parameters
         -`process`: the name of the cutflow that will be grepped from datasrcpath
         -`datasrcpath`: path to the directory containing cutflow tables.
         
         Returns
-        - cutflow dataframe, weight dataframe
-        """
-        cf = pd.read_csv(glob_files(datasrcpath, startpattern=process, endpattern='cf.csv')[0], index_col=0)
-        meta = getmeta(process)
-        for ds in meta.keys():
-            scale_wgt = meta[ds]['Per Event']
-            sel_cols = cf.filter(like=ds).filter(like='wgt')
-            cf[sel_cols.columns] = sel_cols*scale_wgt
-        if not resolve:
-            wgt_df = DataLoader.sum_kwd(cf, 'wgt', f"{process}_wgt")
-        return cf, wgt_df
+        - tuple of resolved (per channel) cutflow dataframe and combined cutflow (per process) dataframe"""
+        resolved_cf = pd.read_csv(glob_files(datasrcpath, startpattern=process, endpattern='cf.csv')[0], index_col=0)
+        for ds, val in wgt_dict[process].items():
+            sel_cols = resolved_cf.filter(like=ds).filter(like='wgt')
+            resolved_cf[sel_cols.columns] = sel_cols * val * luminosity
+            combined_cf = DataLoader.sum_kwd(resolved_cf, 'wgt', f"{process}_wgt")
+        return resolved_cf, combined_cf
     
     @staticmethod
     def process_yield(yield_df, signals) -> pd.DataFrame:
@@ -184,7 +181,7 @@ class DataLoader():
     @staticmethod
     def sum_kwd(cfdf, keyword, name) -> pd.Series:
         """Add a column to the cutflow table by summing up all columns with the keyword.
-, 'LHEReweightingWeight'
+
         Parameters
         - `cfdf`: cutflow dataframe
         - `keyword`: keyword to search for in the column names
