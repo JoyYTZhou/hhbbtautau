@@ -232,7 +232,7 @@ def efficiency(outdir, cfdf, overall=True, save=False, save_name='tot'):
         return_df.to_csv(finame)
     return return_df
 
-def calc_eff(cfdf, column_name=None, type='incremental'):
+def calc_eff(cfdf, column_name=None, type='incremental', save=True, savename='eff.csv') -> pd.DataFrame:
     """Return efficiency for a table/column based on the specified type. Defaults to 
     incremental efficiency calculation.
     
@@ -251,9 +251,9 @@ def calc_eff(cfdf, column_name=None, type='incremental'):
         eff_df = cfdf.div(first_row).fillna(1)
     else:
         raise ValueError("Invalid type. Expected 'incremental' or 'overall'.")
-
     eff_df.replace([np.inf, -np.inf], np.nan, inplace=True)
     eff_df.fillna(0 if type == 'incremental' else 1, inplace=True)
+    if save: eff_df.to_csv(savename)
     return eff_df
 
 def sort_cf(ds_list, srcdir, outdir, save=True):
