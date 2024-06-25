@@ -227,7 +227,7 @@
         "failedlist": [],
         "Raw Events": 268418648,
         "Wgt Events": 89738778580.06801,
-        "Per Event": 8.492426708482869e-09
+        "Per Event": 4.507937442440878e-09
     },
     "TTto2L2N": {
         "string": [
@@ -376,7 +376,7 @@
         "failedlist": [],
         "Raw Events": 84809345,
         "Wgt Events": 6822815546.393702,
-        "Per Event": 1.1169875468827808e-07
+        "Per Event": 1.4213780123553118e-08
     },
     "TTto4Q": {
         "string": [
@@ -534,6 +534,6 @@
         "failedlist": [],
         "Raw Events": 180771725,
         "Wgt Events": 62787618087.51003,
-        "Per Event": 1.2137743447088974e-08
+        "Per Event": 6.721997311822815e-09
     }
 }
