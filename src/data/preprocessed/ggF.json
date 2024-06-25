@@ -3,7 +3,7 @@
         "string": [
             "/GluGlutoHHto2B2Tau_kl-1p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6-v3/NANOAODSIM"
         ],
-        "xsection": 0.0002515,
+        "xsection": 0.0025153,
         "filelist": [
             "root://cmsxrootd.fnal.gov//store/mc/Run3Summer22EENanoAODv12/GluGlutoHHto2B2Tau_kl-1p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v3/80000/5998ad11-ab82-41bf-a740-7a2c38b85a14.root",
             "root://cmsxrootd.fnal.gov//store/mc/Run3Summer22EENanoAODv12/GluGlutoHHto2B2Tau_kl-1p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v3/80000/d76d5b20-9372-4f12-81af-205c7acbcd70.root",
@@ -268,6 +268,6 @@
         "failedlist": [],
         "Raw Events": 3068220,
         "Wgt Events": 90894.77432930002,
-        "Per Event": 2.7669357436198474e-09
+        "Per Event": 2.7669357436198474e-08
     }
 }
