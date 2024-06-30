@@ -210,51 +210,37 @@ def weight_cf(wgt_dict, raw_cf, save=False, outname=None, lumi=50):
     if save and outname is not None: wgt_df.to_csv(outname)
     return wgt_df
 
-def efficiency(outdir, cfdf, overall=True, save=False, save_name='tot'):
-    """Add or return efficiency for the cutflow table.
-    
-    Parameters
-    - `outdir`: name of the output directory
-    - `cfdf`: cutflow dataframe
-    - `overall`: whether to calculate overall efficiency
-    - `save`: whether to save the efficiency table
-    - `save_name`: name of the saved efficiency table. If none is given, it will be named 'tot_eff.csv'
-    """
-    if not overall:
-        efficiency_df = calc_eff(cfdf, type='incremental')
-    else:
-        efficiency_df = calc_eff(cfdf, type='overall')
-    efficiency_df *= 100
-    efficiency_df.columns = [f'{col}_eff' for col in cfdf.columns]
-    return_df = efficiency_df
-    if save:
-        finame = pjoin(outdir, f'{save_name}_eff.csv')
-        return_df.to_csv(finame)
-    return return_df
-
 def calc_eff(cfdf, column_name=None, type='incremental', save=True, savename='eff.csv') -> pd.DataFrame:
-    """Return efficiency for a table/column based on the specified type. Defaults to 
-    incremental efficiency calculation.
+    """Return efficiency for each column in the DataFrame right after the column itself.
     
-    Parameters
-    - `cfdf`: table/column to calculate efficiency on
-    - `column_name`: name of the column to calculate efficiency on
+    Parameters:
+    - `cfdf`: DataFrame to calculate efficiency on
+    - `column_name`: specific column to calculate efficiency on (optional)
     - `type`: type of efficiency calculation. 'incremental' or 'overall'
     """
-    if type == 'incremental':
-        if column_name is None: 
-            eff_df = cfdf.div(cfdf.shift(1)).fillna(1)
-        else: 
-            eff_df = cfdf[column_name].div(cfdf[column_name].shift(1)).fillna(1)
-    elif type == 'overall':
-        first_row = cfdf.iloc[0]
-        eff_df = cfdf.div(first_row).fillna(1)
+    def calculate_efficiency(series):
+        if type == 'incremental':
+            return series.div(series.shift(1)).fillna(1)
+        elif type == 'overall':
+            return series.div(series.iloc[0]).fillna(1)
+        else:
+            raise ValueError("Invalid type. Expected 'incremental' or 'overall'.")
+
+    if column_name:
+        eff_series = calculate_efficiency(cfdf[column_name])
+        eff_series.replace([np.inf, -np.inf], np.nan, inplace=True)
+        eff_series.fillna(0 if type == 'incremental' else 1, inplace=True)
+        cfdf.insert(cfdf.columns.get_loc(column_name) + 1, f"{column_name}_eff", eff_series)
     else:
-        raise ValueError("Invalid type. Expected 'incremental' or 'overall'.")
-    eff_df.replace([np.inf, -np.inf], np.nan, inplace=True)
-    eff_df.fillna(0 if type == 'incremental' else 1, inplace=True)
-    if save: eff_df.to_csv(savename)
-    return eff_df
+        for col in cfdf.columns[::-1]:  # Iterate in reverse to avoid column shifting issues
+            eff_series = calculate_efficiency(cfdf[col])
+            eff_series.replace([np.inf, -np.inf], np.nan, inplace=True)
+            eff_series.fillna(0 if type == 'incremental' else 1, inplace=True)
+            cfdf.insert(cfdf.columns.get_loc(col) + 1, f"{col}_eff", eff_series)
+
+    if save:
+        cfdf.to_csv(savename)
+    return cfdf
 
 def sort_cf(ds_list, srcdir, outdir, save=True):
     """Create a multi index table that contains all channel cutflows for all datasets.

@@ -9,7 +9,7 @@ from analysis.evtselutil import Object
 from config.selectionconfig import cleansetting as cleancfg
 from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, get_xrdfs_file_info
 from utils.datautil import find_branches, pjoin
-from utils.cutflowutil import combine_cf, efficiency, calc_eff, load_csvs
+from utils.cutflowutil import combine_cf, calc_eff, load_csvs
 from utils.datautil import haddWeights
 
 PREFIX = "root://cmseos.fnal.gov"
