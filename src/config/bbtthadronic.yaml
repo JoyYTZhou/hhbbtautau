@@ -55,7 +55,6 @@ default:
       charge: Muon_charge
     Jet:
       btag: Jet_btagDeepFlavB
-      deepJetCvsB: Jet_btagDeepFlavCvB
       jetid: Jet_jetId
     GenPart:
       pdgid: GenPart_pdgId

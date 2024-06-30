@@ -88,8 +88,6 @@ def filterResume(metadata, tsferP=transferP) -> dict:
                     loaded[ds] = {}
                     loaded[ds]['resumeindx'] = fileindx
                     loaded[ds]['filelist'] = metadata[ds]['filelist']
-            if loaded == {}: 
-                raise FileExistsError("All the files have been processed for this process!")
     else:
         loaded = metadata
     return loaded
@@ -97,16 +95,15 @@ def filterResume(metadata, tsferP=transferP) -> dict:
 def checkjobs(tsferP=transferP) -> None:
     """Check if there are files left to be run."""
     loaded = loadmeta(filterResume)
-    try: 
-        print(f"Checking {tsferP} for output files!")
-        if loaded:
-            for ds in loaded.keys():
-                if 'resumeindx' in loaded[ds]:
-                    filelen = len(loaded[ds]['resumeindx'])
-                else:
-                    filelen = len(loaded[ds]['filelist'])
-                print(f"There are {filelen} files left to be run in {ds}.")
-    except FileExistsError as e:
+    print(f"Checking {tsferP} for output files!")
+    if loaded:
+        for ds in loaded.keys():
+            if 'resumeindx' in loaded[ds]:
+                filelen = len(loaded[ds]['resumeindx'])
+            else:
+                filelen = len(loaded[ds]['filelist'])
+            print(f"There are {filelen} files left to be run in {ds}.")
+    else:
         print("All the files have been processed!")
 
 def submitfutures(client, ds, filelist, indx) -> list:
@@ -137,7 +134,6 @@ def submitloops(ds, filelist, indx) -> None:
     - `filelist`: List of files to process
     - `indx`: List of indices to process"""
     print(f"Processing {ds}...")
-    failed = 0
     if indx is None:
         print(f"Expected to see {len(filelist)} number of outputs")
         for i, file in enumerate(filelist):
@@ -155,6 +151,9 @@ def submitjobs(client, dsindx=None) -> int:
     If not, fall back into a loop mode. Note that even in this mode, any dask computations will be managed by client explicitly or implicitly.
     """
     loaded = loadmeta(filterfunc=filterResume, dsindx=dsindx)
+    if not loaded: 
+        print("All the files have been processed for this dataset!")
+        return 0
     if client is None or (not daskcfg.SPAWN_FUTURE): 
         print("Submit jobs in loops!")
         for ds, dsitems in loaded.items():
