@@ -1,5 +1,5 @@
 ,Tot Bkg
 initial,1.0
->= 2 Medium hadronic Taus,0.12722239847526656
-Tau dR >= 0.5,0.9999888901215696
->=2 Medium B-tagged jets,0.028643654774308008
+HLT_DoubleMediumChargedIsoPFTauHPS40_Trk1_eta2p1,0.036610372466390866
+Electron Veto,0.03907143665485258
+Muon Veto,0.9621083383010712

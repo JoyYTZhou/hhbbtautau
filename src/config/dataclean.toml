@@ -1,5 +1,5 @@
 [LPCTEST]
-SELNAME = 'prelim'
+SELNAME = 'vetoskim'
 DATAPATH = "@format {env[DATA_DIR]}/preprocessed"
 INPUTDIR = "@format {env[CONDOR_BASE]}/{this.SELNAME}"
 LOCALOUTPUT = "@format /uscms/home/joyzhou/nobackup/hadded/{this.SELNAME}"
