@@ -122,7 +122,9 @@ class DataLoader():
         resolved_all.to_csv(pjoin(localout, "allDatasetCutflow.csv"))
         wgt_resolved = resolved_all.filter(like='wgt', axis=1)
         wgt_resolved.columns = wgt_resolved.columns.str.replace('_wgt$', '', regex=True)
-        calc_eff(wgt_resolved, None, 'incremental', True, pjoin(localout, 'resolved_wgteff.csv'))
+        wgt_resolved.to_csv(pjoin(localout, "ResolvedWgtOnly.csv"))
+        wgtpEff = calc_eff(wgt_resolved, None, 'incremental', True, pjoin(localout, 'resolved_wgteff.csv'))
+        wgtpEff.filter(like='eff', axis=1).to_csv(pjoin(localout, "ResolvedEffOnly.csv"))
         yield_df = DataLoader.process_yield(pd.DataFrame(wgt_dfdict, index=wgt_resolved.index), 
                                             signals)
         yield_df.to_csv(pjoin(localout, 'scaledyield.csv'))
@@ -139,9 +141,9 @@ class DataLoader():
         Returns
         - tuple of resolved (per channel) cutflow dataframe and combined cutflow (per process) dataframe"""
         resolved_cf = pd.read_csv(glob_files(datasrcpath, startpattern=process, endpattern='cf.csv')[0], index_col=0)
-        for ds, val in wgt_dict[process].items():
+        for ds, perevtwgt in wgt_dict[process].items():
             sel_cols = resolved_cf.filter(like=ds).filter(like='wgt')
-            resolved_cf[sel_cols.columns] = sel_cols * val * luminosity
+            resolved_cf[sel_cols.columns] = sel_cols * perevtwgt * luminosity
             combined_cf = DataLoader.sum_kwd(resolved_cf, 'wgt', f"{process}_wgt")
         return resolved_cf, combined_cf
     
@@ -157,9 +159,9 @@ class DataLoader():
         sig_list = [signal for signal in signals if signal in yield_df.columns]
         bkg_list = yield_df.columns.difference(sig_list)
         yield_df['Tot Sig'] = yield_df[sig_list].sum(axis=1)
-        yield_df['Sig Eff'] = calc_eff(yield_df, "Tot Sig")
+        yield_df['Sig Eff'] = calc_eff(yield_df, "Tot Sig", inplace=False, save=False)
         yield_df['Tot Bkg'] = yield_df[bkg_list].sum(axis=1)
-        yield_df['Bkg Eff'] = calc_eff(yield_df, 'Tot Bkg')
+        yield_df['Bkg Eff'] = calc_eff(yield_df, 'Tot Bkg', inplace=False, save=False)
         new_order = list(bkg_list) + ['Tot Bkg', 'Bkg Eff'] + list(sig_list) + ['Tot Sig', 'Sig Eff']
         yield_df = yield_df[new_order]
         return yield_df

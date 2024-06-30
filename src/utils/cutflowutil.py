@@ -210,7 +210,7 @@ def weight_cf(wgt_dict, raw_cf, save=False, outname=None, lumi=50):
     if save and outname is not None: wgt_df.to_csv(outname)
     return wgt_df
 
-def calc_eff(cfdf, column_name=None, type='incremental', save=True, savename='eff.csv') -> pd.DataFrame:
+def calc_eff(cfdf, column_name=None, type='incremental', inplace=True, save=True, savename='eff.csv') -> pd.DataFrame:
     """Return efficiency for each column in the DataFrame right after the column itself.
     
     Parameters:
@@ -230,17 +230,17 @@ def calc_eff(cfdf, column_name=None, type='incremental', save=True, savename='ef
         eff_series = calculate_efficiency(cfdf[column_name])
         eff_series.replace([np.inf, -np.inf], np.nan, inplace=True)
         eff_series.fillna(0 if type == 'incremental' else 1, inplace=True)
-        cfdf.insert(cfdf.columns.get_loc(column_name) + 1, f"{column_name}_eff", eff_series)
     else:
         for col in cfdf.columns[::-1]:  # Iterate in reverse to avoid column shifting issues
             eff_series = calculate_efficiency(cfdf[col])
             eff_series.replace([np.inf, -np.inf], np.nan, inplace=True)
             eff_series.fillna(0 if type == 'incremental' else 1, inplace=True)
             cfdf.insert(cfdf.columns.get_loc(col) + 1, f"{col}_eff", eff_series)
-
     if save:
         cfdf.to_csv(savename)
-    return cfdf
+    if inplace: return cfdf
+    else: return eff_series
+    
 
 def sort_cf(ds_list, srcdir, outdir, save=True):
     """Create a multi index table that contains all channel cutflows for all datasets.
