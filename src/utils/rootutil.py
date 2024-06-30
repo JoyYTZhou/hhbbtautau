@@ -122,8 +122,7 @@ class DataLoader():
         resolved_all.to_csv(pjoin(localout, "allDatasetCutflow.csv"))
         wgt_resolved = resolved_all.filter(like='wgt', axis=1)
         wgt_resolved.columns = wgt_resolved.columns.str.replace('_wgt$', '', regex=True)
-        wgt_resolved.to_csv(pjoin(localout, "ResolvedWgtOnly.csv"))
-        calc_eff(wgt_resolved, None, 'incremental', True, pjoin(localout, 'efficiency_resolved.csv'))
+        calc_eff(wgt_resolved, None, 'incremental', True, pjoin(localout, 'resolved_wgteff.csv'))
         yield_df = DataLoader.process_yield(pd.DataFrame(wgt_dfdict, index=wgt_resolved.index), 
                                             signals)
         yield_df.to_csv(pjoin(localout, 'scaledyield.csv'))
