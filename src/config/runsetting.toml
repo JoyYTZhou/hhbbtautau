@@ -9,12 +9,12 @@ STEP_SIZE = '150MB'
 
 [PRESELECT]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
-SEL_NAME = 'prelim_looseb'
+SEL_NAME = 'looseb_only'
 INPUTFILE_PATH = "@format /store/user/joyzhou/vetoskim_hadded/{this.PROCESS_NAME}"
 OUTPUTDIR_PATH = "@format {env[OUTPUT_BASE]}/outputs/{this.PROCESS_NAME}"
 COPY_LOCAL = false
 STEP_SIZE = '150MB'
-DELAYED_OPEN = false
+DELAYED_OPEN = true
 
 [LPCCONDOR]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
@@ -26,11 +26,11 @@ STEP_SIZE = '110MB'
 
 [LPCTEST]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
-SEL_NAME = 'vetoskim'
-# INPUTFILE_PATH = "@format /store/user/joyzhou/vetoskim_hadded/{this.PROCESS_NAME}"
-INPUTFILE_PATH = "@format data/preprocessed/{this.PROCESS_NAME}.json"
+SEL_NAME = 'looseb_only'
+INPUTFILE_PATH = "@format /store/user/joyzhou/vetoskim_hadded/{this.PROCESS_NAME}"
+# INPUTFILE_PATH = "@format data/preprocessed/{this.PROCESS_NAME}.json"
 OUTPUTDIR_PATH = "/uscms/home/joyzhou/nobackup/tests"
 TRANSFER_PATH = "@format /store/user/joyzhou/tests/{this.PROCESS_NAME}"
-COPY_LOCAL = true
+COPY_LOCAL = false
 COPY_DIR = "/uscms/home/joyzhou/nobackup/temp"
-STEP_SIZE = '150MB'
+STEP_SIZE = false

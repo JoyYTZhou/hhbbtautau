@@ -8,7 +8,8 @@ import numpy as np
 def switch_selections(sel_name):
     selections = {
         'vetoskim': skimEvtSel,
-        'prelim_looseb': prelimEvtSel
+        'prelim_looseb': prelimEvtSel,
+        'looseb_only': loosebEvtSel
     }
     return selections.get(sel_name, BaseEventSelections)
 
@@ -93,3 +94,15 @@ class prelimEvtSel(BaseEventSelections):
         self.objcollect['LeadingBjet'] = ld_j
         self.objcollect['SubleadingBjet'] = sd_j[:,0]
         self.saveWeights(events)
+
+class loosebEvtSel(BaseEventSelections):
+    def setevtsel(self, events) -> None:
+        def jobjmask(jet: 'Object'):
+            j_mask = (jet.ptmask(opr.ge) &
+                  jet.absetamask(opr.le) &
+                  jet.custommask('btag', opr.ge))
+            return j_mask
+        jet = Object(events, 'Jet')
+        jet_mask = jobjmask(jet)
+        jet_nummask = jet.numselmask(jet_mask, opr.ge) 
+        self.objsel.add("2 Medium B tagged jets", jet_nummask)
