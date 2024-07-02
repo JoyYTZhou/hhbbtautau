@@ -162,7 +162,7 @@ class Object:
         if sort: zipped = zipped[Object.sortmask(zipped[sort_by], **kwargs)]
         return zipped 
     
-    def getldsd(self, **kwargs) -> tuple:
+    def getldsd(self, **kwargs) -> tuple[ak.Array, ak.Array]:
         """Returns the zipped leading object and the rest of the objects (aka subleading candidates).
         All properties in obj setting included."""
         objs = self.getzipped(**kwargs) 

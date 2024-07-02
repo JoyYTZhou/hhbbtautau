@@ -1,11 +1,11 @@
 [LPCTEST]
-SELNAME = 'vetoskim'
+SELNAME = 'prelim_looseb'
 DATAPATH = "@format {env[DATA_DIR]}/preprocessed"
 INPUTDIR = "@format {env[CONDOR_BASE]}/{this.SELNAME}"
 LOCALOUTPUT = "@format /uscms/home/joyzhou/nobackup/hadded/{this.SELNAME}"
 DATASETS = ['DYJets', 'TTbar', 'SingleH', 'WW', 'WWW', 'WZ', 'ZH', 'ggF', 'ZZ']
 # DATASETS = ['ZH', 'SingleH', 'ggF', "ZZ", "DYJets", "WWW", "WW"]
-# DATASETS = ['DYJets']
+# DATASETS = ['ggF']
 TREENAME = 'Events'
 PLOT_VARS = ['Tau', 'Jet', 'FatJet', "GenPart"]
 EXTRA_VARS = ['Generator_weight', 'LHEReweightingWeight']
