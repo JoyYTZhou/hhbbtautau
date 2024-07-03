@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from utils.datautil import arr_handler, iterwgt
-from analysis.evtselutil import Object
+from analysis.objutil import Object
 from utils.filesysutil import checkpath, glob_files, pjoin
 from utils.cutflowutil import load_csvs
 from utils.rootutil import load_fields
@@ -19,8 +19,8 @@ lumi = cleancfg.LUMI
 processes = cleancfg.DATASETS
 localout = cleancfg.LOCALOUTPUT
 
-colors = list(mpl.colormaps['Dark2'].colors) + list(mpl.colormaps['tab10'].colors)
-    
+colors = list(mpl.colormaps['Set2'].colors)
+
 class CSVPlotter():
     def __init__(self, datasource=pjoin(cleancfg.LOCALOUTPUT, 'datasource')):
         self._datadir = datasource
@@ -31,19 +31,43 @@ class CSVPlotter():
         self.outdir = pjoin(localout, 'plots')
         checkpath(self.outdir)
     
-    def postprocess(self, fitype='csv', per_evt_wgt='Generator_weight'):
+    def addextcf(self, cutflow: 'dict', df, ds, wgtname) -> None:
+        """Add the cutflow to the dictionary to be udpated to the cutflow table.
+        
+        Parameters
+        - `cutflow`: the cutflow dictionary to be updated"""
+        cutflow[f'{ds}_raw'] = len(df)
+        cutflow[f'{ds}_wgt'] = df[wgtname].sum()
+    
+    def postprocess_csv(self, per_evt_wgt='Generator_weight', extraprocess=False, selname='Pass') -> pd.DataFrame:
+        """Post-process the datasets and save the processed dataframes to csv files.
+        
+        Parameters
+        - `fitype`: the file type to be saved
+        - `per_evt_wgt`: the weight to be multiplied to the flat weights
+        - `extraprocess`: additional processing to be done on the dataframe"""
         list_of_df = []
+        new_outdir = f'{self._datadir}_extrasel'
+        checkpath(new_outdir)
+        def add_wgt(dfs, rwfac):
+            df = dfs[0]
+            df['weight'] = df[per_evt_wgt] * rwfac
+            df['process'] = process if not resolve else ds
+            if extraprocess: return extraprocess(df)
+            else: return df
         for process in processes:
+            load_dir = pjoin(self._datadir, process) 
+            cf_dict = {}
+            cf_df = load_csvs(load_dir, f'{process}_cf')[0]
             for ds in self.wgt_dict[process].keys():
                 rwfac = self.rwgt_fac(process, ds) 
-                def add_wgt(dfs):
-                    df = dfs[0]
-                    df['weight'] = df[per_evt_wgt] * rwfac
-                    df['process'] = process if not resolve else ds
-                    return df
-                if fitype == 'csv': 
-                    df = load_csvs(pjoin(self._datadir, process), f'{ds}_out', func=add_wgt)
-                    list_of_df.append(df)
+                df = load_csvs(load_dir, f'{ds}_out', func=add_wgt, rwfac=rwfac)
+                checkpath(f'{new_outdir}/{process}')
+                df.to_csv(pjoin(new_outdir, process, f'{ds}_out.csv'))
+                list_of_df.append(df)
+                self.addextcf(cf_dict, df, ds, per_evt_wgt)
+            cf_df = pd.concat([cf_df, pd.DataFrame(cf_dict, index=[selname])])
+            cf_df.to_csv(pjoin(new_outdir, process, f'{process}_cf.csv'))
         processed = pd.concat(list_of_df, axis=0).reset_index().drop('index', axis=1)
         processed.to_csv(pjoin(self._datadir, 'processed.csv'))
         return processed
@@ -71,13 +95,13 @@ class CSVPlotter():
     def rwgt_fac(self, process, ds):
         signalname = cleancfg.get("signal", ['ggF'])
         if process in signalname: 
-            factor = cleancfg.get('factor', 100)
+            factor = cleancfg.get('factor', 10)
         else:
             factor = 1 
         flat_wgt = self.wgt_dict[process][ds] * lumi * 1000 * factor 
         return flat_wgt
             
-    def plot_hist(self, evts: 'pd.DataFrame', attridict: 'dict', group=['ZH', 'ggF', 'ZZ']):
+    def plot_hist(self, evts: 'pd.DataFrame', attridict: 'dict', group: 'dict'=None):
         """Plot the object attribute based on the attribute dictionary.
         
         Parameters
@@ -90,25 +114,18 @@ class CSVPlotter():
             bin_no = histopts.get('bins', 10)
             bin_range = histopts.get('range', (0,200))
             hist_list = []
-            if group:
-                thisdf = evts[evts['process'].isin(group)]
-                otherdf = evts[~evts['process'].isin(group)]
+            pltlabel = list(group.keys()) if group is not None else self.labels
+            for label in pltlabel:
+                proc_list = group[label] if group is not None else [label]
+                thisdf = evts[evts['process'].isin(proc_list)]
                 thishist, bins = ObjectPlotter.hist_overflow(thisdf[att], bin_no, bin_range, thisdf['weight'])
-                thathist, bins = ObjectPlotter.hist_overflow(otherdf[att], bin_no, bin_range, otherdf['weight'])
-                hist_list = [thishist, thathist]
-                pltlabel = ['Signal', 'Background']
-            else:
-                for label in self.labels:
-                    thisdf = evts[evts['process']==label]
-                    hist, bins = ObjectPlotter.hist_overflow(thisdf[att], bin_no, bin_range, thisdf['weight'])
-                    hist_list.append(hist)
-                pltlabel = self.labels
+                hist_list.append(thishist)
             ObjectPlotter.plot_var(hist_list, bins, label=pltlabel, xrange=bin_range, title='', 
                                    save_name=pjoin(self.outdir, f'{att}.png'), **pltopts)
         return None
         
 class ObjectPlotter():
-    def __init__(self, objname, wgt, labels, evts):
+    def __init__(self, objname, wgt, evts):
         self.objname = objname
         self.wgt = wgt
         self.evts = evts
@@ -141,6 +158,7 @@ class ObjectPlotter():
         fig, ax = plt.subplots(figsize=(16, 10))
         ax.set_title(title)
         hep.style.use("CMS")
+        hep.cms.label(label='Work in Progress')
         xlabel = kwargs.pop('xlabel', 'GeV')
         ax.set_prop_cycle('color', colors)
         hep.histplot(
@@ -148,7 +166,7 @@ class ObjectPlotter():
             bins=bin_edges,
             label=label,
             ax=ax,
-            linewidth=3,
+            linewidth=2,
             **kwargs)
         ax.set_xlabel(xlabel, fontsize=20)
         ax.set_ylabel("Events", fontsize=20)
@@ -191,4 +209,3 @@ def makePretty(styler,color_code):
     css_indexes=f'background-color: {color_code}; color: white;'
     styler.applymap_index(lambda _: css_indexes, axis=1)
     return styler
-

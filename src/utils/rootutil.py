@@ -5,7 +5,7 @@ import random
 import subprocess
 import pandas as pd
 
-from analysis.evtselutil import Object
+from analysis.objutil import Object
 from config.selectionconfig import cleansetting as cleancfg
 from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, get_xrdfs_file_info
 from utils.datautil import find_branches, pjoin
@@ -19,6 +19,7 @@ localout = cleancfg.LOCALOUTPUT
 lumi = cleancfg.LUMI * 1000
 resolve = cleancfg.get("RESOLVE", False)
 wgt_dict = haddWeights(cleancfg.DATAPATH)
+condorpath = cleancfg.get("CONDORPATH", f'{indir}_hadded')
 
 checkpath(indir, createdir=False, raiseError=True)
 checkpath(localout, createdir=True)
@@ -105,7 +106,7 @@ class DataLoader():
                 print(f"Discrepancies between cutflow numbers and output number exist for {process}. Please double check selections.")
                 
     @staticmethod
-    def merge_cf(signals=['ggF', 'ZH', 'ZZ']) -> None:
+    def merge_cf(inputdir=condorpath, outputdir=localout, signals=['ggF', 'ZH', 'ZZ']) -> None:
         """Merge all cutflow tables for all processes into one. Save to LOCALOUTPUT.
         Output formatted cutflow table as well.
         
@@ -114,20 +115,20 @@ class DataLoader():
         resolved_list = []
         wgt_dfdict= {}
         for process in cleancfg.DATASETS:
-            condorpath = pjoin(cleancfg.CONDORPATH, process) if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
-            resolved, cmbd = DataLoader.load_cf(process, condorpath)
+            srcdir = pjoin(inputdir, process)
+            resolved, cmbd = DataLoader.load_cf(process, srcdir) 
             resolved_list.append(resolved)
             wgt_dfdict[process] = cmbd
         resolved_all = pd.concat(resolved_list, axis=1)
-        resolved_all.to_csv(pjoin(localout, "allDatasetCutflow.csv"))
+        resolved_all.to_csv(pjoin(outputdir, "allDatasetCutflow.csv"))
         wgt_resolved = resolved_all.filter(like='wgt', axis=1)
         wgt_resolved.columns = wgt_resolved.columns.str.replace('_wgt$', '', regex=True)
-        wgt_resolved.to_csv(pjoin(localout, "ResolvedWgtOnly.csv"))
-        wgtpEff = calc_eff(wgt_resolved, None, 'incremental', True, pjoin(localout, 'resolved_wgteff.csv'))
-        wgtpEff.filter(like='eff', axis=1).to_csv(pjoin(localout, "ResolvedEffOnly.csv"))
+        wgt_resolved.to_csv(pjoin(outputdir, "ResolvedWgtOnly.csv"))
+        wgtpEff = calc_eff(wgt_resolved, None, 'incremental', True, pjoin(outputdir, 'resolved_wgteff.csv'))
+        wgtpEff.filter(like='eff', axis=1).to_csv(pjoin(outputdir, "ResolvedEffOnly.csv"))
         yield_df = DataLoader.process_yield(pd.DataFrame(wgt_dfdict, index=wgt_resolved.index), 
                                             signals)
-        yield_df.to_csv(pjoin(localout, 'scaledyield.csv'))
+        yield_df.to_csv(pjoin(outputdir, 'scaledyield.csv'))
     
     @staticmethod
     def load_cf(process, datasrcpath, luminosity=lumi) -> tuple[pd.DataFrame]:
