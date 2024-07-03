@@ -1,7 +1,8 @@
 # This file contains custom event selection classes for the analysis.
 # The classes are inherited from the BaseEventSelections class
 # TECHNICALLY THIS SHOULD BE THE ONLY FILE THAT NEEDS TO BE MODIFIED FOR CUSTOM EVENT SELECTIONS
-from .evtselutil import BaseEventSelections, Object
+from .evtselutil import BaseEventSelections
+from .objutil import Object
 import operator as opr
 import numpy as np
 
