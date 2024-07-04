@@ -29,10 +29,10 @@ default:
       count: 2
       OS: true
     Jet:
-      pt: 20
+      pt: 30
       eta: 2.4
-      # btag: 0.0614 # loose WP
-      btag: 0.3196 # medium WP
+      btag: 0.0614 # loose WP
+      # btag: 0.3196 # medium WP
       # pnetbtag: 0.0499 # loose WP
       count: 2
       jetid: 3
