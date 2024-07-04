@@ -10,7 +10,7 @@ TREENAME = 'Events'
 PLOT_VARS = ['Tau', 'Jet', 'FatJet', "GenPart"]
 EXTRA_VARS = ['Generator_weight', 'LHEReweightingWeight']
 SIGNAL = ['ggF', 'ZH', 'ZZ']
-LUMI = 213.6 # fb^-1
+LUMI = 220 # fb^-1
 
 [LOCAL]
 SELNAME = 'prelim_looseb'

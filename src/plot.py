@@ -4,7 +4,7 @@ from config.plotsetting import object_dict
 import argparse
 
 def postprocess():
-    # DataLoader.hadd_cfs()
+    DataLoader.hadd_cfs()
     # DataLoader.hadd_roots()
     DataLoader.hadd_csvouts()
 
