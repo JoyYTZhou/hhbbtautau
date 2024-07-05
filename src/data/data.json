@@ -13,6 +13,50 @@
             "xsection": 5558.0
         }
     },
+    "QCD": {
+        "QCD-4Jets_HT-1000to1200": {
+            "string": [
+                "/QCD-4Jets_HT-1000to1200_TuneCP5_13p6TeV_madgraphMLM-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6-v2/NANOAODSIM"
+            ],
+            "xsection": 883.7
+        },
+        "QCD-4Jets_HT-100to200":{
+            "string": ["/QCD-4Jets_HT-100to200_TuneCP5_13p6TeV_madgraphMLM-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6-v2/NANOAODSIM"],
+            "xsection": 1000
+        },
+        "QCD-4Jets_HT-1200to1500": {
+            "string": ["/QCD-4Jets_HT-1200to1500_TuneCP5_13p6TeV_madgraphMLM-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6-v2/NANOAODSIM"],
+            "xsection": 383.5
+        },
+        "QCD-4Jets_HT-1500to2000": {
+            "string": ["/QCD-4Jets_HT-1500to2000_TuneCP5_13p6TeV_madgraphMLM-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6-v2/NANOAODSIM"],
+            "xsection": 125.2 
+        },
+        "QCD-4Jets_HT-2000": {
+            "string": ["/QCD-4Jets_HT-2000_TuneCP5_13p6TeV_madgraphMLM-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6-v2/NANOAODSIM"],
+            "xsection": 26.49
+        },
+        "QCD-4Jets_HT-200to400": {
+            "string": ["/QCD-4Jets_HT-200to400_TuneCP5_13p6TeV_madgraphMLM-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6-v2/NANOAODSIM"],
+            "xsection": 1961000
+        },
+        "QCD-4Jets_HT-400to600": {
+            "string": ["/QCD-4Jets_HT-400to600_TuneCP5_13p6TeV_madgraphMLM-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6-v2/NANOAODSIM"],
+            "xsection": 95620
+        },
+        "QCD-4Jets_HT-600to800": {
+            "string": ["/QCD-4Jets_HT-600to800_TuneCP5_13p6TeV_madgraphMLM-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6-v2/NANOAODSIM"],
+            "xsection": 13540
+        },
+        "QCD-4Jets_HT-70to100": {
+            "string": ["/QCD-4Jets_HT-70to100_TuneCP5_13p6TeV_madgraphMLM-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6-v2/NANOAODSIM"],
+            "xsection": 58500000
+        },
+        "QCD-4Jets_HT-800to1000": {
+            "string": ["/QCD-4Jets_HT-800to1000_TuneCP5_13p6TeV_madgraphMLM-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6-v2/NANOAODSIM"],
+            "xsection": 3033 
+        }
+    },
     "ggF": {
         "GluGlutoHHto2B2Tau": {
             "string": [
