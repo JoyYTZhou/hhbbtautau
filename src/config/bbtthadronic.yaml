@@ -29,12 +29,12 @@ default:
       count: 2
       OS: true
     Jet:
-      pt: 30
+      pt: 20
       eta: 2.4
       btag: 0.0614 # loose WP
       # btag: 0.3196 # medium WP
       # pnetbtag: 0.0499 # loose WP
-      count: 2
+      count: 1
       jetid: 3
   outputs:
     Tau:
