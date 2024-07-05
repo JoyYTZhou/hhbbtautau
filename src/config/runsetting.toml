@@ -9,7 +9,7 @@ STEP_SIZE = '150MB'
 
 [PRESELECT]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
-SEL_NAME = 'prelim_looseb_highpt'
+SEL_NAME = 'prelim_onelooseb'
 INPUTFILE_PATH = "@format /store/user/joyzhou/vetoskim_hadded/{this.PROCESS_NAME}"
 OUTPUTDIR_PATH = "@format {env[OUTPUT_BASE]}/outputs/{this.PROCESS_NAME}"
 COPY_LOCAL = false

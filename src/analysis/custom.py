@@ -9,7 +9,7 @@ import numpy as np
 def switch_selections(sel_name):
     selections = {
         'vetoskim': skimEvtSel,
-        'prelim_looseb_highpt': prelimEvtSel,
+        'prelim_onelooseb': prelimEvtSel,
         'loosepnetb_only': loosebEvtSel
     }
     return selections.get(sel_name, BaseEventSelections)
@@ -83,10 +83,10 @@ class prelimEvtSel(BaseEventSelections):
             return j_mask & jetdR_mask
         
         jet_nummask = jet.numselmask(jobjmask(jet), opr.ge)
-        jet, events = self.selobjhelper(events, '>=2 ak4 jets', jet, jet_nummask)
+        jet, events = self.selobjhelper(events, '>=1 ak4 jets', jet, jet_nummask)
 
-        jet_nummask = jet.numselmask((jobjmask(jet) & jet.custommask('btag', opr.ge)), opr.ge)
-        jet, events = self.selobjhelper(events, '>=2 Loose B-tagged', jet, jet_nummask)
+        jet_nummask = jet.numselmask((jobjmask(jet) & jet.custommask('btag', opr.ge)), opr.eq)
+        jet, events = self.selobjhelper(events, '==1 Loose B-tagged', jet, jet_nummask)
         
         jet_mask = (jobjmask(jet) & jet.custommask('btag', opr.ge))
         ld_j, sd_j = jet.getldsd(mask=jet_mask)
