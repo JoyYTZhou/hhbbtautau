@@ -48,17 +48,32 @@ tau_gen = {
 
 dR = {
     "Tau_dR": {
-        "hist": {'bins': 20, 'range': [-5, 5]},
+        "hist": {'bins': 20, 'range': [0, 5]},
         "plot": {'xlabel': r'dR $(\tau)$',
                  'alpha': 0.95,
                  'stack': if_stack,
                  'histtype': hist_type}}, 
     "Bjet_dR": {
-        "hist": {'bins': 20, 'range': [-5, 5]},
+        "hist": {'bins': 20, 'range': [0, 5]},
         "plot": {'xlabel': r'dR(B Jets)',
                  'alpha': 0.95,
                  'stack': if_stack,
                  'histtype': hist_type}}, 
+}
+
+H_mass = {
+    "Tau_InvM": {
+        "hist": {'bins': 40, 'range': [0,200]},
+        "plot": {'xlabel': r'Invariant Mass (2$\tau$) (GeV)',
+                 'alpha': 0.95,
+                 'stack': if_stack,
+                 'histtype': hist_type}},
+    "Bjet_InvM": {
+        "hist": {'bins': 40, 'range': [0,200]},
+        "plot": {'xlabel': r'Invariant Mass (2b) (GeV)',
+                 'alpha': 0.95,
+                 'stack': if_stack,
+                 'histtype': hist_type}},
 }
 
 
@@ -123,3 +138,4 @@ bjet_eta = {
 }
 
 object_dict = tau_pt | tau_eta | bjet_eta | bjet_pt | b_tag | bjet_mass | tau_gen | dR
+object_dict = object_dict | H_mass
