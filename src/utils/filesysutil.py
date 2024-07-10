@@ -1,9 +1,5 @@
-import os
-import glob
-import subprocess
+import os, glob, tracemalloc, linecache, subprocess, datetime
 from pathlib import Path
-import datetime
-import logging
 
 runcom = subprocess.run
 pjoin = os.path.join
@@ -76,34 +72,28 @@ def checkx509():
         raise SystemError("Certificate directory not set. Immmediately check certificate directory!")
     print(f"Certificate directory set to be {proxy_directory}.")
 
-def logresult(result, success_msg):
-    if result.returncode == 0:
-        logging.debug(success_msg)
-    else:
-        stderr_message = result.stderr.decode('utf-8') if isinstance(result.stderr, bytes) else result.stderr
-        if not stderr_message:
-            stderr_message = "No error message available."
-        logging.info(f"Operation not successful! Return code: {result.returncode}. Here's the error message =========================\n{stderr_message}")
+def display_top(snapshot, key_type='lineno', limit=10):
+    snapshot = snapshot.filter_traces((
+        tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),
+        tracemalloc.Filter(False, "<unknown>"),
+    ))
+    top_stats = snapshot.statistics(key_type)
 
-def initLogger(name, suffix):
-    """Initialize a logger for a module."""
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
+    print("Top %s lines" % limit)
+    for index, stat in enumerate(top_stats[:limit], 1):
+        frame = stat.traceback[0]
+        print("#%s: %s:%s: %.1f KiB"
+              % (index, frame.filename, frame.lineno, stat.size / 1024))
+        line = linecache.getline(frame.filename, frame.lineno).strip()
+        if line:
+            print('    %s' % line)
 
-    debug_handler = logging.FileHandler(f"{name}_daskworker_{suffix}.log")
-    debug_handler.setLevel(logging.DEBUG)
-
-    error_handler = logging.FileHandler(f"{name}daskworker_{suffix}.err")
-    error_handler.setLevel(logging.ERROR)
-
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    debug_handler.setFormatter(formatter)
-    error_handler.setFormatter(formatter)
-
-    logger.addHandler(debug_handler)
-    logger.addHandler(error_handler)
-
-    return logger
+    other = top_stats[limit:]
+    if other:
+        size = sum(stat.size for stat in other)
+        print("%s other: %.1f KiB" % (len(other), size / 1024))
+    total = sum(stat.size for stat in top_stats)
+    print("Total allocated size: %.1f KiB" % (total / 1024))
 
 def delfilelist(filelist) -> None:
     """Remove a list of file"""

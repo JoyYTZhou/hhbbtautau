@@ -92,7 +92,6 @@ def short_name(dataset):
 
     return name
 
-
 def find_files(directory, regex):
     fileset = {}
     for path, _, files in os.walk(directory):
@@ -113,7 +112,6 @@ def eosls(path):
 def eosfind(path):
     cmd = ['eos', 'root://cmseos.fnal.gov/', 'find',  '--size', path]
     return subprocess.check_output(cmd).decode('utf-8')
-
 
 def find_files_eos(directory, regex):
     fileset = defaultdict(list)
