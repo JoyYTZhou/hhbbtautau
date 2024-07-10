@@ -7,6 +7,10 @@ from utils.filesysutil import checkx509
 from config.selectionconfig import dasksetting as dask_cfg
 from config.selectionconfig import runsetting as rs
 
+def diagnose():
+    import tracemalloc
+    gc.set_debug(gc.DEBUG_LEAK)
+
 def main():
     gc.enable()
     from analysis.spawndask import submitjobs
