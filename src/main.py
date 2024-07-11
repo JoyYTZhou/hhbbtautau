@@ -18,7 +18,6 @@ def main():
     if args.diagnose:
         import tracemalloc
         tracemalloc.start()
-        gc.set_debug(gc.DEBUG_LEAK)
 
     if dask_cfg.SPAWN_CLIENT:
         from analysis.spawndask import spawnclient

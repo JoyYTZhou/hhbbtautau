@@ -23,7 +23,7 @@ class skimEvtSel(BaseEventSelections):
             else:
                 self.objsel.add(trigname, events[~trigname])
 
-    def setevtsel(self, events):
+    def setevtsel(self, events) -> None:
         muon = Object(events, "Muon")
         electron = Object(events, "Electron")
         e_mask = (electron.ptmask(opr.ge) & \
@@ -44,7 +44,8 @@ class skimEvtSel(BaseEventSelections):
 
         self.objsel.add_multiple({"Electron Veto": elec_nummask,
                                 "Muon Veto": muon_nummask})
-        return None 
+        electron = None
+        muon = None
 
 class prelimEvtSel(BaseEventSelections):
     def setevtsel(self, events) -> None:

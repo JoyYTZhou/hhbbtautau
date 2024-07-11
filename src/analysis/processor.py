@@ -4,6 +4,7 @@ import uproot._util
 import uproot, pickle
 import pandas as pd
 import dask_awkward as dak
+import awkward as ak
 
 from utils.filesysutil import *
 from .evtselutil import BaseEventSelections
@@ -65,12 +66,9 @@ class Processor:
             checkpath(self.copydir, createdir=True)
         checkpath(self.outdir)
     
-    def loadfile(self, filename, suffix):
+    def loadfile(self, filename: str, suffix: int):
         """This is a wrapper function around uproot._dask. 
         I am writing this doc to humiliate myself in the future.
-        
-        :return: The loaded file dict (and error messages if encountered)
-        :rtype: dask_awkward.lib.core.Array
         """
         dask_args = {}
         if self.rtcfg.get("STEP_SIZE", False): 
@@ -88,34 +86,33 @@ class Processor:
 
         try:
             if self.rtcfg.get("DELAYED_OPEN", True):
-                print("Delayed!")
                 events = uproot.dask(**dask_args)
+                print("Delayed!")
             else:
-                print("Not delayed!")
                 events = uproot.open(dask_args['files']).arrays()
-        except OSError as e:
-            print(f"Failure to load file {filename}: {e}")
+                print("Not delayed!")
+        except Exception as e:
+            print(f"Failure to load file {filename}")
+            print(e)
             events = None
         return events
     
-    def runfile(self, filename: 'str', suffix, delayed=False, write_npz=False):
+    def runfile(self, filename: str, suffix: int, delayed=False, write_npz=False):
         """Run test selections on a single file dict.
 
         Parameters:
-        - filename: path of file to process
-        - suffix: append to output file (usually an index to map the filename to a list)
-        - write_method: how the output will be saved
-        - delayed: if not , output will be computed before saving
+        - delayed: if not, output will be computed before saving
         - write_npz: if write cutflow out
         
         Returns:
         - messages for debugging
         """
         events = self.loadfile(filename, suffix)
+        print(type(events))
         rc = 0
-        if events is None: 
-            rc = 1
-            return rc
+        if not isinstance(events, dak.lib.core.Array) or not isinstance(events, ak.highlevel.Array): 
+            print("Events are not loaded!")
+            return 1
         events = self.evtsel(events)
 
         if write_npz:
@@ -168,7 +165,7 @@ class Processor:
             rc = 1
         return rc
     
-    def writedf(self, passed: 'pd.DataFrame', suffix) -> int:
+    def writedf(self, passed: pd.DataFrame, suffix) -> int:
         """Writes a pandas DataFrame to a csv file.
         
         Parameters:
