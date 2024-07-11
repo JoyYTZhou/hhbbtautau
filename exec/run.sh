@@ -42,5 +42,5 @@ export DEBUG_MODE=true
 echo "start executing main file"
 checkproxy
 
-python3 src/main.py --dsindx $DSINDX
+python3 src/main.py --dsindx $DSINDX --diagnose
 # python3 src/plot.py

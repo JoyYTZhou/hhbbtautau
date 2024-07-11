@@ -154,7 +154,7 @@ def submitjobs(client, dsindx=None) -> int:
     if not loaded: 
         print("All the files have been processed for this dataset!")
         return 0
-    if client is None or (not daskcfg.SPAWN_FUTURE): 
+    if client is None or (not daskcfg.get('SPAWN_FUTURE', False)): 
         print("Submit jobs in loops!")
         for ds, dsitems in loaded.items():
             resumeindx = dsitems.get('resumeindx', None)
