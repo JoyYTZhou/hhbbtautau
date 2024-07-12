@@ -85,7 +85,7 @@ class BaseEventSelections:
         else:
             return self.objcollect_to_df() 
 
-    def cf_to_df(self):
+    def cf_to_df(self) -> pd.DataFrame:
         """Return a dataframe for a single EventSelections.cutflow object.
         DASK GETS COMPUTED!
         :return: cutflow df
