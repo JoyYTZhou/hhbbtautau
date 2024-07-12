@@ -108,9 +108,8 @@ class Processor:
         - messages for debugging
         """
         events = self.loadfile(filename, suffix)
-        print(type(events))
         rc = 0
-        if not isinstance(events, dak.lib.core.Array) or not isinstance(events, ak.highlevel.Array): 
+        if events is None: 
             print("Events are not loaded!")
             return 1
         events = self.evtsel(events)
@@ -180,3 +179,4 @@ class Processor:
         finame = pjoin(self.outdir, f"{self.dataset}_{suffix}.pkl")
         with open(finame, 'wb') as f:
             pickle.dump(passed, f)
+        return 0
