@@ -114,7 +114,15 @@ class Processor:
             return 1
         events = self.evtsel(events)
 
-        if write_npz:
+        rc += self.writeCF(suffix, write_npz=write_npz)
+        rc += self.writeevts(events, suffix, delayed=delayed)
+                
+        if self.rtcfg.COPY_LOCAL: 
+            delfiles(self.copydir)
+        return rc
+    
+    def writeCF(self, suffix, **kwargs) -> int:
+        if kwargs.get('write_npz', False):
             npzname = pjoin(self.outdir, f'cutflow_{suffix}.npz')
             self.evtsel.cfobj.to_npz(npzname)
         cutflow_name = f'{self.dataset}_cutflow_{suffix}.csv'
@@ -123,18 +131,12 @@ class Processor:
         cutflow_df = self.evtsel.cf_to_df() 
         cutflow_df.to_csv(localpath)
         print("Cutflow written to local!")
-
         if self.transfer:
             if os.path.exists(localpath):
                 condorpath = f'{self.transfer}/{cutflow_name}'
                 cpcondor(localpath, condorpath)
                 os.remove(localpath)
-        
-        rc = self.writeevts(events, suffix, delayed=delayed)
-                
-        if self.rtcfg.COPY_LOCAL: 
-            delfiles(self.copydir)
-        return rc
+        return 0
     
     def writeevts(self, passed, suffix, **kwargs) -> int:
         """Write the events to a file."""
