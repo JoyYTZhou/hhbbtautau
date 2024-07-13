@@ -19,6 +19,7 @@ with open(datapath, 'r') as data:
 
 transferP = getTransfer(rs)
 
+
 def job(fn, i, dataset, transferP=transferP, eventSelection=evtselclass) -> int:
     """Run the processor for a single file.
     Parameters
@@ -67,30 +68,27 @@ def loadmeta(filterfunc, dsindx=None, inputpath=rs.INPUTFILE_PATH, tsferP=transf
 
 def filterResume(metadata, tsferP=transferP) -> dict:
     """Resume jobs from last checkpoint"""
-    if tsferP:
-        statcode = checkpath(tsferP, createdir=False)
-        if statcode != 0: 
-            loaded = metadata
-        else:
-            loaded = {}
-            datasets = metadata.keys()
-            for ds in datasets:
-                print(f"Checking {ds} ========================================================")
-                fileno = len(metadata[ds]['filelist'])
-                fileindx1 = check_missing(f'{ds}_cutflow', fileno, tsferP, endpattern='.csv')
-                if fileindx1: print(f"Missing cutflow tables for these files: {fileindx1}!")
-                fileindx1 = set(fileindx1)
-                fileindx2 = check_missing(f'{ds}', fileno, tsferP, endpattern='.root')
-                if fileindx2: print(f"Missing output for these files: {fileindx2} ")
-                fileindx2 = set(fileindx2)
-                fileindx = list(fileindx1.union(fileindx2))
-                if fileindx != []:
-                    loaded[ds] = {}
-                    loaded[ds]['resumeindx'] = fileindx
-                    loaded[ds]['filelist'] = metadata[ds]['filelist']
-    else:
-        loaded = metadata
-    return loaded
+    if not tsferP or checkpath(tsferP, createdir=False) != 0:
+        return metadata
+    
+    loaded = {}
+    for ds, ds_info in metadata.items():
+        print(f"Checking {ds} ========================================================")
+        fileno = len(ds_info['filelist'])
+        missing_cutflow = set(check_missing(f'{ds}_cutflow', fileno, tsferP, endpattern='.csv'))
+        missing_output = set(check_missing(f'{ds}', fileno, tsferP, endpattern='.root'))
+        
+        if missing_cutflow:
+            print(f"Missing cutflow tables for these files: {missing_cutflow}!")
+        if missing_output:
+            print(f"Missing output for these files: {missing_output} ")
+        
+        missing_indices = list(missing_cutflow.union(missing_output))
+        
+        if missing_indices:
+            loaded[ds] = {'resumeindx': missing_indices, 'filelist': ds_info['filelist']}
+    
+    return loaded if loaded else metadata
 
 def checkjobs(tsferP=transferP) -> None:
     """Check if there are files left to be run."""
@@ -145,7 +143,7 @@ def submitloops(ds, filelist, indx) -> None:
             job(filelist[i], i, ds)
     return None
 
-def submitjobs(client, dsindx=None, fileindx=None) -> int:
+def submitjobs(client, dsindx=None) -> int:
     """Run jobs based on client settings.
     If a valid client is found and future mode is true, submit simultaneously run jobs.
     If not, fall back into a loop mode. Note that even in this mode, any dask computations will be managed by client explicitly or implicitly.

@@ -12,7 +12,7 @@ def main():
 
     parser = argparse.ArgumentParser(description='Event selection options')
     parser.add_argument('--dsindx', type=int, help='an optional integer for dataset index', default=None)
-    parser.add_argument('--fileindx', type=int, help='an optional integer for file index', default=None)
+    parser.add_argument('--invert', action='store_true', default=False, help='Duplicate file processing!')
     parser.add_argument('--diagnose', action='store_true', default=False, help='Enable memory diagnose')
     args = parser.parse_args()
     
@@ -28,7 +28,7 @@ def main():
         print("Not spawning client explicitly!")
     checkx509()
 
-    submitjobs(client, args.dsindx, args.fileindx)
+    submitjobs(client, args.dsindx, args.invert)
     
     if args.diagnose:
         snapshot = tracemalloc.take_snapshot()
