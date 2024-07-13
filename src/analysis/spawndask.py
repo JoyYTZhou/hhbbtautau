@@ -145,7 +145,7 @@ def submitloops(ds, filelist, indx) -> None:
             job(filelist[i], i, ds)
     return None
 
-def submitjobs(client, dsindx=None) -> int:
+def submitjobs(client, dsindx=None, fileindx=None) -> int:
     """Run jobs based on client settings.
     If a valid client is found and future mode is true, submit simultaneously run jobs.
     If not, fall back into a loop mode. Note that even in this mode, any dask computations will be managed by client explicitly or implicitly.
