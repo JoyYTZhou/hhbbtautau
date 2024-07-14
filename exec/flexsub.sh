@@ -8,7 +8,10 @@ PROCESS_NAME=$1
 source ../scripts/envutil.sh
 setup_dirname_local
 LPC_setup
-export PYTHONPATH=$SRC_DIR:$PYTHONPATH
+
+cd ..
+source scripts/venv.sh
+cd exec
 
 PROCESS_DATA=$DATA_DIR/preprocessed
 XRD_DIRECTOR=root://cmsxrootd.fnal.gov
