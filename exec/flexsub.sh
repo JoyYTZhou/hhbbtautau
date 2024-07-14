@@ -3,7 +3,7 @@
 # Used to: create dynamic job submissions for different datasets
 # ==============================================================================
 
-PROCESS_NAME=$1
+export PROCESS_NAME=$1
 
 source ../scripts/envutil.sh
 setup_dirname_local

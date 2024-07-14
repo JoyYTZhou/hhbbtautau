@@ -18,6 +18,8 @@ exec/*.err
 exec/*.pem
 exec/*.out
 exec/joblog/
+exec/skimjson/
+exec/runtime/
 # Ignore error log directory
 exec/errors/
 # Ignore all log files

@@ -117,13 +117,13 @@ class JobRunner:
 class JobLoader():
     def __init__(self, jobpath) -> None:
         self.inpath = rs.INPUTFILE_PATH
-        self.tsfert = transferP
+        self.tsferP = transferP
         self.jobpath = jobpath
         checkpath(jobpath)
 
     def writejobs(self, filterfunc=filterResume) -> None:
         """Write job parameters to json file"""
-        if self.inputpath.endswith('.json'):
+        if self.inpath.endswith('.json'):
             self.skimjobs(filterfunc)
         elif self.inpath.startswith('/store/user/'):
             loaded = realmeta[rs.PROCESS_NAME]
@@ -144,11 +144,12 @@ class JobLoader():
             dsloaded = {dskey: loaded[dskey]}
             if filterfunc is not None: 
                 filtered = filterfunc(dsloaded, self.tsferP)
-            resumeindx = filtered.get('resumeindx', [j for j in range(len(dsloaded['filelist']))])
+            resumeindx = filtered.get('resumeindx', [j for j in range(len(dsloaded[dskey]['filelist']))])
             indx_gen = div_list(resumeindx, batch_size)
             for j, indx_list in enumerate(indx_gen):
                 dsloaded['resumeindx'] = indx_list
-                json.dump(dsloaded, pjoin(self.jobpath, f'{rs.PROCESS_NAME}_{i}_job_{j}.json'))
+                with open(pjoin(self.jobpath, f'{rs.PROCESS_NAME}_{i}_job_{j}.json'), 'w') as fp:
+                    json.dump(dsloaded, fp)
 
 def checkjobs(tsferP=transferP) -> None:
     """Check if there are files left to be run."""
