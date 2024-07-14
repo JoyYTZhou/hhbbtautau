@@ -1,12 +1,3 @@
-[SKIM]
-PROCESS_NAME = "@format {env[PROCESS_NAME]}"
-SEL_NAME = 'lepskim'
-INPUTFILE_PATH = "@format data/preprocessed/{this.PROCESS_NAME}.json"
-OUTPUTDIR_PATH = "@format outputs/{this.PROCESS_NAME}"
-TRANSFER_PATH = "@format {env[CONDOR_BASE]}/{this.SEL_NAME}/{this.PROCESS_NAME}"
-COPY_LOCAL = "@format {env[COPY_FILE]}"
-STEP_SIZE = '150MB'
-
 [PRESELECT]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
 SEL_NAME = 'prelim_onelooseb'
@@ -16,7 +7,7 @@ COPY_LOCAL = false
 STEP_SIZE = '150MB'
 DELAYED_OPEN = false
 
-[LPCCONDOR]
+[SKIM]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
 SEL_NAME = 'vetoskim'
 INPUTFILE_PATH = "@format data/preprocessed/{this.PROCESS_NAME}.json"

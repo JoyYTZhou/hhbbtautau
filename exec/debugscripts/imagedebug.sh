@@ -33,7 +33,7 @@ export PYTHONPATH=$(remove_duplicates "$PYTHONPATH")
 
 echo $PYTHONPATH
 
-export ENV_FOR_DYNACONF=LPCCONDOR
+export ENV_FOR_DYNACONF=SKIM
 export DEBUG_ON=true
 
 echo "start executing main file"

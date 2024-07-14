@@ -16,22 +16,10 @@ FILENAME=${PROCESS_DATA}/${PROCESS_NAME}.json
 INDX=$(jq 'length' $FILENAME)
 LEN=$((INDX-1))
 
-if [ "$PROCESS_NAME" == "TTbar" ]; then
-    cpusno=12
-    memory=26GB
-elif [ "$PROCESS_NAME" == "SingleH" ]; then
-    cpusno=8
-    memory=16GB
-else
-    cpusno=12
-    memory=24GB
-fi
+python3 skimjob.py
 
 cp -f hhbbtt.sub runtime/hhbbtt_${PROCESS_NAME}.sub
 cat << EOF >> runtime/hhbbtt_${PROCESS_NAME}.sub
-request_cpus = ${cpusno}
-request_memory = ${memory}
-request_disk = 5GB
 PROCESS_NAME = ${PROCESS_NAME}
 queue arg2 from seq 0 ${LEN} |
 EOF

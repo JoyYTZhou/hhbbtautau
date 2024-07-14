@@ -19,52 +19,10 @@ with open(datapath, 'r') as data:
 
 transferP = getTransfer(rs)
 
-
-def job(fn, i, dataset, transferP=transferP, eventSelection=evtselclass) -> int:
-    """Run the processor for a single file.
-    Parameters
-    - `fn`: The name of the file to process
-    - `i`: The index of the file in the list of files
-    - `dataset`: The name of the dataset (same dataset has same xsection)
-    - `eventSelection`: Custom Defined Event Selection Class
-    """
-    proc = Processor(rs, dataset, transferP, eventSelection)
-    print(f"Processing filename {fn}")
-    try: 
-        rc = proc.runfile(fn, i)
-        if rc !=0: 
-            print(f"File failed for file index {i} in {dataset}.")
-        else:
-            print(f"Execution finished for file index {i} in {dataset}!")
-        return rc
-    except TypeError as e:
-        print(f"TypeError encountered for file index {i} in {dataset}: {e}")
-        return 1
-    
-def loadmeta(filterfunc, dsindx=None, inputpath=rs.INPUTFILE_PATH, tsferP=transferP) -> dict:
-    """Load metadata from input file, or straight from directories containing files to process.
-    
-    Parameters
-    - `filterfunc`: function to filter files to run among meta files
-    - `dsindx`: Index of datasets to process in json file. If None, process all datasets.
-    
-    Return
-    """
-    if inputpath.endswith('.json'):
-        inputdatap = pjoin(parent_directory, inputpath)
-        with open(inputdatap, 'r') as samplepath:
-            loaded = json.load(samplepath)
-        if dsindx is not None:
-            dskey = list(loaded.keys())[dsindx]
-            loaded = {dskey: loaded[dskey]}
-    elif inputpath.startswith('/store/user/'):
-        loaded = realmeta[rs.PROCESS_NAME]
-        for dataset in loaded.keys():
-            loaded[dataset]['filelist'] = glob_files(inputpath, startpattern=dataset, endpattern='.root')
-    else:
-        raise TypeError("Check INPUTFILE_PATH in runsetting.toml. It's not of a valid format!")
-    if filterfunc is not None: loaded = filterfunc(loaded, tsferP)
-    return loaded
+def div_list(original_list, chunk_size):
+    """Divide a list into smaller lists of given size."""
+    for i in range(0, len(original_list), chunk_size):
+        yield original_list[i:i + chunk_size]
 
 def filterResume(metadata, tsferP=transferP) -> dict:
     """Resume jobs from last checkpoint"""
@@ -83,12 +41,114 @@ def filterResume(metadata, tsferP=transferP) -> dict:
         if missing_output:
             print(f"Missing output for these files: {missing_output} ")
         
-        missing_indices = list(missing_cutflow.union(missing_output))
+        missing_indices = sorted(list(missing_cutflow.union(missing_output)))
         
         if missing_indices:
             loaded[ds] = {'resumeindx': missing_indices, 'filelist': ds_info['filelist']}
+    return loaded
     
-    return loaded if loaded else metadata
+class JobRunner:
+    def __init__(self, jobfile, eventSelection=evtselclass) -> None:
+        self.selclass = eventSelection
+        self._ds = None
+        with open(jobfile, 'r') as job:
+            self._loaded = json.load(job)
+    
+    @property
+    def ds(self):
+        return self._ds
+    @ds.setter
+    def ds(self, dsname):
+        self._ds = dsname
+
+    def submitjobs(self, client) -> int:
+        """Run jobs based on client settings.
+        If a valid client is found and future mode is true, submit simultaneously run jobs.
+        If not, fall back into a loop mode. Note that even in this mode, any dask computations will be managed by client explicitly or implicitly.
+        """
+        loaded = self._loaded 
+        if not loaded: 
+            print("Double check the job json file!")
+            print("All the files have been processed for this dataset!")
+            return 0
+
+        use_futures = client is not None and daskcfg.get('SPAWN_FUTURE', False)
+        for ds, dsitems in loaded.items():
+            self.ds = ds
+            resumeindx = dsitems.get('resumeindx', None)
+            filelist = dsitems['filelist']
+            if use_futures:
+                futures = self.submitfutures(client, filelist, resumeindx)
+                result = process_futures(futures)
+            else:
+                print("Submit jobs in loops!")
+                self.submitloops(filelist, resumeindx)
+        return 0
+
+    def submitloops(self, filelist, indx) -> int:
+        """Put file processing in loops, i.e. one file by one file.
+        Usually used for large file size."""
+        
+        print(f"Processing {self.ds}...")
+        proc = Processor(rs, self.ds, transferP, self.selclass)
+        failed = proc.runbatch(filelist, indx)
+        return failed
+    
+    def submitfutures(self, client, filelist, indx) -> list:
+        """Submit jobs as futures to client.
+        
+        Parameters
+        - `client`: Dask client
+
+        Returns
+        list: List of futures for each file in the dataset.
+        """
+        futures = []
+        def job(fn, i):
+            proc = Processor(rs, self.ds, transferP, self.selclass) 
+            rc = proc.runfile(fn, i)
+            return rc
+        if indx is None:
+            futures.extend([client.submit(job, fn, i) for i, fn in enumerate(filelist)])
+        else:
+            futures.extend([client.submit(job, filelist[i]) for i in indx])
+        return futures
+
+class JobLoader():
+    def __init__(self, jobpath) -> None:
+        self.inpath = rs.INPUTFILE_PATH
+        self.tsfert = transferP
+        self.jobpath = jobpath
+        checkpath(jobpath)
+
+    def writejobs(self, filterfunc=filterResume) -> None:
+        """Write job parameters to json file"""
+        if self.inputpath.endswith('.json'):
+            self.skimjobs(filterfunc)
+        elif self.inpath.startswith('/store/user/'):
+            loaded = realmeta[rs.PROCESS_NAME]
+            for dataset in loaded.keys():
+                loaded[dataset]['filelist'] = glob_files(self.inpath, startpattern=dataset, endpattern='.root')
+            if filterfunc is not None: loaded = filterfunc(loaded, self.tsferP)
+            if loaded: json.dump(loaded, pjoin(self.jobpath, f'{rs.PROCESS_NAME}_job.json'))
+            else: print("All the input files have been processed!")
+        else:
+            raise TypeError("Check INPUTFILE_PATH in runsetting.toml. It's not of a valid format!")
+        
+    def skimjobs(self, filterfunc, batch_size=10) -> None:
+        inputdatap = pjoin(parent_directory, self.inpath)
+        with open(inputdatap, 'r') as samplepath:
+            loaded = json.load(samplepath)
+        dslist = list(loaded.keys()) 
+        for i, dskey in enumerate(dslist):
+            dsloaded = {dskey: loaded[dskey]}
+            if filterfunc is not None: 
+                filtered = filterfunc(dsloaded, self.tsferP)
+            resumeindx = filtered.get('resumeindx', [j for j in range(len(dsloaded['filelist']))])
+            indx_gen = div_list(resumeindx, batch_size)
+            for j, indx_list in enumerate(indx_gen):
+                dsloaded['resumeindx'] = indx_list
+                json.dump(dsloaded, pjoin(self.jobpath, f'{rs.PROCESS_NAME}_{i}_job_{j}.json'))
 
 def checkjobs(tsferP=transferP) -> None:
     """Check if there are files left to be run."""
@@ -103,67 +163,6 @@ def checkjobs(tsferP=transferP) -> None:
             print(f"There are {filelen} files left to be run in {ds}.")
     else:
         print("All the files have been processed!")
-
-def submitfutures(client, ds, filelist, indx) -> list:
-    """Submit jobs as futures to client.
-    
-    Parameters
-    - `client`: Dask client
-    - `ds`: dataset name
-    - `filelist`: List of files to process
-    - `indx`: List of indices to process
-
-    Returns
-    list: List of futures for each file in the dataset.
-    """
-    futures = []
-    if indx is None:
-        futures.extend([client.submit(job, fn, i, ds) for i, fn in enumerate(filelist)])
-    else:
-        futures.extend([client.submit(job, filelist[i], i, ds) for i in indx])
-    return futures
-
-def submitloops(ds, filelist, indx) -> None:
-    """Put file processing in loops, i.e. one file by one file.
-    Usually used for large file size.
-    
-    Parameters
-    - `ds`: dataset name
-    - `filelist`: List of files to process
-    - `indx`: List of indices to process"""
-    print(f"Processing {ds}...")
-    if indx is None:
-        print(f"Expected to see {len(filelist)} number of outputs")
-        for i, file in enumerate(filelist):
-            job(file, i, ds) 
-    else:
-        print(f"Starting with file number {indx[0]}............")
-        print(f"Expected to see {len(indx)} number of outputs")
-        for i in indx:
-            job(filelist[i], i, ds)
-    return None
-
-def submitjobs(client, dsindx=None) -> int:
-    """Run jobs based on client settings.
-    If a valid client is found and future mode is true, submit simultaneously run jobs.
-    If not, fall back into a loop mode. Note that even in this mode, any dask computations will be managed by client explicitly or implicitly.
-    """
-    loaded = loadmeta(filterfunc=filterResume, dsindx=dsindx)
-    if not loaded: 
-        print("All the files have been processed for this dataset!")
-        return 0
-    if client is None or (not daskcfg.get('SPAWN_FUTURE', False)): 
-        print("Submit jobs in loops!")
-        for ds, dsitems in loaded.items():
-            resumeindx = dsitems.get('resumeindx', None)
-            submitloops(ds, dsitems['filelist'], resumeindx)
-        return 0
-    else: 
-        for ds, dsitems in loaded.items():
-            resumeindx = dsitems.get('resumeindx', None)
-            futures = submitfutures(client, ds, dsitems['filelist'], resumeindx)
-            result = process_futures(futures)
-        return 0
 
 def sampleloaded(loaded) -> int:
     """Sample a random file from loaded metadata."""
@@ -180,16 +179,6 @@ def sampleloaded(loaded) -> int:
         size, mod_time = get_xrdfs_file_info(filename)
     return size
     
-def testsubmit():
-    client = spawnclient()
-    print(client.get_versions(check=True))
-    with open(rs.INPUTFILE_PATH, 'r') as samplepath:
-        metadata = json.load(samplepath)
-    for dataset, info in metadata.items():
-        print(f"Processing {dataset}...")
-        client.submit(job, info['filelist'][0], 0, dataset)
-    return client
-
 def process_futures(futures, results_file='futureresult.txt', errors_file='futureerror.txt'):
     """Process a list of Dask futures.
     :param futures: List of futures returned by client.submit()

@@ -6,7 +6,7 @@ PARENT_DIR = os.path.dirname(__file__)
 from utils.filesysutil import checkx509, display_top
 from config.selectionconfig import dasksetting as dask_cfg
 
-def main():
+def runselections():
     gc.enable()
     from analysis.spawndask import submitjobs
 
@@ -35,7 +35,7 @@ def main():
         display_top(snapshot)
 
 if __name__ == '__main__':
-    main()
+    runselections()
 
 
 
