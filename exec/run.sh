@@ -5,7 +5,7 @@
 echo "Currently in $PWD"
 
 export PROCESS_NAME=$1
-export DSINDX=$2
+export JSONPATH=$2
 export ENV_NAME=newcoffea_el9
 OLD_ENV_NAME=/uscms_data/d3/joyzhou/${ENV_NAME}
 
@@ -42,5 +42,5 @@ export DEBUG_MODE=true
 echo "start executing main file"
 checkproxy
 
-python3 src/main.py --dsindx $DSINDX --diagnose
+python3 src/main.py --input $JSONPATH --diagnose
 # python3 src/plot.py
