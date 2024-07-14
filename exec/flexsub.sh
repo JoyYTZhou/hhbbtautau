@@ -24,5 +24,5 @@ python3 skimjob.py
 cp -f hhbbtt.sub runtime/hhbbtt_${PROCESS_NAME}.sub
 cat << EOF >> runtime/hhbbtt_${PROCESS_NAME}.sub
 PROCESS_NAME = ${PROCESS_NAME}
-queue arg2 from seq 0 ${LEN} |
+queue FILENAME matching files skimjson/${PROCESS_NAME}_*.json
 EOF
