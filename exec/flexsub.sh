@@ -8,10 +8,10 @@ PROCESS_NAME=$1
 source ../scripts/envutil.sh
 setup_dirname_local
 LPC_setup
+export PYTHONPATH=$SRC_DIR:$PYTHONPATH
 
 PROCESS_DATA=$DATA_DIR/preprocessed
 XRD_DIRECTOR=root://cmsxrootd.fnal.gov
-
 FILENAME=${PROCESS_DATA}/${PROCESS_NAME}.json
 INDX=$(jq 'length' $FILENAME)
 LEN=$((INDX-1))
