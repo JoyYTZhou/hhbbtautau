@@ -1,4 +1,4 @@
-from src.analysis.spawndask import JobLoader, pjoin
+from analysis.spawndask import JobLoader, pjoin
 import os 
 
 cwd = os.path.realpath(__file__)
