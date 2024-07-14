@@ -97,28 +97,49 @@ class Processor:
             events = None
         return events
     
-    def runfile(self, filename: str, suffix: int, delayed=False, write_npz=False):
+    def runbatch(self, files, indxlst:list=None, **kwargs):
+        """Run selections on a batch of files.
+        
+        Parameters:
+        indxlst: list of indices to run on. If None, run on all files."""
+        failed = 0 
+        if indxlst is None:
+            print(f"Expected to see {len(files)} number of outputs")
+            for i, file in enumerate(files):
+                failed += self.runfile(file, i) 
+        else:
+            print(f"Starting with file number {indx[0]}............")
+            print(f"Expected to see {len(indx)} number of outputs")
+            for indx in indxlst:
+                failed += self.runfile(files[indx], indx, **kwargs)
+        return failed
+
+    def runfile(self, filename: str, suffix: int, write_npz=False):
         """Run test selections on a single file dict.
 
         Parameters:
-        - delayed: if not, output will be computed before saving
         - write_npz: if write cutflow out
         
         Returns:
         - messages for debugging
         """
-        events = self.loadfile(filename, suffix)
-        rc = 0
-        if events is None: 
-            print("Events are not loaded!")
-            return 1
-        events = self.evtsel(events)
+        try:
+            events = self.loadfile(filename, suffix)
+            rc = 0
+            if events is None: 
+                print("Events are not loaded!")
+                rc = 1
+            else:
+                events = self.evtsel(events)
 
-        rc += self.writeCF(suffix, write_npz=write_npz)
-        rc += self.writeevts(events, suffix, delayed=delayed)
-                
-        if self.rtcfg.COPY_LOCAL: 
-            delfiles(self.copydir)
+                rc += self.writeCF(suffix, write_npz=write_npz)
+                rc += self.writeevts(events, suffix)
+                        
+                if self.rtcfg.COPY_LOCAL: 
+                    delfiles(self.copydir)
+        except Exception as e:
+            print(f"Error encountered for file index {suffix} in {self.dataset}: {e}")
+            rc = 1
         return rc
     
     def writeCF(self, suffix, **kwargs) -> int:
@@ -150,16 +171,17 @@ class Processor:
             transferfiles(self.outdir, self.transfer, remove=True)
         return rc
 
-    def writedask(self, passed, suffix, delayed=True, fields=None) -> int:
+    def writedask(self, passed, suffix, fields=None) -> int:
         """Wrapper around uproot.dask_write(),
         transfer all root files generated to a destination location."""
         rc = 0
+        delayed = self.rtcfg.get("DELAYED_WRITE", False)
         if fields is None:
             if delayed: uproot.dask_write(passed, destination=self.outdir, tree_name="Events", compute=False, prefix=f'{self.dataset}_{suffix}')
             else: 
                 try:
                     uproot.dask_write(passed, destination=self.outdir, tree_name="Events", compute=True, prefix=f'{self.dataset}_{suffix}')
-                except ValueError as e:
+                except Exception as e:
                     print(f"dask_write encountered error {e} for file index {suffix}.")
                     rc = 1
         else:

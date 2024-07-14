@@ -35,7 +35,7 @@ export PYTHONPATH=$(remove_duplicates "$PYTHONPATH")
 
 echo $PYTHONPATH
 
-export ENV_FOR_DYNACONF=LPCCONDOR
+export ENV_FOR_DYNACONF=SKIM
 export OUTPUT_BASE=$PWD
 export DEBUG_MODE=true
 
