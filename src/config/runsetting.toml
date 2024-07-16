@@ -24,4 +24,4 @@ OUTPUTDIR_PATH = "/uscms/home/joyzhou/nobackup/tests"
 # TRANSFER_PATH = "@format /store/user/joyzhou/tests/{this.PROCESS_NAME}"
 COPY_LOCAL = true
 COPY_DIR = "/uscms/home/joyzhou/nobackup/temp"
-STEP_SIZE = '150MB'
+STEP_SIZE = '200MB'

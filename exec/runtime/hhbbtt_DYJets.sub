@@ -15,14 +15,20 @@ stream_output = True
 
 should_transfer_files = YES
 when_to_transfer_output = ON_EXIT_OR_EVICT 
-transfer_input_files = $(MY_PATH)/src, $(MY_PATH)/scripts, $(NO_BACKUP)/newcoffea_el9.tar.gz
+transfer_input_files = $(MY_PATH)/src, $(MY_PATH)/scripts, $(NO_BACKUP)/newcoffea_el9.tar.gz, $FILENAME
 
-arguments = $(PROCESS_NAME) $(arg2)
-log = joblog/$(OUTNAME)_$(PROCESS_NAME)_$(arg2).log
-output = joblog/$(OUTNAME)_$(PROCESS_NAME)_$(arg2).out
-error = joblog/$(OUTNAME)_$(PROCESS_NAME)_$(arg2).err
-request_cpus = 14
-request_memory = 28GB
+arguments = $(PROCESS_NAME) $(FILENAME)
+log = joblog/$(OUTNAME)_$(FILENAME).log
+output = joblog/$(OUTNAME)_$(FILENAME).out
+error = joblog/$(OUTNAME)_$(FILENAME).err
+
+request_cpus = 6
+request_memory = 14GB
 request_disk = 5GB
+
 PROCESS_NAME = DYJets
-queue arg2 from seq 0 0 |
+queue FILENAME matching files skimjson/DYJets_*.json
+PROCESS_NAME = DYJets
+queue FILENAME matching files skimjson/DYJets_*.json
+PROCESS_NAME = DYJets
+queue FILENAME matching files skimjson/DYJets_*.json

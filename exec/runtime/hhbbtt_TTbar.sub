@@ -15,32 +15,42 @@ stream_output = True
 
 should_transfer_files = YES
 when_to_transfer_output = ON_EXIT_OR_EVICT 
-transfer_input_files = $(MY_PATH)/src, $(MY_PATH)/scripts, $(NO_BACKUP)/newcoffea_el9.tar.gz
+transfer_input_files = $(MY_PATH)/src, $(MY_PATH)/scripts, $(NO_BACKUP)/newcoffea_el9.tar.gz, $(FILENAME)
 
-arguments = $(PROCESS_NAME) $(arg2)
-log = joblog/$(OUTNAME)_$(PROCESS_NAME)_$(arg2).log
-output = joblog/$(OUTNAME)_$(PROCESS_NAME)_$(arg2).out
-error = joblog/$(OUTNAME)_$(PROCESS_NAME)_$(arg2).err
-request_cpus = 12
-request_memory = 26GB
+arguments = $(PROCESS_NAME) $(FILENAME)
+log = joblog/$(OUTNAME)_$(FILENAME).log
+output = joblog/$(OUTNAME)_$(FILENAME).out
+error = joblog/$(OUTNAME)_$(FILENAME).err
+
+request_cpus = 6
+request_memory = 14GB
 request_disk = 5GB
+
 PROCESS_NAME = TTbar
-queue arg2 from seq 0 2 |
-PROCESS_NAME = TTbar
-queue arg2 from seq 0 2 |
-PROCESS_NAME = TTbar
-queue arg2 from seq 0 2 |
-PROCESS_NAME = TTbar
-queue arg2 from seq 0 2 |
-PROCESS_NAME = TTbar
-queue arg2 from seq 0 2 |
-PROCESS_NAME = TTbar
-queue arg2 from seq 0 2 |
-PROCESS_NAME = TTbar
-queue arg2 from seq 0 2 |
-PROCESS_NAME = TTbar
-queue arg2 from seq 0 2 |
-PROCESS_NAME = TTbar
-queue arg2 from seq 0 2 |
-PROCESS_NAME = TTbar
-queue arg2 from seq 0 2 |
+queue FILENAME matching files skimjson/TTbar_2_job_5.json
+queue FILENAME matching files skimjson/TTbar_2_job_4.json
+queue FILENAME matching files skimjson/TTbar_2_job_3.json
+queue FILENAME matching files skimjson/TTbar_2_job_2.json
+queue FILENAME matching files skimjson/TTbar_2_job_1.json
+queue FILENAME matching files skimjson/TTbar_2_job_0.json
+queue FILENAME matching files skimjson/TTbar_0_job_17.json
+queue FILENAME matching files skimjson/TTbar_0_job_16.json
+queue FILENAME matching files skimjson/TTbar_0_job_15.json
+queue FILENAME matching files skimjson/TTbar_2_job_8.json
+queue FILENAME matching files skimjson/TTbar_2_job_7.json
+queue FILENAME matching files skimjson/TTbar_2_job_6.json
+queue FILENAME matching files skimjson/TTbar_0_job_14.json
+queue FILENAME matching files skimjson/TTbar_0_job_8.json
+queue FILENAME matching files skimjson/TTbar_0_job_7.json
+queue FILENAME matching files skimjson/TTbar_0_job_6.json
+queue FILENAME matching files skimjson/TTbar_0_job_5.json
+queue FILENAME matching files skimjson/TTbar_0_job_4.json
+queue FILENAME matching files skimjson/TTbar_0_job_3.json
+queue FILENAME matching files skimjson/TTbar_0_job_2.json
+queue FILENAME matching files skimjson/TTbar_0_job_1.json
+queue FILENAME matching files skimjson/TTbar_0_job_0.json
+queue FILENAME matching files skimjson/TTbar_0_job_13.json
+queue FILENAME matching files skimjson/TTbar_0_job_12.json
+queue FILENAME matching files skimjson/TTbar_0_job_11.json
+queue FILENAME matching files skimjson/TTbar_0_job_10.json
+queue FILENAME matching files skimjson/TTbar_0_job_9.json

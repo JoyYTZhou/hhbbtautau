@@ -144,12 +144,15 @@ class JobLoader():
             dsloaded = {dskey: loaded[dskey]}
             if filterfunc is not None: 
                 filtered = filterfunc(dsloaded, self.tsferP)
-            resumeindx = filtered.get('resumeindx', [j for j in range(len(dsloaded[dskey]['filelist']))])
-            indx_gen = div_list(resumeindx, batch_size)
-            for j, indx_list in enumerate(indx_gen):
-                dsloaded['resumeindx'] = indx_list
-                with open(pjoin(self.jobpath, f'{rs.PROCESS_NAME}_{i}_job_{j}.json'), 'w') as fp:
-                    json.dump(dsloaded, fp)
+            if filtered:
+                resumeindx = filtered[dskey].get('resumeindx', [j for j in range(len(dsloaded[dskey]['filelist']))])
+                indx_gen = div_list(resumeindx, batch_size)
+                for j, indx_list in enumerate(indx_gen):
+                    dsloaded[dskey]['resumeindx'] = indx_list
+                    with open(pjoin(self.jobpath, f'{rs.PROCESS_NAME}_{i}_job_{j}.json'), 'w') as fp:
+                        json.dump(dsloaded, fp)
+            else:
+                print(f"All the files have been processed for {dskey}! No job files are needed!")
 
 def checkjobs(tsferP=transferP) -> None:
     """Check if there are files left to be run."""
