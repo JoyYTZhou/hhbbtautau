@@ -77,6 +77,7 @@ class Processor:
             dask_args["steps_per_file"] = self.rtcfg.STEP_NO
         else: 
             dask_args["step_size"] = uproot._util.unset
+        
 
         if self.rtcfg.COPY_LOCAL:
             destpath = pjoin(self.copydir, f"{self.dataset}_{suffix}.root")
@@ -108,8 +109,8 @@ class Processor:
             for i, file in enumerate(files):
                 failed += self.runfile(file, i) 
         else:
-            print(f"Starting with file number {indx[0]}............")
-            print(f"Expected to see {len(indx)} number of outputs")
+            print(f"Starting with file number {indxlst[0]}............")
+            print(f"Expected to see {len(indxlst)} number of outputs")
             for indx in indxlst:
                 failed += self.runfile(files[indx], indx, **kwargs)
         return failed
