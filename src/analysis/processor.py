@@ -66,39 +66,37 @@ class Processor:
             checkpath(self.copydir, createdir=True)
         checkpath(self.outdir)
     
-    def loadfile(self, filename: str, suffix: int):
+    def loadfile(self, filename: str, suffix: int, dask_args: dict) -> tuple[ak.Array, bool]:
         """This is a wrapper function around uproot._dask. 
         I am writing this doc to humiliate myself in the future.
         """
-        dask_args = {}
-        if self.rtcfg.get("STEP_SIZE", False): 
-            dask_args["step_size"] = self.rtcfg.STEP_SIZE
-        elif self.rtcfg.get("STEP_NO", False):
-            dask_args["steps_per_file"] = self.rtcfg.STEP_NO
-        else: 
-            dask_args["step_size"] = uproot._util.unset
-        
+        allow_copy = self.rtcfg.get("COPY_LOCAL", False)
+        copied = False
+        attempts = 0
 
-        if self.rtcfg.COPY_LOCAL:
-            destpath = pjoin(self.copydir, f"{self.dataset}_{suffix}.root")
-            cpfcondor(filename, destpath)
-            filename = destpath
-        dask_args["files"] = {filename: self.treename}
-
-        try:
-            if self.rtcfg.get("DELAYED_OPEN", True):
-                events = uproot.dask(**dask_args)
-                print("Delayed!")
-            else:
-                events = uproot.open(dask_args['files']).arrays()
-                print("Not delayed!")
-        except Exception as e:
-            print(f"Failure to load file {filename}")
-            print(e)
-            events = None
-        return events
+        while attempts < 2:
+            attempts += 1
+            try:
+                dask_args["files"] = {filename: self.treename}
+                if self.rtcfg.get("DELAYED_OPEN", True):
+                    events = uproot.dask(**dask_args)
+                else:
+                    events = uproot.open(dask_args['files']).arrays()
+                    print("Not delayed!")
+            except Exception as e:
+                print(f"Failure to load file {filename}")
+                print(e)
+                if allow_copy and not copied:
+                    destpath = pjoin(self.copydir, f"{self.dataset}_{suffix}.root")
+                    cpfcondor(filename, destpath)
+                    filename = destpath
+                    copied = True
+                else:
+                    events = None
+                    break
+        return events, copied
     
-    def runbatch(self, files, indxlst:list=None, **kwargs):
+    def runbatch(self, files, dask_args: dict, indxlst:list=None, **kwargs):
         """Run selections on a batch of files.
         
         Parameters:
@@ -107,15 +105,15 @@ class Processor:
         if indxlst is None:
             print(f"Expected to see {len(files)} number of outputs")
             for i, file in enumerate(files):
-                failed += self.runfile(file, i) 
+                failed += self.runfile(file, i, dask_args) 
         else:
             print(f"Starting with file number {indxlst[0]}............")
             print(f"Expected to see {len(indxlst)} number of outputs")
             for indx in indxlst:
-                failed += self.runfile(files[indx], indx, **kwargs)
+                failed += self.runfile(files[indx], indx, dask_args, **kwargs)
         return failed
 
-    def runfile(self, filename: str, suffix: int, write_npz=False):
+    def runfile(self, filename: str, suffix: int, dask_args: dict, write_npz=False):
         """Run test selections on a single file dict.
 
         Parameters:
@@ -125,7 +123,7 @@ class Processor:
         - messages for debugging
         """
         try:
-            events = self.loadfile(filename, suffix)
+            events, copied = self.loadfile(filename, suffix, dask_args)
             rc = 0
             if events is None: 
                 print("Events are not loaded!")
@@ -136,7 +134,7 @@ class Processor:
                 rc += self.writeCF(suffix, write_npz=write_npz)
                 rc += self.writeevts(events, suffix)
                         
-                if self.rtcfg.COPY_LOCAL: 
+                if copied:
                     delfiles(self.copydir)
         except Exception as e:
             print(f"Error encountered for file index {suffix} in {self.dataset}: {e}")
