@@ -1,7 +1,7 @@
 from dask.distributed import Client, LocalCluster
 from dask.distributed import as_completed
 import json as json
-import traceback, os, random
+import traceback, os, random, uproot
 
 from .custom import switch_selections
 from .processor import Processor, getTransfer
@@ -61,6 +61,27 @@ class JobRunner:
     def ds(self, dsname):
         self._ds = dsname
 
+    def get_meta_daskargs(self, filepath, client) -> dict:
+        """Get metadata for dask arguments"""
+        dask_args = {}
+        
+        if rs.get("DELAYED_OPEN", True):
+            if filepath.startswith("root://"): 
+                if client is None: 
+                    dask_args["handler"] = uproot.XRootDSource        
+                else:
+                    dask_args["handler"] = uproot.MultithreadedXRootDSource
+                    dask_args["timeout"] = 60
+            
+            if rs.get("STEP_SIZE", '200MB'): 
+                dask_args["step_size"] = self.rtcfg.STEP_SIZE
+            elif rs.get("STEP_NO", False):
+                dask_args["steps_per_file"] = self.rtcfg.STEP_NO
+            else: 
+                dask_args["step_size"] = uproot._util.unset
+        
+        return dask_args
+        
     def submitjobs(self, client) -> int:
         """Run jobs based on client settings.
         If a valid client is found and future mode is true, submit simultaneously run jobs.
@@ -77,21 +98,22 @@ class JobRunner:
             self.ds = ds
             resumeindx = dsitems.get('resumeindx', None)
             filelist = dsitems['filelist']
+            daskargs = self.get_meta_daskargs(filelist[0], client)
             if use_futures:
                 futures = self.submitfutures(client, filelist, resumeindx)
                 result = process_futures(futures)
             else:
                 print("Submit jobs in loops!")
-                self.submitloops(filelist, resumeindx)
+                self.submitloops(filelist, resumeindx, daskargs)
         return 0
 
-    def submitloops(self, filelist, indx) -> int:
+    def submitloops(self, filelist, indx, daskargs) -> int:
         """Put file processing in loops, i.e. one file by one file.
         Usually used for large file size."""
         
         print(f"Processing {self.ds}...")
         proc = Processor(rs, self.ds, transferP, self.selclass)
-        failed = proc.runbatch(filelist, indx)
+        failed = proc.runbatch(filelist, daskargs, indx)
         return failed
     
     def submitfutures(self, client, filelist, indx) -> list:
@@ -153,20 +175,6 @@ class JobLoader():
                         json.dump(dsloaded, fp)
             else:
                 print(f"All the files have been processed for {dskey}! No job files are needed!")
-
-def checkjobs(tsferP=transferP) -> None:
-    """Check if there are files left to be run."""
-    loaded = loadmeta(filterResume)
-    print(f"Checking {tsferP} for output files!")
-    if loaded:
-        for ds in loaded.keys():
-            if 'resumeindx' in loaded[ds]:
-                filelen = len(loaded[ds]['resumeindx'])
-            else:
-                filelen = len(loaded[ds]['filelist'])
-            print(f"There are {filelen} files left to be run in {ds}.")
-    else:
-        print("All the files have been processed!")
 
 def sampleloaded(loaded) -> int:
     """Sample a random file from loaded metadata."""
