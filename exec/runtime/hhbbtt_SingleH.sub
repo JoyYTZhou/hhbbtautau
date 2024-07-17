@@ -28,3 +28,5 @@ request_disk = 5GB
 
 PROCESS_NAME = SingleH
 queue FILENAME matching files skimjson/SingleH_*.json
+PROCESS_NAME = SingleH
+queue FILENAME matching files skimjson/SingleH_*.json

@@ -73,10 +73,12 @@ class JobRunner:
                     dask_args["handler"] = uproot.MultithreadedXRootDSource
                     dask_args["timeout"] = 60
             
-            if rs.get("STEP_SIZE", '200MB'): 
-                dask_args["step_size"] = self.rtcfg.STEP_SIZE
-            elif rs.get("STEP_NO", False):
-                dask_args["steps_per_file"] = self.rtcfg.STEP_NO
+            step_size = rs.get("STEP_SIZE", '200MB') 
+            step_no = rs.get("STEP_NO", False)
+            if step_size: 
+                dask_args["step_size"] = step_size
+            elif step_no:
+                dask_args["steps_per_file"] = step_no
             else: 
                 dask_args["step_size"] = uproot._util.unset
         
