@@ -28,3 +28,5 @@ request_disk = 5GB
 
 PROCESS_NAME = WZ
 queue FILENAME matching files skimjson/WZ_*.json
+PROCESS_NAME = WZ
+queue FILENAME matching files skimjson/WZ_*.json
