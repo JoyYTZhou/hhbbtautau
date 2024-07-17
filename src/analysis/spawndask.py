@@ -73,7 +73,7 @@ class JobRunner:
                     dask_args["handler"] = uproot.MultithreadedXRootDSource
                     dask_args["timeout"] = 60
             
-            step_size = rs.get("STEP_SIZE", '200MB') 
+            step_size = rs.get("STEP_SIZE", '100MB') 
             step_no = rs.get("STEP_NO", False)
             if step_size: 
                 dask_args["step_size"] = step_size
