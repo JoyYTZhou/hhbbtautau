@@ -17,8 +17,13 @@ export PATH=$(remove_duplicates "$PATH")
 export PYTHONPATH=$(remove_duplicates "$PYTHONPATH")
 
 echo "===================================="
-echo "Enter Dynaconf environment name: "
-read env_name
+
+if [ -z "$1" ]; then
+  echo "Enter Dynaconf environment name: "
+  read env_name
+else
+  env_name=$1
+fi
 
 export ENV_FOR_DYNACONF=$env_name
 export DEBUG_MODE=false

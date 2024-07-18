@@ -10,7 +10,7 @@ setup_dirname_local
 LPC_setup
 
 cd ..
-source scripts/venv.sh
+source scripts/venv.sh SKIM
 cd exec
 
 PROCESS_DATA=$DATA_DIR/preprocessed
