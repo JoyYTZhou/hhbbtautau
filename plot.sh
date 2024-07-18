@@ -1,5 +1,4 @@
-source scripts/venv.sh
-export ENV_FOR_DYNACONF=LPCTEST
+source scripts/venv.sh LPCTEST
 rm -f plot.log
 
 python3 src/plot.py --postprocess --getcf > plot.log 2>&1 &
