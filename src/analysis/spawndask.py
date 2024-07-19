@@ -1,11 +1,11 @@
 from dask.distributed import Client, LocalCluster
 from dask.distributed import as_completed
 import json as json
-import traceback, os, random, uproot
+import traceback, os, uproot
 
 from .custom import switch_selections
 from .processor import Processor, getTransfer
-from utils.filesysutil import glob_files, get_xrdfs_file_info, check_missing, checkpath, pjoin
+from utils.filesysutil import glob_files, check_missing, checkpath, pjoin
 from config.selectionconfig import runsetting as rs
 from config.selectionconfig import dasksetting as daskcfg
 
@@ -177,21 +177,6 @@ class JobLoader():
                         json.dump(dsloaded, fp)
             else:
                 print(f"All the files have been processed for {dskey}! No job files are needed!")
-
-def sampleloaded(loaded) -> int:
-    """Sample a random file from loaded metadata."""
-    firstitem = loaded[next(iter(loaded))]
-    randindx = random.randint(0, len(firstitem['filelist']))
-    splitname = '//store'
-    filename = firstitem['filelist'][randindx]
-    if not filename.startswith('/store'):
-        splitted = filename.split(splitname, 1)
-        redir = splitted[0]
-        finame = '/store' + splitted[1]
-        size, mod_time = get_xrdfs_file_info(finame, redir)
-    else:
-        size, mod_time = get_xrdfs_file_info(filename)
-    return size
     
 def process_futures(futures, results_file='futureresult.txt', errors_file='futureerror.txt'):
     """Process a list of Dask futures.

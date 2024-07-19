@@ -1,15 +1,17 @@
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.utils.class_weight import compute_class_weight
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
+from xgboost import XGBClassifier
 
-class PrelimLoader():
+class DataLoader():
     def __init__(self, file_path, target_column):
         self.target_column = target_column
-        self.load_data(file_path)
+        self.data = pd.read_csv(file_path)
         self.X = None
         self.y = None
         self.X_train = None
@@ -17,9 +19,6 @@ class PrelimLoader():
         self.y_train = None
         self.y_test = None
         self.scaler = StandardScaler()
-        
-    def load_data(self, fipath):
-        self.data = pd.read_csv(fipath)
        
     def preprocess_data(self, dropped: 'list[str]' = []):
         self.y = self.data[self.target_column]
@@ -29,17 +28,19 @@ class PrelimLoader():
     def split_data(self, test_size=0.3, random_state=None):
         self.X_train, self.X_test, self.y_train, self.y_test = \
             train_test_split(self.X, self.y, test_size=test_size, random_state=random_state)
-        self.X_train = torch.tensor(self.X_train, dtype=torch.float32)
-        self.y_train = torch.tensor(self.y_train.to_numpy(), dtype=torch.long)
-        self.X_test = torch.tensor(self.X_test, dtype=torch.float32)
-        self.y_test = torch.tensor(self.y_test.to_numpy(), dtype=torch.long)
             
-    def get_train_data(self):
-        return self.X_train, self.y_train
+    def get_train_data(self, if_torch=True):
+        if if_torch: 
+            return torch.tensor(self.X_train.to_numpy(), dtype=torch.float32), torch.tensor(self.y_train.to_numpy(), dtype=torch.long)
+        else:
+            return self.X_train, self.y_train
     
-    def get_test_data(self):
-        return self.X_test, self.y_test
-    
+    def get_test_data(self, if_torch=False):
+        if if_torch:
+            return torch.tensor(self.X_test, dtype=torch.float32), torch.tensor(self.y_test, dtype=torch.long)
+        else:
+            return self.X_test, self.y_test
+
 class SimpleClassifier(nn.Module):
     def __init__(self, hidden_size=128, num_classes=2):
         super().__init__()
@@ -87,3 +88,21 @@ class SimpleClassifier(nn.Module):
         predicted = self.predict(X_test)
         accuracy = (predicted == y_test).mean()
         print(f'Test Accuracy: {accuracy:.4f}')
+
+def binaryBDTReweighter(X_train, y_train, X_test):
+    class_weight = (len(y_train) - y_train.sum()) / y_train.sum()
+    param_grid = {
+        'max_depth': [3, 4, 5],
+        'learning_rate': [0.1, 0.01, 0.05],
+        'n_estimators': [50, 100, 200],
+        'subsample': [0.8, 1.0],
+        'colsample_bytree': [0.8, 1.0]
+    }
+    xgb_clf = XGBClassifier(objective='binary:logistic', random_state=42, n_jobs=1, scale_pos_weight=class_weight)
+    grid_search = GridSearchCV(xgb_clf, param_grid, scoring='roc_auc', cv=5, n_jobs=-1)
+    grid_search.fit(X_train, y_train)
+
+    labels = xgb_clf.predict(X_test)
+
+    probabilities = xgb_clf.predict_proba(X_test)
+    
