@@ -46,7 +46,7 @@ def iterprocess(endpattern):
 
 class PostProcessor():
     """Class for loading and hadding data from skims/predefined selections produced directly by Processor."""
-    def __init__() -> None:
+    def __init__(self) -> None:
         pass
 
     def __call__(self, output_type=cleancfg.OUTTYPE):
@@ -319,7 +319,7 @@ def load_fields(file, branch_names=None, tree_name='Events', lib='ak') -> tuple[
     combined_evts = ak.concatenate(dfs)
     return combined_evts, emptylist
 
-def write_root(evts: 'ak.Array'|'pd.DataFrame', destination, outputtree="Events", title="Events", compression=None):
+def write_root(evts: 'ak.Array | pd.DataFrame', destination, outputtree="Events", title="Events", compression=None):
     """Write arrays to root file. Highly inefficient methods in terms of data storage.
 
     Parameters
