@@ -63,6 +63,7 @@ def transferfiles(srcpath, destpath, startpattern='', endpattern='', remove=Fals
                 cpfcondor(srcfile, f'{destpath}/')
 
 def checkx509():
+    """Check if the X509 proxy and certificate directory are set."""
     proxy_position = os.environ.get("X509_USER_PROXY", default="None")
     if proxy_position is None:
         raise SystemError("Proxy not found. Immediately check proxy!")
@@ -73,6 +74,7 @@ def checkx509():
     print(f"Certificate directory set to be {proxy_directory}.")
 
 def display_top(snapshot, key_type='lineno', limit=10):
+    """Display the top lines of a snapshot"""
     snapshot = snapshot.filter_traces((
         tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),
         tracemalloc.Filter(False, "<unknown>"),
@@ -94,21 +96,6 @@ def display_top(snapshot, key_type='lineno', limit=10):
         print("%s other: %.1f KiB" % (len(other), size / 1024))
     total = sum(stat.size for stat in top_stats)
     print("Total allocated size: %.1f KiB" % (total / 1024))
-
-def delfilelist(filelist) -> None:
-    """Remove a list of file"""
-    for file_path in filelist:
-        file = Path(file_path)
-        try:
-            file.unlink()
-            print(f"Deleted {file}")
-        except FileNotFoundError:
-            print(f"File not found: {file}")
-        except PermissionError:
-            print(f"Permission denied: {file}")
-        except Exception as e:
-            print(f"Error deleting {file}: {e}")
-    return None
     
 def checklocalpath(pathstr, raiseError=False):
     """Check if a local path exists. If not will create one."""

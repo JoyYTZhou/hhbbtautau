@@ -7,8 +7,8 @@ import pandas as pd
 
 from analysis.objutil import Object
 from config.selectionconfig import cleansetting as cleancfg
-from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, get_xrdfs_file_info
-from utils.datautil import find_branches, pjoin
+from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, get_xrdfs_file_info, pjoin
+from utils.datautil import find_branches
 from utils.cutflowutil import combine_cf, calc_eff, load_csvs
 from utils.datautil import haddWeights
 
@@ -44,10 +44,17 @@ def iterprocess(endpattern):
         return wrapper
     return inner
 
-class DataLoader():
+class PostProcessor():
     """Class for loading and hadding data from skims/predefined selections produced directly by Processor."""
-    def __init__(self) -> None:
+    def __init__() -> None:
         pass
+
+    def __call__(self, output_type=cleancfg.OUTTYPE):
+        PostProcessor.hadd_cfs()
+        if output_type == 'root': PostProcessor.hadd_roots()
+        elif output_type == 'csv': PostProcessor.hadd_csvouts()
+        else: raise TypeError("Invalid output type. Please choose either 'root' or 'csv'.")
+        PostProcessor.merge_cf()
 
     @staticmethod
     @iterprocess('.root')
@@ -99,7 +106,7 @@ class DataLoader():
         """Check the cutflow numbers against the number of events in the root files."""
         for process in cleancfg.DATASETS:
             condorpath = pjoin(cleancfg.CONDORPATH, process) if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
-            cf = DataLoader.load_cf(process, condorpath)[0]
+            cf = PostProcessor.load_cf(process, condorpath)[0]
             if check_last_no(cf, f"{process}_raw", glob_files(condorpath, startpattern=process, endpattern='.root')):
                 print(f"Cutflow check for {process} passed!")
             else:
@@ -116,7 +123,7 @@ class DataLoader():
         wgt_dfdict= {}
         for process in cleancfg.DATASETS:
             srcdir = pjoin(inputdir, process)
-            resolved, cmbd = DataLoader.load_cf(process, srcdir) 
+            resolved, cmbd = PostProcessor.load_cf(process, srcdir) 
             resolved_list.append(resolved)
             wgt_dfdict[process] = cmbd
         resolved_all = pd.concat(resolved_list, axis=1)
@@ -126,7 +133,7 @@ class DataLoader():
         wgt_resolved.to_csv(pjoin(outputdir, "ResolvedWgtOnly.csv"))
         wgtpEff = calc_eff(wgt_resolved, None, 'incremental', True, pjoin(outputdir, 'resolved_wgteff.csv'))
         wgtpEff.filter(like='eff', axis=1).to_csv(pjoin(outputdir, "ResolvedEffOnly.csv"))
-        yield_df = DataLoader.process_yield(pd.DataFrame(wgt_dfdict, index=wgt_resolved.index), 
+        yield_df = PostProcessor.process_yield(pd.DataFrame(wgt_dfdict, index=wgt_resolved.index), 
                                             signals)
         yield_df.to_csv(pjoin(outputdir, 'scaledyield.csv'))
     
@@ -145,7 +152,7 @@ class DataLoader():
         for ds, perevtwgt in wgt_dict[process].items():
             sel_cols = resolved_cf.filter(like=ds).filter(like='wgt')
             resolved_cf[sel_cols.columns] = sel_cols * perevtwgt * luminosity
-            combined_cf = DataLoader.sum_kwd(resolved_cf, 'wgt', f"{process}_wgt")
+            combined_cf = PostProcessor.sum_kwd(resolved_cf, 'wgt', f"{process}_wgt")
         return resolved_cf, combined_cf
     
     @staticmethod
@@ -198,7 +205,7 @@ class DataLoader():
                 destination = pjoin(outdir, f"{ds}_limited.root")
                 with uproot.recreate(destination) as output:
                     print(f"Writing limited data to file {destination}")
-                    DataLoader.write_obj(output, files, cleancfg.PLOT_VARS, cleancfg.EXTRA_VARS)
+                    PostProcessor.write_obj(output, files, cleancfg.PLOT_VARS, cleancfg.EXTRA_VARS)
 
     @staticmethod
     def write_obj(writable, filelist, objnames, extra=[]) -> None:
@@ -312,11 +319,10 @@ def load_fields(file, branch_names=None, tree_name='Events', lib='ak') -> tuple[
     combined_evts = ak.concatenate(dfs)
     return combined_evts, emptylist
 
-def write_root(evts, destination, outputtree="Events", title="Events", compression=None):
+def write_root(evts: 'ak.Array'|'pd.DataFrame', destination, outputtree="Events", title="Events", compression=None):
     """Write arrays to root file. Highly inefficient methods in terms of data storage.
 
     Parameters
-    - `evts`: Array/DataFrame to write
     - `destination`: path to the output root file
     - `outputtree`: name of the tree to write to
     - `title`: title of the tree
@@ -347,8 +353,6 @@ def concat_roots(directory, startpattern, outdir, fields=None, extra_branches = 
     - startpattern: Pattern to match the start of the ROOT file name.
     - fields: List of field names to load from each ROOT file.
     - outdir: Path to the directory to save the combined DataFrame.
-    - extra_branches: List of extra branches to load from each ROOT file.
-    - tree_name: Name of the tree to load
 
     Returns:
     - A list of empty files among the searched ROOT files
