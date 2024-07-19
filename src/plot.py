@@ -7,6 +7,9 @@ def postprocess():
     pp = PostProcessor()
     pp()
 
+def mergecf():
+    PostProcessor.merge_cf()
+
 def plotouts():
     cp = CSVPlotter()
     df = cp.postprocess(per_evt_wgt='Generator_weight_values')
@@ -14,7 +17,8 @@ def plotouts():
 
 def programchoice() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Choose the post-processing options')
-    parser.add_argument('--postprocess', action='store_true', help='Execute hadding procedure for the specified, processed datasets')
+    parser.add_argument('--postprocess', action='store_true', help='Execute cutflow table merging')
+    parser.add_argument('--mergecf', action='store_true', help='Execute hadding procedure for the specified, processed datasets')
     parser.add_argument('--getobj', action='store_true', help='Get delimited object files')
     parser.add_argument('--plotouts', action='store_true', help='Plot stored options')
 
@@ -28,5 +32,6 @@ def programchoice() -> argparse.Namespace:
 if __name__ == '__main__':
     args = programchoice()
     if args.postprocess: postprocess()
+    if args.mergecf: mergecf()
     if args.plotouts: plotouts()
 
