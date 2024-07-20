@@ -64,8 +64,7 @@ class PostProcessor():
         """
         for ds in meta.keys():
             root_files = glob_files(dtdir, ds, '.root', add_prefix=False)
-            size = get_xrdfs_file_info(root_files[0])[0]
-            batch_size = int(20**8/size)
+            batch_size = 600
             print(f"Merging in batches of {batch_size} individual root files!")
             root_files = [PREFIX + "/" + f for f in root_files]
             for i in range(0, len(root_files), batch_size):
