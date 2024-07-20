@@ -1,4 +1,4 @@
-import uproot, json, random, subprocess
+import uproot, json, random, subprocess, ROOT
 import awkward as ak
 import pandas as pd
 
@@ -77,8 +77,10 @@ class PostProcessor():
             root_files = glob_files(dtdir, ds, '.root', add_prefix=False)
             for file_path in root_files:
                 try:
-                    with uproot.open(file_path) as file:
-                        file.classnames()
+                    file = ROOT.TFile.Open(file_path, "READ")
+                    if file.IsZombie() or file.TestBit(ROOT.TFile.kRecovered) or not file.IsOpen():
+                        raise Exception("File is corrupted or truncated")
+                    file.Close()
                 except Exception as e:
                     print(f"File {file_path} might be truncated or corrupted. Error: {e}")
                     truncated_files.append(file_path)
