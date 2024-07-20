@@ -65,16 +65,15 @@ class PostProcessor():
         """Hadd root files of datasets into appropriate size based on settings."""
         for ds in meta.keys():
             root_files = glob_files(dtdir, ds, '.root', add_prefix=True)
-            batch_size = 400
+            batch_size = 200
             for i in range(0, len(root_files), batch_size):
                 batch_files = root_files[i:i+batch_size]
                 outname = pjoin(outdir, f"{ds}_{i//batch_size+1}.root") 
-                try: 
-                    call_hadd(outname, batch_files)
-                except Exception as e:
-                    print(f"Hadding encountered error {e}")
-                    for file_path in batch_files: 
-                        check_corrupt(file_path)
+                call_hadd(outname, batch_files)
+                #except Exception as e:
+                    #print(f"Hadding encountered error {e}")
+                    #for file_path in batch_files: 
+                        #check_corrupt(file_path)
         return ''
     
     @staticmethod
