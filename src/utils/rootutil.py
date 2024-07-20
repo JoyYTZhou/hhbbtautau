@@ -9,8 +9,6 @@ from utils.datautil import find_branches
 from utils.cutflowutil import combine_cf, calc_eff, load_csvs
 from utils.datautil import haddWeights
 
-PREFIX = "root://cmseos.fnal.gov"
-
 indir = cleancfg.INPUTDIR
 localout = cleancfg.LOCALOUTPUT
 lumi = cleancfg.LUMI * 1000
@@ -20,6 +18,15 @@ condorpath = cleancfg.get("CONDORPATH", f'{indir}_hadded')
 
 checkpath(indir, createdir=False, raiseError=True)
 checkpath(localout, createdir=True)
+
+def check_corrupt(file_path):
+    try:
+        file = ROOT.TFile.Open(file_path, "READ")
+        if file.IsZombie() or file.TestBit(ROOT.TFile.kRecovered) or not file.IsOpen():
+            raise Exception("File is corrupted or truncated")
+        file.Close()
+    except Exception as e:
+        print(f"File {file_path} might be truncated or corrupted. Error: {e}")
 
 def iterprocess(endpattern):
     """Decorator function that iterates over all processes in the cleancfg.DATASETS, and
@@ -55,36 +62,30 @@ class PostProcessor():
     @staticmethod
     @iterprocess('.root')
     def hadd_roots(process, meta, dtdir, outdir) -> str:
-        """Hadd root files of datasets into appropriate size based on settings.
-        """
+        """Hadd root files of datasets into appropriate size based on settings."""
         for ds in meta.keys():
-            root_files = glob_files(dtdir, ds, '.root', add_prefix=False)
-            batch_size = 600
-            root_files = [PREFIX + "/" + f for f in root_files]
+            root_files = glob_files(dtdir, ds, '.root', add_prefix=True)
+            batch_size = 400
             for i in range(0, len(root_files), batch_size):
                 batch_files = root_files[i:i+batch_size]
                 outname = pjoin(outdir, f"{ds}_{i//batch_size+1}.root") 
-                call_hadd(outname, batch_files)
+                try: 
+                    call_hadd(outname, batch_files)
+                except Exception as e:
+                    print(f"Hadding encountered error {e}")
+                    for file_path in batch_files: 
+                        check_corrupt(file_path)
         return ''
     
     @staticmethod
     @iterprocess('.root')
-    def check_roots(process, meta, dtdir, outdir) -> str:
+    def check_roots(process, meta, dtdir, outdir):
         """Hadd root files of datasets into appropriate size based on settings.
         """
-        truncated_files = []
         for ds in meta.keys():
-            root_files = glob_files(dtdir, ds, '.root', add_prefix=False)
+            root_files = glob_files(dtdir, ds, '.root', add_prefix=True)
             for file_path in root_files:
-                try:
-                    file = ROOT.TFile.Open(file_path, "READ")
-                    if file.IsZombie() or file.TestBit(ROOT.TFile.kRecovered) or not file.IsOpen():
-                        raise Exception("File is corrupted or truncated")
-                    file.Close()
-                except Exception as e:
-                    print(f"File {file_path} might be truncated or corrupted. Error: {e}")
-                    truncated_files.append(file_path)
-        return truncated_files
+                check_corrupt(file_path)
 
     @staticmethod
     @iterprocess('.csv')
