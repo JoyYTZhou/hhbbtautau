@@ -1,8 +1,5 @@
-import uproot
-import json
+import uproot, json, random, subprocess
 import awkward as ak
-import random
-import subprocess
 import pandas as pd
 
 from analysis.objutil import Object
@@ -59,19 +56,33 @@ class PostProcessor():
     @iterprocess('.root')
     def hadd_roots(process, meta, dtdir, outdir) -> str:
         """Hadd root files of datasets into appropriate size based on settings.
-        
-        Parameters
         """
         for ds in meta.keys():
             root_files = glob_files(dtdir, ds, '.root', add_prefix=False)
             batch_size = 600
-            print(f"Merging in batches of {batch_size} individual root files!")
             root_files = [PREFIX + "/" + f for f in root_files]
             for i in range(0, len(root_files), batch_size):
                 batch_files = root_files[i:i+batch_size]
                 outname = pjoin(outdir, f"{ds}_{i//batch_size+1}.root") 
                 call_hadd(outname, batch_files)
         return ''
+    
+    @staticmethod
+    @iterprocess('.root')
+    def check_roots(process, meta, dtdir, outdir) -> str:
+        """Hadd root files of datasets into appropriate size based on settings.
+        """
+        truncated_files = []
+        for ds in meta.keys():
+            root_files = glob_files(dtdir, ds, '.root', add_prefix=False)
+            for file_path in root_files:
+                try:
+                    with uproot.open(file_path) as file:
+                        file.classnames()
+                except Exception as e:
+                    print(f"File {file_path} might be truncated or corrupted. Error: {e}")
+                    truncated_files.append(file_path)
+        return truncated_files
 
     @staticmethod
     @iterprocess('.csv')
@@ -240,6 +251,7 @@ class PostProcessor():
         if resolution == 0:
             df = df.sum(axis=1).to_frame(name=process)
         return df
+
 
 def check_last_no(df, col_name, rootfiles):
     """Check if the last number in the cutflow table matches the number of events in the root files.
