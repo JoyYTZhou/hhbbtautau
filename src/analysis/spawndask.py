@@ -154,7 +154,9 @@ class JobLoader():
             for dataset in loaded.keys():
                 loaded[dataset]['filelist'] = glob_files(self.inpath, startpattern=dataset, endpattern='.root')
             if filterfunc is not None: loaded = filterfunc(loaded, self.tsferP)
-            if loaded: json.dump(loaded, pjoin(self.jobpath, f'{rs.PROCESS_NAME}_job.json'))
+            if loaded: 
+                with open(pjoin(self.jobpath, f'{rs.PROCESS_NAME}_job.json'), 'w') as fp:
+                    json.dump(loaded, fp)
             else: print("All the input files have been processed!")
         else:
             raise TypeError("Check INPUTFILE_PATH in runsetting.toml. It's not of a valid format!")

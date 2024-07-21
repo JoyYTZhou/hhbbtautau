@@ -4,13 +4,10 @@
 # ==============================================================================
 
 export PROCESS_NAME=$1
-
-source ../scripts/envutil.sh
-setup_dirname_local
-LPC_setup
+export DYNACONF_ENV=$2
 
 cd ..
-source scripts/venv.sh
+source scripts/venv.sh $DYNACONF_ENV
 cd exec
 
 PROCESS_DATA=$DATA_DIR/preprocessed
@@ -19,7 +16,7 @@ FILENAME=${PROCESS_DATA}/${PROCESS_NAME}.json
 INDX=$(jq 'length' $FILENAME)
 LEN=$((INDX-1))
 
-python3 skimjob.py
+python3 genjobs.py
 
 cp -f hhbbtt.sub runtime/hhbbtt_${PROCESS_NAME}.sub
 
