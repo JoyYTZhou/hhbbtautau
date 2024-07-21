@@ -10,8 +10,8 @@ def postprocess():
 def mergecf():
     PostProcessor.merge_cf()
 
-def checkouts():
-    PostProcessor.check_roots()
+# def checkouts():
+#     PostProcessor.check_roots()
 
 def plotouts():
     cp = CSVPlotter()
@@ -22,7 +22,7 @@ def programchoice() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Choose the post-processing options')
     parser.add_argument('--postprocess', action='store_true', help='Execute cutflow table merging')
     parser.add_argument('--mergecf', action='store_true', help='Execute hadding procedure for the specified, processed datasets')
-    parser.add_argument('--checkouts', action='store_true', help='Check the output root')
+    # parser.add_argument('--checkouts', action='store_true', help='Check the output root')
     parser.add_argument('--getobj', action='store_true', help='Get delimited object files')
     parser.add_argument('--plotouts', action='store_true', help='Plot stored options')
 
@@ -37,6 +37,6 @@ if __name__ == '__main__':
     args = programchoice()
     if args.postprocess: postprocess()
     if args.mergecf: mergecf()
-    if args.checkouts: checkouts()
+    # if args.checkouts: checkouts()
     if args.plotouts: plotouts()
 

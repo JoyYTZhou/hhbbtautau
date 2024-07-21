@@ -22,9 +22,9 @@ log = joblog/$(OUTNAME)_$(PROCESS_NAME).log
 output = joblog/$(OUTNAME)_$(PROCESS_NAME).out
 error = joblog/$(OUTNAME)_$(PROCESS_NAME).err
 
-request_cpus = 6
-request_memory = 14GB
-request_disk = 5GB
+request_cpus = 7
+request_memory = 16GB
+request_disk = 4GB
 
 PROCESS_NAME = QCD
 queue FILENAME matching files skimjson/QCD_*.json

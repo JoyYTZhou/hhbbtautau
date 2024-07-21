@@ -1,5 +1,5 @@
 from analysis.spawndask import JobLoader, pjoin
-import os
+import os, argparse
 
 cwd = os.path.dirname(os.path.abspath(__file__))
 
@@ -8,4 +8,5 @@ def gen_jobs():
     jl.writejobs()
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
     gen_jobs()
