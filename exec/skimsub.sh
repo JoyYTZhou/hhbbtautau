@@ -16,12 +16,15 @@ FILENAME=${PROCESS_DATA}/${PROCESS_NAME}.json
 INDX=$(jq 'length' $FILENAME)
 LEN=$((INDX-1))
 
-python3 genjobs.py
+JOB_DIRNAME=$(python3 genjobs.py)
 
-cp -f hhbbtt.sub runtime/hhbbtt_${PROCESS_NAME}.sub
+cp -f hhbbtt.sub runtime/${JOB_DIRNAME}_${PROCESS_NAME}.sub
 
-cat << EOF >> runtime/hhbbtt_${PROCESS_NAME}.sub
+cat << EOF >> runtime/${JOB_DIRNAME}_${PROCESS_NAME}.sub
+JOB_DIRNAME = ${JOB_DIRNAME}
 PROCESS_NAME = ${PROCESS_NAME}
 DYNACONF = ${ENV_FOR_DYNACONF}
-queue FILENAME matching files skimjson/${PROCESS_NAME}_*.json
+queue FILENAME matching files ${JOB_DIRNAME}/${PROCESS_NAME}_*.json
 EOF
+
+condor_submit runtime/${JOB_DIRNAME}_${PROCESS_NAME}.sub
