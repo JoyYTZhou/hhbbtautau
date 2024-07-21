@@ -6,6 +6,7 @@ OUTPUTDIR_PATH = "@format {env[OUTPUT_BASE]}/outputs/{this.PROCESS_NAME}"
 COPY_LOCAL = false
 STEP_SIZE = '150MB'
 DELAYED_OPEN = false
+JOB_DIRNAME = 'preseljson'
 
 [SKIM]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
@@ -14,6 +15,7 @@ INPUTFILE_PATH = "@format data/preprocessed/{this.PROCESS_NAME}.json"
 OUTPUTDIR_PATH = "@format outputs/{this.PROCESS_NAME}"
 COPY_LOCAL = true
 STEP_SIZE = '300MB'
+JOB_DIRNAME = 'skimjson'
 
 [LPCTEST]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"

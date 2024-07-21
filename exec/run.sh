@@ -6,6 +6,8 @@ echo "Currently in $PWD"
 
 export PROCESS_NAME=$1
 export JSONPATH=$2
+export ENV_FOR_DYNACONF=$3
+
 export ENV_NAME=newcoffea_el9
 OLD_ENV_NAME=/uscms_data/d3/joyzhou/${ENV_NAME}
 
@@ -35,7 +37,6 @@ export PYTHONPATH=$(remove_duplicates "$PYTHONPATH")
 
 echo $PYTHONPATH
 
-export ENV_FOR_DYNACONF=SKIM
 export OUTPUT_BASE=$PWD
 export DEBUG_MODE=true
 
@@ -43,4 +44,3 @@ echo "start executing main file"
 checkproxy
 
 python3 src/main.py --input $JSONPATH --diagnose
-# python3 src/plot.py
