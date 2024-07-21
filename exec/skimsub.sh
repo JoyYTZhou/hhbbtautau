@@ -10,7 +10,7 @@ setup_dirname_local
 LPC_setup
 
 cd ..
-source scripts/venv.sh SKIM
+source scripts/venv.sh
 cd exec
 
 PROCESS_DATA=$DATA_DIR/preprocessed
@@ -25,5 +25,6 @@ cp -f hhbbtt.sub runtime/hhbbtt_${PROCESS_NAME}.sub
 
 cat << EOF >> runtime/hhbbtt_${PROCESS_NAME}.sub
 PROCESS_NAME = ${PROCESS_NAME}
+DYNACONF = ${ENV_FOR_DYNACONF}
 queue FILENAME matching files skimjson/${PROCESS_NAME}_*.json
 EOF
