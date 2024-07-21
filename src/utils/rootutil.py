@@ -69,11 +69,12 @@ class PostProcessor():
             for i in range(0, len(root_files), batch_size):
                 batch_files = root_files[i:i+batch_size]
                 outname = pjoin(outdir, f"{ds}_{i//batch_size+1}.root") 
-                call_hadd(outname, batch_files)
-                #except Exception as e:
-                    #print(f"Hadding encountered error {e}")
-                    #for file_path in batch_files: 
-                        #check_corrupt(file_path)
+                try:
+                    call_hadd(outname, batch_files)
+                except Exception as e:
+                    print(f"Hadding encountered error {e}")
+                    # for file_path in batch_files: 
+                    #     check_corrupt(file_path)
         return ''
     
     @staticmethod
