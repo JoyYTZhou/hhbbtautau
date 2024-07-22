@@ -4,7 +4,7 @@
 # ==============================================================================
 
 export PROCESS_NAME=$1
-export DYNACONF_ENV=$2
+DYNACONF_ENV=$2
 
 cd ..
 source scripts/venv.sh $DYNACONF_ENV
@@ -16,7 +16,7 @@ FILENAME=${PROCESS_DATA}/${PROCESS_NAME}.json
 INDX=$(jq 'length' $FILENAME)
 LEN=$((INDX-1))
 
-JOB_DIRNAME=$(python3 genjobs.py)
+python3 genjobs.py
 
 cp -f hhbbtt.sub runtime/${JOB_DIRNAME}_${PROCESS_NAME}.sub
 
@@ -27,4 +27,4 @@ DYNACONF = ${ENV_FOR_DYNACONF}
 queue FILENAME matching files ${JOB_DIRNAME}/${PROCESS_NAME}_*.json
 EOF
 
-condor_submit runtime/${JOB_DIRNAME}_${PROCESS_NAME}.sub
+# condor_submit runtime/${JOB_DIRNAME}_${PROCESS_NAME}.sub
