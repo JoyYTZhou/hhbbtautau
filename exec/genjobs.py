@@ -9,4 +9,3 @@ def gen_jobs():
 
 if __name__ == '__main__':
     gen_jobs()
-    print(rs.JOB_DIRNAME)
