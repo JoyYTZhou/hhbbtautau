@@ -18,6 +18,8 @@ LEN=$((INDX-1))
 
 python3 genjobs.py
 
+JOB_DIRNAME=$(python3 -c 'from analysis.spawndask import rs; print(rs.JOB_DIRNAME)')
+
 cp -f hhbbtt.sub runtime/${JOB_DIRNAME}_${PROCESS_NAME}.sub
 
 cat << EOF >> runtime/${JOB_DIRNAME}_${PROCESS_NAME}.sub
