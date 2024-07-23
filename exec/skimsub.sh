@@ -10,23 +10,31 @@ cd ..
 source scripts/venv.sh $DYNACONF_ENV
 cd exec
 
-PROCESS_DATA=$DATA_DIR/preprocessed
-XRD_DIRECTOR=root://cmsxrootd.fnal.gov
-FILENAME=${PROCESS_DATA}/${PROCESS_NAME}.json
-INDX=$(jq 'length' $FILENAME)
-LEN=$((INDX-1))
+if [ "$PROCESS_NAME" = "ALL" ]; then
+    PROCESS_NAMES=("QCD" "DYJets" "TTbar" "WW" "WWW" "ZH" "ZZ" "WZ" "ggF" "SingleH") 
+else
+    PROCESS_NAMES=("$PROCESS_NAME")
+fi
 
-JOB_DIRNAME=$(python3 -c 'from analysis.spawndask import rs; print(rs.JOB_DIRNAME)')
+for PROCESS in "${PROCESS_NAMES[@]}"; do
+    PROCESS_DATA=$DATA_DIR/preprocessed
+    FILENAME=${PROCESS_DATA}/${PROCESS}.json
+    INDX=$(jq 'length' $FILENAME)
+    LEN=$((INDX-1))
 
-python3 genjobs.py
+    JOB_DIRNAME=$(python3 -c 'from analysis.spawndask import rs; print(rs.JOB_DIRNAME)')
 
-cp -f hhbbtt.sub runtime/${JOB_DIRNAME}_${PROCESS_NAME}.sub
+    python3 genjobs.py
 
-cat << EOF >> runtime/${JOB_DIRNAME}_${PROCESS_NAME}.sub
+    cp -f hhbbtt.sub runtime/${JOB_DIRNAME}_${PROCESS}.sub
+
+    cat << EOF >> runtime/${JOB_DIRNAME}_${PROCESS}.sub
 JOB_DIRNAME = ${JOB_DIRNAME}
-PROCESS_NAME = ${PROCESS_NAME}
+PROCESS_NAME = ${PROCESS}
 DYNACONF = ${ENV_FOR_DYNACONF}
-queue FILENAME matching files ${JOB_DIRNAME}/${PROCESS_NAME}_*.json
+queue FILENAME matching files ${JOB_DIRNAME}/${PROCESS}_*.json
 EOF
 
 condor_submit runtime/${JOB_DIRNAME}_${PROCESS_NAME}.sub
+done
+
