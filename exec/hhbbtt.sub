@@ -3,7 +3,7 @@
 
 MY_PATH = /uscms/homes/j/joyzhou/work/hhbbtautau
 NO_BACKUP = /uscms/home/joyzhou/nobackup
-OUTNAME = formalrun
+OUTNAME = $(DYNACONF)
 
 # Job description
 universe = vanilla

@@ -16,9 +16,9 @@ FILENAME=${PROCESS_DATA}/${PROCESS_NAME}.json
 INDX=$(jq 'length' $FILENAME)
 LEN=$((INDX-1))
 
-python3 genjobs.py
-
 JOB_DIRNAME=$(python3 -c 'from analysis.spawndask import rs; print(rs.JOB_DIRNAME)')
+
+python3 genjobs.py
 
 cp -f hhbbtt.sub runtime/${JOB_DIRNAME}_${PROCESS_NAME}.sub
 
@@ -29,4 +29,4 @@ DYNACONF = ${ENV_FOR_DYNACONF}
 queue FILENAME matching files ${JOB_DIRNAME}/${PROCESS_NAME}_*.json
 EOF
 
-# condor_submit runtime/${JOB_DIRNAME}_${PROCESS_NAME}.sub
+condor_submit runtime/${JOB_DIRNAME}_${PROCESS_NAME}.sub

@@ -80,9 +80,11 @@ class Processor:
                 dask_args["files"] = {filename: self.treename}
                 if self.rtcfg.get("DELAYED_OPEN", True):
                     events = uproot.dask(**dask_args)
+                    break
                 else:
                     events = uproot.open(dask_args['files']).arrays()
                     print("Not delayed!")
+                    break
             except Exception as e:
                 print(f"Failure to load file {filename}")
                 print(e)

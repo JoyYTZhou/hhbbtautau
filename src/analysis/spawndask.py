@@ -61,7 +61,8 @@ class JobRunner:
     def ds(self, dsname):
         self._ds = dsname
 
-    def get_meta_daskargs(self, filepath, client) -> dict:
+    @staticmethod
+    def get_meta_daskargs(filepath, client) -> dict:
         """Get metadata for dask arguments"""
         dask_args = {}
         
