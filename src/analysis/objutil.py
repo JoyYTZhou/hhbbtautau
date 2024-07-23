@@ -7,11 +7,11 @@ import awkward as ak
 
 from utils.datautil import arr_handler
 from config.selectionconfig import selectionsettings as selcfg
+from config.selectionconfig import namemap
 
 default_trigsel = selcfg.triggerselections
 default_objsel = selcfg.objselections
-default_mapcfg = selcfg.outputs
-
+default_mapcfg = namemap
 
 class Object:
     """Object class for handling object selections, meant as an observer of the events.

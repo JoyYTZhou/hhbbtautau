@@ -3,6 +3,12 @@ from pathlib import Path
 
 root_path = Path(__file__).parent
 
+namemap = Dynaconf(
+    root_path = root_path,
+    environments=True,
+    settings_files=['config/aodnamemap.yaml']
+)
+
 selectionsettings = Dynaconf(
     root_path = root_path,
     environments=True,
