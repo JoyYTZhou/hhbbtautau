@@ -4,12 +4,13 @@ import pandas as pd
 import awkward as ak
 
 from config.selectionconfig import selectionsettings as selcfg
+from config.selectionconfig import namemap
 from utils.cutflowutil import weightedSelection
 from analysis.objutil import Object
 
 default_trigsel = selcfg.triggerselections
 default_objsel = selcfg.objselections
-default_mapcfg = selcfg.outputs
+default_mapcfg = namemap
 
 class BaseEventSelections:
     """Base class for event selections.
