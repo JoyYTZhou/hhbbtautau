@@ -166,6 +166,10 @@ class Object:
         All properties in obj setting included."""
         objs = self.getzipped(**kwargs) 
         return (objs[:,0], objs[:,1:])
+    
+    def getld(self, **kwargs) -> ak.Array:
+        objs = self.getzipped(**kwargs) 
+        return objs[:,0]
 
     @staticmethod
     def sortmask(dfarr, **kwargs) -> ak.Array:
