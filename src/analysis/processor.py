@@ -47,7 +47,8 @@ class Processor:
         self._rtcfg = rt_cfg
         self.treename = self.rtcfg.get('TREE_NAME', 'Events')
         self.dataset = dataset
-        self.evtsel = evtselclass(**kwargs) 
+        self.evtsel_kwargs = kwargs
+        self.evtselclass = evtselclass
         self.transfer = transferP
         if self.transfer: checkcondorpath(self.transfer)
         self.initdir()
@@ -125,6 +126,7 @@ class Processor:
         - messages for debugging
         """
         try:
+            self.evtsel = self.evtselclass(**self.evtsel_kwargs)
             events, copied = self.loadfile(filename, suffix, dask_args)
             rc = 0
             if events is None: 

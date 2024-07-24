@@ -31,6 +31,9 @@ class BaseEventSelections:
         self.cfno = None
         self.cfobj = None
     
+    def __del__(self):
+        print(f"Deleting instance of {self.__class__.__name__}")
+    
     def __call__(self, events, wgtname='Generator_weight', **kwargs):
         """Apply all the selections in line on the events"""
         return self.callevtsel(events, wgtname=wgtname, **kwargs)
