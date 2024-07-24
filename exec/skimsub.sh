@@ -3,17 +3,17 @@
 # Used to: create dynamic job submissions for different datasets
 # ==============================================================================
 
-export PROCESS_NAME=$1
+PROCESS_INPUT=$1
 DYNACONF_ENV=$2
 
 cd ..
 source scripts/venv.sh $DYNACONF_ENV
 cd exec
 
-if [ "$PROCESS_NAME" = "ALL" ]; then
-    PROCESS_NAMES=("QCD" "DYJets" "TTbar" "WW" "WWW" "ZH" "ZZ" "WZ" "ggF" "SingleH") 
+if [ "$PROCESS_INPUT" = "ALL" ]; then
+    declare -a PROCESS_NAMES=("QCD" "DYJets" "TTbar" "WW" "WWW" "ZH" "ZZ" "WZ" "ggF" "SingleH")
 else
-    PROCESS_NAMES=("$PROCESS_NAME")
+    declare -a PROCESS_NAMES=("$PROCESS_INPUT")
 fi
 
 for PROCESS in "${PROCESS_NAMES[@]}"; do
@@ -21,6 +21,7 @@ for PROCESS in "${PROCESS_NAMES[@]}"; do
     FILENAME=${PROCESS_DATA}/${PROCESS}.json
     INDX=$(jq 'length' $FILENAME)
     LEN=$((INDX-1))
+    export PROCESS_NAME=$PROCESS
 
     JOB_DIRNAME=$(python3 -c 'from analysis.spawndask import rs; print(rs.JOB_DIRNAME)')
 
@@ -35,6 +36,6 @@ DYNACONF = ${ENV_FOR_DYNACONF}
 queue FILENAME matching files ${JOB_DIRNAME}/${PROCESS}_*.json
 EOF
 
-condor_submit runtime/${JOB_DIRNAME}_${PROCESS_NAME}.sub
+condor_submit runtime/${JOB_DIRNAME}_${PROCESS}.sub
 done
 

@@ -152,8 +152,10 @@ class JobLoader():
             self.skimjobs(filterfunc)
         elif self.inpath.startswith('/store/user/'):
             loaded = realmeta[rs.PROCESS_NAME]
-            for dataset in loaded.keys():
-                loaded[dataset]['filelist'] = glob_files(self.inpath, startpattern=dataset, endpattern='.root')
+            for dataset in list(loaded.keys()):
+                inputfiles = glob_files(self.inpath, startpattern=dataset, endpattern='.root')
+                if inputfiles: loaded[dataset]['filelist'] = inputfiles
+                else: del loaded[dataset]
             if filterfunc is not None: loaded = filterfunc(loaded, self.tsferP)
             if loaded: 
                 with open(pjoin(self.jobpath, f'{rs.PROCESS_NAME}_job.json'), 'w') as fp:

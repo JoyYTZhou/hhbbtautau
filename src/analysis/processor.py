@@ -138,6 +138,7 @@ class Processor:
                         
                 if copied:
                     delfiles(self.copydir)
+            del events
         except Exception as e:
             print(f"Error encountered for file index {suffix} in {self.dataset}: {e}")
             rc = 1
