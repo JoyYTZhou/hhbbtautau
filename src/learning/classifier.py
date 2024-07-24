@@ -89,6 +89,35 @@ class SimpleClassifier(nn.Module):
         accuracy = (predicted == y_test).mean()
         print(f'Test Accuracy: {accuracy:.4f}')
 
+def est_bkg_RegA(df, cri1, cri2, weight_column):
+    """
+    Estimate the background in region A using the ABCD method.
+
+    Parameters:
+    - df: pandas DataFrame containing the data.
+    - cri1: String that defines the first criteria for splitting the data.
+    - cri2: String that defines the second criteria for splitting the data.
+
+    Returns:
+    - Estimated background in region A.
+    """
+    region_A = df.query(cri1 + " and " + cri2)
+    region_B = df.query(cri1 + " and not (" + cri2 + ")")
+    region_C = df.query("not (" + cri1 + ") and " + cri2)
+    region_D = df.query("not (" + cri1 + ") and not (" + cri2 + ")")
+    
+    N_A = region_A[weight_column].sum()
+    N_B = region_B[weight_column].sum()
+    N_C = region_C[weight_column].sum()
+    N_D = region_D[weight_column].sum()
+    
+    if N_D == 0:
+        raise Warning("No events in region D. Cannot estimate background for region A.")
+        return None
+    N_A_background = (N_B * N_C) / N_D
+    
+    return N_A_background
+
 def binaryBDTReweighter(X_train, y_train, X_test):
     class_weight = (len(y_train) - y_train.sum()) / y_train.sum()
     param_grid = {
