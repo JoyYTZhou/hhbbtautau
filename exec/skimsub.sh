@@ -3,6 +3,25 @@
 # Used to: create dynamic job submissions for different datasets
 # ==============================================================================
 
+DISABLE_SUBMISSION=false
+
+while getopts ":d" opt; do
+  case ${opt} in
+    d )
+      DISABLE_SUBMISSION=true
+      ;;
+    \? )
+      echo "Invalid option: -$OPTARG" 1>&2
+      exit 1
+      ;;
+    : )
+      echo "Invalid option: -$OPTARG requires an argument" 1>&2
+      exit 1
+      ;;
+  esac
+done
+shift $((OPTIND -1))
+
 PROCESS_INPUT=$1
 DYNACONF_ENV=$2
 
@@ -38,6 +57,10 @@ DYNACONF = ${ENV_FOR_DYNACONF}
 queue FILENAME matching files ${JOB_DIRNAME}/${PROCESS}_*.json
 EOF
 
-# condor_submit runtime/${JOB_DIRNAME}_${PROCESS}.sub
+    if [ "$DISABLE_SUBMISSION" = false ]; then
+        condor_submit runtime/${JOB_DIRNAME}_${PROCESS}.sub
+    else
+        echo "Submission disabled for process: $PROCESS"
+    fi# Parse options
 done
 
