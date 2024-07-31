@@ -24,7 +24,7 @@ def div_list(original_list, chunk_size):
     for i in range(0, len(original_list), chunk_size):
         yield original_list[i:i + chunk_size]
 
-def filterResume(metadata, tsferP=transferP) -> dict:
+def filterResume(metadata, outputpattern='*.root', tsferP=transferP) -> dict:
     """Resume jobs from last checkpoint"""
     if not tsferP or checkpath(tsferP, createdir=False) != 0:
         return metadata
@@ -33,8 +33,8 @@ def filterResume(metadata, tsferP=transferP) -> dict:
     for ds, ds_info in metadata.items():
         print(f"Checking {ds} ========================================================")
         fileno = len(ds_info['filelist'])
-        missing_cutflow = set(check_missing(f'{ds}_cutflow', fileno, tsferP, endpattern='.csv'))
-        missing_output = set(check_missing(f'{ds}', fileno, tsferP, endpattern='.root'))
+        missing_cutflow = set(check_missing(f'{ds}_cutflow*.csv', fileno, tsferP))
+        missing_output = set(check_missing(f'{ds}{outputpattern}', fileno, tsferP))
         
         if missing_cutflow:
             print(f"Missing cutflow tables for these files: {missing_cutflow}!")
@@ -146,17 +146,17 @@ class JobLoader():
         self.jobpath = jobpath
         checkpath(jobpath)
 
-    def writejobs(self, filterfunc=filterResume) -> None:
+    def writejobs(self) -> None:
         """Write job parameters to json file"""
         if self.inpath.endswith('.json'):
-            self.skimjobs(filterfunc)
+            self.skimjobs()
         elif self.inpath.startswith('/store/user/'):
             loaded = realmeta[rs.PROCESS_NAME]
             for dataset in list(loaded.keys()):
                 inputfiles = glob_files(self.inpath, filepattern=f'{dataset}*.root')
                 if inputfiles: loaded[dataset]['filelist'] = inputfiles
                 else: del loaded[dataset]
-            if filterfunc is not None: loaded = filterfunc(loaded, self.tsferP)
+            loaded = filterResume(loaded, '_output*.csv', self.tsferP)
             if loaded: 
                 with open(pjoin(self.jobpath, f'{rs.PROCESS_NAME}_job.json'), 'w') as fp:
                     json.dump(loaded, fp)
@@ -164,15 +164,14 @@ class JobLoader():
         else:
             raise TypeError("Check INPUTFILE_PATH in runsetting.toml. It's not of a valid format!")
         
-    def skimjobs(self, filterfunc, batch_size=10) -> None:
+    def skimjobs(self, batch_size=10) -> None:
         inputdatap = pjoin(parent_directory, self.inpath)
         with open(inputdatap, 'r') as samplepath:
             loaded = json.load(samplepath)
         dslist = list(loaded.keys()) 
         for i, dskey in enumerate(dslist):
             dsloaded = {dskey: loaded[dskey]}
-            if filterfunc is not None: 
-                filtered = filterfunc(dsloaded, self.tsferP)
+            filtered = filterResume(dsloaded, tsferP=self.tsferP)
             if filtered:
                 resumeindx = filtered[dskey].get('resumeindx', [j for j in range(len(dsloaded[dskey]['filelist']))])
                 indx_gen = div_list(resumeindx, batch_size)

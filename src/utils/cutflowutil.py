@@ -150,7 +150,7 @@ def load_csvs(dirname, startpattern, func=None, *args, **kwargs) -> pd.DataFrame
     - `startpattern`: pattern to match the file names
     - `func`: function to apply to the list of DataFrames. Must return an Pandas object.
     """
-    file_names = glob_files(dirname, startpattern=startpattern, endpattern='.csv')
+    file_names = glob_files(dirname, filepattern=f'{startpattern}*.csv')
     dfs = [pd.read_csv(file_name, index_col=0, header=0) for file_name in file_names] 
     if func is None:
         return dfs

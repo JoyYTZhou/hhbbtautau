@@ -75,7 +75,7 @@ class CSVPlotter():
     @iterwgt
     def getdata(self, process, ds, file_type='.root'):
         """Returns the root files for the datasets."""
-        result = glob_files(self._datadir, startpattern=ds, endpattern=file_type)
+        result = glob_files(self._datadir, filepattern=f'{ds}*{file_type}')
         if result: 
             rootfile = result[0]
             if not process in self.data_dict: 
