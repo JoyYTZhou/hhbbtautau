@@ -25,9 +25,11 @@ for PROCESS in "${PROCESS_NAMES[@]}"; do
 
     JOB_DIRNAME=$(python3 -c 'from analysis.spawndask import rs; print(rs.JOB_DIRNAME)')
 
+    rm -rf ${JOB_DIRNAME}/${PROCESS}_*.json
+
     python3 genjobs.py
 
-    cp -f hhbbtt.sub runtime/${JOB_DIRNAME}_${PROCESS}.sub
+    \cp -f hhbbtt.sub runtime/${JOB_DIRNAME}_${PROCESS}.sub
 
     cat << EOF >> runtime/${JOB_DIRNAME}_${PROCESS}.sub
 JOB_DIRNAME = ${JOB_DIRNAME}
@@ -36,6 +38,6 @@ DYNACONF = ${ENV_FOR_DYNACONF}
 queue FILENAME matching files ${JOB_DIRNAME}/${PROCESS}_*.json
 EOF
 
-condor_submit runtime/${JOB_DIRNAME}_${PROCESS}.sub
+# condor_submit runtime/${JOB_DIRNAME}_${PROCESS}.sub
 done
 
