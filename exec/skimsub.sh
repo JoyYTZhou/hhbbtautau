@@ -61,6 +61,7 @@ EOF
         condor_submit runtime/${JOB_DIRNAME}_${PROCESS}.sub
     else
         echo "Submission disabled for process: $PROCESS"
-    fi# Parse options
+    fi
+
 done
 
