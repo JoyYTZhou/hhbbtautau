@@ -33,22 +33,20 @@ def checkpath(dirname, createdir=True, raiseError=False):
     else:
         return checklocalpath(dirname, raiseError)
 
-def transferfiles(srcpath, destpath, startpattern='', endpattern='', remove=False):
+def transferfiles(srcpath, destpath, filepattern, remove=False):
     """Transfer files between local and condor system. Will check if destpath exist.
     
     Parameters:
     - `srcpath`: source path (local/remote)
     - `destpath`: destination path (remote/local)
-    - `startpattern`: pattern to match the start of the file name
-    - `endpattern`: pattern to match the end of the file name
-    - `remove`: mv/cp
+    - `remove`: mv/cp. Only supported when moving from local to remote
     """
     if isremote(destpath):
         if isremote(srcpath):
             raise ValueError("Source path should be a local directory. Why are you transferring from one EOS to another?")
         else:
             checkcondorpath(destpath)
-            for srcfile in glob_files(srcpath, startpattern, endpattern):
+            for srcfile in glob_files(srcpath, filepattern):
                 cpcondor(srcfile, f'{destpath}/{os.path.basename(srcfile)}')
                 if remove: 
                     os.remove(srcfile)
@@ -57,7 +55,7 @@ def transferfiles(srcpath, destpath, startpattern='', endpattern='', remove=Fals
             raise ValueError("Destination path should be a local directory. Why are you transferring from EOS to EOS?")
         else:
             checklocalpath(destpath)
-            for srcfile in glob_files(srcpath, startpattern, endpattern):
+            for srcfile in glob_files(srcpath, filepattern):
                 cpfcondor(srcfile, f'{destpath}/')
 
 def checkx509():
@@ -123,15 +121,16 @@ def isremote(pathstr):
     is_remote = pathstr.startswith('/store/user') or pathstr.startswith("root://")
     return is_remote
 
-def check_missing(pattern, fileno, dirtocheck, endpattern='.root', return_indices=True):
+def check_missing(filepattern, fileno, dirtocheck, return_indices=True):
     """Check missing output files in a directory based on pattern search. The output files in the directory are
     expected to have names like ${pattern}_${i}, where i is the index of the file.
     
     Return:
     - list of missing files if return_indices=False. Otherwise, return list of missing indices."""
-    existfiles = glob_files(dirtocheck, startpattern=pattern, endpattern=endpattern)
+    existfiles = glob_files(dirtocheck, filepattern)
+    startpattern = filepattern.split('*')[0]
     fileset = set(existfiles)
-    patterns = [f"{pattern}_{i}" for i in range(fileno)]
+    patterns = [f"{startpattern}_{i}" for i in range(fileno)]
     if return_indices: 
         toreturn = [i for i, pattern in enumerate(patterns) if not any(pattern in file for file in fileset)]
     else:

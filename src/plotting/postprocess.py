@@ -43,7 +43,7 @@ def iterprocess(endpattern):
                 with open(pjoin(cleancfg.DATAPATH, f"{process}.json"), 'r') as jsonfile:
                     meta = json.load(jsonfile)
                 startpattern = func(process, meta, dtdir, outdir, *args, **kwargs)
-                transferfiles(outdir, condorpath, endpattern=endpattern)
+                transferfiles(outdir, condorpath, filepattern=f'*{endpattern}')
                 delfiles(outdir, pattern=f'{startpattern}*{endpattern}')
         return wrapper
     return inner

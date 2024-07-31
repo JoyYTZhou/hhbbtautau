@@ -172,7 +172,7 @@ class Processor:
         else:
             rc = self.writepickle(passed, suffix, **kwargs)
         if self.transfer:
-            transferfiles(self.outdir, self.transfer, remove=True)
+            transferfiles(self.outdir, self.transfer, filepattern='*', remove=True)
         return rc
 
     def writedask(self, passed, suffix, fields=None) -> int:
