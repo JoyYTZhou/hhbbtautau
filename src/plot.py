@@ -1,5 +1,5 @@
-from utils.rootutil import PostProcessor
-from analysis.visutil import CSVPlotter
+from plotting.postprocess import PostProcessor
+from plotting.visutil import CSVPlotter
 from config.plotsetting import object_dict
 import argparse
 
