@@ -4,7 +4,7 @@ import pandas as pd
 
 from analysis.objutil import Object
 from config.selectionconfig import cleansetting as cleancfg
-from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, get_xrdfs_file_info, pjoin
+from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, pjoin
 from utils.datautil import find_branches
 from utils.cutflowutil import combine_cf, calc_eff, load_csvs
 from utils.datautil import haddWeights
@@ -64,7 +64,7 @@ class PostProcessor():
     def hadd_roots(process, meta, dtdir, outdir) -> str:
         """Hadd root files of datasets into appropriate size based on settings."""
         for ds in meta.keys():
-            root_files = glob_files(dtdir, ds, '.root', add_prefix=True)
+            root_files = glob_files(dtdir, f'{ds}*.root', add_prefix=True)
             batch_size = 200
             for i in range(0, len(root_files), batch_size):
                 batch_files = root_files[i:i+batch_size]
@@ -83,7 +83,7 @@ class PostProcessor():
         """Hadd root files of datasets into appropriate size based on settings.
         """
         for ds in meta.keys():
-            root_files = glob_files(dtdir, ds, '.root', add_prefix=True)
+            root_files = glob_files(dtdir, f'{ds}*.root', add_prefix=True)
             for file_path in root_files:
                 check_corrupt(file_path)
 
@@ -119,7 +119,7 @@ class PostProcessor():
         for process in cleancfg.DATASETS:
             condorpath = pjoin(cleancfg.CONDORPATH, process) if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
             cf = PostProcessor.load_cf(process, condorpath)[0]
-            if check_last_no(cf, f"{process}_raw", glob_files(condorpath, startpattern=process, endpattern='.root')):
+            if check_last_no(cf, f"{process}_raw", glob_files(condorpath, f'{process}*.root')):
                 print(f"Cutflow check for {process} passed!")
             else:
                 print(f"Discrepancies between cutflow numbers and output number exist for {process}. Please double check selections.")
@@ -160,7 +160,7 @@ class PostProcessor():
         
         Returns
         - tuple of resolved (per channel) cutflow dataframe and combined cutflow (per process) dataframe"""
-        resolved_cf = pd.read_csv(glob_files(datasrcpath, startpattern=process, endpattern='cf.csv')[0], index_col=0)
+        resolved_cf = pd.read_csv(glob_files(datasrcpath, f'{process}*cf.csv')[0], index_col=0)
         for ds, perevtwgt in wgt_dict[process].items():
             sel_cols = resolved_cf.filter(like=ds).filter(like='wgt')
             resolved_cf[sel_cols.columns] = sel_cols * perevtwgt * luminosity
@@ -213,7 +213,7 @@ class PostProcessor():
         for process in cleancfg.DATASETS:
             for ds in self.wgt_dict[process].keys():
                 datadir = pjoin(cleancfg.INPUTDIR, process)
-                files = glob_files(datadir, startpattern=ds, endpattern='.root')
+                files = glob_files(datadir,  f'{ds}*.root')
                 destination = pjoin(outdir, f"{ds}_limited.root")
                 with uproot.recreate(destination) as output:
                     print(f"Writing limited data to file {destination}")
@@ -372,7 +372,7 @@ def concat_roots(directory, startpattern, outdir, fields=None, extra_branches = 
     """
     checkpath(outdir)
     tree_name=kwargs.pop('tree_name', "Events")
-    root_files = glob_files(directory, startpattern, endpattern=kwargs.pop('endpattern', '.root'))
+    root_files = glob_files(directory, f'{startpattern}*.root')
     random.shuffle(root_files)
     emptyfiles = []
     if fields is not None:

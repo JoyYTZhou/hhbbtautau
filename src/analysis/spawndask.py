@@ -153,7 +153,7 @@ class JobLoader():
         elif self.inpath.startswith('/store/user/'):
             loaded = realmeta[rs.PROCESS_NAME]
             for dataset in list(loaded.keys()):
-                inputfiles = glob_files(self.inpath, startpattern=dataset, endpattern='.root')
+                inputfiles = glob_files(self.inpath, filepattern=f'{dataset}*.root')
                 if inputfiles: loaded[dataset]['filelist'] = inputfiles
                 else: del loaded[dataset]
             if filterfunc is not None: loaded = filterfunc(loaded, self.tsferP)

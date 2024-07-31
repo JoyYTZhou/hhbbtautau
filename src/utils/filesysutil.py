@@ -1,4 +1,4 @@
-import os, glob, tracemalloc, linecache, subprocess, datetime
+import os, glob, tracemalloc, linecache, subprocess, datetime, fnmatch
 from pathlib import Path
 
 runcom = subprocess.run
@@ -6,26 +6,24 @@ pjoin = os.path.join
 PREFIX = "root://cmseos.fnal.gov"
 DEBUG_ON = os.environ.get("DEBUG_MODE", default=False)
 
-def glob_files(dirname, startpattern='', endpattern='', **kwargs) -> list:
+def glob_files(dirname, filepattern='*', **kwargs) -> list:
     """Returns a SORTED list of files matching a pattern in a directory. If both patterns are None, return all files.
     
     Parameters
     - `dirname`: directory path (remote/local)
-    - `startpattern`: pattern to match the start of the file name
-    - `endpattern`: pattern to match the end of the file name
+    - `filepattern`: pattern to match the file name
     - `kwargs`: additional arguments for filtering files
 
     Return
     - A SORTED list of files (str)
     """
     if dirname.startswith('/store/user'):
-        files = get_xrdfs_files(dirname, start_pattern=startpattern, end_pattern=endpattern, **kwargs)
+        files = get_xrdfs_files(dirname, filepattern, **kwargs)
     else:
-        if startpattern == None and endpattern == None:
+        if filepattern == '*':
             files = [str(file.absolute()) for file in Path(dirname).iterdir() if file.is_file()]
         else:
-            pattern = f'{startpattern}*{endpattern}'
-            files = glob.glob(pjoin(dirname, pattern)) 
+            files = glob.glob(pjoin(dirname, filepattern)) 
     return sorted(files)
 
 def checkpath(dirname, createdir=True, raiseError=False):
@@ -164,7 +162,7 @@ def delfiles(dirname, pattern='*.root'):
         for fipath in dirpath.glob(pattern):
             fipath.unlink()
 
-def get_xrdfs_files(remote_dir, start_pattern, end_pattern, add_prefix=True) -> list[str]:
+def get_xrdfs_files(remote_dir, filepattern='*', add_prefix=True) -> list[str]:
     """Get the files in a remote directory that match a pattern. If both patterns==None, returns all files.
     
     Parameters:
@@ -177,13 +175,13 @@ def get_xrdfs_files(remote_dir, start_pattern, end_pattern, add_prefix=True) -> 
     - list of files that match the pattern
     """
     all_files = list_xrdfs_files(remote_dir)
-    if start_pattern == None and end_pattern == None:
+    if filepattern == '*':
         return sorted(all_files)
     else:
         if add_prefix:
-            filtered_files = [PREFIX + "/" + f for f in all_files if f.split('/')[-1].startswith(start_pattern) and f.split('/')[-1].endswith(end_pattern)]
+            filtered_files = [PREFIX + "/" + f for f in all_files if fnmatch.fnmatch(f.split('/')[-1], filepattern)]
         else: 
-            filtered_files = [f for f in all_files if f.split('/')[-1].startswith(start_pattern) and f.split('/')[-1].endswith(end_pattern)]
+            filtered_files = [f for f in all_files if fnmatch.fnmatch(f.split('/')[-1], filepattern)]
         return sorted(filtered_files)
 
 def list_xrdfs_files(remote_dir) -> list[str]:
