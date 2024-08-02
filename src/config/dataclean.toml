@@ -1,5 +1,5 @@
 [SKIM]
-SELNAME = 'prelim_onelooseb'
+SELNAME = 'prelim_twolooseb'
 DATAPATH = "@format {env[DATA_DIR]}/preprocessed"
 INPUTDIR = "@format {env[CONDOR_BASE]}/{this.SELNAME}"
 LOCALOUTPUT = "@format /uscms/home/joyzhou/nobackup/hadded/{this.SELNAME}"

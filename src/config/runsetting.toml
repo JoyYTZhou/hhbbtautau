@@ -1,6 +1,6 @@
 [PRESELECT]
 PROCESS_NAME = "@format {env[PROCESS_NAME]}"
-SEL_NAME = 'prelim_onelooseb'
+SEL_NAME = 'prelim_twolooseb'
 INPUTFILE_PATH = "@format /store/user/joyzhou/vetoskim_hadded/{this.PROCESS_NAME}"
 OUTPUTDIR_PATH = "@format {env[OUTPUT_BASE]}/outputs/{this.PROCESS_NAME}"
 COPY_LOCAL = false
@@ -13,7 +13,7 @@ SEL_NAME = 'vetoskim'
 INPUTFILE_PATH = "@format data/preprocessed/{this.PROCESS_NAME}.json"
 OUTPUTDIR_PATH = "@format outputs/{this.PROCESS_NAME}"
 COPY_LOCAL = true
-STEP_SIZE = '200MB'
+STEP_SIZE = '400MB'
 JOB_DIRNAME = 'skimjson'
 
 [LPCTEST]
