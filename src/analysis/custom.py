@@ -9,9 +9,9 @@ import numpy as np
 def switch_selections(sel_name):
     selections = {
         'vetoskim': skimEvtSel,
-        'prelim_onelooseb': prelimEvtSel,
-        'prelim_twolooseb': SignalEvtSel, 
-        'loosepnetb_only': loosebEvtSel
+        'prelim_onelooseb': ControlEvtSel,
+        'prelim_twolooseb': SignalEvtSel,
+        'prelim_total': PrelimEvtSel
     }
     return selections.get(sel_name, BaseEventSelections)
 
@@ -48,61 +48,8 @@ class skimEvtSel(BaseEventSelections):
         electron = None
         muon = None
 
-class prelimEvtSel(BaseEventSelections):
-    def setevtsel(self, events) -> None:
-        tau = Object(events, "Tau", weakrefEvt=True)
-        def tauobjmask(tau: 'Object'):
-            tau_mask = (tau.ptmask(opr.ge) & \
-                        tau.absetamask(opr.le) & \
-                        tau.absdzmask(opr.lt) & \
-                        tau.custommask('idvsjet', opr.ge) & \
-                        tau.custommask('idvsmu', opr.ge) & \
-                        tau.custommask('idvse', opr.ge))
-            return tau_mask
-
-        tau_nummask = tau.numselmask(tauobjmask(tau), opr.ge)
-
-        tau, events = self.selobjhelper(events, '>= 2 Medium hadronic Taus', tau, tau_nummask)
-        leading_tau, sd_cand = tau.getldsd(mask=tauobjmask(tau))
-        self.objcollect['LeadingTau'] = leading_tau
-
-        dR_mask = tau.dRwSelf(threshold=0.5, mask=tauobjmask(tau))
-        sd_cand = sd_cand[dR_mask]
-
-        tau_dRmask = Object.maskredmask(dR_mask, opr.ge, 1)
-        tau, events = self.selobjhelper(events,'Tau dR >= 0.5', tau, tau_dRmask)
-
-        sd_cand = sd_cand[tau_dRmask][:,0]
-        self.objcollect['SubleadingTau'] = sd_cand
-    
-        jet = Object(events, 'Jet')
-        
-        def jobjmask(jet: 'Object'):
-            j_mask = (jet.ptmask(opr.ge) & jet.absetamask(opr.le))
-            tau_ldvec = Object.fourvector(self.objcollect['LeadingTau'], sort=False)
-            tau_sdvec = Object.fourvector(self.objcollect['SubleadingTau'], sort=False)
-            jetdR_mask = jet.dRwOther(tau_ldvec, 0.5) & jet.dRwOther(tau_sdvec, 0.5)
-            return j_mask & jetdR_mask
-        
-        jet_nummask = jet.numselmask(jobjmask(jet), opr.ge)
-        jet, events = self.selobjhelper(events, '>=2 ak4 jets', jet, jet_nummask)
-
-        jet_nummask = jet.maskredmask((jobjmask(jet) & jet.custommask('btag', opr.ge)), opr.eq, 1)
-        jet, events = self.selobjhelper(events, '==1 Loose B-tagged', jet, jet_nummask)
-        
-        jet_mask = (jobjmask(jet) & jet.custommask('btag', opr.ge))
-        ld_j = jet.getld(mask=jet_mask)
-        sd_j = jet.getld(mask=(~jet_mask) & jobjmask(jet), sort_by='btag')
-        self.objcollect['LDBjetBYtag'] = ld_j
-        self.objcollect['SDBjetBYtag'] = sd_j
-
-        sd_j = jet.getld(mask=(~jet_mask) & jobjmask(jet), sort_by='pt')
-        self.objcollect['SDBjetBYpt'] = sd_j
-        
-        self.saveWeights(events)
-
-class SignalEvtSel(BaseEventSelections):
-    def setevtsel(self, events) -> None:
+class twoTauEvtSel(BaseEventSelections):
+    def seltwotaus(self, events) -> None:
         tau = Object(events, "Tau", weakrefEvt=True)
         def tauobjmask(tau: 'Object'):
             tau_mask = (tau.ptmask(opr.ge) & \
@@ -127,7 +74,37 @@ class SignalEvtSel(BaseEventSelections):
 
         sd_cand = sd_cand[tau_dRmask][:,0]
         self.objcollect['SDTau'] = sd_cand
+
+class ControlEvtSel(twoTauEvtSel):
+    def setevtsel(self, events) -> None:
+        self.seltwotaus(events)
     
+        jet = Object(events, 'Jet')
+        def jobjmask(jet: 'Object'):
+            j_mask = (jet.ptmask(opr.ge) & jet.absetamask(opr.le))
+            tau_ldvec = Object.fourvector(self.objcollect['LDTau'], sort=False)
+            tau_sdvec = Object.fourvector(self.objcollect['SDTau'], sort=False)
+            jetdR_mask = jet.dRwOther(tau_ldvec, 0.5) & jet.dRwOther(tau_sdvec, 0.5)
+            return j_mask & jetdR_mask
+        
+        jet_nummask = jet.numselmask(jobjmask(jet), opr.ge)
+        jet, events = self.selobjhelper(events, '>=2 ak4 jets', jet, jet_nummask)
+
+        jet_nummask = jet.maskredmask((jobjmask(jet) & jet.custommask('btag', opr.ge)), opr.eq, count=1)
+        jet, events = self.selobjhelper(events, '==1 Loose B-tagged', jet, jet_nummask)
+        
+        jet_mask = (jobjmask(jet) & jet.custommask('btag', opr.ge))
+        ld_j = jet.getld(mask=jet_mask)
+        sd_j = jet.getld(mask=(~jet_mask) & jobjmask(jet), sort_by='btag')
+        self.objcollect['LDBjetBYtag'] = ld_j
+        self.objcollect['SDBjetBYtag'] = sd_j
+
+        sd_j = jet.getld(mask=(~jet_mask) & jobjmask(jet), sort_by='pt')
+        self.objcollect['SDBjetBYpt'] = sd_j
+        self.saveWeights(events)
+
+class SignalEvtSel(twoTauEvtSel):
+    def setevtsel(self, events) -> None:
         jet = Object(events, 'Jet')
         
         def jobjmask(jet: 'Object'):
@@ -154,14 +131,25 @@ class SignalEvtSel(BaseEventSelections):
 
         self.saveWeights(events)
 
-class loosebEvtSel(BaseEventSelections):
-    def setevtsel(self, events) -> None:
-        def jobjmask(jet: 'Object'):
-            j_mask = (jet.ptmask(opr.ge) &
-                  jet.absetamask(opr.le) &
-                  jet.custommask('pnetbtag', opr.ge))
-            return j_mask
+class PrelimEvtSel(twoTauEvtSel):
+    def setevtsel(self, events):
         jet = Object(events, 'Jet')
-        jet_mask = jobjmask(jet)
-        jet_nummask = jet.numselmask(jet_mask, opr.ge) 
-        self.objsel.add(">= 2 Loose PNet B tagged ak4", jet_nummask)
+        
+        def jobjmask(jet: 'Object'):
+            j_mask = (jet.ptmask(opr.ge) & jet.absetamask(opr.le))
+            tau_ldvec = Object.fourvector(self.objcollect['LDTau'], sort=False)
+            tau_sdvec = Object.fourvector(self.objcollect['SDTau'], sort=False)
+            jetdR_mask = jet.dRwOther(tau_ldvec, 0.5) & jet.dRwOther(tau_sdvec, 0.5)
+            return j_mask & jetdR_mask
+        
+        jet_nummask = jet.numselmask(jobjmask(jet), opr.ge)
+        jet, events = self.selobjhelper(events, '>=2 ak4 jets', jet, jet_nummask)
+
+        jet_nummask = jet.numselmask((jobjmask(jet) & jet.custommask('btag', opr.ge)), opr.ge, count=1)
+        jet, events = self.selobjhelper(events, '>=1 Loose B-tagged', jet, jet_nummask)
+        
+        jet_mask = (jobjmask(jet) & jet.custommask('btag', opr.ge))
+        ld_j = jet.getld(sort_by='btag', mask=jet_mask)
+        self.objcollect['LDBjetBYtag'] = ld_j
+
+        self.saveWeights(events)

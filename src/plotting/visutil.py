@@ -8,7 +8,6 @@ from utils.datautil import arr_handler, iterwgt
 from analysis.objutil import Object
 from utils.filesysutil import checkpath, glob_files, pjoin
 from utils.cutflowutil import load_csvs
-from plotting.postprocess import load_fields
 from utils.datautil import haddWeights
 
 from config.selectionconfig import cleansetting as cleancfg
@@ -22,11 +21,9 @@ localout = cleancfg.LOCALOUTPUT
 colors = list(mpl.colormaps['Set2'].colors)
 
 class CSVPlotter():
-    def __init__(self, datasource=pjoin(cleancfg.LOCALOUTPUT, 'datasource')):
-        self._datadir = datasource
+    def __init__(self):
         self.wgt_dict = haddWeights(cleancfg.DATAPATH)
         self.data_dict = {}
-        # self.getdata()
         self.labels = list(self.wgt_dict.keys())
         self.outdir = pjoin(localout, 'plots')
         checkpath(self.outdir)
@@ -39,7 +36,7 @@ class CSVPlotter():
         cutflow[f'{ds}_raw'] = len(df)
         cutflow[f'{ds}_wgt'] = df[wgtname].sum()
     
-    def postprocess_csv(self, per_evt_wgt='Generator_weight', extraprocess=False, selname='Pass') -> pd.DataFrame:
+    def postprocess_csv(self, datasource=pjoin(cleancfg.LOCALOUTPUT, 'datasource'), per_evt_wgt='Generator_weight', extraprocess=False, selname='Pass') -> pd.DataFrame:
         """Post-process the datasets and save the processed dataframes to csv files.
         
         Parameters
@@ -47,29 +44,33 @@ class CSVPlotter():
         - `per_evt_wgt`: the weight to be multiplied to the flat weights
         - `extraprocess`: additional processing to be done on the dataframe"""
         list_of_df = []
-        new_outdir = f'{self._datadir}_extrasel'
+        new_outdir = f'{datasource}_extrasel'
         checkpath(new_outdir)
         def add_wgt(dfs, rwfac):
             df = dfs[0]
+            if df.empty: return None
             df['weight'] = df[per_evt_wgt] * rwfac
             df['process'] = process if not resolve else ds
             if extraprocess: return extraprocess(df)
             else: return df
         for process in processes:
-            load_dir = pjoin(self._datadir, process) 
+            load_dir = pjoin(datasource, process) 
             cf_dict = {}
             cf_df = load_csvs(load_dir, f'{process}_cf')[0]
             for ds in self.wgt_dict[process].keys():
                 rwfac = self.rwgt_fac(process, ds) 
                 df = load_csvs(load_dir, f'{ds}_out', func=add_wgt, rwfac=rwfac)
                 checkpath(f'{new_outdir}/{process}')
-                df.to_csv(pjoin(new_outdir, process, f'{ds}_out.csv'))
-                list_of_df.append(df)
-                self.addextcf(cf_dict, df, ds, per_evt_wgt)
+                if df is not None: 
+                    list_of_df.append(df)
+                    self.addextcf(cf_dict, df, ds, per_evt_wgt)
+                else:
+                    cf_dict[f'{ds}_raw'] = 0
+                    cf_dict[f'{ds}_wgt'] = 0
             cf_df = pd.concat([cf_df, pd.DataFrame(cf_dict, index=[selname])])
             cf_df.to_csv(pjoin(new_outdir, process, f'{process}_cf.csv'))
         processed = pd.concat(list_of_df, axis=0).reset_index().drop('index', axis=1)
-        processed.to_csv(pjoin(self._datadir, 'processed.csv'))
+        processed.to_csv(pjoin(datasource, 'processed.csv'))
         return processed
 
     @iterwgt
@@ -83,14 +84,6 @@ class CSVPlotter():
             if rootfile: self.data_dict[process][ds] = rootfile
         else:
             raise FileNotFoundError(f"Check if there are any files of specified pattern in {self._datadir}.")
-    
-    def getobj(self, file: 'str', process, ds, obj_name):
-        """Returns the object from the root file."""
-        if file.endswith('.root'):
-            events = load_fields(file, tree_name=obj_name)
-        elif file.endswith('.csv'):
-            pass
-        return events
     
     def rwgt_fac(self, process, ds):
         signalname = cleancfg.get("signal", ['ggF'])
