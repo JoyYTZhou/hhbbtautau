@@ -1,11 +1,10 @@
-import uproot, json, random, subprocess, ROOT
+import uproot, json, random, subprocess
 import awkward as ak
 import pandas as pd
 
 from analysis.objutil import Object
 from config.selectionconfig import cleansetting as cleancfg
 from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, pjoin
-from utils.datautil import find_branches
 from utils.cutflowutil import combine_cf, calc_eff, load_csvs
 from utils.datautil import haddWeights
 
@@ -15,18 +14,6 @@ lumi = cleancfg.LUMI * 1000
 resolve = cleancfg.get("RESOLVE", False)
 wgt_dict = haddWeights(cleancfg.DATAPATH)
 condorpath = cleancfg.get("CONDORPATH", f'{indir}_hadded')
-
-checkpath(indir, createdir=False, raiseError=True)
-checkpath(localout, createdir=True)
-
-def check_corrupt(file_path):
-    try:
-        file = ROOT.TFile.Open(file_path, "READ")
-        if file.IsZombie() or file.TestBit(ROOT.TFile.kRecovered) or not file.IsOpen():
-            raise Exception("File is corrupted or truncated")
-        file.Close()
-    except Exception as e:
-        print(f"File {file_path} might be truncated or corrupted. Error: {e}")
 
 def iterprocess(endpattern):
     """Decorator function that iterates over all processes in the cleancfg.DATASETS, and
@@ -85,7 +72,8 @@ class PostProcessor():
         for ds in meta.keys():
             root_files = glob_files(dtdir, f'{ds}*.root', add_prefix=True)
             for file_path in root_files:
-                check_corrupt(file_path)
+                pass
+                # check_corrupt(file_path)
 
     @staticmethod
     @iterprocess('.csv')
@@ -131,6 +119,8 @@ class PostProcessor():
         
         Parameters
         - `signals`: list of signal process names"""
+        checkpath(outputdir, createdir=True)
+        checkpath(inputdir, createdir=False, raiseError=True)
         resolved_list = []
         wgt_dfdict= {}
         for process in cleancfg.DATASETS:
@@ -254,7 +244,6 @@ class PostProcessor():
         if resolution == 0:
             df = df.sum(axis=1).to_frame(name=process)
         return df
-
 
 def check_last_no(df, col_name, rootfiles):
     """Check if the last number in the cutflow table matches the number of events in the root files.
