@@ -22,7 +22,7 @@ log = joblog/$(OUTNAME)_$(PROCESS_NAME).log
 output = joblog/$(OUTNAME)_$(PROCESS_NAME).out
 error = joblog/$(OUTNAME)_$(PROCESS_NAME).err
 
-request_cpus = 12
-request_memory = 26GB
+request_cpus = 10
+request_memory = 20GB
 request_disk = 5GB
 
