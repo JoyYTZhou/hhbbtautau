@@ -4,7 +4,7 @@
 from .evtselutil import BaseEventSelections
 from .objutil import Object
 import operator as opr
-import numpy as np
+import awkward as ak
 
 def switch_selections(sel_name):
     selections = {
@@ -49,7 +49,7 @@ class skimEvtSel(BaseEventSelections):
         muon = None
 
 class twoTauEvtSel(BaseEventSelections):
-    def seltwotaus(self, events) -> None:
+    def seltwotaus(self, events) -> ak.Array:
         tau = Object(events, "Tau", weakrefEvt=True)
         def tauobjmask(tau: 'Object'):
             tau_mask = (tau.ptmask(opr.ge) & \
@@ -75,9 +75,11 @@ class twoTauEvtSel(BaseEventSelections):
         sd_cand = sd_cand[tau_dRmask][:,0]
         self.objcollect['SDTau'] = sd_cand
 
+        return events
+
 class ControlEvtSel(twoTauEvtSel):
     def setevtsel(self, events) -> None:
-        self.seltwotaus(events)
+        events = self.seltwotaus(events)
     
         jet = Object(events, 'Jet')
         def jobjmask(jet: 'Object'):
@@ -105,6 +107,8 @@ class ControlEvtSel(twoTauEvtSel):
 
 class SignalEvtSel(twoTauEvtSel):
     def setevtsel(self, events) -> None:
+        events = self.seltwotaus(events)
+        
         jet = Object(events, 'Jet')
         
         def jobjmask(jet: 'Object'):
@@ -133,6 +137,8 @@ class SignalEvtSel(twoTauEvtSel):
 
 class PrelimEvtSel(twoTauEvtSel):
     def setevtsel(self, events):
+        events = self.seltwotaus(events)
+
         jet = Object(events, 'Jet')
         
         def jobjmask(jet: 'Object'):
@@ -145,7 +151,7 @@ class PrelimEvtSel(twoTauEvtSel):
         jet_nummask = jet.numselmask(jobjmask(jet), opr.ge)
         jet, events = self.selobjhelper(events, '>=2 ak4 jets', jet, jet_nummask)
 
-        jet_nummask = jet.numselmask((jobjmask(jet) & jet.custommask('btag', opr.ge)), opr.ge, count=1)
+        jet_nummask = jet.maskredmask((jobjmask(jet) & jet.custommask('btag', opr.ge)), opr.eq, count=1)
         jet, events = self.selobjhelper(events, '>=1 Loose B-tagged', jet, jet_nummask)
         
         jet_mask = (jobjmask(jet) & jet.custommask('btag', opr.ge))
