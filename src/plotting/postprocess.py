@@ -60,6 +60,7 @@ class PostProcessor():
                     call_hadd(outname, batch_files)
                 except Exception as e:
                     print(f"Hadding encountered error {e}")
+                    print(batch_files)
                     # for file_path in batch_files: 
                     #     check_corrupt(file_path)
         return ''
@@ -80,8 +81,11 @@ class PostProcessor():
     def hadd_csvouts(process, meta, dtdir, outdir) -> None:
         concat = lambda dfs: pd.concat(dfs, axis=0)
         for ds in meta.keys():
-            df = load_csvs(dtdir, f'{ds}_output', func=concat)
-            df.to_csv(pjoin(outdir, f"{ds}_out.csv"))
+            try:
+                df = load_csvs(dtdir, f'{ds}_output', func=concat)
+                df.to_csv(pjoin(outdir, f"{ds}_out.csv"))
+            except Exception as e:
+                print(f"Error loading csv files for {ds}: {e}")
         return ''
         
     @staticmethod
@@ -96,8 +100,11 @@ class PostProcessor():
         dflist = []
         for ds in meta.keys():
             print(f"Dealing with {ds} now ...............................")
-            df = combine_cf(inputdir=dtdir, dsname=ds, output=False)
-            dflist.append(df)
+            try:
+                df = combine_cf(inputdir=dtdir, dsname=ds, output=False)
+                dflist.append(df)
+            except Exception as e:
+                print(f"Error combining cutflow tables for {ds}: {e}")
         pd.concat(dflist, axis=1).to_csv(pjoin(outdir, f"{process}_cf.csv"))
         return f'{process}_cf'
     
