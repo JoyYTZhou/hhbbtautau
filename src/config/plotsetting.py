@@ -63,13 +63,13 @@ dR = {
 
 H_mass = {
     "Tau_InvM": {
-        "hist": {'bins': 40, 'range': [0,200]},
+        "hist": {'bins': 30, 'range': [0,300]},
         "plot": {'xlabel': r'Invariant Mass (2$\tau$) (GeV)',
                  'alpha': 0.95,
                  'stack': if_stack,
                  'histtype': hist_type}},
     "Bjet_InvM": {
-        "hist": {'bins': 40, 'range': [0,200]},
+        "hist": {'bins': 30, 'range': [0,300]},
         "plot": {'xlabel': r'Invariant Mass (2b) (GeV)',
                  'alpha': 0.95,
                  'stack': if_stack,
