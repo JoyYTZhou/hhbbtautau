@@ -151,7 +151,7 @@ class PrelimEvtSel(twoTauEvtSel):
         jet_nummask = jet.numselmask(jobjmask(jet), opr.ge)
         jet, events = self.selobjhelper(events, '>=2 ak4 jets', jet, jet_nummask)
 
-        jet_nummask = jet.maskredmask((jobjmask(jet) & jet.custommask('btag', opr.ge)), opr.eq, count=1)
+        jet_nummask = jet.maskredmask((jobjmask(jet) & jet.custommask('btag', opr.ge)), opr.ge, count=1)
         jet, events = self.selobjhelper(events, '>=1 Loose B-tagged', jet, jet_nummask)
         
         jet_mask = (jobjmask(jet) & jet.custommask('btag', opr.ge))
