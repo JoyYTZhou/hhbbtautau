@@ -12,20 +12,18 @@ from utils.datautil import haddWeights
 
 from config.selectionconfig import cleansetting as cleancfg
 
-indir = cleancfg.INPUTDIR
 resolve = cleancfg.get("RESOLVE", False)
 lumi = cleancfg.LUMI
 processes = cleancfg.DATASETS
-localout = cleancfg.LOCALOUTPUT
 
 colors = list(mpl.colormaps['Set2'].colors)
 
 class CSVPlotter():
-    def __init__(self):
+    def __init__(self, outdir):
         self.wgt_dict = haddWeights(cleancfg.DATAPATH)
         self.data_dict = {}
         self.labels = list(self.wgt_dict.keys())
-        self.outdir = pjoin(localout, 'plots')
+        self.outdir = outdir
         checkpath(self.outdir)
     
     def addextcf(self, cutflow: 'dict', df, ds, wgtname) -> None:
@@ -68,9 +66,8 @@ class CSVPlotter():
                     cf_dict[f'{ds}_raw'] = 0
                     cf_dict[f'{ds}_wgt'] = 0
             cf_df = pd.concat([cf_df, pd.DataFrame(cf_dict, index=[selname])])
-            cf_df.to_csv(pjoin(new_outdir, process, f'{process}_cf.csv'))
+            cf_df.to_csv(pjoin(new_outdir, process, f'{process}_{selname.replace(" ", "")}_cf.csv'))
         processed = pd.concat(list_of_df, axis=0).reset_index().drop('index', axis=1)
-        processed.to_csv(pjoin(datasource, 'processed.csv'))
         return processed
 
     @iterwgt
@@ -93,8 +90,22 @@ class CSVPlotter():
             factor = 1 
         flat_wgt = self.wgt_dict[process][ds] * lumi * 1000 * factor 
         return flat_wgt
-            
-    def plot_hist(self, evts: 'pd.DataFrame', attridict: 'dict', group: 'dict'=None):
+   
+    def get_hist(self, evts: 'pd.DataFrame', att, options, group: 'dict'=None) -> tuple[dict, dict, list[int, int]]:
+        """Histogram an attribute of the object"""
+        histopts = options['hist']
+        bin_no = histopts.get('bins', 10)
+        bin_range = histopts.get('range', (0,200))
+        pltlabel = list(group.keys()) if group is not None else self.labels
+        hist_list = []
+        for label in pltlabel:
+            proc_list = group[label] if group is not None else [label]
+            thisdf = evts[evts['process'].isin(proc_list)]
+            thishist, bins = ObjectPlotter.hist_overflow(thisdf[att], bin_no, bin_range, thisdf['weight'])
+            hist_list.append(thishist)
+        return hist_list, bins, bin_range
+                
+    def plot_hist(self, evts: 'pd.DataFrame', attridict: 'dict', title='', group: 'dict'=None, save_name=''):
         """Plot the object attribute based on the attribute dictionary.
         
         Parameters
@@ -102,69 +113,97 @@ class CSVPlotter():
         - `attridict`: a dictionary of attributes to be plotted
         """
         for att, options in dict(attridict).items():
+            hist_list, bins, bin_range = self.get_hist(evts, att, options, group)
             pltopts = options['plot']
-            histopts = options['hist']
-            bin_no = histopts.get('bins', 10)
-            bin_range = histopts.get('range', (0,200))
-            hist_list = []
             pltlabel = list(group.keys()) if group is not None else self.labels
-            for label in pltlabel:
-                proc_list = group[label] if group is not None else [label]
-                thisdf = evts[evts['process'].isin(proc_list)]
-                thishist, bins = ObjectPlotter.hist_overflow(thisdf[att], bin_no, bin_range, thisdf['weight'])
-                hist_list.append(thishist)
-            ObjectPlotter.plot_var(hist_list, bins, label=pltlabel, xrange=bin_range, title='', 
-                                   save_name=pjoin(self.outdir, f'{att}.png'), **pltopts)
-        return None
-        
-class ObjectPlotter():
-    def __init__(self, objname, wgt, evts):
-        self.objname = objname
-        self.wgt = wgt
-        self.evts = evts
+            ObjectPlotter.plot_var(hist_list, bins, label=pltlabel, xrange=bin_range, title=title, 
+                                   save_name=pjoin(self.outdir, f'{att}{save_name}.png'), **pltopts)
     
-    def histobj(self, varname, objindx, bins_no, range, sort_by):
-        """Returns a list of histograms for the object attribute.
+    def plot_SVB(self, evts, attridict, sgroup, bgroup, title='', save_name=''):
+        """Plot the signal and background histograms.
         
         Parameters
-        - `varname`: the attribute to be histogrammed
-        - `objindx`: the index of the object in the object array
-        - `bins_no`: number of bins
-        - `range`: range of the histogram
-        - `sort_by`: the attribute to sort by
+        - `evts`: the dataframe to be plotted
+        - `attridict`: the dictionary of attributes to be plotted
         """
-        evts = self.evts
-        wgt_arrs = self.wgt
-        list_of_hists = [None] * len(evts)
-        bin_edges = None
-        for i, obj_arr in enumerate(evts):
-            var = ObjectPlotter.sortobj(obj_arr, sort_by=sort_by, sort_what=varname)[:,objindx]
-            if i==0:
-                list_of_hists[i], bin_edges = ObjectPlotter.hist_overflow(var, bins_no, range, weights=wgt_arrs[i])
-            else:
-                list_of_hists[i] = ObjectPlotter.hist_overflow(var, bins_no, range, weights=wgt_arrs[i])[0]
-        return list_of_hists, bin_edges
+        for att, options in dict(attridict).items():
+            pltopts = options['plot']
+            b_hists, bins, range = self.get_hist(evts, att, options, bgroup)
+            blabels = list(bgroup.keys())
+            slabels = list(sgroup.keys())
+            s_hists, bins, range = self.get_hist(evts, att, options, sgroup)
+            ObjectPlotter.plotSigVBkg(s_hists, b_hists, bins, slabels, blabels, range, title=title, save_name=pjoin(self.outdir, f'{att}{save_name}.png'), **pltopts) 
+        
+class ObjectPlotter():
+    def __init__(self):
+        pass
     
     @staticmethod
-    def plot_var(hist, bin_edges, label, xrange, title='plot', save_name='plot.png', **kwargs):
-        """Plot the object attribute."""
-        fig, ax = plt.subplots(figsize=(16, 10))
-        ax.set_title(title)
+    def set_style(title, xlabel):
+        fig, ax = plt.subplots(figsize=(8, 5))
+        ax.set_title(title, fontsize=14)
         hep.style.use("CMS")
-        hep.cms.label(label='Work in Progress')
-        xlabel = kwargs.pop('xlabel', 'GeV')
+        hep.cms.label(label='Work in Progress', fontsize=11)
+        ax.set_xlabel(xlabel, fontsize=12)
+        ax.set_ylabel("Events", fontsize=12)
         ax.set_prop_cycle('color', colors)
+        ax.tick_params(axis='both', which='major', labelsize=10, length=1)
+        for spine in ax.spines.values():
+            spine.set_linewidth(0.5)
+        return fig, ax
+
+    @staticmethod
+    def plot_var(hist, bin_edges: np.ndarray, label, xrange, title='plot', save_name='plot.png', **kwargs):
+        """Plot the object attribute.
+        
+        Parameters
+        - `hist`: np.ndarray object as histogram, or a list of histograms
+        - `bin_edges`: the bin edges
+        """
+        xlabel = kwargs.pop('xlabel', 'GeV')
+        fig, ax = ObjectPlotter.set_style(title, xlabel)
         hep.histplot(
             hist,
             bins=bin_edges,
             label=label,
             ax=ax,
-            linewidth=2,
+            linewidth=1,
             **kwargs)
-        ax.set_xlabel(xlabel, fontsize=20)
-        ax.set_ylabel("Events", fontsize=20)
+        ax.legend(fontsize=12, loc='upper right')
+        fig.savefig(save_name, dpi=300)
+    
+    @staticmethod
+    def plotSigVBkg(sig_hists, bkg_hists, bin_edges, sig_label, bkg_label, xrange, title='plot', save_name='plot.png', **kwargs):
+        """Plot the signal and background histograms.
+        
+        Parameters
+        - `sig_hists`: the signal histograms
+        - `bkg_hists`: the background histograms
+        - `bin_edges`: the bin edges
+        """
+        xlabel = kwargs.pop('xlabel', 'GeV')
+        fig, ax = ObjectPlotter.set_style(title, xlabel)
+        hep.histplot(
+            sig_hists,
+            bins=bin_edges,
+            ax=ax,
+            color='red',
+            label=sig_label,
+            stack=False,
+            histtype='step',
+            alpha=1.0,
+            linewidth=2)
+        hep.histplot(
+            bkg_hists,
+            bins=bin_edges,
+            label=bkg_label,
+            ax=ax,
+            histtype='fill',
+            alpha=0.5,
+            stack=True,
+            linewidth=1)
         ax.set_xlim(*xrange)
-        ax.legend(fontsize=18)
+        ax.legend(fontsize=12, loc='upper right')
         fig.savefig(save_name, dpi=300)
         
     @staticmethod
