@@ -22,8 +22,8 @@ while getopts ":d" opt; do
 done
 shift $((OPTIND -1))
 
-PROCESS_INPUT=$1
-DYNACONF_ENV=$2
+DYNACONF_ENV=$1
+PROCESS_INPUT=$2
 
 cd ..
 source scripts/venv.sh $DYNACONF_ENV
