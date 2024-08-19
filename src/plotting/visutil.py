@@ -85,7 +85,7 @@ class CSVPlotter():
     def rwgt_fac(self, process, ds):
         signalname = cleancfg.get("signal", ['ggF'])
         if process in signalname: 
-            factor = cleancfg.get('factor', 10)
+            factor = cleancfg.get('factor', 100)
         else:
             factor = 1 
         flat_wgt = self.wgt_dict[process][ds] * lumi * 1000 * factor 
@@ -147,7 +147,7 @@ class ObjectPlotter():
         ax.set_xlabel(xlabel, fontsize=12)
         ax.set_ylabel("Events", fontsize=12)
         ax.set_prop_cycle('color', colors)
-        ax.tick_params(axis='both', which='major', labelsize=10, length=1)
+        ax.tick_params(axis='both', which='major', labelsize=10, length=0)
         for spine in ax.spines.values():
             spine.set_linewidth(0.5)
         return fig, ax
@@ -183,11 +183,12 @@ class ObjectPlotter():
         """
         xlabel = kwargs.pop('xlabel', 'GeV')
         fig, ax = ObjectPlotter.set_style(title, xlabel)
+        s_colors = ['red', 'blue', 'forestgreen']
         hep.histplot(
             sig_hists,
             bins=bin_edges,
             ax=ax,
-            color='red',
+            color=s_colors,
             label=sig_label,
             stack=False,
             histtype='step',
@@ -199,7 +200,7 @@ class ObjectPlotter():
             label=bkg_label,
             ax=ax,
             histtype='fill',
-            alpha=0.5,
+            alpha=0.4,
             stack=True,
             linewidth=1)
         ax.set_xlim(*xrange)

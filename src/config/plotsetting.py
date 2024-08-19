@@ -94,13 +94,13 @@ bjetbytag_pt = {
 
 bjetbytag_btag = {
     "LDBjetBYtag_btag": {
-        "hist": {'bins': 10, 'range': [0,1]},
+        "hist": {'bins': 20, 'range': [0,1]},
         "plot": {'xlabel': r'Leading Jet B Tag Score',
                  'alpha': 0.95,
                  'stack': if_stack,
                  'histtype': hist_type}},
     "SDBjetBYtag_btag": {
-        "hist": {'bins': 10, 'range': [0,1]},
+        "hist": {'bins': 20, 'range': [0,1]},
         "plot": {'xlabel': r'Subleading Jet B Tag Score',
                  'alpha': 0.95,
                  'stack': if_stack,
@@ -109,13 +109,13 @@ bjetbytag_btag = {
 
 bjetbypt_btag = {
     "LDBjetBYpt_btag": {
-        "hist": {'bins': 10, 'range': [0,1]},
+        "hist": {'bins': 20, 'range': [0,1]},
         "plot": {'xlabel': r'Leading Jet B Tag Score',
                  'alpha': 0.95,
                  'stack': if_stack,
                  'histtype': hist_type}},
     "SDBjetBYpt_btag": {
-        "hist": {'bins': 10, 'range': [0,1]},
+        "hist": {'bins': 20, 'range': [0,1]},
         "plot": {'xlabel': r'Subleading Jet B Tag Score',
                  'alpha': 0.95,
                  'stack': if_stack,
