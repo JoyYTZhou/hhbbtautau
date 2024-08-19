@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # adapted from: https://github.com/bu-cms/bucoffea/blob/83daf25146d883df5131d0b50a51c0a6512d7c5f/bucoffea/helpers/dasgowrapper.py
 
-import json, gzip, glob, uproot, os, shutil
+import json, glob, shutil, argparse
 import pandas as pd
 from coffea.dataset_tools.dataset_query import DataDiscoveryCLI
 
@@ -89,7 +89,9 @@ def produceCSV(datadir):
     all_df.to_csv('compiled_weight.csv', index=False)
     
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Run preprocessor on fileset')    
+    parser.add_argument('-d', type=str, help='dataset to run program on')
+
+    args = parser.parse_args()
     qr = QueryRunner()
-    qr('DYJets')
-    # print("Jobs finished!")
-    # produceCSV('preprocessed')
+    qr(args.d)
