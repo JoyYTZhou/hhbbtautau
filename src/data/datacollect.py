@@ -1,25 +1,19 @@
 #!/usr/bin/env python
 # adapted from: https://github.com/bu-cms/bucoffea/blob/83daf25146d883df5131d0b50a51c0a6512d7c5f/bucoffea/helpers/dasgowrapper.py
 
-import json, os, subprocess
-from tqdm import tqdm
-import uproot
-from itertools import chain
+import json, gzip, glob, uproot, os, shutil
 import pandas as pd
-import glob
-from coffea.dataset_tools import rucio_utils
-from coffea.dataset_tools.dataset_query import print_dataset_query
-from rich.console import Console
-from rich.table import Table
 from coffea.dataset_tools.dataset_query import DataDiscoveryCLI
 
 class QueryRunner:
+    """Class to run the query on the dataset and preprocess the data."""
     def __init__(self) -> None:
         self.ddc = DataDiscoveryCLI()
         self.ddc.do_regex_sites(r"T[123]_(US)_\w+")
 
-    def __call__(self, *args, **kwargs) -> None:
-        pass
+    def __call__(self, dataset, infile='MCSampleString.json') -> None:
+        self.run_mc_query(dataset, infile)
+        self.preprocess_query(dataset)
 
     def run_query(self, query) -> dict:
         """Run a query and return the result as a list of strings.
@@ -28,155 +22,19 @@ class QueryRunner:
         - `query`: dataset name, can contain wildcards."""
         return self.ddc.load_dataset_definition(dataset_definition=query, query_results_strategy='all', replicas_strategy='choose')
         
-    def run_mc_query(self, infile='MCSampleString.json', outfile='MCSampleMeta.json'):
+    def run_mc_query(self, dataset, infile):
         with open(infile, 'r') as file:
             mcstrings = json.load(file)
 
-        for category, dataset_dict in tqdm(mcstrings.items(), f"finding samples ..."):
-            for shortname, dataset_meta in dataset_dict.items():
-                filedict = self.run_query(dataset_meta)
+        self.run_query(mcstrings[dataset])
         
-    def preprocess_query(self):
-        fileset_total = self.ddc.do_preprocess(output_file="fileset",
-            step_size=None,
+    def preprocess_query(self, dataset):
+        self.ddc.do_preprocess(output_file=dataset,
+            step_size=10000,
             align_to_clusters=False,
             scheduler_url=None)
-
-def add_weight(dspath, outputdir, dsname=None):
-    """Add the number of raw events, weighted events, and per event weight to the dataset dictionary.
-    The result is saved to a new file.
-    
-    Parameters
-    - `dspath`: path to json file containing dataset names
-    - `outputdir`: path to output directory
-    - `dsname`: optional, a string to specify the dataset name"""
-
-    with open(dspath, 'r') as ds:
-        dsjson = json.load(ds)
-    os.makedirs(outputdir, exist_ok=True)
-
-    if dsname is None:
-        searchitems = dsjson
-    elif isinstance(dsname, str):
-        if dsname in dsjson: searchitems = {dsname: dsjson[dsname]} 
-        else: raise ValueError("Needs to pass a dataset name!")
-    elif isinstance(dsname, list):
-        searchitems = {}
-        for ds in dsname:
-            if ds in dsjson: searchitems.update({ds: dsjson[ds]})
-    else:
-        raise ValueError("Enter reasonable dataset name(s)")
-
-    for name, dataset_dict in tqdm(searchitems.items(), f"finding samples ..."):
-        if dataset_dict != {}:
-            for ds, ds_dict in dataset_dict.items():
-                print(f"locating {ds}")
-                raw_tot, wgt_tot, success_list, failed_list = weight_fl(ds_dict['filelist']) 
-                ds_dict['filelist'] = sorted(success_list)
-                ds_dict['failedlist'] = sorted(failed_list)
-                ds_dict["Raw Events"] = raw_tot
-                ds_dict["Wgt Events"] = wgt_tot
-                ds_dict["Per Event"] = ds_dict['xsection']/wgt_tot
-            fipath = os.path.join(outputdir, f'{name}.json')
-            with open(fipath, 'w') as jsonfile:
-                json.dump(dataset_dict, jsonfile, indent=4)
-    
-    return None
-
-def weight_fl(filelist, retry=2):
-    """Find the total number of raw events, weighted events in a list of files.
-    
-    Parameters
-    - `filelist`: list of file paths
-    Returns
-    - `raw_tot`: total number of raw events
-    - `wgt_tot`: total number of weighted events
-    - `success_list`: list of successful file paths
-    - `failed_list`: list of failed file paths (unable to open/query)
-    """
-    wgt_tot = 0
-    raw_tot = 0
-    success_list = []
-    failed_list = []
-    for file in tqdm(filelist):
-        xrd_file = xrootd_format(file, 'local')
-        result = info_file(xrd_file)
-        if isinstance(result, str): 
-            for trial in range(retry):
-                result = info_file(xrd_file)
-        if isinstance(result, str):
-            continue
-        n_raw, n_wgt = result
-        wgt_tot += n_wgt
-        raw_tot += n_raw
-        success_list.append(xrd_file)
-    
-    return raw_tot, wgt_tot, success_list, failed_list
-
-def info_file(file) -> tuple[int, int]:
-    """Return the number of raw events and weighted events of a file in a json dictionary
-    with error handled."""
-    nevents_wgt = 0
-    nevents_raw = 0
-    try: 
-        with uproot.open(file) as f:
-            t = f.get("Runs")
-            nevents_wgt = t["genEventSumw"].array(library="np").sum()
-            nevents_raw = f.get("Events").num_entries
-        return nevents_raw, nevents_wgt
-    except Exception as e:
-        message = f"Failed to find {file}: {e}"
-        return message
-
-def preprocess_files(inputfn, step_size=10000, tree_name="Events", process_name = "DYJets"):
-    """Preprocess the files in the dataset dictionary by chunking the files into smaller steps.
-    The result is saved to a new file.
-    
-    Parameters
-    - `inputfn`: path to json file containing dataset names
-    - `step_size`: size of the chunk
-    - `tree_name`: name of the tree
-    - `process_name`: name of the process (supposedly a key in the json file)
-    """
-    def chunkfile_dict(file_path, tree_name, step_size):
-        with uproot.open(file_path) as file:
-            print("=============", file_path, "=============")
-            tree = file[tree_name]
-            n_events = tree.num_entries
-            steps = [[i, min(i + step_size, n_events)] for i in range(0, n_events, step_size)]
-            result_dict = {
-                file_path: {
-                    "object_path": tree_name,
-                    "steps": steps
-                }
-            }
-        return result_dict
-    with open(inputfn, 'r') as ds:
-        dsjson = json.load(ds)
-
-    input_dict = {}
-    failed_dict = {}
-    ds = process_name
-    pathlist = dsjson[process_name]
-    result = {}
-    for path in tqdm(pathlist, desc=f"Finding sample {ds}"):
-        try:
-            result.update(chunkfile_dict(path, tree_name, step_size))
-        except Exception as e:
-            print(f"Failed to find {path}: {e}")
-            failed_dict.update({ds: path})
-    if result != {}: input_dict.update({ds: result})
-
-    outputfn = f"chunked/{process_name}.json"
-    with open(outputfn, 'w') as jsonfile:
-        json.dump(input_dict, jsonfile)
-
-    errorfn = f"chunked/{process_name}_failed.json"
-    if failed_dict != {}:
-        with open(errorfn, 'w') as errorfile:
-            json.dump(failed_dict, errorfile)
-
-    return None
+        
+        shutil.move(f"{dataset}_available.json.gz", f"preprocessed/{dataset}.json.gz")
 
 def divide_samples(inputfn, outputfn, dict_size=5):
     """Divide the ds into smaller list as value per key.
@@ -232,12 +90,6 @@ def produceCSV(datadir):
     
 if __name__ == "__main__":
     qr = QueryRunner()
-    qr.run_mc_query(infile='testsample.json', outfile='testsample_meta.json')
-    qr.preprocess_query()
-    # qr.run_mc_query()
-    # query_MCsamples("data.json", "data_file.json", regex="NanoAODv12")
-    # add_weight("data_file.json", "preprocessed", dsname=['TTbar', 'ZZ', 'WZ', 'ZH'])
-    # add_weight("data_file.json", "preprocessed", dsname=['SingleH', 'WW', 'WWW', 'WWZ'])
-    # add_weight("data_file.json", "preprocessed", dsname=['ZZZ', 'WZZ', 'WJets'])
+    qr('DYJets')
     # print("Jobs finished!")
     # produceCSV('preprocessed')
