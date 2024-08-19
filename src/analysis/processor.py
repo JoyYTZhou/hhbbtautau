@@ -70,33 +70,26 @@ class Processor:
     def loadfile(self, filename: str, suffix: int, dask_args: dict) -> tuple[ak.Array, bool]:
         """This is a wrapper function around uproot._dask. 
         I am writing this doc to humiliate myself in the future.
+        
+        Parameters 
+        - `force_copy`: override other settings and force copy to local. Be careful with this setting!
         """
         allow_copy = self.rtcfg.get("COPY_LOCAL", False)
         copied = False
-        attempts = 0
 
-        while attempts < 2:
-            attempts += 1
-            try:
-                dask_args["files"] = {filename: self.treename}
-                if self.rtcfg.get("DELAYED_OPEN", True):
-                    events = uproot.dask(**dask_args)
-                    break
-                else:
-                    events = uproot.open(dask_args['files']).arrays()
-                    print("Not delayed!")
-                    break
-            except Exception as e:
-                print(f"Failure to load file {filename}")
-                print(e)
-                if allow_copy and not copied:
-                    destpath = pjoin(self.copydir, f"{self.dataset}_{suffix}.root")
-                    cpfcondor(filename, destpath)
-                    filename = destpath
-                    copied = True
-                else:
-                    events = None
-                    break
+        if allow_copy:
+            destpath = pjoin(self.copydir, f"{self.dataset}_{suffix}.root")
+            cpfcondor(filename, destpath)
+            copied = True
+            filename = destpath
+
+        dask_args["files"] = {filename: self.treename}
+        if self.rtcfg.get("DELAYED_OPEN", True):
+            events = uproot.dask(**dask_args)
+        else:
+            events = uproot.open(dask_args['files']).arrays()
+            print("Not delayed!")
+
         return events, copied
     
     def runbatch(self, files, dask_args: dict, indxlst:list=None, **kwargs):

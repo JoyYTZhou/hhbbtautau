@@ -38,7 +38,7 @@ function setup_LCG {
         source /cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-centos8-gcc11-opt/setup.sh
     elif [[ "$release_version" == 9.* ]]; then
         echo "Performing operations for release 9.*"
-        source /cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-el9-gcc13-opt/setup.sh
+        source /cvmfs/sft.cern.ch/lcg/views/LCG_106/x86_64-el9-gcc13-opt/setup.sh
     else
         source /cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-centos7-gcc11-opt/setup.sh
     fi
@@ -53,6 +53,9 @@ function LPC_setup {
 
     export PREFIX=root://cmseos.fnal.gov
     print_env_variable "PREFIX"
+
+    alias condor_rm_held="condor_rm -constraint 'JobStatus == 5'"
+    alias condor_rm_running="condor_rm -constraint 'JobStatus == 2'"
 }
 
 function LCG_sasetup {
