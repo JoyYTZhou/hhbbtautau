@@ -7,19 +7,47 @@ import uproot
 from itertools import chain
 import pandas as pd
 import glob
+from coffea.dataset_tools import rucio_utils
+from coffea.dataset_tools.dataset_query import print_dataset_query
+from rich.console import Console
+from rich.table import Table
+from coffea.dataset_tools.dataset_query import DataDiscoveryCLI
 
-def dasgo_query(query, json=False):
-    """Query dasgoclient and return the result as a list of strings."""
-    cmd = ["dasgoclient", "--query", query]
-    if json:
-        cmd.append("-json")
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+class QueryRunner:
+    def __init__(self) -> None:
+        self.client = rucio_utils.get_rucio_client()
+        self.ddc = DataDiscoveryCLI()
+        self.ddc.do_regex_sites(r"T[123]_(US)_\w+")
 
-    stdout, stderr = proc.communicate()
-    if proc.returncode != 0:
-        raise RuntimeError(f"Could not run DAS Go client query: {query}. Stderr: \n{stderr}")
+    def __call__(self, *args: json.Any, **kwds: json.Any) -> json.Any:
+        pass
 
-    return stdout.decode().splitlines()
+    def run_query(self, query) -> dict:
+        """Run a query and return the result as a list of strings.
+        
+        Parameters
+        - `query`: dataset name, can contain wildcards."""
+        return self.ddc.load_dataset_definition(dataset_definition=query, query_results_strategy='manual', replicas_strategy='first')
+        
+    def run_mc_query(self, infile='MCSampleString.json', outfile='MCSampleMeta.json'):
+        with open(infile, 'r') as file:
+            mcstrings = json.load(file)
+
+        for category, dataset_dict in tqdm(mcstrings.items(), f"finding samples ..."):
+            for shortname, dataset_meta in dataset_dict.items():
+                for query_name in dataset_meta.keys():
+                    filedict = self.run_query(query_name)
+                # size = len(filelist)
+                # if size > 1: 
+                #     print("There are more than one dataset found!")
+                #     print(filelist)
+                #     indx = int(input("Enter the index of the dataset you want to use: "))
+                # else:
+                #     if size == 1:
+                #         file
+        
+        with open(outfile, 'w') as jsonfile:
+            json.dump(filedict, jsonfile, indent=4)
 
 def xrootd_format(fpath, prefix):
     """Ensure that the file path is file:/* or xrootd"""
@@ -45,18 +73,7 @@ def query_MCsamples(dspath, outputfn, regex=None):
 
     query_fistr = lambda ds: "".join(["file dataset=", ds])
      
-    for name, dataset_dict in tqdm(dsjson.items(), f"finding samples ..."):
-        keys_to_del = []
-        for ds, ds_dict in dataset_dict.items():
-            if regex is None:
-                filelist = list(chain.from_iterable(dasgo_query(query_fistr(s)) for s in ds_dict["string"]))
-            else:
-                filelist = list(chain.from_iterable(dasgo_query(query_fistr(s)) for s in ds_dict["string"] if regex in s))
-            if filelist:
-                ds_dict["filelist"] = sorted(filelist)
-            else:
-                keys_to_del.append(ds)
-        for key in keys_to_del: del dataset_dict[key]
+
 
     with open(outputfn, 'w') as jsonfile:
         json.dump(dsjson, jsonfile, indent=4)
@@ -250,12 +267,11 @@ def produceCSV(datadir):
     all_df.to_csv('compiled_weight.csv', index=False)
     
 if __name__ == "__main__":
+    qr = QueryRunner()
+    qr.run_mc_query(infile='testsample.json', outfile='testsample_meta.json')
     # query_MCsamples("data.json", "data_file.json", regex="NanoAODv12")
     # add_weight("data_file.json", "preprocessed", dsname=['TTbar', 'ZZ', 'WZ', 'ZH'])
     # add_weight("data_file.json", "preprocessed", dsname=['SingleH', 'WW', 'WWW', 'WWZ'])
-    add_weight("data_file.json", "preprocessed", dsname=['ZZZ', 'WZZ', 'WJets'])
-    print("Jobs finished!")
+    # add_weight("data_file.json", "preprocessed", dsname=['ZZZ', 'WZZ', 'WJets'])
+    # print("Jobs finished!")
     # produceCSV('preprocessed')
-
-
-

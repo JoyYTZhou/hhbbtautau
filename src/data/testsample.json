@@ -1,0 +1,9 @@
+{
+    "DYJets": {
+        "DYJetsToLL_M-50": {
+            "/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/Run3Summer22EENanoAODv12-forPOG_130X_mcRun3_2022_realistic_postEE_v6-v2/NANOAODSIM": {
+                "xsection": 5558.0
+            }
+        }
+    }
+}
