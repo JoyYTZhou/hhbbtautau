@@ -15,11 +15,10 @@ from coffea.dataset_tools.dataset_query import DataDiscoveryCLI
 
 class QueryRunner:
     def __init__(self) -> None:
-        self.client = rucio_utils.get_rucio_client()
         self.ddc = DataDiscoveryCLI()
         self.ddc.do_regex_sites(r"T[123]_(US)_\w+")
 
-    def __call__(self, *args: json.Any, **kwds: json.Any) -> json.Any:
+    def __call__(self, *args, **kwargs) -> None:
         pass
 
     def run_query(self, query) -> dict:
@@ -27,7 +26,7 @@ class QueryRunner:
         
         Parameters
         - `query`: dataset name, can contain wildcards."""
-        return self.ddc.load_dataset_definition(dataset_definition=query, query_results_strategy='manual', replicas_strategy='first')
+        return self.ddc.load_dataset_definition(dataset_definition=query, query_results_strategy='all', replicas_strategy='choose')
         
     def run_mc_query(self, infile='MCSampleString.json', outfile='MCSampleMeta.json'):
         with open(infile, 'r') as file:
@@ -35,48 +34,13 @@ class QueryRunner:
 
         for category, dataset_dict in tqdm(mcstrings.items(), f"finding samples ..."):
             for shortname, dataset_meta in dataset_dict.items():
-                for query_name in dataset_meta.keys():
-                    filedict = self.run_query(query_name)
-                # size = len(filelist)
-                # if size > 1: 
-                #     print("There are more than one dataset found!")
-                #     print(filelist)
-                #     indx = int(input("Enter the index of the dataset you want to use: "))
-                # else:
-                #     if size == 1:
-                #         file
+                filedict = self.run_query(dataset_meta)
         
-        with open(outfile, 'w') as jsonfile:
-            json.dump(filedict, jsonfile, indent=4)
-
-def xrootd_format(fpath, prefix):
-    """Ensure that the file path is file:/* or xrootd"""
-    file_prefix = "root://cmsxrootd.fnal.gov/" if prefix == 'local' else "root://cms-xrd-global.cern.ch/"
-    if fpath.startswith("/store/"):
-        return f"{file_prefix}{fpath}"
-    elif fpath.startswith("file:") or fpath.startswith("root:"):
-        return fpath
-    else:
-        return f"file://{fpath}"
-
-def query_MCsamples(dspath, outputfn, regex=None):
-    """ Query xrootd to find all filepaths for a given set of dataset names.
-    the result is saved to a new file.
-
-    Parameters
-    - `dspath`: path to json file containing dataset names
-    - `outputfn`: path to output json file containing full dataset paths
-    - `regex`: optional, a string to filter the dataset names
-    """
-    with open(dspath, 'r') as ds:
-        dsjson = json.load(ds)
-
-    query_fistr = lambda ds: "".join(["file dataset=", ds])
-     
-
-
-    with open(outputfn, 'w') as jsonfile:
-        json.dump(dsjson, jsonfile, indent=4)
+    def preprocess_query(self):
+        fileset_total = self.ddc.do_preprocess(output_file="fileset",
+            step_size=None,
+            align_to_clusters=False,
+            scheduler_url=None)
 
 def add_weight(dspath, outputdir, dsname=None):
     """Add the number of raw events, weighted events, and per event weight to the dataset dictionary.
@@ -269,6 +233,8 @@ def produceCSV(datadir):
 if __name__ == "__main__":
     qr = QueryRunner()
     qr.run_mc_query(infile='testsample.json', outfile='testsample_meta.json')
+    qr.preprocess_query()
+    # qr.run_mc_query()
     # query_MCsamples("data.json", "data_file.json", regex="NanoAODv12")
     # add_weight("data_file.json", "preprocessed", dsname=['TTbar', 'ZZ', 'WZ', 'ZH'])
     # add_weight("data_file.json", "preprocessed", dsname=['SingleH', 'WW', 'WWW', 'WWZ'])

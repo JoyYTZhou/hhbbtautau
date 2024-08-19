@@ -38,7 +38,8 @@ function setup_LCG {
         source /cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-centos8-gcc11-opt/setup.sh
     elif [[ "$release_version" == 9.* ]]; then
         echo "Performing operations for release 9.*"
-        source /cvmfs/sft.cern.ch/lcg/views/LCG_106/x86_64-el9-gcc13-opt/setup.sh
+        # do not change this, this will have impact on venv installment
+        source /cvmfs/sft.cern.ch/lcg/views/LCG_105/x86_64-el9-gcc13-opt/setup.sh 
     else
         source /cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-centos7-gcc11-opt/setup.sh
     fi
