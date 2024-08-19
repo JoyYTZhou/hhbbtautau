@@ -2,6 +2,7 @@
 # The behavior of the Processor class is highly dependent on run time configurations and the event selection class used.
 import uproot._util
 import uproot, pickle
+from uproot.writing._dask_write import ak_to_root
 import pandas as pd
 import dask_awkward as dak
 import awkward as ak
@@ -184,6 +185,14 @@ class Processor:
         else:
             rc = 1
         return rc
+    
+    def writeak(self, passed: 'ak.Array', suffix, fields=None) -> int:
+        """Writes an awkward array to a root file. Wrapper around ak_to_root."""
+        rc = 0
+        if fields is None:
+            ak_to_root(pjoin(self.outdir, f'{self.dataset}_{suffix}.root'), passed, treename='Events', 
+                       compression="ZLIB", compression_level=1, title="", initial_basket_capacity=50, resize_factor=5)
+
     
     def writedf(self, passed: pd.DataFrame, suffix) -> int:
         """Writes a pandas DataFrame to a csv file.
