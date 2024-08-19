@@ -64,7 +64,7 @@ class BaseEventSelections:
         """
         pass
 
-    def callevtsel(self, events, wgtname, compute_veto=False):
+    def callevtsel(self, events, wgtname, compute=False):
         """Apply all the selections in line on the events
         Parameters
         
@@ -80,7 +80,7 @@ class BaseEventSelections:
             raise NotImplementedError("Events selections not set, this is base selection!")
         if not self.objcollect:
             passed = events[self.cfno.maskscutflow[-1]]
-            if compute_veto: 
+            if compute: 
                 vetoed = events[~(self.objsel.all())]
                 result = (passed, vetoed)
             else:
