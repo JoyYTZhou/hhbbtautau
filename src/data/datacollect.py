@@ -11,7 +11,7 @@ class QueryRunner:
         self.ddc = DataDiscoveryCLI()
         self.ddc.do_regex_sites(r"T[123]_(US)_\w+")
 
-    def __call__(self, dataset, infile='MCSampleString.json') -> None:
+    def __call__(self, dataset, infile='availableQuery.json') -> None:
         self.run_mc_query(dataset, infile)
         self.preprocess_query(dataset)
 
