@@ -20,7 +20,7 @@ class QueryRunner:
         
         Parameters
         - `query`: dataset name, can contain wildcards."""
-        return self.ddc.load_dataset_definition(dataset_definition=query, query_results_strategy='all', replicas_strategy='choose')
+        return self.ddc.load_dataset_definition(dataset_definition=query, query_results_strategy='all', replicas_strategy='manual')
         
     def run_mc_query(self, dataset, infile):
         with open(infile, 'r') as file:
@@ -34,8 +34,8 @@ class QueryRunner:
             align_to_clusters=False,
             recalculate_steps=False,
             files_per_batch=1,
+            file_exceptions=(OSError, IndexError),
             save_form=False,
-            file_exceptions=IndexError,
             scheduler_url=None)
         
         shutil.move(f"{dataset}_available.json.gz", f"preprocessed/{dataset}.json.gz")
