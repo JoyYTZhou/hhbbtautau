@@ -1,6 +1,7 @@
 from dask.distributed import Client, LocalCluster
 from dask.distributed import as_completed
 import json as json
+import gzip
 import traceback, os, uproot
 
 from .custom import switch_selections
@@ -24,28 +25,35 @@ def div_list(original_list, chunk_size):
     for i in range(0, len(original_list), chunk_size):
         yield original_list[i:i + chunk_size]
 
-def filterResume(metadata, outputpattern='*.root', tsferP=transferP) -> dict:
-    """Resume jobs from last checkpoint"""
-    if not tsferP or checkpath(tsferP, createdir=False) != 0:
-        return metadata
+def filterExisting(dsdata: 'dict', outputpattern='*.root', tsferP=transferP) -> bool:
+    """Update dsdata on files that need to be processed for a MC dataset based on the existing output files and cutflow tables.
     
-    loaded = {}
-    for ds, ds_info in metadata.items():
-        print(f"Checking {ds} ========================================================")
-        fileno = len(ds_info['filelist'])
-        missing_cutflow = set(check_missing(f'{ds}_cutflow*.csv', fileno, tsferP))
-        missing_output = set(check_missing(f'{ds}{outputpattern}', fileno, tsferP))
+    Parameters
+    - `dsdata`: A dictionary of dataset information with keys 'files', 'metadata', 'filelist'
+
+    Return
+    - bool: True if some files need to be processed, False otherwise. 
+    """
+    if not tsferP or checkpath(tsferP, createdir=False) != 0:
+        return True
+    
+    filelist = dsdata['files'].keys()
+    fileno = len(filelist)
+    shortname = dsdata["metadata"]["shortname"]
+    missing_cutflow = set(check_missing(f'{shortname}_cutflow*.csv', fileno, tsferP))
+    missing_output = set(check_missing(f'{shortname}{outputpattern}', fileno, tsferP))
         
-        if missing_cutflow:
-            print(f"Missing cutflow tables for these files: {missing_cutflow}!")
-        if missing_output:
-            print(f"Missing output for these files: {missing_output} ")
+    if missing_cutflow:
+        print(f"Missing cutflow tables for these files: {missing_cutflow}!")
+    if missing_output:
+        print(f"Missing output for these files: {missing_output} ")
+    
+    missing_indices = sorted(list(missing_cutflow.union(missing_output)))
         
-        missing_indices = sorted(list(missing_cutflow.union(missing_output)))
-        
-        if missing_indices:
-            loaded[ds] = {'resumeindx': missing_indices, 'filelist': ds_info['filelist']}
-    return loaded
+    if missing_indices:
+        dsdata["resumeindx"] = missing_indices
+        return True
+    else: return False
     
 class JobRunner:
     def __init__(self, jobfile, eventSelection=evtselclass) -> None:
@@ -156,7 +164,7 @@ class JobLoader():
                 inputfiles = glob_files(self.inpath, filepattern=f'{dataset}*.root')
                 if inputfiles: loaded[dataset]['filelist'] = inputfiles
                 else: del loaded[dataset]
-            loaded = filterResume(loaded, '_output*.csv', self.tsferP)
+            loaded = filterExisting(loaded, '_output*.csv', self.tsferP)
             if loaded: 
                 with open(pjoin(self.jobpath, f'{rs.PROCESS_NAME}_job.json'), 'w') as fp:
                     json.dump(loaded, fp)
@@ -164,23 +172,23 @@ class JobLoader():
         else:
             raise TypeError("Check INPUTFILE_PATH in runsetting.toml. It's not of a valid format!")
         
-    def skimjobs(self, batch_size=10) -> None:
+    def skimjobs(self, batch_size=15) -> None:
         inputdatap = pjoin(parent_directory, self.inpath)
-        with open(inputdatap, 'r') as samplepath:
+        with gzip.open(inputdatap, 'rt') as samplepath:
             loaded = json.load(samplepath)
-        dslist = list(loaded.keys()) 
-        for i, dskey in enumerate(dslist):
-            dsloaded = {dskey: loaded[dskey]}
-            filtered = filterResume(dsloaded, tsferP=self.tsferP)
-            if filtered:
-                resumeindx = filtered[dskey].get('resumeindx', [j for j in range(len(dsloaded[dskey]['filelist']))])
+        for ds, dsdata in loaded.items():
+            print(f"Preparing skim job files for {ds}...")
+            need_process = filterExisting(dsdata, tsferP=self.tsferP)
+            if need_process:
+                resumeindx = dsdata.get('resumeindx', [j for j in range(len(dsdata["files"]))])
                 indx_gen = div_list(resumeindx, batch_size)
+                shortname = dsdata['metadata']['shortname']
                 for j, indx_list in enumerate(indx_gen):
-                    dsloaded[dskey]['resumeindx'] = indx_list
-                    with open(pjoin(self.jobpath, f'{rs.PROCESS_NAME}_{i}_job_{j}.json'), 'w') as fp:
-                        json.dump(dsloaded, fp)
+                    dsdata['resumeindx'] = indx_list
+                    with open(pjoin(self.jobpath, f'{rs.PROCESS_NAME}_{shortname}_job_{j}.json'), 'w') as fp:
+                        json.dump(dsdata, fp)
             else:
-                print(f"All the files have been processed for {dskey}! No job files are needed!")
+                print(f"All the files have been processed for {ds}! No job files are needed!")
     
 def process_futures(futures, results_file='futureresult.txt', errors_file='futureerror.txt'):
     """Process a list of Dask futures.

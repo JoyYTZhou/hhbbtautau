@@ -32,6 +32,10 @@ class QueryRunner:
         self.ddc.do_preprocess(output_file=dataset,
             step_size=10000,
             align_to_clusters=False,
+            recalculate_steps=False,
+            files_per_batch=1,
+            save_form=False,
+            file_exceptions=IndexError,
             scheduler_url=None)
         
         shutil.move(f"{dataset}_available.json.gz", f"preprocessed/{dataset}.json.gz")
@@ -90,7 +94,7 @@ def produceCSV(datadir):
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run preprocessor on fileset')    
-    parser.add_argument('-d', type=str, help='dataset to run program on')
+    parser.add_argument('-d', type=str, required=True, help='dataset to run program on')
 
     args = parser.parse_args()
     qr = QueryRunner()
