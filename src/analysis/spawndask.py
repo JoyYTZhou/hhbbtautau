@@ -14,7 +14,7 @@ evtselclass = switch_selections(rs.SEL_NAME)
 
 parent_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-datapath = pjoin(parent_directory, 'data', 'data.json')
+datapath = pjoin(parent_directory, 'data', 'availableQuery.json')
 with open(datapath, 'r') as data:
     realmeta = json.load(data)
 
@@ -156,7 +156,7 @@ class JobLoader():
 
     def writejobs(self) -> None:
         """Write job parameters to json file"""
-        if self.inpath.endswith('.json'):
+        if self.inpath.endswith('.json.gz'):
             self.skimjobs()
         elif self.inpath.startswith('/store/user/'):
             loaded = realmeta[rs.PROCESS_NAME]

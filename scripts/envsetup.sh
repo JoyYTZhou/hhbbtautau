@@ -28,6 +28,10 @@ echo "Installed dyanconf"
 python -m pip install htcondor --no-cache-dir
 echo "Installed htcondor"
 python -m pip install rucio-clients==32 --no-cache-dir
+echo "Installed ruico-clients"
+python -m pip install hist --upgrade --no-cache-dir
+echo "Installed hist"
+
 deactivate
 
 # create tarball

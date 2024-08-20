@@ -36,10 +36,6 @@ else
 fi
 
 for PROCESS in "${PROCESS_NAMES[@]}"; do
-    PROCESS_DATA=$DATA_DIR/preprocessed
-    FILENAME=${PROCESS_DATA}/${PROCESS}.json
-    INDX=$(jq 'length' $FILENAME)
-    LEN=$((INDX-1))
     export PROCESS_NAME=$PROCESS
 
     JOB_DIRNAME=$(python3 -c 'from analysis.spawndask import rs; print(rs.JOB_DIRNAME)')
