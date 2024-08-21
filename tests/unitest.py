@@ -105,4 +105,8 @@ class TestProcessor(unitest.TestCase):
         print(result)
 
         self.assertIsNotNone(result)
+    
+
+if __name__ == '__main__':
+    unitest.main()
 
