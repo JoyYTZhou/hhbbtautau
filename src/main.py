@@ -8,7 +8,7 @@ from config.selectionconfig import dasksetting as dask_cfg
 
 def runselections():
     gc.enable()
-    from analysis.spawndask import JobRunner
+    from analysis.spawnjobs import JobRunner
 
     parser = argparse.ArgumentParser(description='Event selection options')
     parser.add_argument('--input', type=str, help='input file path', default=None)
@@ -21,7 +21,7 @@ def runselections():
         tracemalloc.start()
 
     if dask_cfg.SPAWN_CLIENT:
-        from analysis.spawndask import spawnclient
+        from analysis.spawnjobs import spawnclient
         client = spawnclient(default=False)
     else:
         client = None
