@@ -3,7 +3,6 @@ from src.config.selectionconfig import runsetting as rs
 from src.analysis.custom import switch_selections
 from src.analysis.processor import Processor
 
-
 class TestProcessor(unittest.TestCase):
     def setup(self):
         selname = rs.SEL_NAME

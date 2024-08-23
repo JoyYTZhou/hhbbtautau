@@ -1,4 +1,4 @@
-# This file contains custom event selection classes for the analysis.
+# This file contains custom event selection classes for the src.analysis.
 # The classes are inherited from the BaseEventSelections class
 # TECHNICALLY THIS SHOULD BE THE ONLY FILE THAT NEEDS TO BE MODIFIED FOR CUSTOM EVENT SELECTIONS
 from .evtselutil import BaseEventSelections

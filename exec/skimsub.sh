@@ -38,7 +38,7 @@ fi
 for PROCESS in "${PROCESS_NAMES[@]}"; do
     export PROCESS_NAME=$PROCESS
 
-    JOB_DIRNAME=$(python3 -c 'from analysis.spawndask import rs; print(rs.JOB_DIRNAME)')
+    JOB_DIRNAME=$(python3 -c 'from src.analysis.spawndask import rs; print(rs.JOB_DIRNAME)')
 
     rm -rf ${JOB_DIRNAME}/${PROCESS}_*.json
 

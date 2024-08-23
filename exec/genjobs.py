@@ -1,5 +1,9 @@
 from src.analysis.spawndask import JobLoader, pjoin, rs
+<<<<<<< HEAD
 import os
+=======
+import os, shutil
+>>>>>>> f931ec4 (refactor python path)
 
 cwd = os.path.dirname(os.path.abspath(__file__))
 

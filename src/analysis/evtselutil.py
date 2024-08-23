@@ -6,7 +6,7 @@ import awkward as ak
 from config.selectionconfig import selectionsettings as selcfg
 from config.selectionconfig import namemap
 from utils.cutflowutil import weightedSelection
-from analysis.objutil import Object
+from src.analysis.objutil import Object
 
 default_trigsel = selcfg.triggerselections
 default_objsel = selcfg.objselections
