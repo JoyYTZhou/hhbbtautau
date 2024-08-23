@@ -11,7 +11,7 @@ ENV_NAME=skim_el9
 
 export PYTHONPATH=~/nobackup/${ENV_NAME}/lib/python3.9/site-packages:$PYTHONPATH
 source ~/nobackup/${ENV_NAME}/bin/activate
-export PYTHONPATH=$PWD/src:$PYTHONPATH
+export PYTHONPATH=$PWD:$PYTHONPATH
 
 export PATH=$(remove_duplicates "$PATH")
 export PYTHONPATH=$(remove_duplicates "$PYTHONPATH")

@@ -1,5 +1,5 @@
-from analysis.spawndask import JobLoader, pjoin, rs
-import os, shutil
+from src.analysis.spawndask import JobLoader, pjoin, rs
+import os
 
 cwd = os.path.dirname(os.path.abspath(__file__))
 

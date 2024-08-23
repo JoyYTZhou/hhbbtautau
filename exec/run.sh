@@ -31,7 +31,7 @@ source ${ENV_NAME}/bin/activate
 
 export PYTHONPATH=$VIRTUAL_ENV/lib/python3.9/site-packages:$PYTHONPATH
 export MPLCONFIGDIR=matplotlibconfig
-export PYTHONPATH=$PWD/src:$PYTHONPATH
+export PYTHONPATH=$PWD:$PYTHONPATH
 export PATH=$(remove_duplicates "$PATH")
 export PYTHONPATH=$(remove_duplicates "$PYTHONPATH")
 
