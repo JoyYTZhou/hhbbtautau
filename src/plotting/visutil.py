@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from utils.datautil import arr_handler, iterwgt
-from analysis.objutil import Object
+from src.analysis.objutil import Object
 from utils.filesysutil import checkpath, glob_files, pjoin
 from utils.cutflowutil import load_csvs
 from utils.datautil import haddWeights

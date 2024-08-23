@@ -2,7 +2,7 @@ import uproot, json, random, subprocess
 import awkward as ak
 import pandas as pd
 
-from analysis.objutil import Object
+from src.analysis.objutil import Object
 from config.selectionconfig import cleansetting as cleancfg
 from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, pjoin
 from utils.cutflowutil import combine_cf, calc_eff, load_csvs
