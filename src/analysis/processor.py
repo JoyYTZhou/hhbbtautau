@@ -46,7 +46,6 @@ class Processor:
     """Process individual file or filesets given strings/dicts belonging to one dataset."""
     def __init__(self, rt_cfg, dataset, transferP, evtselclass=BaseEventSelections, **kwargs):
         self._rtcfg = rt_cfg
-        self.treename = self.rtcfg.get('TREE_NAME', 'Events')
         self.dataset = dataset
         self.evtsel_kwargs = kwargs
         self.evtselclass = evtselclass
@@ -66,51 +65,36 @@ class Processor:
         if self.rtcfg.COPY_LOCAL: 
             self.copydir = self.rtcfg.get("COPY_DIR", 'temp')
             checkpath(self.copydir, createdir=True)
-        checkpath(self.outdir)
+        checkpath(self.outdir) 
     
-    def loadfile(self, filename: str, suffix: int, dask_args: dict) -> tuple[ak.Array, bool]:
-        """This is a wrapper function around uproot._dask. 
-        I am writing this doc to humiliate myself in the future.
-        
-        Parameters 
-        - `force_copy`: override other settings and force copy to local. Be careful with this setting!
-        """
-        allow_copy = self.rtcfg.get("COPY_LOCAL", False)
-        copied = False
-
-        if allow_copy:
-            destpath = pjoin(self.copydir, f"{self.dataset}_{suffix}.root")
-            cpfcondor(filename, destpath)
-            copied = True
-            filename = destpath
-
-        dask_args["files"] = {filename: self.treename}
+    def loadfile_remote(self, fileargs: dict) -> tuple[ak.Array, bool]:
+        """This is a wrapper function around uproot._dask."""
         if self.rtcfg.get("DELAYED_OPEN", True):
-            events = uproot.dask(**dask_args)
+            events = uproot.dask(**fileargs)
         else:
-            events = uproot.open(dask_args['files']).arrays()
+            events = uproot.open(fileargs['files']).arrays()
             print("Not delayed!")
 
-        return events, copied
+        return events
     
-    def runbatch(self, files, dask_args: dict, indxlst:list=None, **kwargs):
+    def runbatch(self, preprocessed: dict, indxlst:list=None, **kwargs):
         """Run selections on a batch of files.
         
         Parameters:
         indxlst: list of indices to run on. If None, run on all files."""
         failed = 0 
         if indxlst is None:
-            print(f"Expected to see {len(files)} number of outputs")
-            for i, file in enumerate(files):
-                failed += self.runfile(file, i, dask_args) 
+            print(f"Expected to see {len(preprocessed)} number of outputs")
+            for i, filename in enumerate(preprocessed):
+                failed += self.runfile({fileargs: preprocessed[filename]}, i)
         else:
             print(f"Starting with file number {indxlst[0]}............")
             print(f"Expected to see {len(indxlst)} number of outputs")
             for indx in indxlst:
-                failed += self.runfile(files[indx], indx, dask_args, **kwargs)
+                failed += self.runfile(preprocessed[indx], indx, dask_args, **kwargs)
         return failed
 
-    def runfile(self, filename: str, suffix: int, dask_args: dict, write_npz=False):
+    def runfile(self, fileargs: dict, write_npz=False):
         """Run test selections on a single file dict.
 
         Parameters:
@@ -120,8 +104,9 @@ class Processor:
         - messages for debugging
         """
         try:
+            suffix = fileargs['files']['uuid']
             self.evtsel = self.evtselclass(**self.evtsel_kwargs)
-            events, copied = self.loadfile(filename, suffix, dask_args)
+            events = self.loadfile_remote(fileargs)
             rc = 0
             if events is None: 
                 print("Events are not loaded!")
@@ -132,8 +117,6 @@ class Processor:
                 rc += self.writeCF(suffix, write_npz=write_npz)
                 rc += self.writeevts(events, suffix)
                         
-                if copied:
-                    delfiles(self.copydir)
             del events
         except Exception as e:
             print(f"Error encountered for file index {suffix} in {self.dataset}: {e}")
