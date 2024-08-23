@@ -5,7 +5,7 @@ import awkward as ak
 
 from config.selectionconfig import selectionsettings as selcfg
 from config.selectionconfig import namemap
-from utils.cutflowutil import weightedSelection
+from src.utils.cutflowutil import weightedSelection
 from src.analysis.objutil import Object
 
 default_trigsel = selcfg.triggerselections

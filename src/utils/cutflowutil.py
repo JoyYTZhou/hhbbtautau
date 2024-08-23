@@ -2,12 +2,12 @@ import os, subprocess
 import numpy as np
 import pandas as pd
 import awkward as ak
-from coffea.src.analysis_tools import PackedSelection, Cutflow
+from coffea.analysis_tools import PackedSelection, Cutflow
 import coffea.util
 import dask_awkward, dask
 from collections import namedtuple
 
-from utils.filesysutil import glob_files 
+from src.utils.filesysutil import glob_files 
 pjoin = os.path.join
 runcom = subprocess.run
 
