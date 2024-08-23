@@ -5,7 +5,7 @@ import operator as opr
 import dask_awkward as dak
 import awkward as ak
 
-from utils.datautil import arr_handler
+from src.utils.datautil import arr_handler
 from config.selectionconfig import selectionsettings as selcfg
 from config.selectionconfig import namemap
 

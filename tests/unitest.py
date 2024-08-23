@@ -1,5 +1,5 @@
 import unittest
-from src.config.selectionconfig import runsetting as rs
+from config.selectionconfig import runsetting as rs
 from src.analysis.custom import switch_selections
 from src.analysis.processor import Processor
 
@@ -7,7 +7,7 @@ class TestProcessor(unittest.TestCase):
     def setup(self):
         selname = rs.SEL_NAME
         eventSelection = switch_selections(selname)
-        self.processor = Processor(rs, 'TTto2L2N', eventSelection)
+        self.proc = Processor(rs, 'TTto2L2N', eventSelection)
         
     def test_proc_load_remote(self):
         """Run the processor for skimming single file"""
@@ -105,7 +105,6 @@ class TestProcessor(unittest.TestCase):
 
         self.assertIsNotNone(result)
     
-
 if __name__ == '__main__':
     unittest.main()
 
