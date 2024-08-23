@@ -1,10 +1,10 @@
-import unitest
+import unittest
 from src.config.selectionconfig import runsetting as rs
 from src.analysis.custom import switch_selections
 from src.analysis.processor import Processor
 
 
-class TestProcessor(unitest.TestCase):
+class TestProcessor(unittest.TestCase):
     def setup(self):
         selname = rs.SEL_NAME
         eventSelection = switch_selections(selname)
@@ -108,5 +108,5 @@ class TestProcessor(unitest.TestCase):
     
 
 if __name__ == '__main__':
-    unitest.main()
+    unittest.main()
 
