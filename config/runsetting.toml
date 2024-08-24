@@ -10,8 +10,7 @@ JOB_DIRNAME = 'preseljson'
 [SKIM]
 SEL_NAME = 'vetoskim'
 DATA_PATH = "data/preprocessed"
-INPUTFILE_PATH = "@format data/preprocessed/{this.PROCESS_NAME}.json.gz"
-OUTPUTDIR_PATH = "@format outputs/{this.PROCESS_NAME}"
+OUTPUTDIR_PATH = "outputs"
 COPY_LOCAL = false
 JOB_DIRNAME = 'skimjson'
 
