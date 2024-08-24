@@ -4,7 +4,7 @@ from src.analysis.custom import switch_selections
 from src.analysis.processor import Processor
 
 class TestProcessor(unittest.TestCase):
-    def setup(self):
+    def setUp(self):
         selname = rs.SEL_NAME
         eventSelection = switch_selections(selname)
         self.proc = Processor(rs, 'TTto2L2N', eventSelection)
