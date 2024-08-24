@@ -44,13 +44,14 @@ def getTransfer(rtcfg) -> str:
 
 class Processor:
     """Process individual file or filesets given strings/dicts belonging to one dataset."""
-    def __init__(self, rt_cfg, dataset, transferP, evtselclass=BaseEventSelections, **kwargs):
+    def __init__(self, rt_cfg, dataset, transferP=None, evtselclass=BaseEventSelections, **kwargs):
         self._rtcfg = rt_cfg
         self.dataset = dataset
         self.evtsel_kwargs = kwargs
         self.evtselclass = evtselclass
         self.transfer = transferP
-        if self.transfer: checkcondorpath(self.transfer)
+        if self.transfer is not None: 
+            checkcondorpath(self.transfer)
         self.initdir()
 
     @property

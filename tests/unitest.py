@@ -1,13 +1,16 @@
-import unittest
-from config.selectionconfig import runsetting as rs
-from src.analysis.custom import switch_selections
-from src.analysis.processor import Processor
+import unittest, os
 
 class TestProcessor(unittest.TestCase):
-    def setup(self):
+    def setUp(self):
+        os.environ['PROCESS_NAME'] = 'TTto2L2N'
+
+        from config.selectionconfig import runsetting as rs
+        from src.analysis.processor import Processor
+        from src.analysis.custom import switch_selections
+
         selname = rs.SEL_NAME
         eventSelection = switch_selections(selname)
-        self.proc = Processor(rs, 'TTto2L2N', eventSelection)
+        self.proc = Processor(rs, 'TTto2L2N', transferP=None, evtselclass=eventSelection)
         
     def test_proc_load_remote(self):
         """Run the processor for skimming single file"""
