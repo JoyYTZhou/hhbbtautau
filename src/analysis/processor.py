@@ -63,31 +63,30 @@ class Processor:
         
         - `fileargs`: {"files": {filename: fileinfo}}"""
         if self.rtcfg.get("DELAYED_OPEN", True):
-            events = uproot.dask(fileargs)
+            events = uproot.dask(**fileargs)
         else:
             events = uproot.open(fileargs['files']).arrays()
             print("Not delayed!")
 
         return events
 
-    def runfiles(self, fileargs: dict, write_npz=False):
+    def runfiles(self, write_npz=False):
         """Run test selections on file dictionaries.
 
         Parameters
-        - fileargs: dictionary containing file information
-        {"file1.root": {"steps": [...], "uuid": ...}, "file2.root": {"steps": [...], "uuid": ...}}
         - write_npz: if write cutflow out
         
         Returns
         - number of failed files
         """
-        print(f"Expected to see {len(fileargs)} number of outputs")
+        print(f"Expected to see {len(self.dsdict)} number of outputs")
         rc = 0
-        for filename, fileinfo in fileargs.items():
+        for filename, fileinfo in self.dsdict["files"].items():
+            print(filename)
             try:
                 suffix = fileinfo['uuid']
                 self.evtsel = self.evtselclass(**self.evtsel_kwargs)
-                events = self.loadfile_remote({"files": {filename: fileinfo}})
+                events = self.loadfile_remote(fileargs={"files": {filename: fileinfo}})
                 if events is not None: 
                     events = self.evtsel(events)
                     self.writeCF(suffix, write_npz=write_npz)
