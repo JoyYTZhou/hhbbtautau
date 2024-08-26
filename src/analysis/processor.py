@@ -81,14 +81,14 @@ class Processor:
     def runfile(self, fileargs: dict, write_npz=False):
         """Run test selections on a single file dict.
 
-        Parameters:
+        Parameters
         - write_npz: if write cutflow out
         
-        Returns:
+        Returns
         - messages for debugging
         """
         try:
-            suffix = fileargs['files']['uuid']
+            suffix = next(iter(fileargs['files'].items()))['uuid']
             self.evtsel = self.evtselclass(**self.evtsel_kwargs)
             events = self.loadfile_remote(fileargs)
             rc = 0
