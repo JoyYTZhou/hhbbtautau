@@ -11,10 +11,8 @@ class TestProcessor(unittest.TestCase):
         selname = rs.SEL_NAME
         eventSelection = switch_selections(selname)
         self.proc = Processor(rs, 'TTto2L2N', transferP=None, evtselclass=eventSelection)
-        
-    def test_proc_load_remote(self):
-        """Run the processor for skimming single file"""
-        preprocessed = {
+
+        self.preprocessed = {
             "files": {
                 "root://cmsdcadisk.fnal.gov:1094//dcache/uscmsdisk/store/mc/Run3Summer22EENanoAODv12/TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2520000/07a6b4e8-a99d-4cd4-8ab0-9a51635f6a6f.root": {
                     "object_path": "Events",
@@ -103,10 +101,26 @@ class TestProcessor(unittest.TestCase):
                 "shortname": "TTto2L2N"
             }
         }
-        result = self.proc.loadfile_remote(preprocessed)
-        print(result)
+        
+        self.loaded = None
+        
+    def test_proc_load_remote(self):
+        """Run the processor for skimming single file"""
+        
+        result = self.proc.loadfile_remote(self.preprocessed)
 
         self.assertIsNotNone(result)
+        self.assertTrue(hasattr(result, 'fields'), "Events do not have fields attribute")
+
+        self.loaded = result
+    
+    def test_proc_run_file(self): 
+        self.assertIsNotNone(self.loaded, "Events are not loaded!")
+
+        result = self.proc.runfile(self.preprocessed, write_npz=False)
+
+        self.assertEqual(result, 1, "Error encountered for file index in TTto2L2N")
+        
     
 if __name__ == '__main__':
     unittest.main()
