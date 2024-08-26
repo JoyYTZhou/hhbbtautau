@@ -88,7 +88,7 @@ class Processor:
         - messages for debugging
         """
         try:
-            suffix = next(iter(fileargs['files'].items()))['uuid']
+            suffix = next(iter(fileargs['files'].items()))[1]['uuid']
             self.evtsel = self.evtselclass(**self.evtsel_kwargs)
             events = self.loadfile_remote(fileargs)
             rc = 0
@@ -118,10 +118,8 @@ class Processor:
         cutflow_df.to_csv(localpath)
         print("Cutflow written to local!")
         if self.transfer:
-            if os.path.exists(localpath):
-                condorpath = f'{self.transfer}/{cutflow_name}'
-                cpcondor(localpath, condorpath)
-                os.remove(localpath)
+            condorpath = f'{self.transfer}/{cutflow_name}'
+            cpcondor(localpath, condorpath, remove=True)
         return 0
     
     def writeevts(self, passed, suffix, **kwargs) -> int:
