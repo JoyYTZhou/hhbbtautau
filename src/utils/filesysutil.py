@@ -36,7 +36,7 @@ def checkpath(dirname, createdir=True, raiseError=False):
 def transferfiles(srcpath, destpath, filepattern, remove=False) -> None:
     """Transfer files between local and condor system. Will check if destpath exist.
     
-    Parameters:
+    Parameters
     - `srcpath`: source path (local/remote)
     - `destpath`: destination path (remote/local)
     - `remove`: mv/cp. Only supported when moving from local to remote
