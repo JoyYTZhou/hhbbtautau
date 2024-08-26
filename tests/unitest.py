@@ -111,6 +111,7 @@ class TestProcessor(unittest.TestCase):
         self.assertTrue(hasattr(result, 'fields'), "Events do not have fields attribute")
 
         self.loaded = result
+        self.assertIsNotNone(self.loaded, "Events are not loaded!")
     
     def test_proc_run_file(self): 
         self.assertIsNotNone(self.loaded, "Events are not loaded!")
@@ -124,7 +125,6 @@ class TestProcessor(unittest.TestCase):
         self.assertTrue(len(matched) > 0, f"No root output files found in {expected}")
 
         self.assertEqual(result, 1, "Error encountered for file index in TTto2L2N")
-
         
     
 if __name__ == '__main__':
