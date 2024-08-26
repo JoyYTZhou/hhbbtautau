@@ -104,7 +104,6 @@ class TestProcessor(unittest.TestCase):
             }
         }
         result = self.proc.loadfile_remote(preprocessed)
-        print(result)
 
         self.assertIsNotNone(result)
     
