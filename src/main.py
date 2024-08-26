@@ -12,7 +12,6 @@ def runselections():
 
     parser = argparse.ArgumentParser(description='Event selection options')
     parser.add_argument('--input', type=str, help='input file path', default=None)
-    parser.add_argument('--invert', action='store_true', default=False, help='Duplicate file processing!')
     parser.add_argument('--diagnose', action='store_true', default=False, help='Enable memory diagnose')
     args = parser.parse_args()
     

@@ -1,5 +1,7 @@
 import unittest, os, glob
+
 from src.analysis.processor import Processor
+from src.analysis.spawnjobs import JobLoader
 from config.selectionconfig import runsetting as rs
 from src.analysis.custom import switch_selections
 
@@ -120,7 +122,7 @@ class TestProcessor(unittest.TestCase):
 
         self.assertEqual(result, 1, "Error encountered for file index in TTto2L2N")
     
-class TestRunner(unittest.TestCase):
+class TestLoader(unittest.TestCase):
     pass
     
 if __name__ == '__main__':
