@@ -4,8 +4,9 @@ from config.selectionconfig import runsetting as rs
 from src.analysis.custom import switch_selections
 
 class TestProcessor(unittest.TestCase):
-    def setUp(self):
-        self.preprocessed = {
+    @classmethod
+    def setUp(cls):
+        cls.preprocessed = {
             "files": {
                 "root://cmsdcadisk.fnal.gov:1094//dcache/uscmsdisk/store/mc/Run3Summer22EENanoAODv12/TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2520000/07a6b4e8-a99d-4cd4-8ab0-9a51635f6a6f.root": {
                     "object_path": "Events",
@@ -95,8 +96,8 @@ class TestProcessor(unittest.TestCase):
             }
         }
         eventSelection = switch_selections(rs.SEL_NAME)
-        self.proc = Processor(rs, 'TTto2L2N', transferP=None, evtselclass=eventSelection)
-        self.loaded = None
+        cls.proc = Processor(rs, 'TTto2L2N', transferP=None, evtselclass=eventSelection)
+        cls.loaded = None
 
     def test_dir_init(self):
         expected = self.proc.outdir
@@ -124,9 +125,14 @@ class TestProcessor(unittest.TestCase):
         self.assertTrue(len(matched) > 0, f"No root output files found in {expected}")
 
         self.assertEqual(result, 1, "Error encountered for file index in TTto2L2N")
-
-        
     
 if __name__ == '__main__':
-    unittest.main()
+    suite = unittest.TestSuite()
+    suite.addTest(TestProcessor('test_dir_init'))
+    suite.addTest(TestProcessor('test_proc_load_remote'))
+    suite.addTest(TestProcessor('test_proc_run_file'))
+
+    # Run the TestSuite
+    runner = unittest.TextTestRunner()
+    runner.run(suite)
 
