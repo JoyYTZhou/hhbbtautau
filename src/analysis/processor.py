@@ -27,9 +27,16 @@ def inittransfer(selname, processname) -> str:
 
 class Processor:
     """Process individual file or filesets given strings/dicts belonging to one dataset."""
-    def __init__(self, rt_cfg, dataset, transferP=None, evtselclass=BaseEventSelections, **kwargs):
+    def __init__(self, rt_cfg, dsdict, transferP=None, evtselclass=BaseEventSelections, **kwargs):
+        """
+        Parameters
+        - `ds_dict`: Example dictionary should look like this,
+        {"files": {"file1.root": {"steps": [...], "uuid": ...}}, 
+         "metadata": {"xsection": 96.978, "shortname": "TTto2L2N"}}
+        """
         self._rtcfg = rt_cfg
-        self.dataset = dataset
+        self.dsdict = dsdict
+        self.dataset = dsdict['metadata']['shortname']
         self.evtsel_kwargs = kwargs
         self.evtselclass = evtselclass
         self.transfer = transferP
@@ -52,59 +59,45 @@ class Processor:
         checkpath(self.outdir) 
     
     def loadfile_remote(self, fileargs: dict) -> tuple[ak.Array, bool]:
-        """This is a wrapper function around uproot._dask."""
+        """This is a wrapper function around uproot._dask.
+        
+        - `fileargs`: {"files": {filename: fileinfo}}"""
         if self.rtcfg.get("DELAYED_OPEN", True):
-            events = uproot.dask(**fileargs)
+            events = uproot.dask(fileargs)
         else:
             events = uproot.open(fileargs['files']).arrays()
             print("Not delayed!")
 
         return events
-    
-    def runbatch(self, preprocessed: dict, indxlst:list=None, **kwargs):
-        """Run selections on a batch of files.
-        
-        Parameters:
-        indxlst: list of indices to run on. If None, run on all files."""
-        failed = 0 
-        if indxlst is None:
-            print(f"Expected to see {len(preprocessed)} number of outputs")
-            for i, filename in enumerate(preprocessed):
-                failed += self.runfile({fileargs: preprocessed[filename]}, i)
-        else:
-            print(f"Starting with file number {indxlst[0]}............")
-            print(f"Expected to see {len(indxlst)} number of outputs")
-            for indx in indxlst:
-                failed += self.runfile(preprocessed[indx], indx, dask_args, **kwargs)
-        return failed
 
-    def runfile(self, fileargs: dict, write_npz=False):
-        """Run test selections on a single file dict.
+    def runfiles(self, fileargs: dict, write_npz=False):
+        """Run test selections on file dictionaries.
 
         Parameters
+        - fileargs: dictionary containing file information
+        {"file1.root": {"steps": [...], "uuid": ...}, "file2.root": {"steps": [...], "uuid": ...}}
         - write_npz: if write cutflow out
         
         Returns
-        - messages for debugging
+        - number of failed files
         """
-        try:
-            suffix = next(iter(fileargs['files'].items()))[1]['uuid']
-            self.evtsel = self.evtselclass(**self.evtsel_kwargs)
-            events = self.loadfile_remote(fileargs)
-            rc = 0
-            if events is None: 
-                print("Events are not loaded!")
-                rc = 1
-            else:
-                events = self.evtsel(events)
-
-                rc += self.writeCF(suffix, write_npz=write_npz)
-                rc += self.writeevts(events, suffix)
-                        
-            del events
-        except Exception as e:
-            print(f"Error encountered for file index {suffix} in {self.dataset}: {e}")
-            rc = 1
+        print(f"Expected to see {len(fileargs)} number of outputs")
+        rc = 0
+        for filename, fileinfo in fileargs.items():
+            try:
+                suffix = fileinfo['uuid']
+                self.evtsel = self.evtselclass(**self.evtsel_kwargs)
+                events = self.loadfile_remote({"files": {filename: fileinfo}})
+                if events is not None: 
+                    events = self.evtsel(events)
+                    self.writeCF(suffix, write_npz=write_npz)
+                    self.writeevts(events, suffix)
+                else:
+                    rc += 1
+                del events
+            except Exception as e:
+                print(f"Error encountered for file index {suffix} in {self.dataset}: {e}")
+                rc += 1
         return rc
     
     def writeCF(self, suffix, **kwargs) -> int:
