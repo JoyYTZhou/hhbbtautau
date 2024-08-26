@@ -33,7 +33,7 @@ def checkpath(dirname, createdir=True, raiseError=False):
     else:
         return checklocalpath(dirname, raiseError)
 
-def transferfiles(srcpath, destpath, filepattern, remove=False):
+def transferfiles(srcpath, destpath, filepattern, remove=False) -> None:
     """Transfer files between local and condor system. Will check if destpath exist.
     
     Parameters:

@@ -25,23 +25,6 @@ def inittransfer(selname, processname) -> str:
     else:
         raise EnvironmentError("Export condor base directory properly!")
 
-def getTransfer(rtcfg) -> str:
-    """Get transfer path for condor jobs
-
-    Parameters
-    - `rtcfg`: runsetting object"""
-    if rtcfg.get('TRANSFER', True): 
-        rtcfg_path = rtcfg.get('TRANSFER_PATH', '')
-        if rtcfg_path:
-            transfer = rtcfg_path
-        else:
-            selname = rtcfg.SEL_NAME
-            processname = rtcfg.PROCESS_NAME
-            transfer = inittransfer(selname, processname)
-        return transfer
-    else:
-        return ''
-
 class Processor:
     """Process individual file or filesets given strings/dicts belonging to one dataset."""
     def __init__(self, rt_cfg, dataset, transferP=None, evtselclass=BaseEventSelections, **kwargs):
