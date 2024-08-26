@@ -1,11 +1,10 @@
 from dask.distributed import Client, LocalCluster
 from dask.distributed import as_completed
 import json as json
-import gzip
-import traceback, os, uproot
+import gzip, glob, traceback, os, uproot
 
 from .custom import switch_selections
-from .processor import Processor, getTransfer
+from .processor import Processor
 from utils.filesysutil import glob_files, check_missing, checkpath, pjoin
 from config.selectionconfig import runsetting as rs
 from config.selectionconfig import dasksetting as daskcfg
@@ -18,7 +17,7 @@ datapath = pjoin(parent_directory, 'data', 'availableQuery.json')
 with open(datapath, 'r') as data:
     realmeta = json.load(data)
 
-transferP = getTransfer(rs)
+transferP = rs.get("TRANSFER_PATH", None)
 
 def div_list(original_list, chunk_size):
     """Divide a list into smaller lists of given size."""
@@ -149,35 +148,36 @@ class JobRunner:
 
 class JobLoader():
     def __init__(self, jobpath) -> None:
-        self.inpath = rs.INPUTFILE_PATH
+        self.inpath = "data/preprocessed"
+        checkpath(self.inpath, createdir=False, raiseError=True)
         self.tsferP = transferP
         self.jobpath = jobpath
         checkpath(jobpath)
 
     def writejobs(self) -> None:
         """Write job parameters to json file"""
-        if self.inpath.endswith('.json.gz'):
-            self.skimjobs()
-        elif self.inpath.startswith('/store/user/'):
-            loaded = realmeta[rs.PROCESS_NAME]
-            for dataset in list(loaded.keys()):
-                inputfiles = glob_files(self.inpath, filepattern=f'{dataset}*.root')
-                if inputfiles: loaded[dataset]['filelist'] = inputfiles
-                else: del loaded[dataset]
-            loaded = filterExisting(loaded, '_output*.csv', self.tsferP)
-            if loaded: 
-                with open(pjoin(self.jobpath, f'{rs.PROCESS_NAME}_job.json'), 'w') as fp:
-                    json.dump(loaded, fp)
-            else: print("All the input files have been processed!")
-        else:
-            raise TypeError("Check INPUTFILE_PATH in runsetting.toml. It's not of a valid format!")
+        datafile = glob.glob(pjoin(self.inpath, '*.json.gz'))
+        for file in datafile:
+            self.prepjobs(file)
+            # elif self.inpath.startswith('/store/user/'):
+            #     loaded = realmeta[rs.PROCESS_NAME]
+            #     for dataset in list(loaded.keys()):
+            #         inputfiles = glob_files(self.inpath, filepattern=f'{dataset}*.root')
+            #         if inputfiles: loaded[dataset]['filelist'] = inputfiles
+            #         else: del loaded[dataset]
+            #     loaded = filterExisting(loaded, '_output*.csv', self.tsferP)
+            #     if loaded: 
+            #         with open(pjoin(self.jobpath, f'{rs.PROCESS_NAME}_job.json'), 'w') as fp:
+            #             json.dump(loaded, fp)
+            #     else: print("All the input files have been processed!")
+            # else:
+            #     raise TypeError("Check INPUTFILE_PATH in runsetting.toml. It's not of a valid format!")
         
-    def skimjobs(self, batch_size=15) -> None:
-        inputdatap = pjoin(parent_directory, self.inpath)
+    def prepjobs(self, inputdatap) -> None:
         with gzip.open(inputdatap, 'rt') as samplepath:
             loaded = json.load(samplepath)
         for ds, dsdata in loaded.items():
-            print(f"Preparing skim job files for {ds}...")
+            print(f"Preparing job files for {ds}...")
             need_process = filterExisting(dsdata, tsferP=self.tsferP)
             if need_process:
                 resumeindx = dsdata.get('resumeindx', [j for j in range(len(dsdata["files"]))])
