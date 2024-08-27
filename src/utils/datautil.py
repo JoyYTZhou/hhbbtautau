@@ -17,7 +17,7 @@ def iterwgt(func):
                 func(instance, process, ds, *args, **kwargs)
     return wrapper
 
-def haddWeights(grepdir) -> dict:
+def getXSec(queryjson) -> dict:
     """Function for self use only, grep weights from a list of json files formatted in a specific way.
     
     Parameters
