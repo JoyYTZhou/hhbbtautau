@@ -14,7 +14,7 @@ OUTTYPE = 'csv'
 
 [LOCAL]
 SELNAME = 'prelim_onelooseb'
-DATAPATH = "@format {env[HHBBTT]}/data/preprocessed"
+DATAPATH = "@format {env[HHBBTT]}/data"
 INPUTDIR = "@format {env[DATA_DIR]}/{this.SELNAME}/datasource"
 LOCALOUTPUT = "@format {env[DATA_DIR]}/{this.SELNAME}"
 DATASETS = ['DYJets', 'TTbar', 'SingleH', 'WW', 'WWW', 'WZ', 'ZH', 'ggF', 'ZZ', 'QCD']
