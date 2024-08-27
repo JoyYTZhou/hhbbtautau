@@ -1,18 +1,17 @@
-import uproot, json, random, subprocess
+import uproot, json, random, subprocess, gzip
 import awkward as ak
 import pandas as pd
 
 from src.analysis.objutil import Object
 from config.selectionconfig import cleansetting as cleancfg
-from utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, pjoin
-from utils.cutflowutil import combine_cf, calc_eff, load_csvs
-from utils.datautil import haddWeights
+from src.utils.filesysutil import transferfiles, glob_files, checkpath, delfiles, pjoin
+from src.utils.cutflowutil import combine_cf, calc_eff, load_csvs
 
 indir = cleancfg.INPUTDIR
 localout = cleancfg.LOCALOUTPUT
 lumi = cleancfg.LUMI * 1000
 resolve = cleancfg.get("RESOLVE", False)
-wgt_dict = haddWeights(cleancfg.DATAPATH)
+
 condorpath = cleancfg.get("CONDORPATH", f'{indir}_hadded')
 
 def iterprocess(endpattern):
@@ -22,12 +21,12 @@ def iterprocess(endpattern):
         def wrapper(*args, **kwargs):
             for process in cleancfg.DATASETS:
                 dtdir = pjoin(indir, process)
-                checkpath(dtdir, createdir=False)
+                checkpath(dtdir, createdir=False, raiseError=True)
                 outdir = pjoin(localout, process)
-                checkpath(outdir, createdir=True)
+                checkpath(outdir, createdir=True, raiseError=False)
                 print(f"Processing {process} files ..................................................")
                 condorpath = cleancfg.CONDORPATH if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
-                with open(pjoin(cleancfg.DATAPATH, f"{process}.json"), 'r') as jsonfile:
+                with gzip.open(pjoin(cleancfg.DATAPATH, f"{process}.json.gz"), 'r') as jsonfile:
                     meta = json.load(jsonfile)
                 startpattern = func(process, meta, dtdir, outdir, *args, **kwargs)
                 transferfiles(outdir, condorpath, filepattern=f'*{endpattern}')
@@ -38,54 +37,47 @@ def iterprocess(endpattern):
 class PostProcessor():
     """Class for loading and hadding data from skims/predefined selections produced directly by Processor."""
     def __init__(self) -> None:
-        pass
+        with open(pjoin(cleancfg.DATAPATH, 'availableQuery.json'), 'r') as f:
+            self.meta_dict = json.load(f)
 
-    def __call__(self, output_type=cleancfg.OUTTYPE):
+    def __call__(self, output_type=cleancfg.OUTTYPE, inputdir=condorpath):
         PostProcessor.hadd_cfs()
-        if output_type == 'root': PostProcessor.hadd_roots()
+        if output_type == 'root': 
+            PostProcessor.hadd_roots()
+            self.meta_dict = PostProcessor.calc_wgt(inputdir, self.meta_dict)
         elif output_type == 'csv': PostProcessor.hadd_csvouts()
         else: raise TypeError("Invalid output type. Please choose either 'root' or 'csv'.")
 
     @staticmethod
     @iterprocess('.root')
     def hadd_roots(process, meta, dtdir, outdir) -> str:
-        """Hadd root files of datasets into appropriate size based on settings."""
-        for ds in meta.keys():
-            root_files = glob_files(dtdir, f'{ds}*.root', add_prefix=True)
+        """Hadd root files of datasets into appropriate size based on settings.
+        Might be eliminated depending on dask.write update."""
+        for _, dsitem in meta.items():
+            dsname = dsitem['metadata']['shortname']
+            root_files = glob_files(dtdir, f'{dsname}*.root', add_prefix=True)
             batch_size = 200
             for i in range(0, len(root_files), batch_size):
                 batch_files = root_files[i:i+batch_size]
-                outname = pjoin(outdir, f"{ds}_{i//batch_size+1}.root") 
+                outname = pjoin(outdir, f"{dsname}_{i//batch_size+1}.root") 
                 try:
                     call_hadd(outname, batch_files)
                 except Exception as e:
                     print(f"Hadding encountered error {e}")
                     print(batch_files)
-                    # for file_path in batch_files: 
-                    #     check_corrupt(file_path)
         return ''
-    
-    @staticmethod
-    @iterprocess('.root')
-    def check_roots(process, meta, dtdir, outdir):
-        """Hadd root files of datasets into appropriate size based on settings.
-        """
-        for ds in meta.keys():
-            root_files = glob_files(dtdir, f'{ds}*.root', add_prefix=True)
-            for file_path in root_files:
-                pass
-                # check_corrupt(file_path)
 
     @staticmethod
     @iterprocess('.csv')
     def hadd_csvouts(process, meta, dtdir, outdir) -> None:
         concat = lambda dfs: pd.concat(dfs, axis=0)
-        for ds in meta.keys():
+        for _, dsitems in meta.keys():
             try:
-                df = load_csvs(dtdir, f'{ds}_output', func=concat)
-                df.to_csv(pjoin(outdir, f"{ds}_out.csv"))
+                dsname = dsitems['metadata']['shortname']
+                df = load_csvs(dtdir, f'{dsname}_output', func=concat)
+                df.to_csv(pjoin(outdir, f"{dsname}_out.csv"))
             except Exception as e:
-                print(f"Error loading csv files for {ds}: {e}")
+                print(f"Error loading csv files for {dsname}: {e}")
         return ''
         
     @staticmethod
@@ -98,13 +90,14 @@ class PostProcessor():
         - `process`: Process
         - `meta`: metadata for the process"""
         dflist = []
-        for ds in meta.keys():
-            print(f"Dealing with {ds} now ...............................")
+        for _, dsitems in meta.keys():
+            dsname = dsitems['metadata']['shortname']
+            print(f"Dealing with {dsname} now ...............................")
             try:
-                df = combine_cf(inputdir=dtdir, dsname=ds, output=False)
+                df = combine_cf(inputdir=dtdir, dsname=dsname, output=False)
                 dflist.append(df)
             except Exception as e:
-                print(f"Error combining cutflow tables for {ds}: {e}")
+                print(f"Error combining cutflow tables for {dsname}: {e}")
         pd.concat(dflist, axis=1).to_csv(pjoin(outdir, f"{process}_cf.csv"))
         return f'{process}_cf'
     
@@ -119,8 +112,7 @@ class PostProcessor():
             else:
                 print(f"Discrepancies between cutflow numbers and output number exist for {process}. Please double check selections.")
                 
-    @staticmethod
-    def merge_cf(inputdir=condorpath, outputdir=localout, signals=['ggF', 'ZH', 'ZZ']) -> None:
+    def merge_cf(self, inputdir=condorpath, outputdir=localout, signals=['ggF', 'ZH', 'ZZ']) -> None:
         """Merge all cutflow tables for all processes into one. Save to LOCALOUTPUT.
         Output formatted cutflow table as well.
         
@@ -131,8 +123,7 @@ class PostProcessor():
         resolved_list = []
         wgt_dfdict= {}
         for process in cleancfg.DATASETS:
-            srcdir = pjoin(inputdir, process)
-            resolved, cmbd = PostProcessor.load_cf(process, srcdir) 
+            resolved, cmbd = PostProcessor.load_cf(process, self.meta_dict, inputdir) 
             resolved_list.append(resolved)
             wgt_dfdict[process] = cmbd
         resolved_all = pd.concat(resolved_list, axis=1)
@@ -147,22 +138,37 @@ class PostProcessor():
         yield_df.to_csv(pjoin(outputdir, 'scaledyield.csv'))
     
     @staticmethod
-    def load_cf(process, datasrcpath, luminosity=lumi) -> tuple[pd.DataFrame]:
-        """Load cutflow tables for one process containing datasets to be grouped tgt 
-        and scale it by xs * luminosity
+    def calc_wgt(datasrcpath, meta_dict) -> dict:
+        for process in cleancfg.DATASETS:
+            resolved_df = pd.read_csv(glob_files(pjoin(datasrcpath, process), f'{process}*cf.csv')[0], index_col=0) 
+            for ds, dsitems in meta_dict[process].items():
+                nwgt = resolved_df.filter(like=dsitems['shortname']).filter(like='wgt').iloc[0,0]
+                meta_dict[process][ds]['nwgt'] = nwgt
+                meta_dict[process][ds]['per_evt_wgt'] = meta_dict[process][ds]['xsection'] * lumi / nwgt
+        
+        with open(pjoin(cleancfg.DATAPATH, 'availableQuery.json'), 'w') as f:
+            json.dump(meta_dict, f)
+        
+        return meta_dict
+
+    @staticmethod
+    def load_cf(process, meta_dict, datasrcpath) -> tuple[pd.DataFrame]:
+        """Load cutflow tables for one process containing datasets to be grouped tgt and scale it by xs * luminosity
 
         Parameters
         -`process`: the name of the cutflow that will be grepped from datasrcpath
-        -`datasrcpath`: path to the directory containing cutflow tables.
+        -`datasrcpath`: path to the output directory (base level)
         
         Returns
         - tuple of resolved (per channel) cutflow dataframe and combined cutflow (per process) dataframe"""
-        resolved_cf = pd.read_csv(glob_files(datasrcpath, f'{process}*cf.csv')[0], index_col=0)
-        for ds, perevtwgt in wgt_dict[process].items():
-            sel_cols = resolved_cf.filter(like=ds).filter(like='wgt')
-            resolved_cf[sel_cols.columns] = sel_cols * perevtwgt * luminosity
-            combined_cf = PostProcessor.sum_kwd(resolved_cf, 'wgt', f"{process}_wgt")
-        return resolved_cf, combined_cf
+        resolved_df = pd.read_csv(glob_files(pjoin(datasrcpath, process), f'{process}*cf.csv')[0], index_col=0)
+        for _, dsitems in meta_dict[process].items():
+            dsname = dsitems['shortname']
+            per_evt_wgt = dsitems['per_evt_wgt']
+            sel_cols = resolved_df.filter(like=dsname).filter(like='wgt')
+            resolved_df[sel_cols.columns] = sel_cols * per_evt_wgt
+            combined_cf = PostProcessor.sum_kwd(resolved_df, 'wgt', f"{process}_wgt")
+        return resolved_df, combined_cf
     
     @staticmethod
     def process_yield(yield_df, signals) -> pd.DataFrame:

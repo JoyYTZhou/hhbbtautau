@@ -1,13 +1,17 @@
 from sklearn.model_selection import train_test_split, GridSearchCV
 import pandas as pd
+import numpy as np
 from hep_ml import reweight 
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.utils.class_weight import compute_class_weight
+from matplotlib import pyplot as plt
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 from xgboost import XGBClassifier
+from hep_ml.metrics_utils import ks_2samp_weighted
+
 
 class DataLoader():
     def __init__(self, file_path, target_column):
@@ -135,4 +139,24 @@ def binaryBDTReweighter(X_train, y_train, X_test):
     labels = xgb_clf.predict(X_test)
 
     probabilities = xgb_clf.predict_proba(X_test)
+
+def draw_distributions(original, target, new_original_weights, columns):
+    hist_settings = {'bins': 100, 'density': True, 'alpha': 0.7}
+    plt.figure(figsize=[15, 7])
+    for id, column in enumerate(columns, 1):
+        xlim = np.percentile(np.hstack([target[column]]), [0.01, 99.99])
+        plt.subplot(2, 3, id)
+        plt.hist(original[column], weights=new_original_weights, range=xlim, **hist_settings)
+        plt.hist(target[column], range=xlim, **hist_settings)
+        plt.title(column)
+        print('KS over ', column, ' = ', ks_2samp_weighted(original[column], target[column], 
+                                         weights1=new_original_weights, weights2=np.ones(len(target), dtype=float)))
+
+def GBRweighter(original_train, target_train, original_test, target_test, original_weight, target_weight):
+    reweighter = reweight.GBReweighter(n_estimators=50, learning_rate=0.1, max_depth=3, min_samples_leaf=1000, 
+                                   gb_args={'subsample': 0.4})
+    reweighter.fit(original_train, target_train, original_weight, target_weight)
+
+    gb_weights_test = reweighter.predict_weights(original_test)
+    draw_distributions(original_test, target_test, gb_weights_test)
     
