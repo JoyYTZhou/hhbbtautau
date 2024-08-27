@@ -26,9 +26,7 @@ def iterprocess(endpattern):
                 checkpath(outdir, createdir=True, raiseError=False)
                 print(f"Processing {process} files ..................................................")
                 condorpath = cleancfg.CONDORPATH if cleancfg.get("CONDORPATH", False) else pjoin(f'{indir}_hadded', process)
-                with gzip.open(pjoin(cleancfg.DATAPATH, f"{process}.json.gz"), 'r') as jsonfile:
-                    meta = json.load(jsonfile)
-                startpattern = func(process, meta, dtdir, outdir, *args, **kwargs)
+                startpattern = func(process, dtdir, outdir, *args, **kwargs)
                 transferfiles(outdir, condorpath, filepattern=f'*{endpattern}')
                 delfiles(outdir, pattern=f'{startpattern}*{endpattern}')
         return wrapper
@@ -50,11 +48,11 @@ class PostProcessor():
 
     @staticmethod
     @iterprocess('.root')
-    def hadd_roots(process, meta, dtdir, outdir) -> str:
+    def hadd_roots(process, dtdir, outdir, meta) -> str:
         """Hadd root files of datasets into appropriate size based on settings.
         Might be eliminated depending on dask.write update."""
-        for _, dsitem in meta.items():
-            dsname = dsitem['metadata']['shortname']
+        for _, dsitem in meta[process].items():
+            dsname = dsitem['shortname']
             root_files = glob_files(dtdir, f'{dsname}*.root', add_prefix=True)
             batch_size = 200
             for i in range(0, len(root_files), batch_size):
@@ -69,11 +67,11 @@ class PostProcessor():
 
     @staticmethod
     @iterprocess('.csv')
-    def hadd_csvouts(process, meta, dtdir, outdir) -> None:
+    def hadd_csvouts(process, dtdir, outdir, meta) -> None:
         concat = lambda dfs: pd.concat(dfs, axis=0)
-        for _, dsitems in meta.keys():
+        for _, dsitems in meta[process].keys():
             try:
-                dsname = dsitems['metadata']['shortname']
+                dsname = dsitems['shortname']
                 df = load_csvs(dtdir, f'{dsname}_output', func=concat)
                 df.to_csv(pjoin(outdir, f"{dsname}_out.csv"))
             except Exception as e:
@@ -82,7 +80,7 @@ class PostProcessor():
         
     @staticmethod
     @iterprocess('.csv')
-    def hadd_cfs(process, meta, dtdir, outdir) -> str:
+    def hadd_cfs(process, dtdir, outdir, meta) -> str:
         """Hadd cutflow table output from processor, saved to LOCALOUTPUT. 
         Transfer to prenamed condorpath if needed.
         
@@ -90,8 +88,8 @@ class PostProcessor():
         - `process`: Process
         - `meta`: metadata for the process"""
         dflist = []
-        for _, dsitems in meta.keys():
-            dsname = dsitems['metadata']['shortname']
+        for _, dsitems in meta[process].keys():
+            dsname = dsitems['shortname']
             print(f"Dealing with {dsname} now ...............................")
             try:
                 df = combine_cf(inputdir=dtdir, dsname=dsname, output=False)

@@ -16,25 +16,6 @@ def iterwgt(func):
             for ds in dsinfo.keys():
                 func(instance, process, ds, *args, **kwargs)
     return wrapper
-
-def getXSec(queryjson) -> dict:
-    """Function for self use only, grep weights from a list of json files formatted in a specific way.
-    
-    Parameters
-    - `grepdir`: directory where the json files are located
-    """
-    wgt_dict = {}
-    jsonfiles = glob_files(grepdir)
-    for filename in jsonfiles:
-        ds = os.path.basename(filename).rsplit('.json', 1)[0]
-        with open(filename, 'r') as f:
-            meta = json.load(f)
-            dsdict = {}
-            for dskey, dsval in meta.items():
-                weight = dsval['Per Event']
-                dsdict[dskey] = weight
-            wgt_dict[ds] = dsdict
-    return wgt_dict
     
 def get_compression(**kwargs):
     """Returns the compression algorithm to use for writing root files."""

@@ -3,12 +3,12 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
 import pandas as pd
+import json
 
 from src.utils.datautil import arr_handler, iterwgt
 from src.analysis.objutil import Object
 from src.utils.filesysutil import checkpath, glob_files, pjoin
 from src.utils.cutflowutil import load_csvs
-from src.utils.datautil import haddWeights
 
 from config.selectionconfig import cleansetting as cleancfg
 
@@ -20,9 +20,10 @@ colors = list(mpl.colormaps['Set2'].colors)
 
 class CSVPlotter():
     def __init__(self, outdir):
-        self.wgt_dict = haddWeights(cleancfg.DATAPATH)
+        with open(pjoin(cleancfg.DATAPATH, 'availableQuery.json'), 'r') as f:
+            self.meta_dict = json.load(f)
         self.data_dict = {}
-        self.labels = list(self.wgt_dict.keys())
+        self.labels = list(self.meta_dict.keys())
         self.outdir = outdir
         checkpath(self.outdir)
     
@@ -55,16 +56,17 @@ class CSVPlotter():
             load_dir = pjoin(datasource, process) 
             cf_dict = {}
             cf_df = load_csvs(load_dir, f'{process}_cf')[0]
-            for ds in self.wgt_dict[process].keys():
+            for ds in self.meta_dict[process].keys():
                 rwfac = self.rwgt_fac(process, ds) 
-                df = load_csvs(load_dir, f'{ds}_out', func=add_wgt, rwfac=rwfac)
+                dsname = self.meta_dict[process][ds]['shortname']
+                df = load_csvs(load_dir, f'{dsname}_out', func=add_wgt, rwfac=rwfac)
                 checkpath(f'{new_outdir}/{process}')
                 if df is not None: 
                     list_of_df.append(df)
                     self.addextcf(cf_dict, df, ds, per_evt_wgt)
                 else:
-                    cf_dict[f'{ds}_raw'] = 0
-                    cf_dict[f'{ds}_wgt'] = 0
+                    cf_dict[f'{dsname}_raw'] = 0
+                    cf_dict[f'{dsname}_wgt'] = 0
             cf_df = pd.concat([cf_df, pd.DataFrame(cf_dict, index=[selname])])
             cf_df.to_csv(pjoin(new_outdir, process, f'{process}_{selname.replace(" ", "")}_cf.csv'))
         processed = pd.concat(list_of_df, axis=0).reset_index().drop('index', axis=1)
@@ -88,7 +90,7 @@ class CSVPlotter():
             factor = cleancfg.get('factor', 100)
         else:
             factor = 1 
-        flat_wgt = self.wgt_dict[process][ds] * lumi * 1000 * factor 
+        flat_wgt = self.meta_dict[process][ds]['per_evt_wgt'] * lumi * 1000 * factor 
         return flat_wgt
    
     def get_hist(self, evts: 'pd.DataFrame', att, options, group: 'dict'=None) -> tuple[dict, dict, list[int, int]]:
