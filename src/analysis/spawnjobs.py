@@ -5,7 +5,7 @@ import gzip, glob, traceback, os, uproot
 
 from .custom import switch_selections
 from .processor import Processor
-from utils.filesysutil import glob_files, check_missing, checkpath, pjoin
+from src.utils.filesysutil import glob_files, check_missing, checkpath, pjoin
 from config.selectionconfig import runsetting as rs
 from config.selectionconfig import dasksetting as daskcfg
 
