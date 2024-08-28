@@ -7,7 +7,7 @@ function setup_dirname_local {
     export BASE_DIR=/uscms/home/joyzhou/work/hhbbtautau
     export LIB_DIR=${BASE_DIR}/scripts
     export SRC_DIR=${BASE_DIR}/src
-    export DATA_DIR=${SRC_DIR}/data
+    export DATA_DIR=${BASE_DIR}/data
     export CONDOR_BASE=/store/user/joyzhou
     export OUTPUT_BASE=/uscms/home/joyzhou/nobackup
     echo "Successfully set up environment or $PWD"

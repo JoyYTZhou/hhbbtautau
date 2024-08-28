@@ -39,9 +39,9 @@ class PostProcessor():
             self.meta_dict = json.load(f)
 
     def __call__(self, output_type=cleancfg.OUTTYPE, inputdir=condorpath):
-        PostProcessor.hadd_cfs()
+        PostProcessor.hadd_cfs(self.meta_dict)
         if output_type == 'root': 
-            PostProcessor.hadd_roots()
+            PostProcessor.hadd_roots(self.meta_dict)
             self.meta_dict = PostProcessor.calc_wgt(inputdir, self.meta_dict)
         elif output_type == 'csv': PostProcessor.hadd_csvouts()
         else: raise TypeError("Invalid output type. Please choose either 'root' or 'csv'.")
@@ -88,7 +88,7 @@ class PostProcessor():
         - `process`: Process
         - `meta`: metadata for the process"""
         dflist = []
-        for _, dsitems in meta[process].keys():
+        for _, dsitems in meta[process].items():
             dsname = dsitems['shortname']
             print(f"Dealing with {dsname} now ...............................")
             try:
