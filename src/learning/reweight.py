@@ -14,9 +14,12 @@ from hep_ml.metrics_utils import ks_2samp_weighted
 
 
 class DataLoader():
-    def __init__(self, file_path, target_column):
+    def __init__(self, data:'pd.DataFrame', target_column):
+        """
+        Parameters:
+        `data`: pandas DataFrame containing the data."""
         self.target_column = target_column
-        self.data = pd.read_csv(file_path)
+        self.data = data
         self.X = None
         self.y = None
         self.X_train = None
@@ -25,9 +28,17 @@ class DataLoader():
         self.y_test = None
         self.scaler = StandardScaler()
        
-    def preprocess_data(self, dropped: 'list[str]' = []):
+    def preprocess_data(self, drop_kwd: 'list[str]' = [], keep_kwd: 'list[str]' = []):
         self.y = self.data[self.target_column]
-        self.X = self.data.drop(columns=[self.target_column]+dropped)
+
+        for kwd in keep_kwd:
+            self.data = self.data.filter(like=kwd)
+        
+        for kwd in drop_kwd:
+            self.data.drop(columns=self.data.filter(like=kwd).columns, inplace=True)
+        
+        
+        self.X = self.data.drop(columns=[self.target_column])
         self.X = self.scaler.fit_transform(self.X)
         
     def split_data(self, test_size=0.3, random_state=None):
@@ -141,6 +152,10 @@ def binaryBDTReweighter(X_train, y_train, X_test):
     probabilities = xgb_clf.predict_proba(X_test)
 
 def draw_distributions(original, target, new_original_weights, columns):
+    """Reference: https://github.com/arogozhnikov/hep_ml/blob/master/notebooks/DemoReweighting.ipynb
+    
+    Parameters:
+    -`columns`: List of columns to draw the distributions for."""
     hist_settings = {'bins': 100, 'density': True, 'alpha': 0.7}
     plt.figure(figsize=[15, 7])
     for id, column in enumerate(columns, 1):
@@ -152,11 +167,12 @@ def draw_distributions(original, target, new_original_weights, columns):
         print('KS over ', column, ' = ', ks_2samp_weighted(original[column], target[column], 
                                          weights1=new_original_weights, weights2=np.ones(len(target), dtype=float)))
 
-def GBRweighter(original_train, target_train, original_test, target_test, original_weight, target_weight):
+def XGBweighter(original_train, target_train, original_test, target_test, original_weight, target_weight, draw_cols):
+    """Reference: https://github.com/arogozhnikov/hep_ml/blob/master/notebooks/DemoReweighting.ipynb"""
     reweighter = reweight.GBReweighter(n_estimators=50, learning_rate=0.1, max_depth=3, min_samples_leaf=1000, 
                                    gb_args={'subsample': 0.4})
     reweighter.fit(original_train, target_train, original_weight, target_weight)
 
     gb_weights_test = reweighter.predict_weights(original_test)
-    draw_distributions(original_test, target_test, gb_weights_test)
+    draw_distributions(original_test, target_test, gb_weights_test, draw_cols)
     
