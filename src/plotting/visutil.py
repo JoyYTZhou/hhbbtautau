@@ -63,7 +63,7 @@ class CSVPlotter():
                 checkpath(f'{new_outdir}/{process}')
                 if df is not None: 
                     list_of_df.append(df)
-                    self.addextcf(cf_dict, df, ds, per_evt_wgt)
+                    self.addextcf(cf_dict, df, dsname, per_evt_wgt)
                 else:
                     cf_dict[f'{dsname}_raw'] = 0
                     cf_dict[f'{dsname}_wgt'] = 0
@@ -90,22 +90,40 @@ class CSVPlotter():
             factor = cleancfg.get('factor', 100)
         else:
             factor = 1 
-        flat_wgt = self.meta_dict[process][ds]['per_evt_wgt'] * lumi * 1000 * factor 
+        flat_wgt = self.meta_dict[process][ds]['per_evt_wgt'] * factor 
         return flat_wgt
    
-    def get_hist(self, evts: 'pd.DataFrame', att, options, group: 'dict'=None) -> tuple[dict, dict, list[int, int]]:
-        """Histogram an attribute of the object"""
+    def get_hist(self, evts: 'pd.DataFrame', att, options, group: 'dict'=None) -> tuple[list, list, list[int, int], list, list]:
+        """Histogram an attribute of the object for the given dataframe for groups of datasets. 
+        Return sorted histograms based on the total counts.
+        
+        Parameters
+        - `group`: the group of datasets to be plotted. {groupname: [list of datasets]}
+        
+        Returns
+        - `hist_list`: a sorted list of histograms
+        - `bins`: the bin edges
+        - `bin_range`: the range of the histogram
+        - `pltlabel`: the sorted labels of the datasets
+        - `b_colors`: the colors of the datasets"""
         histopts = options['hist']
         bin_no = histopts.get('bins', 10)
         bin_range = histopts.get('range', (0,200))
         pltlabel = list(group.keys()) if group is not None else self.labels
         hist_list = []
+        total_counts = []
+        b_colors = colors[0:len(pltlabel)]
         for label in pltlabel:
             proc_list = group[label] if group is not None else [label]
             thisdf = evts[evts['process'].isin(proc_list)]
             thishist, bins = ObjectPlotter.hist_overflow(thisdf[att], bin_no, bin_range, thisdf['weight'])
             hist_list.append(thishist)
-        return hist_list, bins, bin_range
+            total_counts.append(np.sum(thishist))
+        sorted_indx = np.argsort(total_counts)[::-1]
+        pltlabel = [pltlabel[i] for i in sorted_indx]
+        hist_list = [hist_list[i] for i in sorted_indx]
+        b_colors = [b_colors[i] for i in sorted_indx]
+        return hist_list, bins, bin_range, pltlabel, b_colors
                 
     def plot_hist(self, evts: 'pd.DataFrame', attridict: 'dict', title='', group: 'dict'=None, save_name=''):
         """Plot the object attribute based on the attribute dictionary.
@@ -115,9 +133,8 @@ class CSVPlotter():
         - `attridict`: a dictionary of attributes to be plotted
         """
         for att, options in dict(attridict).items():
-            hist_list, bins, bin_range = self.get_hist(evts, att, options, group)
+            hist_list, bins, bin_range, pltlabel = self.get_hist(evts, att, options, group)
             pltopts = options['plot']
-            pltlabel = list(group.keys()) if group is not None else self.labels
             ObjectPlotter.plot_var(hist_list, bins, label=pltlabel, xrange=bin_range, title=title, 
                                    save_name=pjoin(self.outdir, f'{att}{save_name}.png'), **pltopts)
     
@@ -130,11 +147,9 @@ class CSVPlotter():
         """
         for att, options in dict(attridict).items():
             pltopts = options['plot']
-            b_hists, bins, range = self.get_hist(evts, att, options, bgroup)
-            blabels = list(bgroup.keys())
-            slabels = list(sgroup.keys())
-            s_hists, bins, range = self.get_hist(evts, att, options, sgroup)
-            ObjectPlotter.plotSigVBkg(s_hists, b_hists, bins, slabels, blabels, range, title=title, save_name=pjoin(self.outdir, f'{att}{save_name}.png'), **pltopts) 
+            b_hists, bins, range, blabels, b_color = self.get_hist(evts, att, options, bgroup)
+            s_hists, bins, range, slabels, _= self.get_hist(evts, att, options, sgroup)
+            ObjectPlotter.plotSigVBkg(s_hists, b_hists, bins, slabels, blabels, range, title=title, save_name=pjoin(self.outdir, f'{att}{save_name}.png'), b_color=b_color, **pltopts) 
         
 class ObjectPlotter():
     def __init__(self):
@@ -201,8 +216,9 @@ class ObjectPlotter():
             bins=bin_edges,
             label=bkg_label,
             ax=ax,
+            color=kwargs.pop('b_color', colors),
             histtype='fill',
-            alpha=0.4,
+            alpha=0.6,
             stack=True,
             linewidth=1)
         ax.set_xlim(*xrange)

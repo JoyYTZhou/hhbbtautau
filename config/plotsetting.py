@@ -49,7 +49,7 @@ tau_gen = {
 dR = {
     "Tau_dR": {
         "hist": {'bins': 20, 'range': [0, 5]},
-        "plot": {'xlabel': r'dR $(\tau)$',
+        "plot": {'xlabel': r'dR $(\tau \tau)$',
                  'alpha': 0.95,
                  'stack': if_stack,
                  'histtype': hist_type}}, 
@@ -64,7 +64,7 @@ dR = {
 H_mass = {
     "Tau_InvM": {
         "hist": {'bins': 30, 'range': [0,300]},
-        "plot": {'xlabel': r'Invariant Mass (2$\tau$) (GeV)',
+        "plot": {'xlabel': r'Visible Mass (2$\tau$) (GeV)',
                  'alpha': 0.95,
                  'stack': if_stack,
                  'histtype': hist_type}},
@@ -94,13 +94,13 @@ bjetbytag_pt = {
 
 bjetbytag_btag = {
     "LDBjetBYtag_btag": {
-        "hist": {'bins': 20, 'range': [0,1]},
+        "hist": {'bins': 40, 'range': [0,1]},
         "plot": {'xlabel': r'Leading Jet B Tag Score',
                  'alpha': 0.95,
                  'stack': if_stack,
                  'histtype': hist_type}},
     "SDBjetBYtag_btag": {
-        "hist": {'bins': 20, 'range': [0,1]},
+        "hist": {'bins': 40, 'range': [0,1]},
         "plot": {'xlabel': r'Subleading Jet B Tag Score',
                  'alpha': 0.95,
                  'stack': if_stack,
@@ -109,13 +109,13 @@ bjetbytag_btag = {
 
 bjetbypt_btag = {
     "LDBjetBYpt_btag": {
-        "hist": {'bins': 20, 'range': [0,1]},
+        "hist": {'bins': 40, 'range': [0,1]},
         "plot": {'xlabel': r'Leading Jet B Tag Score',
                  'alpha': 0.95,
                  'stack': if_stack,
                  'histtype': hist_type}},
     "SDBjetBYpt_btag": {
-        "hist": {'bins': 20, 'range': [0,1]},
+        "hist": {'bins': 40, 'range': [0,1]},
         "plot": {'xlabel': r'Subleading Jet B Tag Score',
                  'alpha': 0.95,
                  'stack': if_stack,

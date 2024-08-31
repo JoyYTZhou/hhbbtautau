@@ -142,7 +142,7 @@ class PostProcessor():
             for ds, dsitems in meta_dict[process].items():
                 nwgt = resolved_df.filter(like=dsitems['shortname']).filter(like='wgt').iloc[0,0]
                 meta_dict[process][ds]['nwgt'] = nwgt
-                meta_dict[process][ds]['per_evt_wgt'] = meta_dict[process][ds]['xsection'] * lumi / nwgt
+                meta_dict[process][ds]['per_evt_wgt'] = meta_dict[process][ds]['xsection'] / nwgt
         
         with open(pjoin(cleancfg.DATAPATH, 'availableQuery.json'), 'w') as f:
             json.dump(meta_dict, f)
