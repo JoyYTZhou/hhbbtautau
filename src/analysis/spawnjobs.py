@@ -147,8 +147,8 @@ class JobRunner:
         return futures
 
 class JobLoader():
-    def __init__(self, jobpath) -> None:
-        self.inpath = "data/preprocessed"
+    def __init__(self, datapath, jobpath) -> None:
+        self.inpath = datapath
         checkpath(self.inpath, createdir=False, raiseError=True)
         self.tsferP = transferP
         self.jobpath = jobpath
@@ -173,7 +173,7 @@ class JobLoader():
             # else:
             #     raise TypeError("Check INPUTFILE_PATH in runsetting.toml. It's not of a valid format!")
         
-    def prepjobs(self, inputdatap) -> None:
+    def prepjobs(self, inputdatap, batch_size=15) -> bool:
         with gzip.open(inputdatap, 'rt') as samplepath:
             loaded = json.load(samplepath)
         for ds, dsdata in loaded.items():
@@ -187,8 +187,10 @@ class JobLoader():
                     dsdata['resumeindx'] = indx_list
                     with open(pjoin(self.jobpath, f'{rs.PROCESS_NAME}_{shortname}_job_{j}.json'), 'w') as fp:
                         json.dump(dsdata, fp)
+                return True
             else:
                 print(f"All the files have been processed for {ds}! No job files are needed!")
+                return False
     
 def process_futures(futures, results_file='futureresult.txt', errors_file='futureerror.txt'):
     """Process a list of Dask futures.

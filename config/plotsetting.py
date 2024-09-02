@@ -6,14 +6,12 @@ tau_pt = {
         "hist": {'bins': 30, 'range': [0,300]},
         "plot": {'histtype': hist_type,
                 'xlabel': r'Leading $\tau$ $P_t$ (GeV)',
-                'alpha': 0.95,
-                'stack': if_stack}},
+                'alpha': 0.95}},
     "SubleadingTau_pt": {
         "hist": {'bins': 30, 'range': [0,300]},
         "plot": {'xlabel': r'Subleading $\tau$ $P_t$ (GeV)',
                 'histtype': hist_type,
-                'alpha': 0.95,
-                'stack': if_stack}} 
+                'alpha': 0.95}},
 }
 
 tau_eta = {
@@ -49,7 +47,7 @@ tau_gen = {
 dR = {
     "Tau_dR": {
         "hist": {'bins': 20, 'range': [0, 5]},
-        "plot": {'xlabel': r'dR $(\tau \tau)$',
+        "plot": {'xlabel': r'dR $(\tau)$',
                  'alpha': 0.95,
                  'stack': if_stack,
                  'histtype': hist_type}}, 
@@ -64,16 +62,10 @@ dR = {
 H_mass = {
     "Tau_InvM": {
         "hist": {'bins': 30, 'range': [0,300]},
-        "plot": {'xlabel': r'Visible Mass (2$\tau$) (GeV)',
-                 'alpha': 0.95,
-                 'stack': if_stack,
-                 'histtype': hist_type}},
+        "plot": {'xlabel': r'Visible Mass (2$\tau$) (GeV)'}},
     "Bjet_InvM": {
         "hist": {'bins': 30, 'range': [0,300]},
-        "plot": {'xlabel': r'Invariant Mass (2b) (GeV)',
-                 'alpha': 0.95,
-                 'stack': if_stack,
-                 'histtype': hist_type}},
+        "plot": {'xlabel': r'Invariant Mass (2b) (GeV)'}},
 }
 
 

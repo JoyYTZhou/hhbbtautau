@@ -6,8 +6,8 @@ from src.analysis.custom import switch_selections
 
 class TestProcessor(unittest.TestCase):
     @classmethod
-    def setUp(cls):
-        cls.preprocessed = {
+    def setUp(self):
+        self.preprocessed = {
         "files": {
                 "root://cmsdcadisk.fnal.gov:1094//dcache/uscmsdisk/store/mc/Run3Summer22EENanoAODv12/GluGlutoHHto2B2Tau_kl-1p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v3/2540000/1161da1c-05e7-4f35-a15c-ab3ce7a0aab4.root": {
             "object_path": "Events",
@@ -27,7 +27,7 @@ class TestProcessor(unittest.TestCase):
         }
 
         eventSelection = switch_selections(rs.SEL_NAME)
-        cls.proc = Processor(rs, cls.preprocessed, transferP=None, evtselclass=eventSelection)
+        self.proc = Processor(rs, self.preprocessed, transferP=None, evtselclass=eventSelection)
 
     def test_dir_init(self):
         expected = self.proc.outdir
@@ -51,11 +51,6 @@ class TestProcessor(unittest.TestCase):
         self.assertTrue(len(matched) > 0, f"No cutflow csv files found in {expected}")
 
         self.assertEqual(result, 1, "Error encountered")
-    
-class TestLoader(unittest.TestCase):
-    def setUp(cls): 
-        cls.datapath = "data/preprocessed/ZZ.json.gz"
-        pass
 
     
 if __name__ == '__main__':
@@ -64,7 +59,6 @@ if __name__ == '__main__':
     suite.addTest(TestProcessor('test_proc_load_remote'))
     suite.addTest(TestProcessor('test_proc_run_file'))
 
-    # Run the TestSuite
     runner = unittest.TextTestRunner()
     runner.run(suite)
 
