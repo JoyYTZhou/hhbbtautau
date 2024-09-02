@@ -177,7 +177,7 @@ class JobLoader():
         with gzip.open(inputdatap, 'rt') as samplepath:
             loaded = json.load(samplepath)
         for ds, dsdata in loaded.items():
-            print(f"Preparing job files for {ds}...")
+            print(f"===============Preparing job files for {ds}...")
             need_process = filterExisting(dsdata, tsferP=self.tsferP)
             if need_process:
                 resumeindx = dsdata.get('resumeindx', [j for j in range(len(dsdata["files"]))])
@@ -185,8 +185,10 @@ class JobLoader():
                 shortname = dsdata['metadata']['shortname']
                 for j, indx_list in enumerate(indx_gen):
                     dsdata['resumeindx'] = indx_list
-                    with open(pjoin(self.jobpath, f'{rs.PROCESS_NAME}_{shortname}_job_{j}.json'), 'w') as fp:
+                    finame = pjoin(self.jobpath, f'{rs.PROCESS_NAME}_{shortname}_job_{j}.json')
+                    with open(finame, 'w') as fp:
                         json.dump(dsdata, fp)
+                    print("Job file created: ", finame)
                 return True
             else:
                 print(f"All the files have been processed for {ds}! No job files are needed!")
