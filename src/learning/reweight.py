@@ -151,21 +151,7 @@ def binaryBDTReweighter(X_train, y_train, X_test):
 
     probabilities = xgb_clf.predict_proba(X_test)
 
-def draw_distributions(original, target, new_original_weights, columns):
-    """Reference: https://github.com/arogozhnikov/hep_ml/blob/master/notebooks/DemoReweighting.ipynb
-    
-    Parameters:
-    -`columns`: List of columns to draw the distributions for."""
-    hist_settings = {'bins': 100, 'density': True, 'alpha': 0.7}
-    plt.figure(figsize=[15, 7])
-    for id, column in enumerate(columns, 1):
-        xlim = np.percentile(np.hstack([target[column]]), [0.01, 99.99])
-        plt.subplot(2, 3, id)
-        plt.hist(original[column], weights=new_original_weights, range=xlim, **hist_settings)
-        plt.hist(target[column], range=xlim, **hist_settings)
-        plt.title(column)
-        print('KS over ', column, ' = ', ks_2samp_weighted(original[column], target[column], 
-                                         weights1=new_original_weights, weights2=np.ones(len(target), dtype=float)))
+
 
 def XGBweighter(original_train, target_train, original_test, target_test, original_weight, target_weight, draw_cols):
     """Reference: https://github.com/arogozhnikov/hep_ml/blob/master/notebooks/DemoReweighting.ipynb"""

@@ -93,12 +93,13 @@ class CSVPlotter():
         flat_wgt = self.meta_dict[process][ds]['per_evt_wgt'] * factor 
         return flat_wgt
    
-    def get_hist(self, evts: 'pd.DataFrame', att, options, group: 'dict'=None) -> tuple[list, list, list[int, int], list, list]:
+    def get_hist(self, evts: 'pd.DataFrame', att, options, group: 'dict'=None, **kwargs) -> tuple[list, list, list[int, int], list, list]:
         """Histogram an attribute of the object for the given dataframe for groups of datasets. 
         Return sorted histograms based on the total counts.
         
         Parameters
         - `group`: the group of datasets to be plotted. {groupname: [list of datasets]}
+        - `kwargs`: additional arguments for the `ObjectPlotter.hist_arr` function
         
         Returns
         - `hist_list`: a sorted list of histograms
@@ -107,7 +108,7 @@ class CSVPlotter():
         - `pltlabel`: the sorted labels of the datasets
         - `b_colors`: the colors of the datasets"""
         histopts = options['hist']
-        bin_no = histopts.get('bins', 10)
+        bins = histopts.get('bins', 40)
         bin_range = histopts.get('range', (0,200))
         pltlabel = list(group.keys()) if group is not None else self.labels
         hist_list = []
@@ -116,7 +117,7 @@ class CSVPlotter():
         for label in pltlabel:
             proc_list = group[label] if group is not None else [label]
             thisdf = evts[evts['process'].isin(proc_list)]
-            thishist, bins = ObjectPlotter.hist_overflow(thisdf[att], bin_no, bin_range, thisdf['weight'])
+            thishist, bins = ObjectPlotter.hist_arr(thisdf[att], bins, bin_range, thisdf['weight'], **kwargs)
             hist_list.append(thishist)
             total_counts.append(np.sum(thishist))
         sorted_indx = np.argsort(total_counts)[::-1]
@@ -125,30 +126,45 @@ class CSVPlotter():
         b_colors = [b_colors[i] for i in sorted_indx]
         return hist_list, bins, bin_range, pltlabel, b_colors
                 
-    def plot_hist(self, evts: 'pd.DataFrame', attridict: 'dict', title='', group: 'dict'=None, save_name=''):
+    def plot_hist(self, evts: 'pd.DataFrame', attridict: 'dict', title='', group: 'dict'=None, save_name='', **kwargs):
         """Plot the object attribute based on the attribute dictionary.
         
         Parameters
         - `objname`: the object to be loaded and plotted
         - `attridict`: a dictionary of attributes to be plotted
         """
-        for att, options in dict(attridict).items():
-            hist_list, bins, bin_range, pltlabel = self.get_hist(evts, att, options, group)
+        for att, options in attridict.items():
+            hist_list, bins, bin_range, pltlabel = self.get_hist(evts, att, options, group, **kwargs)
             pltopts = options['plot']
             ObjectPlotter.plot_var(hist_list, bins, label=pltlabel, xrange=bin_range, title=title, 
                                    save_name=pjoin(self.outdir, f'{att}{save_name}.png'), **pltopts)
-    
-    def plot_SVB(self, evts, attridict, sgroup, bgroup, title='', save_name=''):
+
+    def plot_shape(self, list_of_evts: list[pd.DataFrame], labels, attridict: dict, title='', save_name=''):
+        """Compare the shape of the object attribute for different dataframes."""
+        for att, options in attridict.items():
+            hist_list = []
+            pltopts = options['plot']
+            bins = options['hist']['bins']
+            bin_range = options['hist']['range']
+            for evts in list_of_evts:
+                thishist, bins = ObjectPlotter.hist_arr(evts[att], bins, bin_range, evts['weight'], density=True, keep_overflow=False)
+                hist_list.append(thishist)
+            ObjectPlotter.plot_var(hist_list, bins, labels, bin_range, title=title, 
+                                   save_name=pjoin(self.outdir, f'{att}{save_name}.png'), stack=False, histtype='step', alpha=1.0,  
+                                   **pltopts)
+            
+    def plot_SVB(self, evts, attridict, sgroup, bgroup, title='', save_name='', **kwargs):
         """Plot the signal and background histograms.
         
         Parameters
         - `evts`: the dataframe to be plotted
         - `attridict`: the dictionary of attributes to be plotted
+        - `kwargs`: additional arguments to be passed into the `ObjectPlotter.hist_arr` function
         """
-        for att, options in dict(attridict).items():
+        for att, options in attridict.items():
             pltopts = options['plot']
-            b_hists, bins, range, blabels, b_color = self.get_hist(evts, att, options, bgroup)
-            s_hists, bins, range, slabels, _= self.get_hist(evts, att, options, sgroup)
+            b_hists, bins, range, blabels, b_color = self.get_hist(evts, att, options, bgroup, **kwargs)
+            s_hists, bins, range, slabels, _= self.get_hist(evts, att, options, sgroup, **kwargs)
             ObjectPlotter.plotSigVBkg(s_hists, b_hists, bins, slabels, blabels, range, title=title, save_name=pjoin(self.outdir, f'{att}{save_name}.png'), b_color=b_color, **pltopts) 
         
 class ObjectPlotter():
@@ -157,6 +173,7 @@ class ObjectPlotter():
     
     @staticmethod
     def set_style(title, xlabel):
+        """Set the style of the plot to CMS HEP."""
         fig, ax = plt.subplots(figsize=(8, 5))
         ax.set_title(title, fontsize=14)
         hep.style.use("CMS")
@@ -168,6 +185,16 @@ class ObjectPlotter():
         for spine in ax.spines.values():
             spine.set_linewidth(0.5)
         return fig, ax
+    
+    # @staticmethod
+    # def compare_shape(original: np.ndarray, target: np.ndarray, new_original_weights, **kwargs):
+    #     fig, ax = ObjectPlotter.set_style(kwargs.get('title', None), kwargs.get('xlabel', 'GeV')) 
+    #     xlim = np.percentile(np.hstack([target]), [0.01, 99.99])
+    #     plt.hist(original[column], weights=new_original_weights, range=xlim, **hist_settings)
+    #         plt.hist(target[column], range=xlim, **hist_settings)
+    #         plt.title(column)
+    #         print('KS over ', column, ' = ', ks_2samp_weighted(original[column], target[column], 
+    #                                         weights1=new_original_weights, weights2=np.ones(len(target), dtype=float)))
 
     @staticmethod
     def plot_var(hist, bin_edges: np.ndarray, label, xrange, title='plot', save_name='plot.png', **kwargs):
@@ -184,9 +211,10 @@ class ObjectPlotter():
             bins=bin_edges,
             label=label,
             ax=ax,
-            linewidth=1,
+            linewidth=1.5,
             **kwargs)
         ax.legend(fontsize=12, loc='upper right')
+        ax.set_xlim(*xrange)
         fig.savefig(save_name, dpi=300)
     
     @staticmethod
@@ -202,16 +230,6 @@ class ObjectPlotter():
         fig, ax = ObjectPlotter.set_style(title, xlabel)
         s_colors = ['red', 'blue', 'forestgreen']
         hep.histplot(
-            sig_hists,
-            bins=bin_edges,
-            ax=ax,
-            color=s_colors,
-            label=sig_label,
-            stack=False,
-            histtype='step',
-            alpha=1.0,
-            linewidth=2)
-        hep.histplot(
             bkg_hists,
             bins=bin_edges,
             label=bkg_label,
@@ -221,25 +239,39 @@ class ObjectPlotter():
             alpha=0.6,
             stack=True,
             linewidth=1)
+        hep.histplot(
+            sig_hists,
+            bins=bin_edges,
+            ax=ax,
+            color=s_colors,
+            label=sig_label,
+            stack=False,
+            histtype='step',
+            alpha=1.0,
+            linewidth=2)
         ax.set_xlim(*xrange)
         ax.legend(fontsize=12, loc='upper right')
         fig.savefig(save_name, dpi=300)
         
     @staticmethod
-    def hist_overflow(arr, bins: int, range: list[int, int], weights=None) -> tuple[np.ndarray, np.ndarray]:
+    def hist_arr(arr, bins: int, range: list[int, int], weights=None, density=False, keep_overflow=True) -> tuple[np.ndarray, np.ndarray]:
         """Wrapper around numpy histogram function to deal with overflow.
         
         Parameters
         - `arr`: the array to be histogrammed
         - `bin_no`: number of bins
         - `range`: range of the histogram
+        - `weights`: the weights of the array
         """
         if isinstance(bins, int):
             bins = np.linspace(*range, bins+1)
             min_edge = bins[0]
             max_edge = bins[-1]
-        adjusted_data = np.clip(arr, min_edge, max_edge)
-        hist, bin_edges = np.histogram(adjusted_data, bins=bins, weights=weights)
+            if keep_overflow: adjusted_data = np.clip(arr, min_edge, max_edge)
+            else: adjusted_data = arr
+        else:
+            adjusted_data = arr
+        hist, bin_edges = np.histogram(adjusted_data, bins=bins, weights=weights, density=density)
         return hist, bin_edges
             
     @staticmethod
