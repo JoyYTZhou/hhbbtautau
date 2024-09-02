@@ -13,11 +13,22 @@ class TestLoader(unittest.TestCase):
         self.outpath = pjoin(curr_dir, "testout")
         self.jl = JobLoader(self.datapath, self.outpath)
     
+    def test_init(self):
+        self.assertTrue(os.path.exists(self.outpath), f"Directory {self.datapath} does not exist!")
+    
+    def tearDown(self):
+        files = glob.glob(pjoin(self.outpath, "*.json"))
+        for f in files: os.remove(f)
+    
     def test_prep_jobs(self):
         inputpath = pjoin(self.datapath, "ZZ.json.gz")
         returned = self.jl.prep_jobs(inputpath)
 
-        
-        self.assertTrue(os.path.exists(self.outpath), f"Directory {self.outpath} does not exist!")
+        if returned:
+            files = glob.glob(pjoin(self.outpath, "*.json"))
+            self.assertTrue(len(files) > 0, "No files were written!")
+
+if __name__ == '__main__':
+    unittest.main()
 
     
