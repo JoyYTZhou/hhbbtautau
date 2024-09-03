@@ -1,7 +1,7 @@
 from dask.distributed import Client, LocalCluster
 from dask.distributed import as_completed
 import json as json
-import gzip, glob, traceback, os, uproot
+import gzip, glob, traceback, os
 
 from .custom import switch_selections
 from .processor import Processor
@@ -11,13 +11,20 @@ from config.selectionconfig import dasksetting as daskcfg
 
 evtselclass = switch_selections(rs.SEL_NAME)
 
-parent_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+p_dirname = os.path.dirname
 
-datapath = pjoin(parent_directory, 'data', 'availableQuery.json')
+src_dir = p_dirname(p_dirname(os.path.abspath(__file__)))
+base_dir = p_dirname(src_dir)
+data_dir = pjoin(base_dir, 'data')
+
+datapath = pjoin(data_dir, 'availableQuery.json')
 with open(datapath, 'r') as data:
     realmeta = json.load(data)
 
 transferP = rs.get("TRANSFER_PATH", None)
+
+def get_fi_prefix(filepath):
+    return os.path.basename(filepath).split('.')[0]
 
 def div_list(original_list, chunk_size):
     """Divide a list into smaller lists of given size."""
@@ -57,9 +64,9 @@ def filterExisting(dsdata: 'dict', outputpattern='*.root', tsferP=transferP) -> 
 class JobRunner:
     def __init__(self, jobfile, eventSelection=evtselclass) -> None:
         self.selclass = eventSelection
-        self._ds = None
         with open(jobfile, 'r') as job:
             self._loaded = json.load(job)
+            grp_name = get_fi_prefix(jobfile)
     
     @property
     def ds(self):
@@ -67,30 +74,6 @@ class JobRunner:
     @ds.setter
     def ds(self, dsname):
         self._ds = dsname
-
-    @staticmethod
-    def get_meta_daskargs(filepath, client) -> dict:
-        """Get metadata for dask arguments"""
-        dask_args = {}
-        
-        if rs.get("DELAYED_OPEN", True):
-            if filepath.startswith("root://"): 
-                if client is None: 
-                    dask_args["handler"] = uproot.XRootDSource        
-                else:
-                    dask_args["handler"] = uproot.MultithreadedXRootDSource
-                    dask_args["timeout"] = 60
-            
-            step_size = rs.get("STEP_SIZE", '100MB') 
-            step_no = rs.get("STEP_NO", False)
-            if step_size: 
-                dask_args["step_size"] = step_size
-            elif step_no:
-                dask_args["steps_per_file"] = step_no
-            else: 
-                dask_args["step_size"] = uproot._util.unset
-        
-        return dask_args
         
     def submitjobs(self, client) -> int:
         """Run jobs based on client settings.
@@ -147,7 +130,7 @@ class JobRunner:
         return futures
 
 class JobLoader():
-    def __init__(self, datapath, jobpath) -> None:
+    def __init__(self, jobpath, datapath=pjoin(data_dir, 'preprocessed')) -> None:
         self.inpath = datapath
         checkpath(self.inpath, createdir=False, raiseError=True)
         self.tsferP = transferP
@@ -159,25 +142,13 @@ class JobLoader():
         datafile = glob.glob(pjoin(self.inpath, '*.json.gz'))
         for file in datafile:
             self.prepjobs(file)
-            # elif self.inpath.startswith('/store/user/'):
-            #     loaded = realmeta[rs.PROCESS_NAME]
-            #     for dataset in list(loaded.keys()):
-            #         inputfiles = glob_files(self.inpath, filepattern=f'{dataset}*.root')
-            #         if inputfiles: loaded[dataset]['filelist'] = inputfiles
-            #         else: del loaded[dataset]
-            #     loaded = filterExisting(loaded, '_output*.csv', self.tsferP)
-            #     if loaded: 
-            #         with open(pjoin(self.jobpath, f'{rs.PROCESS_NAME}_job.json'), 'w') as fp:
-            #             json.dump(loaded, fp)
-            #     else: print("All the input files have been processed!")
-            # else:
-            #     raise TypeError("Check INPUTFILE_PATH in runsetting.toml. It's not of a valid format!")
         
     def prepjobs(self, inputdatap, batch_size=15) -> bool:
         with gzip.open(inputdatap, 'rt') as samplepath:
+            grp_name = get_fi_prefix(inputdatap)
             loaded = json.load(samplepath)
         for ds, dsdata in loaded.items():
-            print(f"===============Preparing job files for {ds}...")
+            print(f"===============Preparing job files for {ds}========================")
             need_process = filterExisting(dsdata, tsferP=self.tsferP)
             if need_process:
                 resumeindx = dsdata.get('resumeindx', [j for j in range(len(dsdata["files"]))])
@@ -185,7 +156,7 @@ class JobLoader():
                 shortname = dsdata['metadata']['shortname']
                 for j, indx_list in enumerate(indx_gen):
                     dsdata['resumeindx'] = indx_list
-                    finame = pjoin(self.jobpath, f'{rs.PROCESS_NAME}_{shortname}_job_{j}.json')
+                    finame = pjoin(self.jobpath, f'{grp_name}_{shortname}_job_{j}.json')
                     with open(finame, 'w') as fp:
                         json.dump(dsdata, fp)
                     print("Job file created: ", finame)

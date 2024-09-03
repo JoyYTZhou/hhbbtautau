@@ -11,7 +11,7 @@ class TestLoader(unittest.TestCase):
         analysis_path = os.path.dirname(curr_dir)
         self.datapath = pjoin(analysis_path, "data/preprocessed")
         self.outpath = pjoin(curr_dir, "testout")
-        self.jl = JobLoader(self.datapath, self.outpath)
+        self.jl = JobLoader(jobpath=self.outpath, datapath=self.datapath)
     
     def test_init(self):
         self.assertTrue(os.path.exists(self.outpath), f"Directory {self.datapath} does not exist!")
@@ -22,7 +22,7 @@ class TestLoader(unittest.TestCase):
     
     def test_prep_jobs(self):
         inputpath = pjoin(self.datapath, "ZZ.json.gz")
-        returned = self.jl.prep_jobs(inputpath)
+        returned = self.jl.prepjobs(inputpath)
 
         if returned:
             files = glob.glob(pjoin(self.outpath, "*.json"))

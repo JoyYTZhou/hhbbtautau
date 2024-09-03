@@ -29,6 +29,10 @@ cd ..
 source scripts/venv.sh $DYNACONF_ENV
 cd exec
 
+JOB_DIRNAME=$(python3 -c 'from src.analysis.spawndask import rs; print(rs.JOB_DIRNAME)')
+rm -rf ${JOB_DIRNAME}/*.json
+python3 genjobs.py
+
 if [ "$PROCESS_INPUT" = "ALL" ]; then
     declare -a PROCESS_NAMES=("QCD" "DYJets" "TTbar" "WW" "WWW" "ZH" "ZZ" "WZ" "ggF" "SingleH")
 else
@@ -38,11 +42,6 @@ fi
 for PROCESS in "${PROCESS_NAMES[@]}"; do
     export PROCESS_NAME=$PROCESS
 
-    JOB_DIRNAME=$(python3 -c 'from src.analysis.spawndask import rs; print(rs.JOB_DIRNAME)')
-
-    rm -rf ${JOB_DIRNAME}/${PROCESS}_*.json
-
-    python3 genjobs.py
 
     \cp -f hhbbtt.sub runtime/${JOB_DIRNAME}_${PROCESS}.sub
 
