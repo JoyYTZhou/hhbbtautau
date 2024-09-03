@@ -23,42 +23,34 @@ done
 shift $((OPTIND -1))
 
 DYNACONF_ENV=$1
-PROCESS_INPUT=$2
+PROCESS=$2
 
 cd ..
 source scripts/venv.sh $DYNACONF_ENV
 cd exec
 
-JOB_DIRNAME=$(python3 -c 'from src.analysis.spawndask import rs; print(rs.JOB_DIRNAME)')
+JOB_DIRNAME=$(python3 -c 'from src.analysis.spawnjob import rs; print(rs.JOB_DIRNAME)')
 rm -rf ${JOB_DIRNAME}/*.json
 python3 genjobs.py
 
+if [ "$PROCESS" = "ALL" ]; then
+    FILENAME="${JOB_DIRNAME}/*.json"
+fi
+
+\cp -f hhbbtt.sub runtime/${JOB_DIRNAME}_${PROCESS}.sub
+
 cat << EOF >> runtime/${JOB_DIRNAME}_${PROCESS}.sub
 JOB_DIRNAME = ${JOB_DIRNAME}
-PROCESS_NAME = ${PROCESS}
 DYNACONF = ${ENV_FOR_DYNACONF}
 queue FILENAME matching files ${JOB_DIRNAME}/${PROCESS}_*.json
 EOF
 
-if [ "$PROCESS_INPUT" = "ALL" ]; then
-    FILENAMES=
+
+if [ "$DISABLE_SUBMISSION" = false ]; then
+    condor_submit runtime/${JOB_DIRNAME}_${PROCESS}.sub
 else
-    declare -a PROCESS_NAMES=("$PROCESS_INPUT")
+    echo "Submission disabled for process: $PROCESS"
 fi
-
-for PROCESS in "${PROCESS_NAMES[@]}"; do
-    export PROCESS_NAME=$PROCESS
-
-
-    \cp -f hhbbtt.sub runtime/${JOB_DIRNAME}_${PROCESS}.sub
-
-
-
-    if [ "$DISABLE_SUBMISSION" = false ]; then
-        condor_submit runtime/${JOB_DIRNAME}_${PROCESS}.sub
-    else
-        echo "Submission disabled for process: $PROCESS"
-    fi
 
 done
 
