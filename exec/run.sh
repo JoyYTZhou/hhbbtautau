@@ -4,9 +4,8 @@
 
 echo "Currently in $PWD"
 
-export PROCESS_NAME=$1
-export JSONPATH=$2
-export ENV_FOR_DYNACONF=$3
+export JSONPATH=$1
+export ENV_FOR_DYNACONF=$2
 export ENV_NAME=skim_el9
 
 OLD_ENV_NAME=/uscms_data/d3/joyzhou/${ENV_NAME}
