@@ -65,49 +65,18 @@ class JobRunner:
     def __init__(self, jobfile, eventSelection=evtselclass) -> None:
         self.selclass = eventSelection
         with open(jobfile, 'r') as job:
-            self._loaded = json.load(job)
+            self.loaded = json.load(job)
             grp_name = get_fi_prefix(jobfile)
-    
-    @property
-    def ds(self):
-        return self._ds
-    @ds.setter
-    def ds(self, dsname):
-        self._ds = dsname
+        self.grp_name = grp_name
         
     def submitjobs(self, client) -> int:
         """Run jobs based on client settings.
         If a valid client is found and future mode is true, submit simultaneously run jobs.
         If not, fall back into a loop mode. Note that even in this mode, any dask computations will be managed by client explicitly or implicitly.
         """
-        loaded = self._loaded 
-        if not loaded: 
-            print("Double check the job json file!")
-            print("All the files have been processed for this dataset!")
-            return 0
-
-        use_futures = client is not None and daskcfg.get('SPAWN_FUTURE', False)
-        for ds, dsitems in loaded.items():
-            self.ds = ds
-            resumeindx = dsitems.get('resumeindx', None)
-            filelist = dsitems['filelist']
-            daskargs = self.get_meta_daskargs(filelist[0], client)
-            if use_futures:
-                futures = self.submitfutures(client, filelist, resumeindx)
-                result = process_futures(futures)
-            else:
-                print("Submit jobs in loops!")
-                self.submitloops(filelist, resumeindx, daskargs)
+        proc = Processor(rs, self.loaded, self.ds, transferP, self.selclass)
+        rc = proc.runfiles()
         return 0
-
-    def submitloops(self, filelist, indx, daskargs) -> int:
-        """Put file processing in loops, i.e. one file by one file.
-        Usually used for large file size."""
-        
-        print(f"Processing {self.ds}...")
-        proc = Processor(rs, self.ds, transferP, self.selclass)
-        failed = proc.runbatch(filelist, daskargs, indx)
-        return failed
     
     def submitfutures(self, client, filelist, indx) -> list:
         """Submit jobs as futures to client.
@@ -120,7 +89,7 @@ class JobRunner:
         """
         futures = []
         def job(fn, i):
-            proc = Processor(rs, self.ds, transferP, self.selclass) 
+            proc = Processor(rs, filelist, self.grp_name, transferP) 
             rc = proc.runfile(fn, i)
             return rc
         if indx is None:
