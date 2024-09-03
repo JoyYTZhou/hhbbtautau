@@ -33,8 +33,15 @@ JOB_DIRNAME=$(python3 -c 'from src.analysis.spawndask import rs; print(rs.JOB_DI
 rm -rf ${JOB_DIRNAME}/*.json
 python3 genjobs.py
 
+cat << EOF >> runtime/${JOB_DIRNAME}_${PROCESS}.sub
+JOB_DIRNAME = ${JOB_DIRNAME}
+PROCESS_NAME = ${PROCESS}
+DYNACONF = ${ENV_FOR_DYNACONF}
+queue FILENAME matching files ${JOB_DIRNAME}/${PROCESS}_*.json
+EOF
+
 if [ "$PROCESS_INPUT" = "ALL" ]; then
-    declare -a PROCESS_NAMES=("QCD" "DYJets" "TTbar" "WW" "WWW" "ZH" "ZZ" "WZ" "ggF" "SingleH")
+    FILENAMES=
 else
     declare -a PROCESS_NAMES=("$PROCESS_INPUT")
 fi
@@ -45,12 +52,7 @@ for PROCESS in "${PROCESS_NAMES[@]}"; do
 
     \cp -f hhbbtt.sub runtime/${JOB_DIRNAME}_${PROCESS}.sub
 
-    cat << EOF >> runtime/${JOB_DIRNAME}_${PROCESS}.sub
-JOB_DIRNAME = ${JOB_DIRNAME}
-PROCESS_NAME = ${PROCESS}
-DYNACONF = ${ENV_FOR_DYNACONF}
-queue FILENAME matching files ${JOB_DIRNAME}/${PROCESS}_*.json
-EOF
+
 
     if [ "$DISABLE_SUBMISSION" = false ]; then
         condor_submit runtime/${JOB_DIRNAME}_${PROCESS}.sub
