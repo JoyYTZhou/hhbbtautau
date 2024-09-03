@@ -19,16 +19,11 @@ class TestProcessor(unittest.TestCase):
             ],
             "num_entries": 5580,
             "uuid": "3985bc58-ab6d-11ee-b5bf-0e803c0abeef"
-        }},
-        "metadata": {
-            "xsection": 0.002489,
-            "shortname": "GluGlutoHHto2B2Tau"
-            },
-        }
+        }}}
 
         eventSelection = switch_selections(rs.SEL_NAME)
-        self.proc = Processor(rs, self.preprocessed, transferP=None, evtselclass=eventSelection)
-
+        self.proc = Processor(rs, self.preprocessed, shortname='ggF', transferP=None, evtselclass=eventSelection)
+    
     def test_dir_init(self):
         expected = self.proc.outdir
         self.assertTrue(os.path.exists(expected), f"Directory {expected} does not exist!")
@@ -50,7 +45,7 @@ class TestProcessor(unittest.TestCase):
         matched = glob.glob(expected)
         self.assertTrue(len(matched) > 0, f"No cutflow csv files found in {expected}")
 
-        self.assertEqual(result, 1, "Error encountered")
+        self.assertEqual(result, 0, "Error encountered")
 
     
 if __name__ == '__main__':
