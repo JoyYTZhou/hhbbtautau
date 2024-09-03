@@ -24,6 +24,10 @@ class TestProcessor(unittest.TestCase):
         eventSelection = switch_selections(rs.SEL_NAME)
         self.proc = Processor(rs, self.preprocessed, shortname='ggF', transferP=None, evtselclass=eventSelection)
     
+    def tearDown(self) -> None:
+        files = glob.glob(os.path.join(self.proc.outdir, "*"))
+        for f in files: os.remove(f)
+    
     def test_dir_init(self):
         expected = self.proc.outdir
         self.assertTrue(os.path.exists(expected), f"Directory {expected} does not exist!")

@@ -18,11 +18,11 @@ when_to_transfer_output = ON_EXIT_OR_EVICT
 transfer_input_files = $(MY_PATH)/src, $(MY_PATH)/scripts, $(NO_BACKUP)/skim_el9.tar.gz, $(MY_PATH)/exec/$(JOB_DIRNAME)
 
 arguments = $(FILENAME) $(DYNACONF)
-log = joblog/$(OUTNAME)_$(GROUP_NAME).log
-output = joblog/$(OUTNAME)_$(GROUP_NAME).out
-error = joblog/$(OUTNAME)_$(GROUP_NAME).err
+log = joblog/$(OUTNAME)_$(Cluster).$(Process).log
+output = joblog/$(OUTNAME)_$(Cluster).$(Process).out
+error = joblog/$(OUTNAME)__$(Cluster).$(Process).err
 
-request_cpus = 10
-request_memory = 22GB
+request_cpus = 6
+request_memory = 12GB
 request_disk = 5GB
 
