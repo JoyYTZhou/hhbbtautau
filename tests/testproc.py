@@ -50,7 +50,6 @@ class TestProcessor(unittest.TestCase):
         self.assertTrue(len(matched) > 0, f"No cutflow csv files found in {expected}")
 
         self.assertEqual(result, 0, "Error encountered")
-
     
 if __name__ == '__main__':
     suite = unittest.TestSuite()

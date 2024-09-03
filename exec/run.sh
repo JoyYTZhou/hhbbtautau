@@ -21,10 +21,9 @@ else
 fi
 
 source scripts/envutil.sh
-LPC_setup
+setup_LCG
 
 export CONDOR_BASE=/store/user/joyzhou
-LCG_sasetup
 
 source ${ENV_NAME}/bin/activate
 
@@ -34,6 +33,7 @@ export PYTHONPATH=$PWD:$PYTHONPATH
 export PATH=$(remove_duplicates "$PATH")
 export PYTHONPATH=$(remove_duplicates "$PYTHONPATH")
 
+echo "This is the PYTHONPATH===================================="
 echo $PYTHONPATH
 
 export OUTPUT_BASE=$PWD
