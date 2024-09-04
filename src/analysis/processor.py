@@ -102,7 +102,7 @@ class Processor:
         if kwargs.get('write_npz', False):
             npzname = pjoin(self.outdir, f'cutflow_{suffix}.npz')
             self.evtsel.cfobj.to_npz(npzname)
-        cutflow_name = f'{self.dataset}_cutflow_{suffix}.csv'
+        cutflow_name = f'{self.dataset}_{suffix}_cutflow.csv'
         checkpath(self.outdir)
         localpath = pjoin(self.outdir, cutflow_name)
         cutflow_df = self.evtsel.cf_to_df() 
@@ -110,7 +110,7 @@ class Processor:
         print("Cutflow written to local!")
         if self.transfer:
             condorpath = f'{self.transfer}/{cutflow_name}'
-            cpcondor(localpath, condorpath, remove=True)
+            transferfiles(localpath, condorpath, filepattern=False, remove=True)
         return 0
     
     def writeevts(self, passed, suffix, **kwargs) -> int:

@@ -33,7 +33,7 @@ def checkpath(dirname, createdir=True, raiseError=False):
     else:
         return checklocalpath(dirname, raiseError)
 
-def transferfiles(srcpath, destpath, filepattern, remove=False) -> None:
+def transferfiles(srcpath, destpath, filepattern=False, remove=False) -> None:
     """Transfer files between local and condor system. Will check if destpath exist.
     
     Parameters
@@ -46,17 +46,22 @@ def transferfiles(srcpath, destpath, filepattern, remove=False) -> None:
             raise ValueError("Source path should be a local directory. Why are you transferring from one EOS to another?")
         else:
             checkcondorpath(destpath)
-            for srcfile in glob_files(srcpath, filepattern):
-                cpcondor(srcfile, f'{destpath}/{os.path.basename(srcfile)}')
-                if remove: 
-                    os.remove(srcfile)
+            if filepattern:
+                for srcfile in glob_files(srcpath, filepattern):
+                    cpcondor(srcfile, f'{destpath}/{os.path.basename(srcfile)}')
+                    if remove: os.remove(srcfile)
+            else:
+                cpcondor(srcpath, destpath)
+                if remove: os.remove(srcpath)
     elif isremote(srcpath):
         if isremote(destpath):
             raise ValueError("Destination path should be a local directory. Why are you transferring from EOS to EOS?")
         else:
             checklocalpath(destpath)
-            for srcfile in glob_files(srcpath, filepattern):
-                cpfcondor(srcfile, f'{destpath}/')
+            if filepattern:
+                for srcfile in glob_files(srcpath, filepattern):
+                    cpfcondor(srcfile, f'{destpath}/')
+            else: cpfcondor(srcpath, f'{destpath}/')
 
 def checkx509():
     """Check if the X509 proxy and certificate directory are set."""
@@ -121,21 +126,21 @@ def isremote(pathstr):
     is_remote = pathstr.startswith('/store/user') or pathstr.startswith("root://")
     return is_remote
 
-def check_missing(filepattern, fileno, dirtocheck, return_indices=True):
-    """Check missing output files in a directory based on pattern search. The output files in the directory are
-    expected to have names like ${pattern}_${i}, where i is the index of the file.
+def cross_check(filepattern, existentfiles) -> bool:
+    """Check if a file pattern exists in a list of files.
     
-    Return:
-    - list of missing files if return_indices=False. Otherwise, return list of missing indices."""
-    existfiles = glob_files(dirtocheck, filepattern)
-    startpattern = filepattern.split('*')[0]
-    fileset = set(existfiles)
-    patterns = [f"{startpattern}_{i}" for i in range(fileno)]
-    if return_indices: 
-        toreturn = [i for i, pattern in enumerate(patterns) if not any(pattern in file for file in fileset)]
-    else:
-        toreturn = [pattern for i, pattern in enumerate(patterns) if not any(pattern in file for file in fileset)] 
-    return toreturn
+    Parameters
+    - `filepattern`: pattern to match the file name
+    - `existentfiles`: list of files to check
+    
+    Return
+    - bool: True if the file pattern exists in the list of files
+    """
+    for file in existentfiles:
+        basename = file.split('/')[-1]
+        if fnmatch.fnmatch(basename, filepattern):
+            return True
+    return False
 
 def checkcondorpath(dirname, createdir=True, raiseError=False):
     """Check if a condor path exists and potentially create one.
@@ -166,8 +171,7 @@ def get_xrdfs_files(remote_dir, filepattern='*', add_prefix=True) -> list[str]:
     
     Parameters:
     - `remote_dir`: remote directory path
-    - `start_pattern`: pattern to match the start of the file name
-    - `end_pattern`: pattern to match the end of the file name
+    - `filepattern`: pattern to match the file name. Wildcards (*, ?) allowed
     - `add_prefix`: if True, will add the PREFIX to the file path
     
     Returns:

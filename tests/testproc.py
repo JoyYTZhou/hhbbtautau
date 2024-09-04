@@ -22,7 +22,7 @@ class TestProcessor(unittest.TestCase):
         }}}
 
         eventSelection = switch_selections(rs.SEL_NAME)
-        self.proc = Processor(rs, self.preprocessed, shortname='ggF', transferP=None, evtselclass=eventSelection)
+        self.proc = Processor(rs, self.preprocessed, shortname='ggF', transferP='/store/user/joyzhou/tests', evtselclass=eventSelection)
     
     def tearDown(self) -> None:
         files = glob.glob(os.path.join(self.proc.outdir, "*"))
