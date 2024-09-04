@@ -5,7 +5,7 @@ import gzip, glob, traceback, os
 
 from .custom import switch_selections
 from .processor import Processor
-from src.utils.filesysutil import glob_files, check_missing, checkpath, pjoin
+from src.utils.filesysutil import glob_files, cross_check, checkpath, pjoin
 from config.selectionconfig import runsetting as rs
 from config.selectionconfig import dasksetting as daskcfg
 
@@ -31,10 +31,11 @@ def div_list(original_list, chunk_size):
     for i in range(0, len(original_list), chunk_size):
         yield original_list[i:i + chunk_size]
 
-def filterExisting(dsdata: 'dict', outputpattern='*.root', tsferP=transferP) -> bool:
+def filterExisting(ds: 'str', dsdata: 'dict', outputpattern=".root", tsferP=transferP) -> bool:
     """Update dsdata on files that need to be processed for a MC dataset based on the existing output files and cutflow tables.
     
     Parameters
+    - `ds`: Dataset name
     - `dsdata`: A dictionary of dataset information with keys 'files', 'metadata', 'filelist'
 
     Return
@@ -43,23 +44,21 @@ def filterExisting(dsdata: 'dict', outputpattern='*.root', tsferP=transferP) -> 
     if not tsferP or checkpath(tsferP, createdir=False) != 0:
         return True
     
-    filelist = dsdata['files'].keys()
-    fileno = len(filelist)
-    shortname = dsdata["metadata"]["shortname"]
-    missing_cutflow = set(check_missing(f'{shortname}_cutflow*.csv', fileno, tsferP))
-    missing_output = set(check_missing(f'{shortname}{outputpattern}', fileno, tsferP))
+    files_to_remove = [] 
+
+    for filename, fileinfo in dsdata['files'].items():
+        prefix = f'{ds}_{fileinfo['uuid']}'
+        outputfile = f"{prefix}*{outputpattern}"
+        cutflowfile = f"{prefix}_cutflow.csv"
+        outputfiles = glob_files(tsferP, '*.root')
+        cutflowfiles = glob_files(tsferP, '*cutflow.csv')
+        if cross_check(outputfile, outputfiles) and cross_check(cutflowfile, cutflowfiles):
+            files_to_remove.append(filename)
         
-    if missing_cutflow:
-        print(f"Missing cutflow tables for these files: {missing_cutflow}!")
-    if missing_output:
-        print(f"Missing output for these files: {missing_output} ")
+    for file in files_to_remove:
+        dsdata['files'].pop(file)
     
-    missing_indices = sorted(list(missing_cutflow.union(missing_output)))
-        
-    if missing_indices:
-        dsdata["resumeindx"] = missing_indices
-        return True
-    else: return False
+    return len(dsdata['files']) > 0
     
 class JobRunner:
     def __init__(self, jobfile, eventSelection=evtselclass) -> None:
@@ -118,7 +117,7 @@ class JobLoader():
             loaded = json.load(samplepath)
         for ds, dsdata in loaded.items():
             print(f"===============Preparing job files for {ds}========================")
-            need_process = filterExisting(dsdata, tsferP=self.tsferP)
+            need_process = filterExisting(ds, dsdata, tsferP=self.tsferP)
             if need_process:
                 resumeindx = dsdata.get('resumeindx', [j for j in range(len(dsdata["files"]))])
                 indx_gen = div_list(resumeindx, batch_size)
