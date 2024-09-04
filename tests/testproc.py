@@ -4,6 +4,8 @@ from src.analysis.processor import Processor
 from config.selectionconfig import runsetting as rs
 from src.analysis.custom import switch_selections
 
+pjoin = os.path.join
+
 class TestProcessor(unittest.TestCase):
     @classmethod
     def setUp(self):
@@ -21,8 +23,8 @@ class TestProcessor(unittest.TestCase):
             "uuid": "3985bc58-ab6d-11ee-b5bf-0e803c0abeef"
         }}}
 
-        eventSelection = switch_selections(rs.SEL_NAME)
-        self.proc = Processor(rs, self.preprocessed, shortname='ggF', transferP='/store/user/joyzhou/tests', evtselclass=eventSelection)
+        self.eventSelection = switch_selections(rs.SEL_NAME)
+        self.proc = Processor(rs, self.preprocessed, shortname='ggF', transferP=None, evtselclass=self.eventSelection)
     
     def tearDown(self) -> None:
         files = glob.glob(os.path.join(self.proc.outdir, "*"))
@@ -41,7 +43,7 @@ class TestProcessor(unittest.TestCase):
     def test_proc_run_file(self): 
         """Run the processor for selecting on a single file"""
         result = self.proc.runfiles(write_npz=False)
-        expected = os.path.join(self.proc.outdir, "*.root")
+        expected = pjoin(self.proc.outdir, "*.root")
         matched = glob.glob(expected)
         self.assertTrue(len(matched) > 0, f"No root output files found in {expected}")
 
@@ -50,6 +52,11 @@ class TestProcessor(unittest.TestCase):
         self.assertTrue(len(matched) > 0, f"No cutflow csv files found in {expected}")
 
         self.assertEqual(result, 0, "Error encountered")
+    
+    def test_transfer_file(self):
+        proc = Processor(rs, self.preprocessed, shortname='ggF', transferP='/store/user/joyzhou/tests', evtselclass=self.eventSelection) 
+        result = proc.runfiles(write_npz=False)
+        # not finished
     
 if __name__ == '__main__':
     suite = unittest.TestSuite()
