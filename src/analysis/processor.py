@@ -27,7 +27,7 @@ def inittransfer(selname, processname) -> str:
 
 class Processor:
     """Process individual file or filesets given strings/dicts belonging to one dataset."""
-    def __init__(self, rt_cfg, dsdict, shortname, transferP=None, evtselclass=BaseEventSelections, **kwargs):
+    def __init__(self, rt_cfg, dsdict, transferP=None, evtselclass=BaseEventSelections, **kwargs):
         """
         Parameters
         - `ds_dict`: Example dictionary should look like this,
@@ -35,7 +35,7 @@ class Processor:
         """
         self._rtcfg = rt_cfg
         self.dsdict = dsdict
-        self.dataset = shortname
+        self.dataset = dsdict['metadata']['shortname']
         self.evtsel_kwargs = kwargs
         self.evtselclass = evtselclass
         self.transfer = transferP

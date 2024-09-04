@@ -1,6 +1,8 @@
 import unittest, os, glob
 
 from src.analysis.processor import Processor
+from src.analysis.spawnjobs import filterExisting
+from src.utils.filesysutil import glob_files
 from config.selectionconfig import runsetting as rs
 from src.analysis.custom import switch_selections
 
@@ -21,10 +23,13 @@ class TestProcessor(unittest.TestCase):
             ],
             "num_entries": 5580,
             "uuid": "3985bc58-ab6d-11ee-b5bf-0e803c0abeef"
-        }}}
+        }},
+        "metadata": {
+            "shortname": "ggF"
+        }}
 
         self.eventSelection = switch_selections(rs.SEL_NAME)
-        self.proc = Processor(rs, self.preprocessed, shortname='ggF', transferP=None, evtselclass=self.eventSelection)
+        self.proc = Processor(rs, self.preprocessed, transferP=None, evtselclass=self.eventSelection)
     
     def tearDown(self) -> None:
         files = glob.glob(os.path.join(self.proc.outdir, "*"))
@@ -54,9 +59,10 @@ class TestProcessor(unittest.TestCase):
         self.assertEqual(result, 0, "Error encountered")
     
     def test_transfer_file(self):
-        proc = Processor(rs, self.preprocessed, shortname='ggF', transferP='/store/user/joyzhou/tests', evtselclass=self.eventSelection) 
+        proc = Processor(rs, self.preprocessed, transferP='/store/user/joyzhou/tests/ggF', evtselclass=self.eventSelection) 
         result = proc.runfiles(write_npz=False)
-        # not finished
+        
+        matched = glob_files(proc.transfer)
     
 if __name__ == '__main__':
     suite = unittest.TestSuite()
