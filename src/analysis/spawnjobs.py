@@ -21,7 +21,8 @@ datapath = pjoin(data_dir, 'availableQuery.json')
 with open(datapath, 'r') as data:
     realmeta = json.load(data)
 
-transferP = rs.get("TRANSFER_PATH", None)
+transferPBase = rs.get("TRANSFER_PATH", None)
+if transferPBase is not None: checkpath(transferPBase, createdir=True)
 
 def get_fi_prefix(filepath):
     return os.path.basename(filepath).split('.')[0]
@@ -31,7 +32,7 @@ def div_list(original_list, chunk_size):
     for i in range(0, len(original_list), chunk_size):
         yield original_list[i:i + chunk_size]
 
-def filterExisting(ds: 'str', dsdata: 'dict', outputpattern=".root", tsferP=transferP) -> bool:
+def filterExisting(ds: 'str', dsdata: 'dict', outputpattern=".root", tsferP=transferPBase) -> bool:
     """Update dsdata on files that need to be processed for a MC dataset based on the existing output files and cutflow tables.
     
     Parameters
@@ -47,7 +48,7 @@ def filterExisting(ds: 'str', dsdata: 'dict', outputpattern=".root", tsferP=tran
     files_to_remove = [] 
 
     for filename, fileinfo in dsdata['files'].items():
-        prefix = f'{ds}_{fileinfo['uuid']}'
+        prefix = f"{ds}_{fileinfo['uuid']}"
         outputfile = f"{prefix}*{outputpattern}"
         cutflowfile = f"{prefix}_cutflow.csv"
         outputfiles = glob_files(tsferP, '*.root')
@@ -73,7 +74,7 @@ class JobRunner:
         If a valid client is found and future mode is true, submit simultaneously run jobs.
         If not, fall back into a loop mode. Note that even in this mode, any dask computations will be managed by client explicitly or implicitly.
         """
-        proc = Processor(rs, self.loaded, self.grp_name, transferP, self.selclass)
+        proc = Processor(rs, self.loaded, f'{transferPBase}/{self.grp_name}', self.selclass)
         rc = proc.runfiles()
         return 0
     
