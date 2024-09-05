@@ -2,7 +2,7 @@ import unittest, os, glob
 
 from src.analysis.processor import Processor
 from src.analysis.spawnjobs import filterExisting, checkpath
-from src.utils.filesysutil import glob_files
+from src.utils.filesysutil import glob_files, cross_check
 from config.selectionconfig import runsetting as rs
 from src.analysis.custom import switch_selections
 
@@ -45,11 +45,20 @@ class TestFilter(unittest.TestCase):
             "num_entries": 6682,
             "uuid": "4e4b117c-661e-11ee-9492-9484e4a9beef"
         }}}
-        
+    
+    def testGlob(self):
+        files = glob_files(self.temp_dir)
+        self.assertTrue(len(files) > 0, "No files found in the directory! Double check glob_files function")
+    
+    def testCrossCheck(self):
+        if_exist = cross_check(["test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef_cutflow.csv",
+                     "test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef.root"], glob_files(self.temp_dir))
+        self.assertTrue(if_exist, "File search failed. Double check cross_check function")
+    
     def testFilter(self):
         need_process = filterExisting(self.ds, self.dsdata, tsferP=self.temp_dir)
-        self.assertTrue(need_process, "")
-        self.assertEqual(len(self.dsdata['files']), 1, "One file is left to be processed")
+        self.assertTrue(need_process, "Files not filtered correctly. Check filterExisting function")
+        self.assertEqual(len(self.dsdata['files']), 1, "Files not filtered correctly, check filterExisting function")
 
     def tearDown(self) -> None:
         for f in glob.glob(pjoin(self.temp_dir, '*')): os.remove(f)
