@@ -1,15 +1,57 @@
 import unittest, os, glob
 
 from src.analysis.processor import Processor
-from src.analysis.spawnjobs import filterExisting
+from src.analysis.spawnjobs import filterExisting, checkpath
 from src.utils.filesysutil import glob_files
 from config.selectionconfig import runsetting as rs
 from src.analysis.custom import switch_selections
 
 pjoin = os.path.join
 
+class TestFilter(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = pjoin(rs.OUTPUTDIR_PATH, 'temp')
+        checkpath(rs.OUTPUTDIR_PATH, createdir=True)
+        checkpath(self.temp_dir, createdir=True)
+        with open(pjoin(self.temp_dir, 'test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef_cutflow.csv'), 'w') as f: 
+            f.write("0")
+        with open(pjoin(self.temp_dir, 'test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef.root'), 'w') as f: 
+            f.write("0")
+        self.ds = "test"
+        self.dsdata = {"files": {
+        "root://cmsxrootd.hep.wisc.edu:1094//store/mc/Run3Summer22EENanoAODv12/WWW_4F_TuneCP5_13p6TeV_amcatnlo-madspin-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2520000/d78224ba-afff-44f0-b559-242cce95af4f.root": {
+            "object_path": "Events",
+            "steps": [
+            [
+                0,
+                9766
+            ],
+            [
+                9766,
+                19532
+            ]
+            ],
+            "num_entries": 19532,
+            "uuid": "3985bc58-ab6d-11ee-b5bf-0e803c0abeef"
+        },
+        "root://cmsxrootd.hep.wisc.edu:1094//store/mc/Run3Summer22EENanoAODv12/WWW_4F_TuneCP5_13p6TeV_amcatnlo-madspin-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2520000/f0eecfe6-d5f7-4163-88a0-3e5a059c3a8c.root": {
+            "object_path": "Events",
+            "steps": [
+            [
+                0,
+                6682
+            ]
+            ],
+            "num_entries": 6682,
+            "uuid": "4e4b117c-661e-11ee-9492-9484e4a9beef"
+        }}}
+        
+    def testFilter(self):
+        need_process = filterExisting(self.ds, self.dsdata, tsferP=self.temp_dir)
+        self.assertTrue(need_process, "There are files which need processing")
+        self.assertEqual(len(self.dsdata['files']), 1, "One file is left to be processed")
+
 class TestProcessor(unittest.TestCase):
-    @classmethod
     def setUp(self):
         self.preprocessed = {
         "files": {
@@ -61,15 +103,19 @@ class TestProcessor(unittest.TestCase):
     def test_transfer_file(self):
         proc = Processor(rs, self.preprocessed, transferP='/store/user/joyzhou/tests/ggF', evtselclass=self.eventSelection) 
         result = proc.runfiles(write_npz=False)
+
+        self.assertEqual(result, 0, "Error encountered")
         
-        matched = glob_files(proc.transfer)
+        expected_files = ['GluGlutoHHto2B2Tau_3985bc58-ab6d-11ee-b5bf-0e803c0abeef_cutflow.csv', 
+                          'GluGlutoHHto2B2Tau_3985bc58-ab6d-11ee-b5bf-0e803c0abeef-part0.root']
+        produced = glob_files(proc.transfer)
+        for file in expected_files:
+            self.assertIn(file, produced, f"File {file} not found in {proc.transfer}")
+        
+        local_files = glob_files(proc.outdir)
+        self.assertEqual(len(local_files), 0, f"Files not removed from {proc.outdir}")
+            
     
 if __name__ == '__main__':
-    suite = unittest.TestSuite()
-    suite.addTest(TestProcessor('test_dir_init'))
-    suite.addTest(TestProcessor('test_proc_load_remote'))
-    suite.addTest(TestProcessor('test_proc_run_file'))
-
-    runner = unittest.TextTestRunner()
-    runner.run(suite)
+    unittest.main()
 
