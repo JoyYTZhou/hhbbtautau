@@ -49,8 +49,9 @@ class TestFilter(unittest.TestCase):
         self.assertTrue(len(files) > 0, "No files found in the directory! Double check glob_files function")
     
     def testCrossCheck(self):
-        if_exist = cross_check(["test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef_cutflow.csv",
-                     "test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef.root"], glob_files(self.temp_dir))
+        if_exist = cross_check("*.root", glob_files(self.temp_dir))
+        self.assertTrue(if_exist, "Search for files containing wildcards failed. Double check cross_check function")
+        if_exist = cross_check("test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef_cutflow.csv", glob_files(self.temp_dir))
         self.assertTrue(if_exist, "File search failed. Double check cross_check function")
     
     def testFilter(self):
