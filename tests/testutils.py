@@ -60,3 +60,6 @@ class TestFilter(unittest.TestCase):
 
     def tearDown(self) -> None:
         for f in glob.glob(pjoin(self.temp_dir, '*')): os.remove(f)
+    
+if __name__ == '__main__':
+    unittest.main()
