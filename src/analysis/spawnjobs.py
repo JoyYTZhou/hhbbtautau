@@ -25,7 +25,7 @@ transferPBase = rs.get("TRANSFER_PATH", None)
 if transferPBase is not None: checkpath(transferPBase, createdir=True)
 
 def get_fi_prefix(filepath):
-    return os.path.basename(filepath).split('.')[0]
+    return os.path.basename(filepath).split('.')[0].split('_')[0]
 
 def div_list(original_list, chunk_size):
     """Divide a list into smaller lists of given size."""
@@ -50,7 +50,9 @@ def filterExisting(ds: 'str', dsdata: 'dict', outputpattern=".root", tsferP=tran
     for filename, fileinfo in dsdata['files'].items():
         prefix = f"{ds}_{fileinfo['uuid']}"
         outputfile = f"{prefix}*{outputpattern}"
+        print(f"Expecting output file {outputfile}.")
         cutflowfile = f"{prefix}_cutflow.csv"
+        print(f"Expecting cutflow file {cutflowfile}.")
         outputfiles = glob_files(tsferP, '*.root')
         cutflowfiles = glob_files(tsferP, '*cutflow.csv')
         if cross_check(outputfile, outputfiles) and cross_check(cutflowfile, cutflowfiles):
@@ -89,7 +91,7 @@ class JobRunner:
         """
         futures = []
         def job(fn, i):
-            proc = Processor(rs, filelist, self.grp_name, transferP) 
+            proc = Processor(rs, filelist, self.grp_name, transferPBase) 
             rc = proc.runfile(fn, i)
             return rc
         if indx is None:
@@ -102,7 +104,7 @@ class JobLoader():
     def __init__(self, jobpath, datapath=pjoin(data_dir, 'preprocessed')) -> None:
         self.inpath = datapath
         checkpath(self.inpath, createdir=False, raiseError=True)
-        self.tsferP = transferP
+        self.tsferP = transferPBase
         self.jobpath = jobpath
         checkpath(jobpath)
 

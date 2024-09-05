@@ -48,8 +48,11 @@ class TestFilter(unittest.TestCase):
         
     def testFilter(self):
         need_process = filterExisting(self.ds, self.dsdata, tsferP=self.temp_dir)
-        self.assertTrue(need_process, "There are files which need processing")
+        self.assertTrue(need_process, "")
         self.assertEqual(len(self.dsdata['files']), 1, "One file is left to be processed")
+
+    def tearDown(self) -> None:
+        for f in glob.glob(pjoin(self.temp_dir, '*')): os.remove(f)
 
 class TestProcessor(unittest.TestCase):
     def setUp(self):
