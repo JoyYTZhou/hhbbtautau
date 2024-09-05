@@ -45,7 +45,7 @@ queue FILENAME matching files ${JOB_DIRNAME}/${PROCESS}_*.json
 EOF
 
 if [ "$DISABLE_SUBMISSION" = false ]; then
-    condor_submit runtime/${JOB_DIRNAME}_${PROCESS}.sub
+    condor_submit runtime/${DYNACONF_ENV}_${PROCESS}.sub
 else
     echo "Submission disabled for process: $PROCESS"
 fi
