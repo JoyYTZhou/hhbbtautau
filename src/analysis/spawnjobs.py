@@ -50,9 +50,7 @@ def filterExisting(ds: 'str', dsdata: 'dict', outputpattern=".root", tsferP=tran
     for filename, fileinfo in dsdata['files'].items():
         prefix = f"{ds}_{fileinfo['uuid']}"
         outputfile = f"{prefix}*{outputpattern}"
-        print(f"Expecting output file {outputfile}.")
         cutflowfile = f"{prefix}_cutflow.csv"
-        print(f"Expecting cutflow file {cutflowfile}.")
         outputfiles = glob_files(tsferP, '*.root')
         cutflowfiles = glob_files(tsferP, '*cutflow.csv')
         if cross_check(outputfile, outputfiles) and cross_check(cutflowfile, cutflowfiles):
@@ -120,9 +118,9 @@ class JobLoader():
             loaded = json.load(samplepath)
         for ds, dsdata in loaded.items():
             print(f"===============Preparing job files for {ds}========================")
-            need_process = filterExisting(ds, dsdata, tsferP=self.tsferP)
+            need_process = filterExisting(ds, dsdata, tsferP=pjoin(self.tsferP, grp_name))
             if need_process:
-                resumeindx = dsdata.get('resumeindx', [j for j in range(len(dsdata["files"]))])
+                resumeindx = [j for j in range(len(dsdata["files"]))]
                 indx_gen = div_list(resumeindx, batch_size)
                 shortname = dsdata['metadata']['shortname']
                 for j, indx_list in enumerate(indx_gen):

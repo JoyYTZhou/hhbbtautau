@@ -1,5 +1,5 @@
-from src.analysis.spawnjobs import filterExisting, checkpath
-from src.utils.filesysutil import glob_files, cross_check
+from src.analysis.spawnjobs import filterExisting
+from src.utils.filesysutil import glob_files, cross_check, checklocalpath, checkpath
 from config.selectionconfig import runsetting as rs
 
 import unittest, os, glob
@@ -44,6 +44,9 @@ class TestFilter(unittest.TestCase):
             "uuid": "4e4b117c-661e-11ee-9492-9484e4a9beef"
         }}}
     
+    def test_checklocalpath(self):
+        self.assertEqual(checklocalpath(self.temp_dir, False), 0, "checklocalpath returns incorrect stat result.")
+
     def testGlob(self):
         files = glob_files(self.temp_dir)
         self.assertTrue(len(files) > 0, "No files found in the directory! Double check glob_files function")
