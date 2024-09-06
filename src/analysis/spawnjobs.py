@@ -128,9 +128,8 @@ class JobLoader():
             print(f"===============Preparing job files for {ds}========================")
             need_process = filterExisting(ds, dsdata, tsferP=pjoin(self.tsferP, grp_name))
             if need_process:
-                list_of_dsdata = list[div_dict(dsdata['files'], batch_size)]
                 shortname = dsdata['metadata']['shortname']
-                for j, sliced in enumerate(list_of_dsdata):
+                for j, sliced in enumerate(div_dict(dsdata['files'], batch_size)):
                     baby_job = {'metadata': dsdata['metadata'], 'files': sliced}
                     finame = pjoin(self.jobpath, f'{grp_name}_{shortname}_job_{j}.json')
                     with open(finame, 'w') as fp:
