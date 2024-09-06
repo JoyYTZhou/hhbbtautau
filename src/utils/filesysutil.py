@@ -99,7 +99,10 @@ def display_top(snapshot, key_type='lineno', limit=10):
     print("Total allocated size: %.1f KiB" % (total / 1024))
     
 def checklocalpath(pathstr, raiseError=False) -> bool:
-    """Check if a local path exists. If not will create one."""
+    """Check if a local path exists. If not will create one.
+    
+    Return
+    - 0 if the path exists"""
     path = Path(pathstr) 
     if not path.exists():
         if raiseError:

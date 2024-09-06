@@ -2,6 +2,7 @@ from dask.distributed import Client, LocalCluster
 from dask.distributed import as_completed
 import json as json
 import gzip, glob, traceback, os
+from itertools import islice
 
 from .custom import switch_selections
 from .processor import Processor
@@ -31,6 +32,12 @@ def div_list(original_list, chunk_size):
     """Divide a list into smaller lists of given size."""
     for i in range(0, len(original_list), chunk_size):
         yield original_list[i:i + chunk_size]
+
+def div_dict(original_dict, chunk_size):
+    """Divide a dictionary into smaller dictionaries of given size."""
+    it = iter(original_dict.items())
+    for _ in range(0, len(original_dict), chunk_size):
+        yield dict(islice(it, chunk_size))
 
 def filterExisting(ds: 'str', dsdata: 'dict', outputpattern=".root", tsferP=transferPBase) -> bool:
     """Update dsdata on files that need to be processed for a MC dataset based on the existing output files and cutflow tables.
@@ -99,6 +106,7 @@ class JobRunner:
         return futures
 
 class JobLoader():
+    """Load meta job files and prepare for processing."""
     def __init__(self, jobpath, datapath=pjoin(data_dir, 'preprocessed')) -> None:
         self.inpath = datapath
         checkpath(self.inpath, createdir=False, raiseError=True)
@@ -120,14 +128,13 @@ class JobLoader():
             print(f"===============Preparing job files for {ds}========================")
             need_process = filterExisting(ds, dsdata, tsferP=pjoin(self.tsferP, grp_name))
             if need_process:
-                resumeindx = [j for j in range(len(dsdata["files"]))]
-                indx_gen = div_list(resumeindx, batch_size)
+                list_of_dsdata = list[div_dict(dsdata['files'], batch_size)]
                 shortname = dsdata['metadata']['shortname']
-                for j, indx_list in enumerate(indx_gen):
-                    dsdata['resumeindx'] = indx_list
+                for j, sliced in enumerate(list_of_dsdata):
+                    baby_job = {'metadata': dsdata['metadata'], 'files': sliced}
                     finame = pjoin(self.jobpath, f'{grp_name}_{shortname}_job_{j}.json')
                     with open(finame, 'w') as fp:
-                        json.dump(dsdata, fp)
+                        json.dump(baby_job, fp)
                     print("Job file created: ", finame)
                 return True
             else:
