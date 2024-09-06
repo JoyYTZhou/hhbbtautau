@@ -26,7 +26,7 @@ def glob_files(dirname, filepattern='*', **kwargs) -> list:
             files = glob.glob(pjoin(dirname, filepattern)) 
     return sorted(files)
 
-def checkpath(dirname, createdir=True, raiseError=False):
+def checkpath(dirname, createdir=True, raiseError=False) -> bool:
     """Check if a directory exists. If not will create one."""
     if dirname.startswith('/store/user/'):
         return checkcondorpath(dirname, createdir, raiseError=raiseError)
@@ -98,7 +98,7 @@ def display_top(snapshot, key_type='lineno', limit=10):
     total = sum(stat.size for stat in top_stats)
     print("Total allocated size: %.1f KiB" % (total / 1024))
     
-def checklocalpath(pathstr, raiseError=False):
+def checklocalpath(pathstr, raiseError=False) -> bool:
     """Check if a local path exists. If not will create one."""
     path = Path(pathstr) 
     if not path.exists():
@@ -106,6 +106,8 @@ def checklocalpath(pathstr, raiseError=False):
             raise FileNotFoundError(f"this file {pathstr} does not exist.")
         else:
             path.mkdir(parents=True, exist_ok=True)
+        return 1
+    return 0
 
 def cpfcondor(srcpath, localpath):
     """Copy a root file FROM condor to LOCAL."""
