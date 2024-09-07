@@ -45,11 +45,12 @@ class CSVPlotter():
         list_of_df = []
         new_outdir = f'{datasource}_extrasel'
         checkpath(new_outdir)
-        def add_wgt(dfs, rwfac):
+        def add_wgt(dfs, rwfac, ds, group):
             df = dfs[0]
             if df.empty: return None
             df['weight'] = df[per_evt_wgt] * rwfac
-            df['process'] = process if not resolve else ds
+            df['dataset'] = ds
+            df['group'] = group 
             if extraprocess: return extraprocess(df)
             else: return df
         for process in processes:
@@ -59,7 +60,7 @@ class CSVPlotter():
             for ds in self.meta_dict[process].keys():
                 rwfac = self.rwgt_fac(process, ds) 
                 dsname = self.meta_dict[process][ds]['shortname']
-                df = load_csvs(load_dir, f'{dsname}_out', func=add_wgt, rwfac=rwfac)
+                df = load_csvs(load_dir, f'{dsname}_out', func=add_wgt, rwfac=rwfac, ds=dsname, group=process)
                 checkpath(f'{new_outdir}/{process}')
                 if df is not None: 
                     list_of_df.append(df)
