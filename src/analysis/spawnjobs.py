@@ -125,20 +125,18 @@ class JobLoader():
             grp_name = get_fi_prefix(inputdatap)
             loaded = json.load(samplepath)
         for ds, dsdata in loaded.items():
+            shortname = dsdata['metadata']['shortname']
             print(f"===============Preparing job files for {ds}========================")
-            need_process = filterExisting(ds, dsdata, tsferP=pjoin(self.tsferP, grp_name))
+            need_process = filterExisting(shortname, dsdata, tsferP=pjoin(self.tsferP, grp_name))
             if need_process:
-                shortname = dsdata['metadata']['shortname']
                 for j, sliced in enumerate(div_dict(dsdata['files'], batch_size)):
                     baby_job = {'metadata': dsdata['metadata'], 'files': sliced}
                     finame = pjoin(self.jobpath, f'{grp_name}_{shortname}_job_{j}.json')
                     with open(finame, 'w') as fp:
                         json.dump(baby_job, fp)
                     print("Job file created: ", finame)
-                return True
             else:
                 print(f"All the files have been processed for {ds}! No job files are needed!")
-                return False
     
 def process_futures(futures, results_file='futureresult.txt', errors_file='futureerror.txt'):
     """Process a list of Dask futures.
