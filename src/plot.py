@@ -3,12 +3,14 @@ from plotting.visutil import CSVPlotter
 from config.plotsetting import object_dict
 import argparse
 
+
 def postprocess():
     pp = PostProcessor()
     pp()
 
 def mergecf():
-    PostProcessor.merge_cf()
+    cf_df = PostProcessor.merge_cf()
+    PostProcessor.present_yield(cf_df, ['ZH', 'HH', 'ZH'])
 
 # def checkouts():
 #     PostProcessor.check_roots()

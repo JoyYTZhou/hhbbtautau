@@ -210,7 +210,7 @@ def weight_cf(wgt_dict, raw_cf, save=False, outname=None, lumi=50):
     if save and outname is not None: wgt_df.to_csv(outname)
     return wgt_df
 
-def calc_eff(cfdf, column_name=None, type='incremental', inplace=True, save=True, savename='eff.csv') -> pd.DataFrame:
+def calc_eff(cfdf, column_name=None, type='incremental', inplace=True) -> pd.DataFrame:
     """Return efficiency for each column in the DataFrame right after the column itself.
     
     Parameters:
@@ -236,8 +236,6 @@ def calc_eff(cfdf, column_name=None, type='incremental', inplace=True, save=True
             eff_series.replace([np.inf, -np.inf], np.nan, inplace=True)
             eff_series.fillna(0 if type == 'incremental' else 1, inplace=True)
             cfdf.insert(cfdf.columns.get_loc(col) + 1, f"{col}_eff", eff_series)
-    if save:
-        cfdf.to_csv(savename)
     if inplace: return cfdf
     else: return eff_series
     
