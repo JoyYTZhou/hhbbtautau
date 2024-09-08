@@ -18,6 +18,17 @@ def clopper_pearson_error(passed, total, level=0.6827):
     low = scipy.stats.beta.ppf(alpha, passed, total - passed + 1)
     high = scipy.stats.beta.ppf(1 - alpha, passed + 1, total - passed)
     return low, high
+
+def poisson_errors(obs, alpha=1 - 0.6827) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Taken from https://github.com/aminnj/yahist/blob/master/yahist/utils.py 
+    Return poisson low and high values for a series of data observations
+    """
+    from scipy.stats import gamma
+
+    lows = np.nan_to_num(gamma.ppf(alpha / 2, np.array(obs)))
+    highs = np.nan_to_num(gamma.ppf(1.0 - alpha / 2, np.array(obs) + 1))
+    return lows, highs
     
 def simplifyError(passed,total,level=0.6827):
     low,high=clopper_pearson_error(passed, total, level)

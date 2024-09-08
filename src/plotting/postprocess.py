@@ -130,7 +130,7 @@ class PostProcessor():
         wgt_resolved = resolved_all.filter(like='wgt', axis=1)
         wgt_resolved.columns = wgt_resolved.columns.str.replace('_wgt$', '', regex=True)
         wgt_resolved.to_csv(pjoin(outputdir, "ResolvedWgtOnly.csv"))
-        wgtpEff = calc_eff(wgt_resolved, None, 'incremental', True, pjoin(outputdir, 'resolved_wgteff.csv'))
+        wgtpEff = calc_eff(wgt_resolved, None, 'incremental', True)
         wgtpEff.filter(like='eff', axis=1).to_csv(pjoin(outputdir, "ResolvedEffOnly.csv"))
 
         return wgt_resolved
