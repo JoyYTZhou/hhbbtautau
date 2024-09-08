@@ -46,14 +46,14 @@ tau_gen = {
 
 dR = {
     "Tau_dR": {
-        "hist": {'bins': 20, 'range': [0, 5]},
-        "plot": {'xlabel': r'dR $(\tau)$',
+        "hist": {'bins': 10, 'range': [0, 5]},
+        "plot": {'xlabel': r'|dR $(\tau)$|',
                  'alpha': 0.95,
                  'stack': if_stack,
                  'histtype': hist_type}}, 
     "Bjet_dR": {
-        "hist": {'bins': 20, 'range': [0, 5]},
-        "plot": {'xlabel': r'dR(B Jets)',
+        "hist": {'bins': 10, 'range': [0, 5]},
+        "plot": {'xlabel': r'|dR(b Jets)|',
                  'alpha': 0.95,
                  'stack': if_stack,
                  'histtype': hist_type}}, 
@@ -64,7 +64,7 @@ H_mass = {
         "hist": {'bins': 30, 'range': [0,300]},
         "plot": {'xlabel': r'Visible Mass (2$\tau$) (GeV)'}},
     "Bjet_InvM": {
-        "hist": {'bins': 30, 'range': [0,300]},
+        "hist": {'bins': 40, 'range': [0,400]},
         "plot": {'xlabel': r'Invariant Mass (2b) (GeV)'}},
 }
 
