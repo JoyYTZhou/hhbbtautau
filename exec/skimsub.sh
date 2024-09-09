@@ -35,13 +35,16 @@ python3 genjobs.py
 
 if [ "$PROCESS" = "ALL" ]; then
     FILENAME="${JOB_DIRNAME}/*.json"
+else 
+    FILENAME="${JOB_DIRNAME}/${PROCESS}_*.json"
 fi
+
 
 \cp -f hhbbtt.sub runtime/${DYNACONF_ENV}_${PROCESS}.sub
 
 cat << EOF >> runtime/${DYNACONF_ENV}_${PROCESS}.sub
 DYNACONF = ${DYNACONF_ENV}
-queue FILENAME matching files ${JOB_DIRNAME}/${PROCESS}_*.json
+queue FILENAME matching files ${FILENAME}
 EOF
 
 if [ "$DISABLE_SUBMISSION" = false ]; then
