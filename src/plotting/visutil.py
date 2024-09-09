@@ -141,36 +141,29 @@ class CSVPlotter():
     def order_list(list_of_obj, order) -> list:
         """Order the list of lists based on the order."""
         return [list_of_obj[i] for i in order]
-    
-    def plot_hist(self, evts: 'pd.DataFrame', attridict: 'dict', title='', group: 'dict'=None, save_name='', **kwargs):
-        """Plot the object attribute based on the attribute dictionary.
-        
-        Parameters
-        - `objname`: the object to be loaded and plotted
-        - `attridict`: a dictionary of attributes to be plotted
-        """
-        for att, options in attridict.items():
-            hist_list, bins, bin_range, pltlabel, _= self.get_hist(evts, att, options, group, **kwargs)
-            pltopts = options['plot']
-            ObjectPlotter.plot_var(hist_list, bins, label=pltlabel, xrange=bin_range, title=title, 
-                                   save_name=pjoin(self.outdir, f'{att}{save_name}.png'), **pltopts)
 
-    def plot_shape(self, list_of_evts: list[pd.DataFrame], labels, attridict: dict, top_y, bottom_y, title='', save_name='') -> None:
+    def plot_shape(self, list_of_evts: list[pd.DataFrame], labels, attridict: dict, ratio_ylabel, hist_ylabel='Normalized', title='', save_name='') -> None:
         """Compare the (normalized) shape of the object attribute for two different dataframes, with ratio panel attached.
         
         Parameters
         - `list_of_evts`: the list of dataframes to be histogrammed and compared"""
+
+        assert len(list_of_evts) == 2, "The number of dataframes must be 2."
+
         for att, options in attridict.items():
-            fig, ax, ax2 = ObjectPlotter.set_style_with_ratio(title, top_y, bottom_y)
+            pltopts = options['plot'].copy()
+            fig, ax, ax2 = ObjectPlotter.set_style_with_ratio(title, pltopts.pop('xlabel', ''), hist_ylabel, ratio_ylabel)
             hist_list = []
-            pltopts = options['plot']
             bins = options['hist']['bins']
             bin_range = options['hist']['range']
+            wgt_list = []
             for evts in list_of_evts:
-                thishist, bins = ObjectPlotter.hist_arr(evts[att], bins, bin_range, evts['weight'], density=True, keep_overflow=False)
+                thishist, bins = ObjectPlotter.hist_arr(evts[att], bins, bin_range, evts['weight'], density=False, keep_overflow=False)
                 hist_list.append(thishist)
-            ObjectPlotter.plot_var(ax, hist_list, bins, labels, bin_range, histtype='step', alpha=1.0, **pltopts)
-            fig.savefig(save_name=pjoin(self.outdir, f'{att}{save_name}.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
+                wgt_list.append(evts['weight'])
+            ObjectPlotter.plot_var_with_err(ax, ax2, hist_list, wgt_list, bins, labels, bin_range, **pltopts)
+
+            fig.savefig(pjoin(self.outdir, f'{att}{save_name}.png'), dpi=300, bbox_inches='tight', pad_inches=0.2)
     
     def plot_SvBHist(self, ax, evts, att, attoptions, title, **kwargs) -> list:
         """Plot the signal and background histograms.
@@ -211,27 +204,30 @@ class ObjectPlotter():
         pass
     
     @staticmethod
-    def set_style_with_ratio(title, top_ylabel, bottom_ylabel, set_log=False, lumi=220):
+    def set_style_with_ratio(title, x_label, top_ylabel, bottom_ylabel, set_log=False, lumi=220):
         """Set the style of the plot to CMS HEP with ratio plot as bottom panel.
         
         Parameters
         - `top_ylabel`: the ylabel of the top panel"""
-        fig = plt.figure(figsize=(16, 12))
-        fig.suptitle(title, fontsize=12)
+        fig = plt.figure(figsize=(8, 6))
+        fig.suptitle(title, fontsize=14, y=0.92)
         hep.style.use("CMS")
         gs = fig.add_gridspec(2, 1, height_ratios=(4, 1))
         ax2 = fig.add_subplot(gs[1,0])
         ax = fig.add_subplot(gs[0,0], sharex=ax2)
         fig.subplots_adjust(hspace=0.1)
-        ax.tick_params(labelbottom=False)
+
         hep.cms.label(ax=ax, loc=2, label='Work in Progress', fontsize=11, com=13.6, lumi=lumi)
 
-        ax.set_ylabel(top_ylabel)
-        ax2.set_ylabel(bottom_ylabel)
+        ax.set_ylabel(top_ylabel, fontsize=12)
+        ax.tick_params(axis='both', which='major', labelsize=10, length=0, labelbottom=False)
+
+        ax2.set_ylabel(bottom_ylabel, fontsize=11)
+        ax2.set_xlabel(x_label, fontsize=12)
+        ax2.tick_params(axis='both', which='major', labelsize=10, length=0)
         if set_log: ax2.set_yscale('log')
 
         return fig, ax, ax2
-        
 
     @staticmethod
     def set_style(title, xlabel='', n_row=1, n_col=1, year=None, lumi=220) -> tuple:
@@ -271,6 +267,27 @@ class ObjectPlotter():
         ax.set_xlim(*xrange)
     
     @staticmethod
+    def plot_var_with_err(ax, ax2, hist_list, wgt_list, bins, label, xrange, **kwargs):
+        """Plot the histograms with error bars in a second panel.
+        
+        Parameters
+        - `hist_list`: the list of histograms (un-normalized)
+        - `wgt_list`: the list of weights array"""
+        bin_width = bins[1] - bins[0]
+
+        norm_hist_list = []
+        norm_err_list = []
+        for hist, wgt in zip(hist_list, wgt_list):
+            norm_hist_list.append(hist / (np.sum(wgt) * bin_width))
+            norm_err_list.append(np.sqrt(hist) / (np.sum(wgt) * bin_width))
+    
+        ratio = np.nan_to_num(hist_list[0] / hist_list[1], nan=0., posinf=0.)
+        ratio_err = np.nan_to_num(ratio * np.sqrt((norm_err_list[0]/norm_hist_list[0])**2 + (norm_err_list[1]/norm_hist_list[1])**2), nan=0., posinf=0.)
+
+        ObjectPlotter.plot_var(ax, norm_hist_list, bins, label, xrange, histtype='step', alpha=1.0, yerr=norm_err_list, **kwargs) 
+        ax2.errorbar((bins[:-1] + bins[1:])/2, ratio, yerr=ratio_err, markersize=4, fmt='o', color='black')
+    
+    @staticmethod
     def plotSigVBkg(ax, sig_hists, bkg_hists, bin_edges, sig_label, bkg_label, xrange, title, **kwargs):
         """Plot the signal and background histograms.
         
@@ -281,10 +298,8 @@ class ObjectPlotter():
         - `bin_edges`: the bin edges
         """
         s_colors = ['red', 'blue', 'forestgreen']
-        hep.histplot(bkg_hists, bins=bin_edges, label=bkg_label, ax=ax,
-            histtype='fill', alpha=0.6, stack=True, linewidth=1)
-        hep.histplot(sig_hists, bins=bin_edges, ax=ax, color=s_colors, label=sig_label, stack=False, 
-            histtype='step', alpha=1.0, linewidth=1.5)
+        hep.histplot(bkg_hists, bins=bin_edges, label=bkg_label, ax=ax, histtype='fill', alpha=0.6, stack=True, linewidth=1)
+        hep.histplot(sig_hists, bins=bin_edges, ax=ax, color=s_colors, label=sig_label, stack=False, histtype='step', alpha=1.0, linewidth=1.5)
         ax.set_xlim(*xrange)
         ax.set_ylim(bottom=0)
         ax.set_xlabel(kwargs.get('xlabel', ''))
