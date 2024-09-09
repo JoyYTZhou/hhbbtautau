@@ -136,25 +136,53 @@ class PostProcessor():
         return wgt_resolved
     
     @staticmethod
-    def present_yield(wgt_resolved, signals, regroup_dict=None, outputdir=localout) -> None:
+    def present_yield(wgt_resolved, signals, regroup_dict=None, outputdir=localout) -> pd.DataFrame:
         """Present the yield dataframe with grouped datasets. Regroup if necessary.
         
         Parameters
         - `signals`: list of signal process names
         - `regroup_dict`: dictionary of regrouping keywords. Passed into `PostProcessor.categorize`.
         """
-        if regroup_dict is None:
+        if regroup_dict is not None:
             wgt_resolved = PostProcessor.categorize(wgt_resolved, regroup_dict)
         
         yield_df = PostProcessor.process_yield(wgt_resolved, signals)
         yield_df.to_csv(pjoin(outputdir, 'scaledyield.csv'))
+        
+        return yield_df
+    
+    @staticmethod
+    def process_yield(yield_df, signals) -> pd.DataFrame:
+        """Process the yield dataframe to include signal and background efficiencies.
+
+        Parameters
+        - `yield_df`: dataframe of yields
+        - `signals`: list of signal process names
+        
+        Return
+        - processed yield dataframe"""
+        sig_list = [signal for signal in signals if signal in yield_df.columns]
+        bkg_list = yield_df.columns.difference(sig_list)
+
+        yield_df['Tot Bkg'] = yield_df[bkg_list].sum(axis=1)
+        yield_df['Bkg Eff'] = calc_eff(yield_df, 'Tot Bkg', inplace=False)
+
+        for signal in sig_list:
+            yield_df[f'{signal} Eff'] = calc_eff(yield_df, signal, inplace=False)
+
+        new_order = list(bkg_list) + ['Tot Bkg', 'Bkg Eff']
+        for signal in sig_list:
+            new_order.extend([signal, f'{signal} Eff'])
+            
+        yield_df = yield_df[new_order]
+        return yield_df
     
     @staticmethod
     def categorize(df, group_kwd:'dict') -> pd.DataFrame:
         """Recalculate/categorize a table by the group keyword.
         
         Parameters
-        - `group_kwd`: {name of new column: list of keywords to search for in the column names}"""
+        - `group_kwd`: {name of new column: [keywords to search for in the column names]}"""
         for newcol, kwdlist in group_kwd.items():
             cols = [col for col in df.columns if any(kwd in col for kwd in kwdlist)]
             if cols:
@@ -194,32 +222,6 @@ class PostProcessor():
             resolved_df[sel_cols.columns] = sel_cols * per_evt_wgt
             combined_cf = PostProcessor.sum_kwd(resolved_df, 'wgt', f"{process}_wgt")
         return resolved_df, combined_cf
-    
-    @staticmethod
-    def process_yield(yield_df, signals) -> pd.DataFrame:
-        """Process the yield dataframe to include signal and background efficiencies.
-
-        Parameters
-        - `yield_df`: dataframe of yields
-        - `signals`: list of signal process names
-        
-        Return
-        - processed yield dataframe"""
-        sig_list = [signal for signal in signals if signal in yield_df.columns]
-        bkg_list = yield_df.columns.difference(sig_list)
-
-        yield_df['Tot Bkg'] = yield_df[bkg_list].sum(axis=1)
-        yield_df['Bkg Eff'] = calc_eff(yield_df, 'Tot Bkg', inplace=False, save=False)
-
-        for signal in sig_list:
-            yield_df[f'{signal} Eff'] = calc_eff(yield_df, signal, inplace=False, save=False)
-
-        new_order = list(bkg_list) + ['Tot Bkg', 'Bkg Eff']
-        for signal in sig_list:
-            new_order.extend([signal, f'{signal} Eff'])
-            
-        yield_df = yield_df[new_order]
-        return yield_df
 
     @staticmethod
     def sum_kwd(cfdf, keyword, name) -> pd.Series:

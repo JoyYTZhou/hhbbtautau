@@ -21,7 +21,7 @@ else
 fi
 
 source scripts/envutil.sh
-setup_LCG
+LCG_sasetup
 
 export CONDOR_BASE=/store/user/joyzhou
 

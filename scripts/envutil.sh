@@ -83,6 +83,9 @@ function LCG_sasetup {
     echo "Successfully sourced python package"
     source /cvmfs/sft.cern.ch/lcg/releases/LCG_105/ROOT/6.30.02/$version/ROOT-env.sh
     echo "Successfully sourced ROOT software"
+    source /cvmfs/sft.cern.ch/lcg/releases/LCG_105/pyyaml/6.0.1/$version/PyYAML-env.sh
+    echo "Successfully sourced PyYAML software"
+
 }
 
 function remove_duplicates {
