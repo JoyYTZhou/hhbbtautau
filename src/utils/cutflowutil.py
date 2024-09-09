@@ -149,6 +149,7 @@ def load_csvs(dirname, startpattern, func=None, *args, **kwargs) -> pd.DataFrame
     - `dirname`: directory name to search for
     - `startpattern`: pattern to match the file names
     - `func`: function to apply to the list of DataFrames. Must return an Pandas object.
+    - `*args`, `**kwargs`: additional arguments to pass to the function
     """
     file_names = glob_files(dirname, filepattern=f'{startpattern}*.csv')
     dfs = [pd.read_csv(file_name, index_col=0, header=0) for file_name in file_names] 
@@ -210,7 +211,7 @@ def weight_cf(wgt_dict, raw_cf, save=False, outname=None, lumi=50):
     if save and outname is not None: wgt_df.to_csv(outname)
     return wgt_df
 
-def calc_eff(cfdf, column_name=None, type='incremental', inplace=True, save=True, savename='eff.csv') -> pd.DataFrame:
+def calc_eff(cfdf, column_name=None, type='incremental', inplace=True) -> pd.DataFrame:
     """Return efficiency for each column in the DataFrame right after the column itself.
     
     Parameters:
@@ -236,8 +237,6 @@ def calc_eff(cfdf, column_name=None, type='incremental', inplace=True, save=True
             eff_series.replace([np.inf, -np.inf], np.nan, inplace=True)
             eff_series.fillna(0 if type == 'incremental' else 1, inplace=True)
             cfdf.insert(cfdf.columns.get_loc(col) + 1, f"{col}_eff", eff_series)
-    if save:
-        cfdf.to_csv(savename)
     if inplace: return cfdf
     else: return eff_series
     
