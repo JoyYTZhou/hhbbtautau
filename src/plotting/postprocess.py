@@ -110,30 +110,57 @@ class PostProcessor():
             else:
                 print(f"Discrepancies between cutflow numbers and output number exist for {process}. Please double check selections.")
                 
-    def merge_cf(self, inputdir=condorpath, outputdir=localout, signals=['ggF', 'ZH', 'ZZ']) -> None:
+    def merge_cf(self, inputdir=condorpath, outputdir=localout) -> pd.DataFrame:
         """Merge all cutflow tables for all processes into one. Save to LOCALOUTPUT.
         Output formatted cutflow table as well.
         
         Parameters
-        - `signals`: list of signal process names"""
+        - `signals`: list of signal process names
+        
+        Return 
+        - dataframe of weighted cutflows for every dataset merged"""
         checkpath(outputdir, createdir=True)
         checkpath(inputdir, createdir=False, raiseError=True)
         resolved_list = []
-        wgt_dfdict= {}
         for process in cleancfg.DATASETS:
-            resolved, cmbd = PostProcessor.load_cf(process, self.meta_dict, inputdir) 
+            resolved, _ = PostProcessor.load_cf(process, self.meta_dict, inputdir) 
             resolved_list.append(resolved)
-            wgt_dfdict[process] = cmbd
         resolved_all = pd.concat(resolved_list, axis=1)
         resolved_all.to_csv(pjoin(outputdir, "allDatasetCutflow.csv"))
         wgt_resolved = resolved_all.filter(like='wgt', axis=1)
         wgt_resolved.columns = wgt_resolved.columns.str.replace('_wgt$', '', regex=True)
         wgt_resolved.to_csv(pjoin(outputdir, "ResolvedWgtOnly.csv"))
-        wgtpEff = calc_eff(wgt_resolved, None, 'incremental', True, pjoin(outputdir, 'resolved_wgteff.csv'))
+        wgtpEff = calc_eff(wgt_resolved, None, 'incremental', True)
         wgtpEff.filter(like='eff', axis=1).to_csv(pjoin(outputdir, "ResolvedEffOnly.csv"))
-        yield_df = PostProcessor.process_yield(pd.DataFrame(wgt_dfdict, index=wgt_resolved.index), 
-                                            signals)
+
+        return wgt_resolved
+    
+    @staticmethod
+    def present_yield(wgt_resolved, signals, regroup_dict=None, outputdir=localout) -> None:
+        """Present the yield dataframe with grouped datasets. Regroup if necessary.
+        
+        Parameters
+        - `signals`: list of signal process names
+        - `regroup_dict`: dictionary of regrouping keywords. Passed into `PostProcessor.categorize`.
+        """
+        if regroup_dict is None:
+            wgt_resolved = PostProcessor.categorize(wgt_resolved, regroup_dict)
+        
+        yield_df = PostProcessor.process_yield(wgt_resolved, signals)
         yield_df.to_csv(pjoin(outputdir, 'scaledyield.csv'))
+    
+    @staticmethod
+    def categorize(df, group_kwd:'dict') -> pd.DataFrame:
+        """Recalculate/categorize a table by the group keyword.
+        
+        Parameters
+        - `group_kwd`: {name of new column: list of keywords to search for in the column names}"""
+        for newcol, kwdlist in group_kwd.items():
+            cols = [col for col in df.columns if any(kwd in col for kwd in kwdlist)]
+            if cols:
+                df[newcol] = df[cols].sum(axis=1)
+                df.drop(columns=cols, inplace=True)
+        return df
     
     @staticmethod
     def calc_wgt(datasrcpath, meta_dict) -> dict:
@@ -151,7 +178,7 @@ class PostProcessor():
 
     @staticmethod
     def load_cf(process, meta_dict, datasrcpath) -> tuple[pd.DataFrame]:
-        """Load cutflow tables for one process containing datasets to be grouped tgt and scale it by xs * luminosity
+        """Load cutflow tables for one process containing datasets to be grouped tgt and scale it by xsection 
 
         Parameters
         -`process`: the name of the cutflow that will be grepped from datasrcpath
@@ -171,6 +198,7 @@ class PostProcessor():
     @staticmethod
     def process_yield(yield_df, signals) -> pd.DataFrame:
         """Process the yield dataframe to include signal and background efficiencies.
+
         Parameters
         - `yield_df`: dataframe of yields
         - `signals`: list of signal process names
@@ -179,11 +207,17 @@ class PostProcessor():
         - processed yield dataframe"""
         sig_list = [signal for signal in signals if signal in yield_df.columns]
         bkg_list = yield_df.columns.difference(sig_list)
-        yield_df['Tot Sig'] = yield_df[sig_list].sum(axis=1)
-        yield_df['Sig Eff'] = calc_eff(yield_df, "Tot Sig", inplace=False, save=False)
+
         yield_df['Tot Bkg'] = yield_df[bkg_list].sum(axis=1)
         yield_df['Bkg Eff'] = calc_eff(yield_df, 'Tot Bkg', inplace=False, save=False)
-        new_order = list(bkg_list) + ['Tot Bkg', 'Bkg Eff'] + list(sig_list) + ['Tot Sig', 'Sig Eff']
+
+        for signal in sig_list:
+            yield_df[f'{signal} Eff'] = calc_eff(yield_df, signal, inplace=False, save=False)
+
+        new_order = list(bkg_list) + ['Tot Bkg', 'Bkg Eff']
+        for signal in sig_list:
+            new_order.extend([signal, f'{signal} Eff'])
+            
         yield_df = yield_df[new_order]
         return yield_df
 

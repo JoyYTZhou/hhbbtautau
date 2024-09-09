@@ -44,6 +44,7 @@ fi
 
 cat << EOF >> runtime/${DYNACONF_ENV}_${PROCESS}.sub
 DYNACONF = ${DYNACONF_ENV}
+JOB_DIRNAME = ${JOB_DIRNAME}
 queue FILENAME matching files ${FILENAME}
 EOF
 

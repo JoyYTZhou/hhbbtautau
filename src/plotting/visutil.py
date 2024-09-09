@@ -27,6 +27,11 @@ class CSVPlotter():
         self.outdir = outdir
         checkpath(self.outdir)
     
+    def set_group(self, sig_group, bkg_group):
+        """Set the signal and background groups."""
+        self.sig_group = sig_group
+        self.bkg_group = bkg_group
+    
     def addextcf(self, cutflow: 'dict', df, ds, wgtname) -> None:
         """Add the cutflow to the dictionary to be udpated to the cutflow table.
         
@@ -45,11 +50,12 @@ class CSVPlotter():
         list_of_df = []
         new_outdir = f'{datasource}_extrasel'
         checkpath(new_outdir)
-        def add_wgt(dfs, rwfac):
+        def add_wgt(dfs, rwfac, ds, group):
             df = dfs[0]
             if df.empty: return None
             df['weight'] = df[per_evt_wgt] * rwfac
-            df['process'] = process if not resolve else ds
+            df['dataset'] = ds
+            df['group'] = group 
             if extraprocess: return extraprocess(df)
             else: return df
         for process in processes:
@@ -59,7 +65,7 @@ class CSVPlotter():
             for ds in self.meta_dict[process].keys():
                 rwfac = self.rwgt_fac(process, ds) 
                 dsname = self.meta_dict[process][ds]['shortname']
-                df = load_csvs(load_dir, f'{dsname}_out', func=add_wgt, rwfac=rwfac)
+                df = load_csvs(load_dir, f'{dsname}_out', func=add_wgt, rwfac=rwfac, ds=dsname, group=process)
                 checkpath(f'{new_outdir}/{process}')
                 if df is not None: 
                     list_of_df.append(df)
@@ -112,20 +118,30 @@ class CSVPlotter():
         bin_range = histopts.get('range', (0,200))
         pltlabel = list(group.keys()) if group is not None else self.labels
         hist_list = []
-        total_counts = []
         b_colors = colors[0:len(pltlabel)]
         for label in pltlabel:
             proc_list = group[label] if group is not None else [label]
-            thisdf = evts[evts['process'].isin(proc_list)]
+            thisdf = evts[evts['group'].isin(proc_list)]
             thishist, bins = ObjectPlotter.hist_arr(thisdf[att], bins, bin_range, thisdf['weight'], **kwargs)
             hist_list.append(thishist)
-            total_counts.append(np.sum(thishist))
-        sorted_indx = np.argsort(total_counts)[::-1]
-        pltlabel = [pltlabel[i] for i in sorted_indx]
-        hist_list = [hist_list[i] for i in sorted_indx]
-        b_colors = [b_colors[i] for i in sorted_indx]
+        
+        assert len(hist_list) == len(pltlabel), "The number of histograms and labels must be equal."
+        assert len(hist_list) == len(b_colors), "The number of histograms and colors must be equal."
+
         return hist_list, bins, bin_range, pltlabel, b_colors
-                
+    
+    @staticmethod
+    def get_order(hist_list) -> list:
+        """Order the histograms based on the total counts."""
+        total_counts = [np.sum(hist) for hist in hist_list]
+        sorted_indx = np.argsort(total_counts)[::-1]
+        return sorted_indx
+    
+    @staticmethod
+    def order_list(list_of_obj, order) -> list:
+        """Order the list of lists based on the order."""
+        return [list_of_obj[i] for i in order]
+    
     def plot_hist(self, evts: 'pd.DataFrame', attridict: 'dict', title='', group: 'dict'=None, save_name='', **kwargs):
         """Plot the object attribute based on the attribute dictionary.
         
@@ -134,14 +150,18 @@ class CSVPlotter():
         - `attridict`: a dictionary of attributes to be plotted
         """
         for att, options in attridict.items():
-            hist_list, bins, bin_range, pltlabel = self.get_hist(evts, att, options, group, **kwargs)
+            hist_list, bins, bin_range, pltlabel, _= self.get_hist(evts, att, options, group, **kwargs)
             pltopts = options['plot']
             ObjectPlotter.plot_var(hist_list, bins, label=pltlabel, xrange=bin_range, title=title, 
                                    save_name=pjoin(self.outdir, f'{att}{save_name}.png'), **pltopts)
 
-    def plot_shape(self, list_of_evts: list[pd.DataFrame], labels, attridict: dict, title='', save_name=''):
-        """Compare the shape of the object attribute for different dataframes."""
+    def plot_shape(self, list_of_evts: list[pd.DataFrame], labels, attridict: dict, top_y, bottom_y, title='', save_name='') -> None:
+        """Compare the (normalized) shape of the object attribute for two different dataframes, with ratio panel attached.
+        
+        Parameters
+        - `list_of_evts`: the list of dataframes to be histogrammed and compared"""
         for att, options in attridict.items():
+            fig, ax, ax2 = ObjectPlotter.set_style_with_ratio(title, top_y, bottom_y)
             hist_list = []
             pltopts = options['plot']
             bins = options['hist']['bins']
@@ -149,109 +169,127 @@ class CSVPlotter():
             for evts in list_of_evts:
                 thishist, bins = ObjectPlotter.hist_arr(evts[att], bins, bin_range, evts['weight'], density=True, keep_overflow=False)
                 hist_list.append(thishist)
-            ObjectPlotter.plot_var(hist_list, bins, labels, bin_range, title=title, 
-                                   save_name=pjoin(self.outdir, f'{att}{save_name}.png'), stack=False, histtype='step', alpha=1.0,  
-                                   **pltopts)
-            
-    def plot_SVB(self, evts, attridict, sgroup, bgroup, title='', save_name='', **kwargs):
+            ObjectPlotter.plot_var(ax, hist_list, bins, labels, bin_range, histtype='step', alpha=1.0, **pltopts)
+            fig.savefig(save_name=pjoin(self.outdir, f'{att}{save_name}.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
+    
+    def plot_SvBHist(self, ax, evts, att, attoptions, title, **kwargs) -> list:
         """Plot the signal and background histograms.
         
         Parameters
-        - `evts`: the dataframe to be plotted
-        - `attridict`: the dictionary of attributes to be plotted
-        - `kwargs`: additional arguments to be passed into the `ObjectPlotter.hist_arr` function
-        """
+        - `ax`: matplotlib axis object
+        - `att`: the attribute to be plotted
+        - `attoptions`: the options for the attribute to be plotted
+        
+        Return
+        - `order`: the order of the histograms"""
+        xlabel = attoptions['plot'].get('xlabel', '')
+        b_hists, bins, range, blabels, _ = self.get_hist(evts, att, attoptions, self.bkg_group)
+        order = kwargs.pop('order', CSVPlotter.get_order(b_hists))
+        b_hists, blabels = CSVPlotter.order_list(b_hists, order), CSVPlotter.order_list(blabels, order)
+
+        s_hists, bins, range, slabels, _ = self.get_hist(evts, att, attoptions, self.sig_group, **kwargs)
+        ObjectPlotter.plotSigVBkg(ax, s_hists, b_hists, bins, slabels, blabels, range, title, xlabel=xlabel, **kwargs)  
+
+        return order
+
+    def plot_fourRegions(self, regionA, regionB, regionC, regionD, attridict, bgroup, sgroup, title='', save_name='', **kwargs):
+        """Plot the signal and background histograms for the four regions."""
+        self.set_group(sgroup, bgroup)
         for att, options in attridict.items():
-            pltopts = options['plot']
-            b_hists, bins, range, blabels, b_color = self.get_hist(evts, att, options, bgroup, **kwargs)
-            s_hists, bins, range, slabels, _= self.get_hist(evts, att, options, sgroup, **kwargs)
-            ObjectPlotter.plotSigVBkg(s_hists, b_hists, bins, slabels, blabels, range, title=title, save_name=pjoin(self.outdir, f'{att}{save_name}.png'), b_color=b_color, **pltopts) 
+            fig, axes = ObjectPlotter.set_style(title, '', n_row=2, n_col=2)
+
+            order = self.plot_SvBHist(ax=axes[0,0], evts=regionA, att=att, attoptions=options, title='Region A (OS, 2 b-tagged)', **kwargs)
+
+            self.plot_SvBHist(ax=axes[0,1], evts=regionB, att=att, attoptions=options, title='Region B (OS, 1 b-tagged)', order=order, **kwargs)
+            self.plot_SvBHist(ax=axes[1,0], evts=regionC, att=att, attoptions=options, title='Region C (SS, 2 b-tagged)', order=order, **kwargs)
+            self.plot_SvBHist(ax=axes[1,1], evts=regionD, att=att, attoptions=options, title='Region D (SS, 1 b-tagged)', order=order, **kwargs)
+
+            fig.savefig(pjoin(self.outdir, f'{att}{save_name}.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
         
 class ObjectPlotter():
     def __init__(self):
         pass
     
     @staticmethod
-    def set_style(title, xlabel):
-        """Set the style of the plot to CMS HEP."""
-        fig, ax = plt.subplots(figsize=(8, 5))
-        ax.set_title(title, fontsize=14)
+    def set_style_with_ratio(title, top_ylabel, bottom_ylabel, set_log=False, lumi=220):
+        """Set the style of the plot to CMS HEP with ratio plot as bottom panel.
+        
+        Parameters
+        - `top_ylabel`: the ylabel of the top panel"""
+        fig = plt.figure(figsize=(16, 12))
+        fig.suptitle(title, fontsize=12)
         hep.style.use("CMS")
-        hep.cms.label(label='Work in Progress', fontsize=11)
-        ax.set_xlabel(xlabel, fontsize=12)
-        ax.set_ylabel("Events", fontsize=12)
-        ax.set_prop_cycle('color', colors)
-        ax.tick_params(axis='both', which='major', labelsize=10, length=0)
-        for spine in ax.spines.values():
-            spine.set_linewidth(0.5)
-        return fig, ax
-    
-    # @staticmethod
-    # def compare_shape(original: np.ndarray, target: np.ndarray, new_original_weights, **kwargs):
-    #     fig, ax = ObjectPlotter.set_style(kwargs.get('title', None), kwargs.get('xlabel', 'GeV')) 
-    #     xlim = np.percentile(np.hstack([target]), [0.01, 99.99])
-    #     plt.hist(original[column], weights=new_original_weights, range=xlim, **hist_settings)
-    #         plt.hist(target[column], range=xlim, **hist_settings)
-    #         plt.title(column)
-    #         print('KS over ', column, ' = ', ks_2samp_weighted(original[column], target[column], 
-    #                                         weights1=new_original_weights, weights2=np.ones(len(target), dtype=float)))
+        gs = fig.add_gridspec(2, 1, height_ratios=(4, 1))
+        ax2 = fig.add_subplot(gs[1,0])
+        ax = fig.add_subplot(gs[0,0], sharex=ax2)
+        fig.subplots_adjust(hspace=0.1)
+        ax.tick_params(labelbottom=False)
+        hep.cms.label(ax=ax, loc=2, label='Work in Progress', fontsize=11, com=13.6, lumi=lumi)
+
+        ax.set_ylabel(top_ylabel)
+        ax2.set_ylabel(bottom_ylabel)
+        if set_log: ax2.set_yscale('log')
+
+        return fig, ax, ax2
+        
 
     @staticmethod
-    def plot_var(hist, bin_edges: np.ndarray, label, xrange, title='plot', save_name='plot.png', **kwargs):
-        """Plot the object attribute.
+    def set_style(title, xlabel='', n_row=1, n_col=1, year=None, lumi=220) -> tuple:
+        """Set the style of the plot to CMS HEP.
+        
+        Return 
+        - `fig`: the figure object
+        - `axes`: the axes object"""
+
+        fig, axes = plt.subplots(n_row, n_col, figsize=(8*n_col, 5*n_row))
+        fig.suptitle(title, fontsize=14)
+        hep.style.use("CMS")
+
+        if not isinstance(axes, np.ndarray):
+            axes = np.array([axes])
+
+        for ax in axes.flat:
+            hep.cms.label(ax=ax, loc=2, label='Work in Progress', fontsize=11, com=13.6, lumi=lumi, year=year)
+            ax.set_xlabel(xlabel, fontsize=12)
+            ax.set_ylabel("Events", fontsize=12)
+            ax.set_prop_cycle('color', colors)
+            ax.tick_params(axis='both', which='major', labelsize=10, length=0)
+            for spine in ax.spines.values():
+                spine.set_linewidth(0.5)
+        return fig, axes
+
+    @staticmethod
+    def plot_var(ax, hist, bin_edges: np.ndarray, label, xrange, **kwargs):
+        """A wrapper around the histplot function in mplhep to plot the histograms.
         
         Parameters
         - `hist`: np.ndarray object as histogram, or a list of histograms
         - `bin_edges`: the bin edges
         """
-        xlabel = kwargs.pop('xlabel', 'GeV')
-        fig, ax = ObjectPlotter.set_style(title, xlabel)
-        hep.histplot(
-            hist,
-            bins=bin_edges,
-            label=label,
-            ax=ax,
-            linewidth=1.5,
-            **kwargs)
+        hep.histplot(hist, bins=bin_edges, label=label, ax=ax, linewidth=1.5, **kwargs)
         ax.legend(fontsize=12, loc='upper right')
         ax.set_xlim(*xrange)
-        fig.savefig(save_name, dpi=300)
     
     @staticmethod
-    def plotSigVBkg(sig_hists, bkg_hists, bin_edges, sig_label, bkg_label, xrange, title='plot', save_name='plot.png', **kwargs):
+    def plotSigVBkg(ax, sig_hists, bkg_hists, bin_edges, sig_label, bkg_label, xrange, title, **kwargs):
         """Plot the signal and background histograms.
         
         Parameters
+        - `ax`: the axis to be plotted
         - `sig_hists`: the signal histograms
         - `bkg_hists`: the background histograms
         - `bin_edges`: the bin edges
         """
-        xlabel = kwargs.pop('xlabel', 'GeV')
-        fig, ax = ObjectPlotter.set_style(title, xlabel)
         s_colors = ['red', 'blue', 'forestgreen']
-        hep.histplot(
-            bkg_hists,
-            bins=bin_edges,
-            label=bkg_label,
-            ax=ax,
-            color=kwargs.pop('b_color', colors),
-            histtype='fill',
-            alpha=0.6,
-            stack=True,
-            linewidth=1)
-        hep.histplot(
-            sig_hists,
-            bins=bin_edges,
-            ax=ax,
-            color=s_colors,
-            label=sig_label,
-            stack=False,
-            histtype='step',
-            alpha=1.0,
-            linewidth=2)
+        hep.histplot(bkg_hists, bins=bin_edges, label=bkg_label, ax=ax,
+            histtype='fill', alpha=0.6, stack=True, linewidth=1)
+        hep.histplot(sig_hists, bins=bin_edges, ax=ax, color=s_colors, label=sig_label, stack=False, 
+            histtype='step', alpha=1.0, linewidth=1.5)
         ax.set_xlim(*xrange)
+        ax.set_ylim(bottom=0)
+        ax.set_xlabel(kwargs.get('xlabel', ''))
+        ax.set_title(title, fontsize=12)
         ax.legend(fontsize=12, loc='upper right')
-        fig.savefig(save_name, dpi=300)
         
     @staticmethod
     def hist_arr(arr, bins: int, range: list[int, int], weights=None, density=False, keep_overflow=True) -> tuple[np.ndarray, np.ndarray]:
@@ -285,10 +323,3 @@ class ObjectPlotter():
         """
         mask = Object.sortmask(data[sort_by], **kwargs)
         return arr_handler(data[sort_what])[mask]
-
-# style a dataframe table
-def makePretty(styler,color_code):
-    styler.format(precision=3)
-    css_indexes=f'background-color: {color_code}; color: white;'
-    styler.applymap_index(lambda _: css_indexes, axis=1)
-    return styler
