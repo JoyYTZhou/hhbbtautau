@@ -34,11 +34,11 @@ def checkpath(dirname, createdir=True, raiseError=False) -> bool:
         return checklocalpath(dirname, raiseError)
 
 def transferfiles(srcpath, destpath, filepattern=False, remove=False) -> None:
-    """Transfer files between local and condor system. Will check if destpath exist.
+    """Transfer all files in srcpath to destpath. Will check if destpath exist.
     
     Parameters
-    - `srcpath`: source path (local/remote)
-    - `destpath`: destination path (remote/local)
+    - `srcpath`: source path (local/remote), a directory
+    - `destpath`: destination path (remote/local), a directory
     - `remove`: mv/cp. Only supported when moving from local to remote
     """
     if isremote(destpath):
@@ -62,6 +62,14 @@ def transferfiles(srcpath, destpath, filepattern=False, remove=False) -> None:
                 for srcfile in glob_files(srcpath, filepattern):
                     cpfcondor(srcfile, f'{destpath}/')
             else: cpfcondor(srcpath, f'{destpath}/')
+
+def remove_xrdfs_file(file_path):
+    """Remove a file from xrdfs.
+    
+    Parameters
+    - `file_path`: file path to remove. without prefix"""
+    cmd = ["xrdfs", PREFIX, "rm", file_path]
+    subprocess.run(cmd)
 
 def checkx509():
     """Check if the X509 proxy and certificate directory are set."""
@@ -106,7 +114,7 @@ def checklocalpath(pathstr, raiseError=False) -> bool:
     path = Path(pathstr) 
     if not path.exists():
         if raiseError:
-            raise FileNotFoundError(f"this file {pathstr} does not exist.")
+            raise FileNotFoundError(f"this path {pathstr} does not exist.")
         else:
             path.mkdir(parents=True, exist_ok=True)
         return 1
