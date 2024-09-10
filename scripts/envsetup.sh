@@ -5,6 +5,9 @@
 # ===========================================================================================================
 
 # NOTE: This script is meant for LCG set up with PYTHON<=3.10
+source scripts/envutil.sh
+LCG_sasetup
+
 cd ~/work/hhbbtautau
 rm -r *.tar.gz
 cd ~/nobackup

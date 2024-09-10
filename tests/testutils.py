@@ -1,5 +1,5 @@
 from src.analysis.spawnjobs import filterExisting
-from src.utils.filesysutil import glob_files, cross_check, checklocalpath, checkpath
+from src.utils.filesysutil import glob_files, cross_check, checklocalpath, checkpath, transferfiles, remove_xrdfs_file
 from config.selectionconfig import runsetting as rs
 
 import unittest, os, glob
@@ -72,6 +72,18 @@ class TestFilter(unittest.TestCase):
             "uuid": "4e4b117c-661e-11ee-9492-9484e4a9beef"
         }}} 
 
+    def test_transferfiles(self):
+        """Check the success of transferring/removing files from local to remote and vice versa."""
+        transferfiles(self.temp_dir, self.remote_test)
+        self.assertTrue(os.path.exists(pjoin(self.remote_test, 'test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef_cutflow.csv')), "Files transfered from local to remote incorrectly. Check transferfiles function")
+        self.assertTrue(os.path.exists(pjoin(self.remote_test, 'test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef-part0.root')), "Files translated from local to remote correctly. Check transferfiles function")
+
+        remove_xrdfs_file(pjoin(self.remote_test, 'test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef_cutflow.csv'))
+        remove_xrdfs_file(pjoin(self.remote_test, 'test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef-part0.root'))
+
+        self.assertFalse(os.path.exists(pjoin(self.remote_test, 'test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef_cutflow.csv')), "Files not removed from remote. Check remove_xrdfs_file function")
+        self.assertFalse(os.path.exists(pjoin(self.remote_test, 'test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef-part0.root')), "Files not removed from remote. Check remove_xrdfs_file function")
+
     def test_checklocalpath(self):
         self.assertEqual(checklocalpath(self.temp_dir, False), 0, "checklocalpath returns incorrect stat result.")
 
@@ -98,6 +110,7 @@ class TestFilter(unittest.TestCase):
         remote_result = filterExisting('ggF', self.dsdata_remote, tsferP=self.remote_test)
         self.assertTrue(remote_result, "Files not filtered correctly. Check filterExisting function")
         self.assertEqual(len(self.dsdata_remote['files']), 1, "Files not filtered correctly, check filterExisting function")
+    
 
     def tearDown(self) -> None:
         for f in glob.glob(pjoin(self.temp_dir, '*')): os.remove(f)

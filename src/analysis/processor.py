@@ -31,7 +31,7 @@ class Processor:
         """
         Parameters
         - `ds_dict`: Example dictionary should look like this,
-        {"files": {"file1.root": {"steps": [...], "uuid": ...}}}
+        {"files": {"file1.root": {"steps": [...], "uuid": ...}}, "metadata": {"shortname": ...}}
         """
         self._rtcfg = rt_cfg
         self.dsdict = dsdict
@@ -99,18 +99,17 @@ class Processor:
         return rc
     
     def writeCF(self, suffix, **kwargs) -> int:
+        """Write the cutflow to a file. Transfer the file if necessary"""
         if kwargs.get('write_npz', False):
             npzname = pjoin(self.outdir, f'cutflow_{suffix}.npz')
             self.evtsel.cfobj.to_npz(npzname)
         cutflow_name = f'{self.dataset}_{suffix}_cutflow.csv'
         checkpath(self.outdir)
-        localpath = pjoin(self.outdir, cutflow_name)
         cutflow_df = self.evtsel.cf_to_df() 
-        cutflow_df.to_csv(localpath)
+        cutflow_df.to_csv(pjoin(self.outdir, cutflow_name))
         print("Cutflow written to local!")
         if self.transfer:
-            condorpath = f'{self.transfer}/{cutflow_name}'
-            transferfiles(localpath, condorpath, filepattern=False, remove=True)
+            transferfiles(self.outdir, self.transfer, filepattern=False, remove=True)
         return 0
     
     def writeevts(self, passed, suffix, **kwargs) -> int:
