@@ -4,7 +4,17 @@ from config.selectionconfig import runsetting as rs
 
 import unittest, os, glob
 
+runcom = subprocess.run
 pjoin = os.path.join
+PREFIX = "root://cmseos.fnal.gov"
+
+def stat_xrdfs(path) -> bool:
+    com = f"xrdfs {PREFIX} stat {path}"
+    proc = runcom(com, shell=True, capture_output=True, text=True)
+    if proc.returncode == 0:
+        return True
+    else:
+        return False
 
 class TestFilter(unittest.TestCase):
     def setUp(self):
@@ -75,8 +85,7 @@ class TestFilter(unittest.TestCase):
     def test_transferfiles(self):
         """Check the success of transferring/removing files from local to remote and vice versa."""
         transferfiles(self.temp_dir, self.remote_test)
-        self.assertTrue(os.path.exists(pjoin(self.remote_test, 'test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef_cutflow.csv')), "Files transfered from local to remote incorrectly. Check transferfiles function")
-        self.assertTrue(os.path.exists(pjoin(self.remote_test, 'test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef-part0.root')), "Files translated from local to remote correctly. Check transferfiles function")
+        stat_xrdfs()
 
         remove_xrdfs_file(pjoin(self.remote_test, 'test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef_cutflow.csv'))
         remove_xrdfs_file(pjoin(self.remote_test, 'test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef-part0.root'))

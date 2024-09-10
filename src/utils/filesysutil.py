@@ -155,8 +155,9 @@ def cross_check(filepattern, existentfiles) -> bool:
             return True
     return False
 
-def checkcondorpath(dirname, createdir=True, raiseError=False):
+def checkcondorpath(dirname, createdir=True, raiseError=False) -> True:
     """Check if a condor path exists and potentially create one.
+
     Parameters:
     `dirname`: directory path to check
     `createdir`: if True, create the directory if it doesn't exist. If false, return stat code. 
