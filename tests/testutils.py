@@ -2,13 +2,14 @@ from src.analysis.spawnjobs import filterExisting
 from src.utils.filesysutil import glob_files, cross_check, checklocalpath, checkpath, transferfiles, remove_xrdfs_file
 from config.selectionconfig import runsetting as rs
 
-import unittest, os, glob
+import unittest, os, glob, subprocess
 
 runcom = subprocess.run
 pjoin = os.path.join
 PREFIX = "root://cmseos.fnal.gov"
 
 def stat_xrdfs(path) -> bool:
+    """Check if the file exists in the remote directory."""
     com = f"xrdfs {PREFIX} stat {path}"
     proc = runcom(com, shell=True, capture_output=True, text=True)
     if proc.returncode == 0:
@@ -85,7 +86,8 @@ class TestFilter(unittest.TestCase):
     def test_transferfiles(self):
         """Check the success of transferring/removing files from local to remote and vice versa."""
         transferfiles(self.temp_dir, self.remote_test)
-        stat_xrdfs()
+        self.assertTrue(stat_xrdfs(pjoin(self.remote_test, 'test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef_cutflow.csv')), "Files not transferred to remote. Check transferfiles function")
+        self.assertTrue(stat_xrdfs(pjoin(self.remote_test, 'test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef-part0.root')), "Files not transferred to remote. Check transferfiles function")
 
         remove_xrdfs_file(pjoin(self.remote_test, 'test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef_cutflow.csv'))
         remove_xrdfs_file(pjoin(self.remote_test, 'test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef-part0.root'))
