@@ -39,6 +39,7 @@ def transferfiles(srcpath, destpath, filepattern=False, remove=False) -> None:
     Parameters
     - `srcpath`: source path (local/remote), a directory
     - `destpath`: destination path (remote/local), a directory
+    - `filepattern`: 
     - `remove`: mv/cp. Only supported when moving from local to remote
     """
     if isremote(destpath):

@@ -85,7 +85,8 @@ class TestFilter(unittest.TestCase):
 
     def test_transferfiles(self):
         """Check the success of transferring/removing files from local to remote and vice versa."""
-        transferfiles(self.temp_dir, self.remote_test)
+        transferfiles(self.temp_dir, self.remote_test, filepattern="*.root")
+        transferfiles(self.temp_dir, self.remote_test, filepattern="*.csv")
         self.assertTrue(stat_xrdfs(pjoin(self.remote_test, 'test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef_cutflow.csv')), "Files not transferred to remote. Check transferfiles function")
         self.assertTrue(stat_xrdfs(pjoin(self.remote_test, 'test_3985bc58-ab6d-11ee-b5bf-0e803c0abeef-part0.root')), "Files not transferred to remote. Check transferfiles function")
 
@@ -102,7 +103,7 @@ class TestFilter(unittest.TestCase):
         files = glob_files(self.temp_dir)
         files_remote = glob_files(self.remote_test)
         self.assertTrue(len(files) > 0, "No files found in the directory! Double check glob_files function")
-        self.assertTrue(len(files_remote) > 0, "No files found in the directory! Double check glob_files function")
+        self.assertTrue(len(files_remote) == 2, "No files found in the directory! Double check glob_files function")
     
     def testCrossCheck(self):
         if_exist = cross_check("*.root", glob_files(self.temp_dir))
