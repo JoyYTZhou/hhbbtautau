@@ -47,6 +47,6 @@ A brief explanation of the different subdirectories in this repository:
 
 - **results/**: Directory for storing the output results of the analysis, including plots, tables, and summary files.
 
-- **scripts/**: Contains scripts for setting up the environment, running the analysis, and other automation tasks.
+- **scripts/**: Contains scripts for setting up the (LPC/LXPLUS) environment, running the analysis, and other automation tasks.
 
 - **notebooks/**: Jupyter notebooks for exploratory data analysis, visualization, and prototyping.
