@@ -1,9 +1,9 @@
 import unittest, os, glob
 
-from src.analysis.processor import Processor
-from src.utils.filesysutil import glob_files
+from ..src.analysis.processor import Processor
+from ..src.utils.filesysutil import glob_files
 from config.selectionconfig import runsetting as rs
-from src.analysis.custom import switch_selections
+from config.custom import switch_selections
 
 pjoin = os.path.join
 
