@@ -1,6 +1,6 @@
 import unittest, os, glob
 
-from config.selectionconfig import runsetting as rs
+from config.projectconfg import runsetting as rs
 from src.analysis.spawnjobs import JobLoader
 import json
 

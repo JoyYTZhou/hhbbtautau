@@ -9,10 +9,10 @@ namemap = Dynaconf(
     settings_files=['config/aodnamemap.yaml']
 )
 
-selectionsettings = Dynaconf(
+selection = Dynaconf(
     root_path = root_path,
     environments=True,
-    settings_files=['config/bbtthadronic.yaml']
+    settings_files=['config/selection.yaml']
 )
 
 runsetting = Dynaconf(
@@ -30,7 +30,7 @@ dasksetting = Dynaconf(
 cleansetting = Dynaconf(
     root_path=root_path,
     environments=True,
-    settings_file=['config/dataclean.toml']
+    settings_file=['config/postprocess.toml']
 )
 
 trainingsetting = Dynaconf(
