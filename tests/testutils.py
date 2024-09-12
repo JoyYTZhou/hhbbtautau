@@ -1,6 +1,6 @@
 from src.analysis.spawnjobs import filterExisting
 from src.utils.filesysutil import glob_files, cross_check, checklocalpath, checkpath, transferfiles, remove_xrdfs_file
-from config.selectionconfig import runsetting as rs
+from config.projectconfg import runsetting as rs
 
 import unittest, os, glob, subprocess
 
