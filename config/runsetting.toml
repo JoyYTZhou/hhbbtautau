@@ -1,5 +1,5 @@
 [PRESELECT]
-SEL_NAME = 'prelim_total'
+SEL_NAME = 'prelim_twolooseb'
 COPY_LOCAL = false
 DELAYED_OPEN = false
 JOB_DIRNAME = 'preseljson'
