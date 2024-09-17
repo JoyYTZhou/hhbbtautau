@@ -5,13 +5,42 @@ This repository contains the code and configuration files for the HH $\to b\bar{
 ## Table of Contents
 - [HH $\\to b\\bar{b} \\tau \\tau$ Analysis Repo](#hh-to-bbarb-tau-tau-analysis-repo)
   - [Table of Contents](#table-of-contents)
-  - [Using this Repo as a Template](#using-this-repo-as-a-template)
+  - [Recommended Practice](#recommended-practice)
+    - [Create copies of the repository for development and testing](#create-copies-of-the-repository-for-development-and-testing)
+      - [Fork and Create a New Branch](#fork-and-create-a-new-branch)
+      - [Using this Repo as a Template](#using-this-repo-as-a-template)
+    - [Change event selection/analysis logic/run-time environment](#change-event-selectionanalysis-logicrun-time-environment)
   - [Installation](#installation)
   - [Directory Structure](#directory-structure)
 
-## Using this Repo as a Template
+## Recommended Practice
+
+### Create copies of the repository for development and testing
+
+#### Fork and Create a New Branch
+1. **Fork the Repository**:
+   - Go to the repository page on GitHub.
+   - Click the "Fork" button at the top right of the page to create a copy of the repository under your GitHub account.
+
+2. **Clone the Forked Repository**:
+   ```bash
+   # Clone the forked repository
+   git clone <your-forked-repository-url>
+
+   # Navigate to the project directory
+   cd <project-directory>
+   ```
+
+#### Using this Repo as a Template
 Follow the instructions [here](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-repository-from-a-template) to create a new repository from this template.
 
+
+### Change event selection/analysis logic/run-time environment
+This section provides guidelines on how to modify the event selection logic and analysis code. 
+1. Customize event selections through creating classes inherited from the `EventSelection` in the `analysis.evtselutil` module.
+2. Any src code changes should be tested with the provided unit tests in the `tests` directory.
+3. Update the configuration files in the `configs` directory, especially the `projectconfg.py` file to reflect the changes in the event selection logic. 
+4. Modify `main.py` to include the new event selection classes if necessary and run the analysis. This shouldn't be necessary unless the directory structure has changed significantly or files in `projectconfg.py` have been renamed.
 
 ## Installation
 

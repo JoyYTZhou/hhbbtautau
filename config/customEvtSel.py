@@ -3,6 +3,8 @@
 # TECHNICALLY THIS SHOULD BE THE ONLY FILE THAT NEEDS TO BE MODIFIED FOR CUSTOM EVENT SELECTIONS
 from src.analysis.evtselutil import BaseEventSelections
 from src.analysis.objutil import Object
+
+from config.projectconfg import namemap, selection
 import operator as opr
 import awkward as ak
 
@@ -15,8 +17,15 @@ def switch_selections(sel_name):
     }
     return selections.get(sel_name, BaseEventSelections)
 
+default_trigsel = selection.triggerselections
+default_objsel = selection.objselections
+default_mapcfg = namemap
+
 class skimEvtSel(BaseEventSelections):
-    """Reduce event sizes"""
+    """A class to skim the events based on the trigger and object selections."""
+    def __init__(self, trigcfg=default_trigsel, objcfg=default_objsel, mapcfg=default_mapcfg, sequential=False) -> None:
+        super().__init__(trigcfg, objcfg, mapcfg, sequential)
+
     def triggersel(self, events):
         for trigname, value in self.trigcfg.items():
             if value:
@@ -49,6 +58,9 @@ class skimEvtSel(BaseEventSelections):
         muon = None
 
 class twoTauEvtSel(BaseEventSelections):
+    def __init__(self, trigcfg=default_trigsel, objcfg=default_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
+        super().__init__(trigcfg, objcfg, mapcfg, sequential)
+
     def seltwotaus(self, events) -> ak.Array:
         tau = Object(events, "Tau", weakrefEvt=True)
         def tauobjmask(tau: 'Object'):
@@ -78,6 +90,8 @@ class twoTauEvtSel(BaseEventSelections):
         return events
 
 class ControlEvtSel(twoTauEvtSel):
+    def __init__(self, trigcfg=default_trigsel, objcfg=default_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
+        super().__init__(trigcfg, objcfg, mapcfg, sequential)
     def setevtsel(self, events) -> None:
         events = self.seltwotaus(events)
     
@@ -106,6 +120,9 @@ class ControlEvtSel(twoTauEvtSel):
         self.saveWeights(events)
 
 class SignalEvtSel(twoTauEvtSel):
+    def __init__(self, trigcfg=default_trigsel, objcfg=default_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
+        super().__init__(trigcfg, objcfg, mapcfg, sequential)
+
     def setevtsel(self, events) -> None:
         events = self.seltwotaus(events)
         
@@ -136,6 +153,9 @@ class SignalEvtSel(twoTauEvtSel):
         self.saveWeights(events)
 
 class PrelimEvtSel(twoTauEvtSel):
+    def __init__(self, trigcfg=default_trigsel, objcfg=default_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
+        super().__init__(trigcfg, objcfg, mapcfg, sequential)
+
     def setevtsel(self, events):
         events = self.seltwotaus(events)
 
