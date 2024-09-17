@@ -1,7 +1,7 @@
 import unittest, os, glob
 
-from ..src.analysis.processor import Processor
-from ..src.utils.filesysutil import glob_files
+from src.analysis.processor import Processor
+from src.utils.filesysutil import glob_files
 from config.projectconfg import runsetting as rs
 from config.customEvtSel import switch_selections
 
