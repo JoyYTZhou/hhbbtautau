@@ -1,7 +1,7 @@
 import unittest, os, glob
 
-from ..src.analysis.processor import Processor
-from ..src.utils.filesysutil import glob_files
+from src.analysis.processor import Processor
+from src.utils.filesysutil import FileSysHelper, XRootDHelper
 from config.projectconfg import runsetting as rs
 from config.customEvtSel import switch_selections
 
@@ -32,10 +32,12 @@ class TestProcessor(unittest.TestCase):
     def tearDown(self) -> None:
         files = glob.glob(os.path.join(self.proc.outdir, "*"))
         for f in files: os.remove(f)
+        xrdhelper = XRootDHelper()
+        xrdhelper.remove_files(rs.TRANSFER_PATH)
     
     def test_dir_init(self):
         expected = self.proc.outdir
-        self.assertTrue(os.path.exists(expected), f"Directory {expected} does not exist!")
+        self.assertTrue(os.path.exists(expected), f"Local output Directory {expected} does not exist!")
         
     def test_proc_load_remote(self):
         result = self.proc.loadfile_remote(self.preprocessed)
@@ -57,20 +59,20 @@ class TestProcessor(unittest.TestCase):
         self.assertEqual(result, 0, "Error encountered")
     
     def test_transfer_file(self):
-        proc = Processor(rs, self.preprocessed, transferP='/store/user/joyzhou/tests/ggF', evtselclass=self.eventSelection) 
+        proc = Processor(rs, self.preprocessed, transferP=rs.TRANSFER_PATH, evtselclass=self.eventSelection) 
         result = proc.runfiles(write_npz=False)
 
         self.assertEqual(result, 0, "Error encountered")
         
         expected_files = ['GluGlutoHHto2B2Tau_3985bc58-ab6d-11ee-b5bf-0e803c0abeef_cutflow.csv', 
                           'GluGlutoHHto2B2Tau_3985bc58-ab6d-11ee-b5bf-0e803c0abeef-part0.root']
-        produced = glob_files(proc.transfer)
+        produced = FileSysHelper.glob_files(proc.transfer)
+
         for file in expected_files:
             self.assertIn(file, produced, f"File {file} not found in {proc.transfer}")
-        
-        local_files = glob_files(proc.outdir)
+
+        local_files = FileSysHelper.glob_files(proc.outdir)
         self.assertEqual(len(local_files), 0, f"Files not removed from {proc.outdir}")
-            
     
 if __name__ == '__main__':
     unittest.main()

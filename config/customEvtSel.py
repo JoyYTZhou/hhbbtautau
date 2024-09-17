@@ -1,8 +1,8 @@
 # This file contains custom event selection classes for the src.analysis.
 # The classes are inherited from the BaseEventSelections class
 # TECHNICALLY THIS SHOULD BE THE ONLY FILE THAT NEEDS TO BE MODIFIED FOR CUSTOM EVENT SELECTIONS
-from ..src.analysis.evtselutil import BaseEventSelections
-from ..src.analysis.objutil import Object
+from src.analysis.evtselutil import BaseEventSelections
+from src.analysis.objutil import Object
 import operator as opr
 import awkward as ak
 
