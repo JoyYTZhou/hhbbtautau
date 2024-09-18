@@ -34,8 +34,8 @@ class skimEvtSel(BaseEventSelections):
                 self.objsel.add(trigname, events[~trigname])
 
     def setevtsel(self, events) -> None:
-        muon = Object(events, "Muon")
-        electron = Object(events, "Electron")
+        muon = Object(events, "Muon", selcfg=self.objcfg['Muon'], mapcfg=self.mapcfg)
+        electron = Object(events, "Electron", selcfg=self.objcfg['Electron'], mapcfg=self.mapcfg)
         e_mask = (electron.ptmask(opr.ge) & \
                 electron.absdxymask(opr.le) & \
                 electron.absetamask(opr.le) & \
@@ -62,7 +62,7 @@ class twoTauEvtSel(BaseEventSelections):
         super().__init__(trigcfg, objcfg, mapcfg, sequential)
 
     def seltwotaus(self, events) -> ak.Array:
-        tau = Object(events, "Tau", weakrefEvt=True)
+        tau = Object(events, "Tau", selcfg=self.objcfg['Tau'], mapcfg=self.mapcfg)
         def tauobjmask(tau: 'Object'):
             tau_mask = (tau.ptmask(opr.ge) & \
                         tau.absetamask(opr.le) & \
@@ -95,7 +95,7 @@ class ControlEvtSel(twoTauEvtSel):
     def setevtsel(self, events) -> None:
         events = self.seltwotaus(events)
     
-        jet = Object(events, 'Jet')
+        jet = Object(events, name='Jet', selcfg=self.objcfg['Jet'], mapcfg=self.mapcfg)
         def jobjmask(jet: 'Object'):
             j_mask = (jet.ptmask(opr.ge) & jet.absetamask(opr.le))
             tau_ldvec = Object.fourvector(self.objcollect['LDTau'], sort=False)
@@ -126,7 +126,7 @@ class SignalEvtSel(twoTauEvtSel):
     def setevtsel(self, events) -> None:
         events = self.seltwotaus(events)
         
-        jet = Object(events, 'Jet')
+        jet = Object(events, name='Jet', selcfg=self.objcfg['Jet'], mapcfg=self.mapcfg)
         
         def jobjmask(jet: 'Object'):
             j_mask = (jet.ptmask(opr.ge) & jet.absetamask(opr.le))
@@ -159,7 +159,7 @@ class PrelimEvtSel(twoTauEvtSel):
     def setevtsel(self, events):
         events = self.seltwotaus(events)
 
-        jet = Object(events, 'Jet')
+        jet = Object(events, name='Jet', selcfg=self.objcfg['Jet'], mapcfg=self.mapcfg)
         
         def jobjmask(jet: 'Object'):
             j_mask = (jet.ptmask(opr.ge) & jet.absetamask(opr.le))
