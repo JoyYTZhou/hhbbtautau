@@ -41,6 +41,7 @@ This section provides guidelines on how to modify the event selection logic and 
 2. Any src code changes should be tested with the provided unit tests in the `tests` directory.
 3. Update the configuration files in the `configs` directory, especially the `projectconfg.py` file to reflect the changes in the event selection logic. 
 4. Modify `main.py` to include the new event selection classes if necessary and run the analysis. This shouldn't be necessary unless the directory structure has changed significantly or files in `projectconfg.py` have been renamed.
+5. Test your changes by running `python -m unittest tests.testproc` with the new event selection classes and configurations.
 
 ## Installation
 
