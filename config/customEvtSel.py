@@ -34,8 +34,9 @@ class skimEvtSel(BaseEventSelections):
                 self.objsel.add(trigname, events[~trigname])
 
     def setevtsel(self, events) -> None:
-        muon = Object(events, "Muon", selcfg=self.objcfg['Muon'], mapcfg=self.mapcfg)
-        electron = Object(events, "Electron", selcfg=self.objcfg['Electron'], mapcfg=self.mapcfg)
+        electron = self.getObj("Electron", events)
+        muon = self.getObj("Muon", events)
+
         e_mask = (electron.ptmask(opr.ge) & \
                 electron.absdxymask(opr.le) & \
                 electron.absetamask(opr.le) & \
@@ -62,7 +63,7 @@ class twoTauEvtSel(BaseEventSelections):
         super().__init__(trigcfg, objcfg, mapcfg, sequential)
 
     def seltwotaus(self, events) -> ak.Array:
-        tau = Object(events, "Tau", selcfg=self.objcfg['Tau'], mapcfg=self.mapcfg)
+        tau = Object(events, "Tau", selcfg=self.objselcfg['Tau'], mapcfg=self.mapcfg)
         def tauobjmask(tau: 'Object'):
             tau_mask = (tau.ptmask(opr.ge) & \
                         tau.absetamask(opr.le) & \
@@ -95,7 +96,7 @@ class ControlEvtSel(twoTauEvtSel):
     def setevtsel(self, events) -> None:
         events = self.seltwotaus(events)
     
-        jet = Object(events, name='Jet', selcfg=self.objcfg['Jet'], mapcfg=self.mapcfg)
+        jet = Object(events, name='Jet', selcfg=self.objselcfg['Jet'], mapcfg=self.mapcfg)
         def jobjmask(jet: 'Object'):
             j_mask = (jet.ptmask(opr.ge) & jet.absetamask(opr.le))
             tau_ldvec = Object.fourvector(self.objcollect['LDTau'], sort=False)
@@ -126,7 +127,7 @@ class SignalEvtSel(twoTauEvtSel):
     def setevtsel(self, events) -> None:
         events = self.seltwotaus(events)
         
-        jet = Object(events, name='Jet', selcfg=self.objcfg['Jet'], mapcfg=self.mapcfg)
+        jet = Object(events, name='Jet', selcfg=self.objselcfg['Jet'], mapcfg=self.mapcfg)
         
         def jobjmask(jet: 'Object'):
             j_mask = (jet.ptmask(opr.ge) & jet.absetamask(opr.le))
@@ -153,13 +154,13 @@ class SignalEvtSel(twoTauEvtSel):
         self.saveWeights(events)
 
 class PrelimEvtSel(twoTauEvtSel):
-    def __init__(self, trigcfg=default_trigsel, objcfg=default_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
-        super().__init__(trigcfg, objcfg, mapcfg, sequential)
+    def __init__(self, trigcfg=default_trigsel, objselcfg=default_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
+        super().__init__(trigcfg, objselcfg, mapcfg, sequential)
 
     def setevtsel(self, events):
         events = self.seltwotaus(events)
 
-        jet = Object(events, name='Jet', selcfg=self.objcfg['Jet'], mapcfg=self.mapcfg)
+        jet = Object(events, name='Jet', selcfg=self.objselcfg['Jet'], mapcfg=self.mapcfg)
         
         def jobjmask(jet: 'Object'):
             j_mask = (jet.ptmask(opr.ge) & jet.absetamask(opr.le))
