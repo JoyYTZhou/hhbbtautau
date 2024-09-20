@@ -58,21 +58,21 @@ class TestProcessor(unittest.TestCase):
 
         self.assertEqual(result, 0, "Error encountered")
     
-    # def test_transfer_file(self):
-    #     proc = Processor(rs, self.preprocessed, transferP=rs.TRANSFER_PATH, evtselclass=self.eventSelection) 
-    #     result = proc.runfiles(write_npz=False)
+    def test_transfer_file(self):
+        proc = Processor(rs, self.preprocessed, transferP=rs.TRANSFER_PATH, evtselclass=self.eventSelection) 
+        result = proc.runfiles(write_npz=False)
 
-    #     self.assertEqual(result, 0, "Error encountered")
+        self.assertEqual(result, 0, "Error encountered")
         
-    #     expected_files = ['ggF_3985bc58-ab6d-11ee-b5bf-0e803c0abeef_cutflow.csv', 
-    #                       'ggF_3985bc58-ab6d-11ee-b5bf-0e803c0abeef-part0.root']
-    #     produced = FileSysHelper.glob_files(proc.transfer)
+        expected_files = ['ggF_3985bc58-ab6d-11ee-b5bf-0e803c0abeef_cutflow.csv', 
+                          'ggF_3985bc58-ab6d-11ee-b5bf-0e803c0abeef-part0.root']
+        produced = FileSysHelper.glob_files(proc.transfer)
 
-    #     for file in expected_files:
-    #         self.assertIn(file, produced, f"File {file} not found in {proc.transfer}")
+        for file in expected_files:
+            self.assertIn(file, produced, f"File {file} not found in {proc.transfer}")
 
-    #     local_files = FileSysHelper.glob_files(proc.outdir)
-    #     self.assertEqual(len(local_files), 0, f"Files not removed from {proc.outdir}")
+        local_files = FileSysHelper.glob_files(proc.outdir)
+        self.assertEqual(len(local_files), 0, f"Files not removed from {proc.outdir}")
     
 if __name__ == '__main__':
     unittest.main()
