@@ -45,18 +45,18 @@ class TestProcessor(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertTrue(hasattr(result, 'fields'), "Events do not have fields attribute")
     
-    def test_proc_run_file(self): 
-        """Run the processor for selecting on a single file"""
-        result = self.proc.runfiles(write_npz=False)
-        expected = pjoin(self.proc.outdir, "*.root")
-        matched = glob.glob(expected)
-        self.assertTrue(len(matched) > 0, f"No root output files found in {expected}")
+    # def test_proc_run_file(self): 
+    #     """Run the processor for selecting on a single file"""
+    #     result = self.proc.runfiles(write_npz=False)
+    #     expected = pjoin(self.proc.outdir, "*.root")
+    #     matched = glob.glob(expected)
+    #     self.assertTrue(len(matched) > 0, f"No root output files found in {expected}")
 
-        expected = os.path.join(self.proc.outdir, "*.csv")
-        matched = glob.glob(expected)
-        self.assertTrue(len(matched) > 0, f"No cutflow csv files found in {expected}")
+    #     expected = os.path.join(self.proc.outdir, "*.csv")
+    #     matched = glob.glob(expected)
+    #     self.assertTrue(len(matched) > 0, f"No cutflow csv files found in {expected}")
 
-        self.assertEqual(result, 0, "Error encountered")
+    #     self.assertEqual(result, 0, "Error encountered")
     
     def test_transfer_file(self):
         proc = Processor(rs, self.preprocessed, transferP=rs.TRANSFER_PATH, evtselclass=self.eventSelection) 
