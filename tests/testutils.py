@@ -20,6 +20,7 @@ class TestXRootDHelper(unittest.TestCase):
 
     def test_glob_files_all_files(self):
         self.setUpMockDirList(['file1.txt', 'file2.txt'])
+        self.mock_fs.stat.return_value = (MagicMock(ok=True), None)
 
         files = self.helper.glob_files('/some/dir')
 
@@ -30,6 +31,7 @@ class TestXRootDHelper(unittest.TestCase):
 
     def test_glob_files_pattern(self):
         self.setUpMockDirList(['file1.txt', 'file2.log'])
+        self.mock_fs.stat.return_value = (MagicMock(ok=True), None)
 
         files = self.helper.glob_files('/some/dir', '*.txt')
 
@@ -39,7 +41,7 @@ class TestXRootDHelper(unittest.TestCase):
     def test_check_path_exists(self):
         self.mock_fs.stat.return_value = (MagicMock(ok=True), None)
 
-        result = self.helper._XRootDHelper__check_path('/some/dir')
+        result = self.helper.check_path('/some/dir')
 
         self.mock_fs.stat.assert_called_once_with('/some/dir')
         self.assertTrue(result)
@@ -48,7 +50,7 @@ class TestXRootDHelper(unittest.TestCase):
         self.mock_fs.stat.return_value = (MagicMock(ok=False), None)
         self.mock_fs.mkdir.return_value = (MagicMock(ok=True), None)
 
-        result = self.helper._XRootDHelper__check_path('/some/dir')
+        result = self.helper.check_path('/some/dir') 
 
         self.mock_fs.stat.assert_called_once_with('/some/dir')
         self.mock_fs.mkdir.assert_called_once_with('/some/dir')
@@ -58,12 +60,13 @@ class TestXRootDHelper(unittest.TestCase):
         self.mock_fs.stat.return_value = (MagicMock(ok=False), None)
 
         with self.assertRaises(FileNotFoundError):
-            self.helper._XRootDHelper__check_path('/some/dir', raiseError=True)
+            self.helper.check_path('/some/dir', raiseError=True)
         
     def test_remove_all_files(self):
         self.setUpMockDirList(['file1.txt', 'file2.txt'])
 
         self.mock_fs.rm.return_value = (MagicMock(ok=True), None)
+        self.mock_fs.stat.return_value = (MagicMock(ok=True), None)
 
         self.helper.remove_files('/some/dir')
 
@@ -71,9 +74,17 @@ class TestXRootDHelper(unittest.TestCase):
         self.mock_fs.rm.assert_any_call('/some/dir/file1.txt')
         self.mock_fs.rm.assert_any_call('/some/dir/file2.txt')
     
+    def test_remove_files_no_files(self):
+        self.mock_fs.stat.return_value = (MagicMock(ok=False), None)
+        self.helper.remove_files('/some/dir', "*.txt")
+        
+        self.mock_fs.dirlist.assert_not_called()
+        self.mock_fs.rm.assert_not_called()
+    
     def test_remove_files_with_patterns(self):
         self.setUpMockDirList(['file1.txt', 'file2.log', 'file3.txt'])
         self.mock_fs.rm.return_value = (MagicMock(ok=True), None)
+        self.mock_fs.stat.return_value = (MagicMock(ok=True), None)
     
         self.helper.remove_files('/some/dir', pattern='*.txt')
     
@@ -86,53 +97,27 @@ class TestXRootDHelper(unittest.TestCase):
         self.assertNotIn('/some/dir/file2.log', calls)
 
     @patch('src.utils.filesysutil.glob.glob')
-    def test_transfer_files_glob(self, mock_glob):
+    def test_transfer_files_copy(self, mock_glob):
         mock_glob.return_value = ['/local/dir/file1.txt', '/local/dir/file2.txt']
-        self.helper._XRootDHelper__check_path = MagicMock(return_value=MagicMock(ok=True))
-        self.helper.xrdfs_client.copy.return_value = (MagicMock(ok=True), None)
+        self.mock_fs.stat.return_value = (MagicMock(ok=True), None)
+        self.mock_fs.copy.return_value = (MagicMock(ok=True), None)
 
         self.helper.transfer_files('/local/dir', '/store/user/dir', '*.txt', remove=False)
 
-        mock_glob.assert_called_once_with('/local/dir/*.txt')
-    
-    # @patch('src.utils.filesysutil.os.remove')
-    # @patch('src.utils.filesysutil.glob.glob')
-    # def test_transfer_files_with_removal(self, mock_remove, mock_glob):
-    #     mock_glob.return_value = ['/local/dir/file1.txt', '/local/dir/file2.txt']
-    #     self.helper._XRootDHelper__check_path = MagicMock(return_value=MagicMock(ok=True))
-    #     self.helper.xrdfs_client.copy.return_value = (MagicMock(ok=True), None)
+        self.assertEqual(self.mock_fs.copy.call_count, 2)
+        self.mock_fs.copy.assert_any_call('/local/dir/file1.txt', '/store/user/dir/file1.txt', force=False)
+        self.mock_fs.copy.assert_any_call('/local/dir/file2.txt', '/store/user/dir/file2.txt', force=False)
 
-    #     self.helper.transfer_files('/local/dir', '/store/user/dir', '*.txt', remove=False)
+        self.helper.transfer_files('/local/dir', '/store/user/dir', '*.txt', remove=False, overwrite=True)
 
-    #     mock_glob.assert_called_once_with('/local/dir/*.txt')
-    #     # self.helper._XRootDHelper__check_path.assert_called_once_with('/store/user/dir')
-    #     # self.helper.xrdfs_client.copy.assert_any_call('/local/dir/file1.txt', '/store/user/dir/file1.txt')
-    #     # self.helper.xrdfs_client.copy.assert_any_call('/local/dir/file2.txt', '/store/user/dir/file2.txt')
-    #     # mock_remove.assert_any_call('/local/dir/file1.txt')
-    #     # mock_remove.assert_any_call('/local/dir/file2.txt')
+        self.assertEqual(self.mock_fs.copy.call_count, 4)  # Called twice more
+        self.mock_fs.copy.assert_any_call('/local/dir/file1.txt', '/store/user/dir/file1.txt', force=True)
+        self.mock_fs.copy.assert_any_call('/local/dir/file2.txt', '/store/user/dir/file2.txt', force=True)
 
     def test_transfer_files_source_path_error(self):
         with self.assertRaises(ValueError):
             self.helper.transfer_files('/store/user/dir', '/store/user/dir')
 
-    # @patch('src.utils.filesysutil.glob.glob')
-    # def test_transfer_files_copy_failure(self, mock_glob):
-    #     mock_glob.return_value = ['/local/dir/file1.txt', '/local/dir/file2.txt']
-    #     self.helper._XRootDHelper__check_path = MagicMock(return_value=MagicMock(ok=True))
-    #     self.helper.xrdfs_client.copy.side_effect = [
-    #         (MagicMock(ok=False, message="Copy failed"), None),
-    #         (MagicMock(ok=True), None)
-    #     ]
-
-    #     with self.assertRaises(Exception) as context:
-    #         self.helper.transfer_files('/local/dir', '/store/user/dir', '*.txt', remove=False)
-
-    #     self.assertIn("Failed to copy /local/dir/file1.txt to /store/user/dir/file1.txt: Copy failed", str(context.exception))
-
-    #     mock_glob.assert_called_once_with('/local/dir/*.txt')
-    #     self.helper._XRootDHelper__check_path.assert_called_once_with('/store/user/dir')
-    #     self.helper.xrdfs_client.copy.assert_any_call('/local/dir/file1.txt', '/store/user/dir/file1.txt')
-    #     self.helper.xrdfs_client.copy.assert_any_call('/local/dir/file2.txt', '/store/user/dir/file2.tx')
    
 if __name__ == '__main__':
     unittest.main()
