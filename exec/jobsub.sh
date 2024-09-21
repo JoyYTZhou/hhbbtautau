@@ -29,7 +29,7 @@ cd ..
 source scripts/venv.sh $DYNACONF_ENV
 cd exec
 
-JOB_DIRNAME=$(python3 -c 'from src.analysis.spawnjobs import rs; print(rs.JOB_DIRNAME)')
+JOB_DIRNAME=$(python3 -c 'from config.projectconfg import runsetting as rs; print(rs.JOB_DIRNAME)')
 rm -rf ${JOB_DIRNAME}/*.json
 python3 genjobs.py
 

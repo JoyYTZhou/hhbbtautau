@@ -13,7 +13,6 @@ TRANSFER_PATH = '/store/user/joyzhou/vetoskim'
 
 [LPCTEST]
 SEL_NAME = 'vetoskim'
-DATA_PATH = "data/preprocessed"
 OUTPUTDIR_PATH = "/uscms/home/joyzhou/nobackup/tests"
 COPY_LOCAL = false
 TRANSFER_PATH = '/store/user/joyzhou/tests'

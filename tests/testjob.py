@@ -12,7 +12,7 @@ class TestLoader(unittest.TestCase):
         analysis_path = os.path.dirname(curr_dir)
         self.datapath = pjoin(analysis_path, "data/preprocessed")
         self.outpath = pjoin(rs.OUTPUTDIR_PATH, "testout")
-        self.jl = JobLoader(jobpath=self.outpath, datapath=self.datapath)
+        self.jl = JobLoader(jobpath=self.outpath, datapath=self.datapath, transferPBase=rs.TRANSFER_PATH)
     
     def test_init(self):
         self.assertTrue(os.path.exists(self.outpath), f"Directory {self.datapath} does not exist!")
