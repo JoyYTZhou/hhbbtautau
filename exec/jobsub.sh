@@ -39,7 +39,6 @@ else
     FILENAME="${JOB_DIRNAME}/${PROCESS}_*.json"
 fi
 
-
 \cp -f hhbbtt.sub runtime/${DYNACONF_ENV}_${PROCESS}.sub
 
 cat << EOF >> runtime/${DYNACONF_ENV}_${PROCESS}.sub

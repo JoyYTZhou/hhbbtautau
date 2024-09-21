@@ -42,4 +42,4 @@ export DEBUG_MODE=true
 echo "start executing main file"
 checkproxy
 
-python3 src/main.py --input ${JSONPATH} --diagnose
+python3 main.py --input ${JSONPATH} --diagnose
