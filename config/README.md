@@ -9,3 +9,5 @@
 - `dasksetting.toml`: CURRENTLY NOT USED. Contains the settings for the dask cluster, including the number of workers, the number of threads per worker, and the memory limit per worker.
 - `postprocess.toml`: Contains the settings for the post-processing of the outputs, including the output directory to which the combined cutflow tables will be saved.
 - `plotsetting.toml`: Contains dictionaries of how attributes are to be plotted, including the x-axis label, y-axis label, and the binning.
+
+Since `DYNACONF_ENV` is an environmental variable across all settings, be consistent with the naming. If only one set of setting will be used for any file, then the `DYNACONF_ENV` should be set to `default`. If multiple sets of settings are to be used, then the `DYNACONF_ENV` should be set to the desired environment name which should be present in all the files.

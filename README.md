@@ -12,7 +12,9 @@ Current working branch: `submodule`.
       - [Fork and Create a New Branch](#fork-and-create-a-new-branch)
       - [Using this Repo as a Template](#using-this-repo-as-a-template)
     - [Set up environment](#set-up-environment)
-    - [Change event selection/analysis logic/run-time environment](#change-event-selectionanalysis-logicrun-time-environment)
+    - [Test event selection with a provided nanoaod file](#test-event-selection-with-a-provided-nanoaod-file)
+    - [Obtain all MC samples needed from DAS](#obtain-all-mc-samples-needed-from-das)
+    - [Submit batch jobs to LPC farm](#submit-batch-jobs-to-lpc-farm)
   - [Installation](#installation)
   - [Directory Structure](#directory-structure)
 
@@ -40,34 +42,46 @@ Follow the instructions [here](https://help.github.com/en/github/creating-clonin
 ### Set up environment
 1. **Set up the environment in LPC**:
    - Run `source scripts/envsetup.sh` to set up a python virtual environment for the analysis. This script will install the necessary packages and set up the environment for running the analysis. It will also create a tarball of the environment for future use.
-   - Run `source scripts/venv.sh` to set up a CMS-python environment with LCG software. This will activate the installed python virtual environment and set up the necessary environment variables for running the analysis.
+   - Run `source scripts/venv.sh` to set up a CMS-python environment with LCG software. This will activate the installed python virtual environment and set up the necessary environment variables for running the analysis. Do this everytime you want to work in this repo.
     - Run `source scripts/venv.sh --help` to see details on how to set up the environment.
 2. **Modify the configuration files**:
    - Update the configuration files in the `configs` directory to reflect the correct paths to where the sample files are stored, where the output files should be saved, and other settings.
    - `projectconfig.py` contains all main configurations for the analysis, including the event selection setting, program runtime setting, the post-processing setting, and the plotting setting. In general, you could add as many new configurations (in the form of toml/yaml/json) as you want, and then load them in the `projectconfig.py` file so that you could use them in your python scripts.
    - check the `configs` directory for more details.
 
+### Test event selection with a provided nanoaod file
+1. Customize event selections through creating classes inherited from the `EventSelection` in the `analysis.evtselutil` module. Check `configs` directory for more details. Technically this should be the only directory you need to modify for cusmizing the event selection.
+2. Test the correct working of the event selection classes by running
+    ```bash
+    source scripts/venv.sh
+    python -m unittest tests.testproc
+    ```
+    - No changes to src code should be required, as they are not related to the event selection logic but only provides utility functions and object definitions. Any src code changes should be tested with the provided unit tests in the `tests` directory.
+    - No changes to `main.py` should be required as it only provides the main program logic for running the analysis. 
 
-### Change event selection/analysis logic/run-time environment
-This section provides guidelines on how to modify the event selection logic and analysis code. 
-1. Customize event selections through creating classes inherited from the `EventSelection` in the `analysis.evtselutil` module.
-2. Any src code changes should be tested with the provided unit tests in the `tests` directory.
-3. Update the configuration files in the `configs` directory, especially the `projectconfg.py` file to reflect the changes in the event selection logic. 
-4. Modify `main.py` to include the new event selection classes if necessary and run the analysis. This shouldn't be necessary unless the directory structure has changed significantly or files in `projectconfg.py` have been renamed.
-5. Test your changes by running `python -m unittest tests.testproc` with the new event selection classes and configurations.
+### Obtain all MC samples needed from DAS
+The current curling is heavily dependent on coffea pacakges and might be subject to change in the future. Navigate to `data` directory for more details.
+
+
+### Submit batch jobs to LPC farm
+The batch submission scripts provided in `exec` are compatible with HTCondor batch system. The python program will be executed with the tarball of the python virtual environment created in the `scripts/envsetup.sh` script. 
+
+Other workflow management systems have been tried (e.g. local submission through lpcjobqueue, coffea singularity shells etc.) and are not recommended for now due to various conflicts.
+
+1. **Generate json job files**:
+  ```bash
+  cd exec
+  python genjobs.py
+  ```
+2. **Write jdl files**:
+  A template of the job submission script `hhbbtt.sub` is provided in the `exec` directory.
 
 ## Installation
-
 Instructions on how to install and set up the project.
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-
-# Navigate to the project directory
+git clone <repository-url-you-have-forked>
 cd <project-directory>
-
-# Initialize and update submodules
 git submodule update --init --recursive
 ```
 

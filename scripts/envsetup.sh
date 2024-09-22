@@ -41,6 +41,7 @@ python -m pip install matplotlib --upgrade --no-cache-dir
 echo "Installed matplotlib"
 python -m pip install dask --upgrade --no-cache-dir
 echo "Installed dask"
+python -m pip install dask_awkward --upgrade --no-cache-dir
 
 deactivate
 

@@ -8,7 +8,7 @@ export JSONPATH=$1
 export ENV_FOR_DYNACONF=$2
 export ENV_NAME=skim_el9
 
-OLD_ENV_NAME=/uscms_data/d3/joyzhou/${ENV_NAME}
+OLD_ENV_NAME=/uscms_data/d3/$(whoami)/${ENV_NAME}
 
 if [ ! -z "${VIRTUAL_ENV}" ] && [ "$VIRTUAL_ENV" == "${ENV_NAME}" ]; then
     echo "Found environmental variable."
