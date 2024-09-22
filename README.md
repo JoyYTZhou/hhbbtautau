@@ -40,8 +40,12 @@ Follow the instructions [here](https://help.github.com/en/github/creating-clonin
 ### Set up environment
 1. **Set up the environment in LPC**:
    - Run `source scripts/envsetup.sh` to set up a python virtual environment for the analysis. This script will install the necessary packages and set up the environment for running the analysis. It will also create a tarball of the environment for future use.
-   - Run `source scripts/venv.sh` to set up CMS python environment with LCG software. Run `source scripts/venv.sh --help` to see details on how to set up the environment.
-   - 
+   - Run `source scripts/venv.sh` to set up a CMS-python environment with LCG software. This will activate the installed python virtual environment and set up the necessary environment variables for running the analysis.
+    - Run `source scripts/venv.sh --help` to see details on how to set up the environment.
+2. **Modify the configuration files**:
+   - Update the configuration files in the `configs` directory to reflect the correct paths to where the sample files are stored, where the output files should be saved, and other settings.
+   - `projectconfig.py` contains all main configurations for the analysis, including the event selection setting, program runtime setting, the post-processing setting, and the plotting setting. In general, you could add as many new configurations (in the form of toml/yaml/json) as you want, and then load them in the `projectconfig.py` file so that you could use them in your python scripts.
+   - check the `configs` directory for more details.
 
 
 ### Change event selection/analysis logic/run-time environment

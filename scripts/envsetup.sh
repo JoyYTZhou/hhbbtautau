@@ -45,5 +45,5 @@ echo "Installed dask"
 deactivate
 
 # create tarball
-tar -czf ~/work/hhbbtautau/${ENV_NAME}.tar.gz ${ENV_NAME}
-cd ~/work/hhbbtautau
+tar -czf ${BASE_DIR}/${ENV_NAME}.tar.gz ${ENV_NAME}
+cd ${BASE_DIR}
