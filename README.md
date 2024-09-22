@@ -1,6 +1,8 @@
 # HH $\to b\bar{b} \tau \tau$ Analysis Repo
 
-This repository contains the code and configuration files for the HH $\to b\bar{b} \tau \tau$ analysis. The analysis is performed in the context of the [CMS experiment](https://cms.cern/).
+This repository contains the code and configuration files for the HH $\to b\bar{b} \tau \tau$ analysis. The analysis is performed in the context of the [CMS experiment](https://cms.cern/). The project is coffea-based, and is tested mainly in LPC environment.
+
+Current working branch: `submodule`.
 
 ## Table of Contents
 - [HH $\\to b\\bar{b} \\tau \\tau$ Analysis Repo](#hh-to-bbarb-tau-tau-analysis-repo)
@@ -9,6 +11,7 @@ This repository contains the code and configuration files for the HH $\to b\bar{
     - [Create copies of the repository for development and testing](#create-copies-of-the-repository-for-development-and-testing)
       - [Fork and Create a New Branch](#fork-and-create-a-new-branch)
       - [Using this Repo as a Template](#using-this-repo-as-a-template)
+    - [Set up environment](#set-up-environment)
     - [Change event selection/analysis logic/run-time environment](#change-event-selectionanalysis-logicrun-time-environment)
   - [Installation](#installation)
   - [Directory Structure](#directory-structure)
@@ -33,6 +36,12 @@ This repository contains the code and configuration files for the HH $\to b\bar{
 
 #### Using this Repo as a Template
 Follow the instructions [here](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-repository-from-a-template) to create a new repository from this template.
+
+### Set up environment
+1. **Set up the environment in LPC**:
+   - Run `source scripts/envsetup.sh` to set up a python virtual environment for the analysis. This script will install the necessary packages and set up the environment for running the analysis. It will also create a tarball of the environment for future use.
+   - Run `source scripts/venv.sh` to set up CMS python environment with LCG software. Run `source scripts/venv.sh --help` to see details on how to set up the environment.
+   - 
 
 
 ### Change event selection/analysis logic/run-time environment

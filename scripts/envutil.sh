@@ -1,15 +1,17 @@
 #!/bin/bash
 # ===========================================================================================================
 # This script contains some functions to set up LPC environment for analysis quickly 
+# Last updated: 2024-09-21
 # ===========================================================================================================
 
 function setup_dirname_local {
-    export BASE_DIR=/uscms/home/joyzhou/work/hhbbtautau
+    NAME=$(whoami)
+    export BASE_DIR=$(pwd)
     export LIB_DIR=${BASE_DIR}/scripts
     export SRC_DIR=${BASE_DIR}/src
     export DATA_DIR=${BASE_DIR}/data
-    export CONDOR_BASE=/store/user/joyzhou
-    export OUTPUT_BASE=/uscms/home/joyzhou/nobackup
+    export CONDOR_BASE=/store/user/${NAME}
+    export OUTPUT_BASE=/uscms/home/${NAME}/nobackup
     echo "Successfully set up environment or $PWD"
 }
 
@@ -22,7 +24,7 @@ function human_readable() {
     echo "$size${units[$i]}"
 }
 
-function setup_LCG {
+function LCG_setup {
     if [ -f /etc/os-release ]; then
         . /etc/os-release
         release_version=$VERSION_ID
@@ -85,7 +87,6 @@ function LCG_sasetup {
     echo "Successfully sourced ROOT software"
     source /cvmfs/sft.cern.ch/lcg/releases/LCG_105/pyyaml/6.0.1/$version/PyYAML-env.sh
     echo "Successfully sourced PyYAML software"
-
 }
 
 function remove_duplicates {
