@@ -1,7 +1,6 @@
 [PRESELECT]
 SEL_NAME = 'prelim_twolooseb'
 DELAYED_OPEN = false
-COPY_LOCAL = false
 JOB_DIRNAME = 'preseljson'
 TRANSFER_PATH = '/store/user/joyzhou/prelim'
 
