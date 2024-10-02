@@ -9,7 +9,17 @@ def runselections():
     gc.enable()
     from src.analysis.spawnjobs import JobRunner
 
-    parser = argparse.ArgumentParser(description='Event selection options')
+    parser = argparse.ArgumentParser(
+            description='''Run event selections for data analysis.
+
+    This script performs event selections based on the specified configuration and input file.
+    It supports optional memory diagnostics to help identify memory usage issues.
+
+    Arguments:
+    - --input: Path to the input file containing data to be processed. See example input files in example/ directory.
+    - --diagnose: Enable memory diagnostics to track memory usage during execution.
+            '''
+        )
     parser.add_argument('--input', type=str, help='input file path', default=None)
     parser.add_argument('--diagnose', action='store_true', default=False, help='Enable memory diagnose')
     args = parser.parse_args()
