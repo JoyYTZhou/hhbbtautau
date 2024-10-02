@@ -22,7 +22,7 @@ exec/skimjson/
 exec/runtime/
 # Ignore error log directory
 exec/errors/
-exec/docker_*
+exec/docker_stderror
 # Ignore all log files
 **/*.log
 .DS_Store
