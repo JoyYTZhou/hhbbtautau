@@ -1,9 +1,9 @@
 [SKIM]
-SELNAME = 'vetoskim_Run2Trigger'
-DATAPATH = "@format {env[DATA_DIR]}"
+SELNAME = 'vetoskim'
+METADATA = "@format {env[DATA_DIR]}/availableQuery.json" 
 INPUTDIR = "@format {env[CONDOR_BASE]}/{this.SELNAME}"
 LOCALOUTPUT = "@format /uscms/home/joyzhou/nobackup/hadded/{this.SELNAME}"
-DATASETS = ['DYJets', 'TTbar', 'SingleH', 'WW', 'WWW', 'WZ', 'ZH', 'ggF', 'ZZ']
+TRANSFERPATH = "/store/user/joyzhou/{this.SELNAME}_hadded"
 TREENAME = 'Events'
 PLOT_VARS = ['Tau', 'Jet', 'FatJet', "GenPart"]
 EXTRA_VARS = ['Generator_weight', 'LHEReweightingWeight']

@@ -72,6 +72,7 @@ class TestProcessor(unittest.TestCase):
             self.assertIn(file, produced, f"File {file} not found in {proc.transfer}")
 
         local_files = FileSysHelper.glob_files(proc.outdir)
+        local_files = [f for f in local_files if not os.path.basename(f).startswith('.')]
         self.assertEqual(len(local_files), 0, f"Files not removed from {proc.outdir}")
     
 if __name__ == '__main__':

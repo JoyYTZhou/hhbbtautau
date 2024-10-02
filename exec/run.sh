@@ -2,13 +2,14 @@
 
 # This bash script is adapted from https://github.com/bu-cms/bucoffea/blob/master/bucoffea/execute/htcondor_wrap.sh
 
+USERNAME=joyzhou
 echo "Currently in $PWD"
 
 export JSONPATH=$1
 export ENV_FOR_DYNACONF=$2
 export ENV_NAME=skim_el9
 
-OLD_ENV_NAME=/uscms_data/d3/joyzhou/${ENV_NAME}
+OLD_ENV_NAME=/uscms_data/d3/${USERNAME}/${ENV_NAME}
 
 if [ ! -z "${VIRTUAL_ENV}" ] && [ "$VIRTUAL_ENV" == "${ENV_NAME}" ]; then
     echo "Found environmental variable."
@@ -23,7 +24,7 @@ fi
 source scripts/envutil.sh
 LCG_sasetup
 
-export CONDOR_BASE=/store/user/joyzhou
+export CONDOR_BASE=/store/user/${USERNAME}
 
 source ${ENV_NAME}/bin/activate
 

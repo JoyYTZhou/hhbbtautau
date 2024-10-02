@@ -55,8 +55,6 @@ class skimEvtSel(BaseEventSelections):
 
         self.objsel.add_multiple({"Electron Veto": elec_nummask,
                                 "Muon Veto": muon_nummask})
-        electron = None
-        muon = None
 
 class twoTauEvtSel(BaseEventSelections):
     def __init__(self, trigcfg=default_trigsel, objcfg=default_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
