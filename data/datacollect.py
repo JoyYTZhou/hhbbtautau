@@ -38,13 +38,14 @@ class QueryRunner:
         shutil.move(f"{dataset}_available.json.gz", f"preprocessed/{dataset}.json.gz")
     
     def query_from_dir(self, dataset, query_dir, metaquery) -> None:
-        """Query the available files from the query_dir, e.g. a directory containing custom skim files."""
+        """Query the available files from the query_dir, e.g. a directory containing custom skim files. 
+        Right now this does not do preprocessing."""
         queryed_result = {}
         root_files = FileSysHelper.glob_files(pjoin(query_dir, dataset), '*.root')
 
         pattern = re.compile(r'_(\d+)\.root$')
 
-        for datasetname in metaquery.keys():
+        for datasetname in metaquery[dataset].keys():
             queryed_result[datasetname] = {"files": {}}
             for root_file in root_files:
                 match = pattern.search(root_file)
