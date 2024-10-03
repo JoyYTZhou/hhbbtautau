@@ -1,9 +1,10 @@
 [SKIM]
 SELNAME = 'vetoskim'
 METADATA = "@format {env[DATA_DIR]}/availableQuery.json" 
+NEWMETA = "@format {env[DATA_DIR]}/processedQuery.json"
 INPUTDIR = "@format {env[CONDOR_BASE]}/{this.SELNAME}"
 LOCALOUTPUT = "@format /uscms/home/joyzhou/nobackup/hadded/{this.SELNAME}"
-TRANSFERPATH = "/store/user/joyzhou/{this.SELNAME}_hadded"
+TRANSFERPATH = "@format /store/user/joyzhou/{this.SELNAME}_hadded"
 TREENAME = 'Events'
 SIGNAL = ['ggF', 'ZH', 'ZZ']
 LUMI = 220 # fb^-1
