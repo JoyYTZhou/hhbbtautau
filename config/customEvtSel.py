@@ -116,6 +116,7 @@ class ControlEvtSel(twoTauEvtSel):
 
         sd_j = jet.getld(mask=(~jet_mask) & jobjmask(jet), sort_by='pt')
         self.objcollect['SDBjetBYpt'] = sd_j
+
         self.saveWeights(events)
 
 class SignalEvtSel(twoTauEvtSel):
@@ -142,12 +143,8 @@ class SignalEvtSel(twoTauEvtSel):
         
         jet_mask = (jobjmask(jet) & jet.custommask('btag', opr.ge))
         ld_j, sd_j = jet.getldsd(sort_by='btag', mask=jet_mask)
-        self.objcollect['LDBjetBYtag'] = ld_j
-        self.objcollect['SDBjetBYtag'] = sd_j[:,0]
-
-        ld_j, sd_j = jet.getldsd(sort_by='pt', mask=jet_mask)
-        self.objcollect['LDBjetBYpt'] = ld_j
-        self.objcollect['SDBjetBYpt'] = sd_j[:,0]
+        self.objcollect['LDBjet'] = ld_j
+        self.objcollect['SDBjet'] = sd_j[:,0]
 
         self.saveWeights(events)
 
