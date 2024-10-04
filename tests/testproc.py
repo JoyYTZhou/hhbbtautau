@@ -343,9 +343,12 @@ class TestProcessor(unittest.TestCase):
         result = proc.runfiles(write_npz=False)
 
         self.assertEqual(result, 0, "Error encountered")
+
+        prefix = self.preprocessed['metadata']['shortname']
+        uuid = self.preprocessed['files'].values()[0]['uuid']
+
+        expected_files = [f'{prefix}_{uuid}_cutflow.csv', f'{prefix}_{uuid}-part0.root']
         
-        expected_files = ['ggF_3985bc58-ab6d-11ee-b5bf-0e803c0abeef_cutflow.csv', 
-                          'ggF_3985bc58-ab6d-11ee-b5bf-0e803c0abeef-part0.root']
         produced = FileSysHelper.glob_files(proc.transfer)
 
         for file in expected_files:
