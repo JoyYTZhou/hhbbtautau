@@ -4,6 +4,8 @@ This repository contains the code and configuration files for the HH $\to b\bar{
 
 Current working branch: `submodule`.
 
+Pull new changes in `src` directory by running `git submodule update --remote --merge` in the main directory. Or you could run `git submodule update --init --recursive` to update the submodule to the latest commit. See [here](https://git-scm.com/book/en/v2/Git-Tools-Submodules) for more details. Visit [CoffeaMate](https://github.com/JoyYTZhou/CoffeaMate) for more details on tools provided by `src` directory.
+
 ## Table of Contents
 - [HH $\\to b\\bar{b} \\tau \\tau$ Analysis Repo](#hh-to-bbarb-tau-tau-analysis-repo)
   - [Table of Contents](#table-of-contents)
