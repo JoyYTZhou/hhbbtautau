@@ -87,6 +87,8 @@ function LCG_sasetup {
     echo "Successfully sourced ROOT software"
     source /cvmfs/sft.cern.ch/lcg/releases/LCG_105/pyyaml/6.0.1/$version/PyYAML-env.sh
     echo "Successfully sourced PyYAML software"
+    source /cvmfs/sft.cern.ch/lcg/releases/LCG_105/gdb/14.1/$version/gdb-env.sh
+    echo "Successfully sourced gdb software"
 }
 
 function remove_duplicates {

@@ -9,7 +9,7 @@ pjoin = os.path.join
 
 class TestProcessor(unittest.TestCase):
     def setUp(self):
-        self.preprocessed = {
+        large_preprocessed = {
         "files": {
             "root://xrootd-local.unl.edu:1094//store/mc/Run3Summer22EENanoAODv12/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/NANOAODSIM/forPOG_130X_mcRun3_2022_realistic_postEE_v6-v2/2520000/e389fc53-6ebe-48cd-8eae-c1b7bbca7cbe.root": {
                 "object_path": "Events",
@@ -305,6 +305,10 @@ class TestProcessor(unittest.TestCase):
         "metadata": {
             "shortname": "DYJets"
         }}
+        
+        small_preprocessed = {}
+        
+        skim_preprocessed = {}
 
         self.eventSelection = switch_selections(rs.SEL_NAME)
         self.proc = Processor(rs, self.preprocessed, transferP=None, evtselclass=self.eventSelection)

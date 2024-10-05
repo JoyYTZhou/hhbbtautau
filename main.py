@@ -33,6 +33,9 @@ def runselections():
     selectionclass = switch_selections(runsetting.SEL_NAME)
 
     jr = JobRunner(runsetting, args.input, selectionclass, dasksetting)
+    print("======================================================================")
+    print("Enter Main Python program: Event selection Mode!")
+    print("======================================================================")
     jr.submitjobs(client=None)
     
     if args.diagnose:
