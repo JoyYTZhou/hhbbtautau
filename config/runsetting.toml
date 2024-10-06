@@ -15,3 +15,4 @@ SEL_NAME = 'prelim_total'
 OUTPUTDIR_PATH = "/uscms/home/joyzhou/nobackup/tests"
 TRANSFER_PATH = '/store/user/joyzhou/tests'
 COPY_DIR = "/uscms/home/joyzhou/nobackup/temp"
+TEST_JSON = "tests/testInputs/custom_SKIM.json"
