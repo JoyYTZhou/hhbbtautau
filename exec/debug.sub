@@ -1,0 +1,32 @@
+# bare bone of submission script for debugging condor jobs
+# Updated by Joy Zhou, Oct 10 2024
+
+MY_PATH = /uscms/homes/j/joyzhou/work/hhbbtautau
+NO_BACKUP = /uscms/home/joyzhou/nobackup
+
+# Job description
+universe = vanilla
+executable = $(MY_PATH)/exec/debug_run.sh
+arguments = $(FILENAME) $(DYNACONF)
+
++SingularityImage = "/cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el9:x86_64"
+
+stream_error = True
+stream_output = True
+
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT_OR_EVICT 
+transfer_input_files = $(MY_PATH)/src, $(MY_PATH)/data, $(MY_PATH)/scripts, $(MY_PATH)/config, $(NO_BACKUP)/skim_el9.tar.gz, $(MY_PATH)/exec/$(JOB_DIRNAME), $(MY_PATH)/main.py
+
+transfer_output_files = *.txt
+output = debug_output.txt
+error = debug_error.txt
+log = condor_job.log
+
+request_cpus = 8
+request_memory = 16GB
+request_disk = 3GB
+
+DYNACONF = SKIM
+JOB_DIRNAME = skimjson
+queue FILENAME matching files skimjson/ZH_*.json

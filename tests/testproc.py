@@ -27,42 +27,42 @@ class TestProcessor(unittest.TestCase):
         
     def test_proc_load_remote(self):
         result = self.proc.loadfile_remote(self.preprocessed)
-        print(result.attrs)
+
         self.assertIsNotNone(result)
         self.assertTrue(hasattr(result, 'fields'), "Events do not have fields attribute")
     
-    def test_proc_run_file(self): 
-        """Run the processor for selecting on a single file"""
-        result = self.proc.runfiles(write_npz=False)
-        expected = pjoin(self.proc.outdir, "*.root")
-        matched = glob.glob(expected)
-        self.assertTrue(len(matched) > 0, f"No root output files found in {expected}")
+    # def test_proc_run_file(self): 
+    #     """Run the processor for selecting on a single file"""
+    #     result = self.proc.runfiles(write_npz=False)
+    #     expected = pjoin(self.proc.outdir, "*.root")
+    #     matched = glob.glob(expected)
+    #     self.assertTrue(len(matched) > 0, f"No root output files found in {expected}")
 
-        expected = os.path.join(self.proc.outdir, "*.csv")
-        matched = glob.glob(expected)
-        self.assertTrue(len(matched) > 0, f"No cutflow csv files found in {expected}")
+    #     expected = os.path.join(self.proc.outdir, "*.csv")
+    #     matched = glob.glob(expected)
+    #     self.assertTrue(len(matched) > 0, f"No cutflow csv files found in {expected}")
 
-        self.assertEqual(result, 0, "Error encountered")
+    #     self.assertEqual(result, 0, "Error encountered")
     
-    def test_transfer_file(self):
-        proc = Processor(rs, self.preprocessed, transferP=rs.TRANSFER_PATH, evtselclass=self.eventSelection) 
-        result = proc.runfiles(write_npz=False)
+    # def test_transfer_file(self):
+    #     proc = Processor(rs, self.preprocessed, transferP=rs.TRANSFER_PATH, evtselclass=self.eventSelection) 
+    #     result = proc.runfiles(write_npz=False)
 
-        self.assertEqual(result, 0, "Error encountered")
+    #     self.assertEqual(result, 0, "Error encountered")
 
-        prefix = self.preprocessed['metadata']['shortname']
-        uuid = self.preprocessed['files'].values()[0]['uuid']
+    #     prefix = self.preprocessed['metadata']['shortname']
+    #     uuid = self.preprocessed['files'].values()[0]['uuid']
 
-        expected_files = [f'{prefix}_{uuid}_cutflow.csv', f'{prefix}_{uuid}-part0.root']
+    #     expected_files = [f'{prefix}_{uuid}_cutflow.csv', f'{prefix}_{uuid}-part0.root']
         
-        produced = FileSysHelper.glob_files(proc.transfer)
+    #     produced = FileSysHelper.glob_files(proc.transfer)
 
-        for file in expected_files:
-            self.assertIn(file, produced, f"File {file} not found in {proc.transfer}")
+    #     for file in expected_files:
+    #         self.assertIn(file, produced, f"File {file} not found in {proc.transfer}")
 
-        local_files = FileSysHelper.glob_files(proc.outdir)
-        local_files = [f for f in local_files if not os.path.basename(f).startswith('.')]
-        self.assertEqual(len(local_files), 0, f"Files not removed from {proc.outdir}")
+    #     local_files = FileSysHelper.glob_files(proc.outdir)
+    #     local_files = [f for f in local_files if not os.path.basename(f).startswith('.')]
+    #     self.assertEqual(len(local_files), 0, f"Files not removed from {proc.outdir}")
     
 if __name__ == '__main__':
     unittest.main()

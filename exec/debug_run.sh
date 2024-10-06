@@ -43,5 +43,21 @@ export DEBUG_MODE=true
 echo "start executing main file"
 checkproxy
 
-python -u main.py --input ${JSONPATH} --diagnose
-# gdb --args python -u main.py --input ${JSONPATH} --diagnose
+LOG_FILE="debug_run.log"
+GDB_BACKTRACE_FILE="gdb_backtrace.txt"
+CORE_DUMP_FILE="core_dump"
+
+command -v python >/dev/null 2>&1 || { echo "python is not installed. Exiting."; exit 1; }
+
+echo "Running Python script with gdb for debugging..." | tee -a $LOG_FILE
+
+gdb --batch --ex "run --input ${JSONPATH} --diagnose" --ex "bt" --args python -u main.py 2>&1 | tee $GDB_BACKTRACE_FILE
+
+if [ -f "$CORE_DUMP_FILE" ]; then
+    echo "Core dump found. Generating backtrace..." | tee -a $LOG_FILE
+    gdb python "$CORE_DUMP_FILE" --batch -ex "bt" >> $GDB_BACKTRACE_FILE
+else
+    echo "No core dump found. Check gdb_backtrace.txt for details." | tee -a $LOG_FILE
+fi
+
+echo "Check $GDB_BACKTRACE_FILE for the backtrace and any relevant details." | tee -a $LOG_FILE

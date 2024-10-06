@@ -1,18 +1,21 @@
 [PRESELECT]
 SEL_NAME = 'prelim_twolooseb'
+JOB_PATH = 'skimmed'
 DELAYED_OPEN = false
 JOB_DIRNAME = 'preseljson'
 TRANSFER_PATH = '/store/user/joyzhou/prelim'
 
 [SKIM]
 SEL_NAME = 'vetoskim'
+JOB_PATH = 'preprocessed'
 OUTPUTDIR_PATH = "outputs"
 JOB_DIRNAME = 'skimjson'
 TRANSFER_PATH = '/store/user/joyzhou/vetoskim'
 
 [LPCTEST]
 SEL_NAME = 'prelim_total'
+DELAYED_OPEN = false
 OUTPUTDIR_PATH = "/uscms/home/joyzhou/nobackup/tests"
 TRANSFER_PATH = '/store/user/joyzhou/tests'
 COPY_DIR = "/uscms/home/joyzhou/nobackup/temp"
-TEST_JSON = "tests/testInputs/custom_SKIM.json"
+TEST_JSON = "/uscms/home/joyzhou/work/hhbbtautau/tests/testInputs/custom_SKIM.json"

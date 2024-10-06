@@ -6,7 +6,7 @@ cwd = os.getcwd()
 projectbase = os.path.dirname(cwd)
 
 def gen_jobs():
-    jl = JobLoader(datapath=pjoin(projectbase, 'data', 'preprocessed'), jobpath=pjoin(cwd, rs.JOB_DIRNAME),
+    jl = JobLoader(datapath=pjoin(projectbase, 'data', rs.JOB_PATH), jobpath=pjoin(cwd, rs.JOB_DIRNAME),
                    transferPBase=rs.TRANSFER_PATH)
     jl.writejobs()
 
