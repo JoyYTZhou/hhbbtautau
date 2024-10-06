@@ -27,6 +27,7 @@ LCG_sasetup
 export CONDOR_BASE=/store/user/${USERNAME}
 
 source ${ENV_NAME}/bin/activate
+setup_python_gdb
 
 export PYTHONPATH=$VIRTUAL_ENV/lib/python3.9/site-packages:$PYTHONPATH
 export MPLCONFIGDIR=matplotlibconfig
@@ -42,5 +43,6 @@ export DEBUG_MODE=true
 
 echo "start executing main file"
 checkproxy
+
 
 gdb --args python3 main.py --input ${JSONPATH} --diagnose

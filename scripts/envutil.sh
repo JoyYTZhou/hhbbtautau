@@ -91,6 +91,13 @@ function LCG_sasetup {
     echo "Successfully sourced gdb software"
 }
 
+function set_python_gdb {
+    DEFAULT_PYTHON_HOME=$(python -c "import sys; print(sys.base_prefix)")
+    VENV_SITE_PACKAGES=$(python -c "import site; print(site.getsitepackages()[0])")
+    export PYTHONHOME=$DEFAULT_PYTHON_HOME
+    export PYTHONPATH=$VENV_SITE_PACKAGES
+}
+
 function remove_duplicates {
     IFS=':' read -r -a array <<< "$1"
     declare -A seen
