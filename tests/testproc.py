@@ -1,4 +1,4 @@
-import unittest, os, glob
+import unittest, os, glob, json
 
 from src.analysis.processor import Processor
 from src.utils.filesysutil import FileSysHelper, XRootDHelper

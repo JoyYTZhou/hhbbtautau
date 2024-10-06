@@ -1,0 +1,13 @@
+{
+    "files": {
+        "root://cmseos.fnal.gov//store/user/joyzhou/vetoskim_hadded/TTbar/TTto2L2N_1.root:Events": {
+            "uuid": "1"
+        }
+    },
+    "metadata": {
+        "xsection": 404.5368,
+        "shortname": "TTtoLNu2Q",
+        "nwgt": 90004062490.0,
+        "per_evt_wgt": 0.000988823099067203
+    }
+}

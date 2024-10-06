@@ -27,7 +27,7 @@ LCG_sasetup
 export CONDOR_BASE=/store/user/${USERNAME}
 
 source ${ENV_NAME}/bin/activate
-setup_python_gdb
+set_python_gdb
 
 export PYTHONPATH=$VIRTUAL_ENV/lib/python3.9/site-packages:$PYTHONPATH
 export MPLCONFIGDIR=matplotlibconfig

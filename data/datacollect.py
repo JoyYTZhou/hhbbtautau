@@ -47,6 +47,7 @@ class QueryRunner:
 
         for datasetname in metaquery[dataset].keys():
             queryed_result[datasetname] = {"files": {}}
+            queryed_result[datasetname]["metadata"] = metaquery[dataset][datasetname]
             for root_file in root_files:
                 match = pattern.search(root_file)
                 if match:
