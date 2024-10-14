@@ -19,6 +19,7 @@ exec/*.pem
 exec/*.out
 exec/joblog/
 exec/skimjson/
+exec/preseljson/
 exec/runtime/
 # Ignore error log directory
 exec/errors/
