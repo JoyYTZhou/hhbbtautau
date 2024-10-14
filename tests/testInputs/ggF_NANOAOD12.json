@@ -1,0 +1,19 @@
+{
+    "files": {
+      "root://cmsdcadisk.fnal.gov:1094//dcache/uscmsdisk/store/mc/Run3Summer22EENanoAODv12/GluGlutoHHto2B2Tau_kl-1p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v3/2540000/00e323ee-8d01-4701-a6e2-11d6b3b0aca8.root": {
+            "object_path": "Events",
+            "steps": [
+            [
+                0,
+                5208
+            ]
+            ],
+            "num_entries": 5208,
+            "uuid": "ba245300-addf-11ee-8cf2-78a8935abeef"
+        }
+    },
+    "metadata": {
+      "xsection": 0.002489,
+      "shortname": "GluGlutoHHto2B2Tau"
+    }
+}

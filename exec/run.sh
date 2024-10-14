@@ -43,5 +43,8 @@ export DEBUG_MODE=true
 echo "start executing main file"
 checkproxy
 
+export PYTHONFAULTHANDLER=1
+export PYTHONVERBOSE=1
+
 python -u main.py --input ${JSONPATH} --diagnose
 # gdb --args python -u main.py --input ${JSONPATH} --diagnose

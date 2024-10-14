@@ -1,0 +1,35 @@
+{
+    "metadata": {
+        "xsection": 0.05500221399699999,
+        "shortname": "ZH_Hto2B_Zto2L"
+    },
+    "files": {
+        "root://xrootd-local.unl.edu:1094//store/mc/Run3Summer22EENanoAODv12/ZH_Hto2B_Zto2L_M-125_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2520000/ca913076-fa8c-4566-bf60-e76ebf9370ed.root": {
+            "object_path": "Events",
+            "steps": [
+                [
+                    0,
+                    9724
+                ],
+                [
+                    9724,
+                    19448
+                ],
+                [
+                    19448,
+                    29172
+                ],
+                [
+                    29172,
+                    38896
+                ],
+                [
+                    38896,
+                    48620
+                ]
+            ],
+            "num_entries": 48620,
+            "uuid": "2900e8ea-65ad-11ee-aa4e-19803c0abeef"
+        }
+    }
+}
