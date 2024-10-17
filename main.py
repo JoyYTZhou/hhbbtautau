@@ -36,7 +36,7 @@ def runselections():
     print("======================================================================")
     print("Enter Main Python program: Event selection Mode!")
     print("======================================================================")
-    jr.submitjobs(client=None)
+    jr.submitjobs(client=None, parquet=True)
     
     if args.diagnose:
         snapshot = tracemalloc.take_snapshot()

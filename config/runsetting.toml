@@ -5,18 +5,22 @@ DELAYED_OPEN = false
 JOB_DIRNAME = 'preseljson'
 OUTPUTDIR_PATH = "outputs"
 TRANSFER_PATH = '/store/user/joyzhou/prelim'
+FILTER_BRANCH = ['Tau*', 'Jet*', 'Electron*', "Muon*", "GenPart*"]
 
 [SKIM]
 SEL_NAME = 'vetoskim'
 JOB_PATH = 'preprocessed'
+DELAYED_OPEN = false
 OUTPUTDIR_PATH = "outputs"
 JOB_DIRNAME = 'skimjson'
 TRANSFER_PATH = '/store/user/joyzhou/vetoskim'
 
+
 [LPCTEST]
-SEL_NAME = 'vetoskim'
-# DELAYED_OPEN = false
+SEL_NAME = 'prelim_twolooseb' 
+DELAYED_OPEN = false
 OUTPUTDIR_PATH = "/uscms/home/joyzhou/nobackup/tests"
 TRANSFER_PATH = '/store/user/joyzhou/tests'
 COPY_DIR = "/uscms/home/joyzhou/nobackup/temp"
-TEST_JSON = "/uscms/home/joyzhou/work/hhbbtautau/tests/testInputs/ZH_NANOAOD12.json"
+TEST_JSON = "/uscms/home/joyzhou/work/hhbbtautau/tests/testInputs/custom_SKIM.json"
+FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*"]

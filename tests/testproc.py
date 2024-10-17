@@ -44,8 +44,21 @@ class TestProcessor(unittest.TestCase):
 
         self.assertEqual(result, 0, "Error encountered")
     
+    # def test_proc_run_file_with_parquet(self): 
+    #     """Run the processor for selecting on a single file"""
+    #     result = self.proc.runfiles(write_npz=False, parquet=True)
+    #     expected = pjoin(self.proc.outdir, "*.parquet")
+    #     matched = glob.glob(expected)
+    #     self.assertTrue(len(matched) > 0, f"No parquet output files found in {expected}")
+
+    #     expected = os.path.join(self.proc.outdir, "*.csv")
+    #     matched = glob.glob(expected)
+    #     self.assertTrue(len(matched) > 0, f"No cutflow csv files found in {expected}")
+
+    #     self.assertEqual(result, 0, "Error encountered")
+    
     # def test_transfer_file(self):
-    #     proc = Processor(rs, self.preprocessed, transferP=rs.TRANSFER_PATH, evtselclass=self.eventSelection) 
+    #     proc = Processor(self.preprocessed, transferP=rs.TRANSFER_PATH, evtselclass=self.eventSelection) 
     #     result = proc.runfiles(write_npz=False)
 
     #     self.assertEqual(result, 0, "Error encountered")

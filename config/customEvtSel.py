@@ -61,7 +61,8 @@ class twoTauEvtSel(BaseEventSelections):
         super().__init__(trigcfg, objcfg, mapcfg, sequential)
 
     def seltwotaus(self, events) -> ak.Array:
-        tau = Object(events, "Tau", selcfg=self.objselcfg['Tau'], mapcfg=self.mapcfg)
+        tau = self.getObj("Tau", events)
+
         def tauobjmask(tau: 'Object'):
             tau_mask = (tau.ptmask(opr.ge) & \
                         tau.absetamask(opr.le) & \
@@ -93,8 +94,9 @@ class ControlEvtSel(twoTauEvtSel):
         super().__init__(trigcfg, objcfg, mapcfg, sequential)
     def setevtsel(self, events) -> None:
         events = self.seltwotaus(events)
+        
+        jet = self.getObj("Jet", events)
     
-        jet = Object(events, name='Jet', selcfg=self.objselcfg['Jet'], mapcfg=self.mapcfg)
         def jobjmask(jet: 'Object'):
             j_mask = (jet.ptmask(opr.ge) & jet.absetamask(opr.le))
             tau_ldvec = Object.fourvector(self.objcollect['LDTau'], sort=False)
@@ -125,8 +127,8 @@ class SignalEvtSel(twoTauEvtSel):
 
     def setevtsel(self, events) -> None:
         events = self.seltwotaus(events)
-        
-        jet = Object(events, name='Jet', selcfg=self.objselcfg['Jet'], mapcfg=self.mapcfg)
+
+        jet = self.getObj('Jet', events)
         
         def jobjmask(jet: 'Object'):
             j_mask = (jet.ptmask(opr.ge) & jet.absetamask(opr.le))
