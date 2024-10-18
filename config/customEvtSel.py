@@ -92,6 +92,7 @@ class twoTauEvtSel(BaseEventSelections):
 class ControlEvtSel(twoTauEvtSel):
     def __init__(self, trigcfg=default_trigsel, objcfg=default_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
         super().__init__(trigcfg, objcfg, mapcfg, sequential)
+
     def setevtsel(self, events) -> None:
         events = self.seltwotaus(events)
         
