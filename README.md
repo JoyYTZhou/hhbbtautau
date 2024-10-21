@@ -58,12 +58,12 @@ Follow the instructions [here](https://help.github.com/en/github/creating-clonin
     source scripts/venv.sh
     python -m unittest tests.testproc
     ```
+    when prompted, enter `LPCTEST`. Change the json input file in `runsetting.toml` to the desired nanoaod file for testing.
     - No changes to src code should be required, as they are not related to the event selection logic but only provides utility functions and object definitions. Any src code changes should be tested with the provided unit tests in the `tests` directory.
     - No changes to `main.py` should be required as it only provides the main program logic for running the analysis. 
 
 ### Obtain all MC samples needed from DAS
 The current curling is heavily dependent on coffea pacakges and might be subject to change in the future. Navigate to `data` directory for more details.
-
 
 ### Submit batch jobs to LPC farm
 The batch submission scripts provided in `exec` are compatible with HTCondor batch system. The python program will be executed with the tarball of the python virtual environment created in the `scripts/envsetup.sh` script. 
