@@ -114,11 +114,11 @@ class ControlEvtSel(twoTauEvtSel):
         jet_mask = (jobjmask(jet) & jet.custommask('btag', opr.ge))
         ld_j = jet.getld(mask=jet_mask)
         sd_j = jet.getld(mask=(~jet_mask) & jobjmask(jet), sort_by='btag')
-        self.objcollect['LDBjetBYtag'] = ld_j
-        self.objcollect['SDBjetBYtag'] = sd_j
+        self.objcollect['LDBjet'] = ld_j
+        self.objcollect['SDBjet'] = sd_j
 
         sd_j = jet.getld(mask=(~jet_mask) & jobjmask(jet), sort_by='pt')
-        self.objcollect['SDBjetBYpt'] = sd_j
+        self.objcollect['SDBjet'] = sd_j
 
         self.saveWeights(events)
 
@@ -175,6 +175,6 @@ class PrelimEvtSel(twoTauEvtSel):
         
         jet_mask = (jobjmask(jet) & jet.custommask('btag', opr.ge))
         ld_j = jet.getld(sort_by='btag', mask=jet_mask)
-        self.objcollect['LDBjetBYtag'] = ld_j
+        self.objcollect['LDBjet'] = ld_j
 
         self.saveWeights(events)
