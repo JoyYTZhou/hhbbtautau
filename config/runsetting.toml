@@ -6,6 +6,7 @@ JOB_DIRNAME = 'preseljson'
 OUTPUTDIR_PATH = "outputs"
 TRANSFER_PATH = '/store/user/joyzhou/RegionCD'
 FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*"]
+OUTENDPATTERN = ['cutflow.csv', 'output.csv']
 
 [SKIM]
 SEL_NAME = 'vetoskim'

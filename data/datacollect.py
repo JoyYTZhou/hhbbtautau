@@ -41,13 +41,14 @@ class QueryRunner:
         """Query the available files from the query_dir, e.g. a directory containing custom skim files. 
         Right now this does not do preprocessing."""
         queryed_result = {}
-        root_files = FileSysHelper.glob_files(pjoin(query_dir, dataset), '*.root')
 
         pattern = re.compile(r'_(\d+)\.root$')
 
         for datasetname in metaquery[dataset].keys():
             queryed_result[datasetname] = {"files": {}}
             queryed_result[datasetname]["metadata"] = metaquery[dataset][datasetname]
+            shortname = metaquery[dataset][datasetname]['shortname'] 
+            root_files = FileSysHelper.glob_files(pjoin(query_dir, dataset), f'{shortname}*.root')
             for root_file in root_files:
                 match = pattern.search(root_file)
                 if match:
