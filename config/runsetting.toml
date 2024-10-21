@@ -1,10 +1,10 @@
 [PRESELECT]
-SEL_NAME = 'prelim_onelooseb'
+SEL_NAME = 'prelim_twolooseb'
 JOB_PATH = 'skimmed'
 DELAYED_OPEN = false
 JOB_DIRNAME = 'preseljson'
 OUTPUTDIR_PATH = "outputs"
-TRANSFER_PATH = '/store/user/joyzhou/RegionCD'
+TRANSFER_PATH = '/store/user/joyzhou/twob'
 FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*"]
 OUTENDPATTERN = ['cutflow.csv', 'output.csv']
 
