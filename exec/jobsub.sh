@@ -30,13 +30,16 @@ source scripts/venv.sh $DYNACONF_ENV
 cd exec
 
 JOB_DIRNAME=$(python3 -c 'from config.projectconfg import runsetting as rs; print(rs.JOB_DIRNAME)')
-rm -rf ${JOB_DIRNAME}/*.json
-python3 genjobs.py
+
 
 if [ "$PROCESS" = "ALL" ]; then
     FILENAME="${JOB_DIRNAME}/*.json"
+    rm -rf ${JOB_DIRNAME}/*.json
+    python3 genjobs.py *
 else 
-    FILENAME="${JOB_DIRNAME}/${PROCESS}_*.json"
+    FILENAME="${JOB_DIRNAME}/${PROCESS}*.json"
+    rm -rf ${JOB_DIRNAME}/${PROCESS}*.json
+    python3 genjobs.py $PROCESS
 fi
 
 \cp -f hhbbtt.sub runtime/${DYNACONF_ENV}_${PROCESS}.sub

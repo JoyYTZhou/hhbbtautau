@@ -11,10 +11,10 @@ OUTENDPATTERN = ['cutflow.csv', 'output.csv']
 [SKIM]
 SEL_NAME = 'vetoskim'
 JOB_PATH = 'preprocessed'
-DELAYED_OPEN = false
+DELAYED_OPEN = true
 OUTPUTDIR_PATH = "outputs"
 JOB_DIRNAME = 'skimjson'
-TRANSFER_PATH = '/store/user/joyzhou/vetoskim'
+TRANSFER_PATH = '/store/user/joyzhou/vetoskim_23Summer'
 
 
 [LPCTEST]

@@ -17,18 +17,17 @@ class QueryRunner:
         self.ddc.do_regex_sites(r"T[123]_(US)_\w+")
         self.dataset = dataset
 
-    def __call__(self, indir='availableMC', query_dir=None) -> None:
+    def __call__(self, infile, query_dir=None) -> None:
         """Run the query on the dataset and preprocess the dataset."""
-        for infile in FileSysHelper.glob_files(indir, '*.json'):
-            with open(infile, 'r') as file:
-                mcstrings = json.load(file)
-            
-            name = infile.split('/')[-1].split('.')[0]
-            if query_dir is None:
-                self.query_from_dasgo(mcstrings, suffix=name)
-            else:
-                FileSysHelper.checkpath(query_dir, createdir=False, raiseError=True)
-                self.query_from_dir(query_dir, mcstrings)
+        with open(infile, 'r') as file:
+            mcstrings = json.load(file)
+        
+        name = infile.split('/')[-1].split('.')[0]
+        if query_dir is None:
+            self.query_from_dasgo(mcstrings, suffix=name)
+        else:
+            FileSysHelper.checkpath(query_dir, createdir=False, raiseError=True)
+            self.query_from_dir(query_dir, mcstrings)
     
     def query_from_dasgo(self, metaquery, suffix) -> None:
         """Query the available files from the DASGO. Produce a json.gz file with the query results (files, redirectors, uuids etc.)"""
@@ -77,6 +76,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run preprocessor on fileset')    
     parser.add_argument('-d', '--dataset', type=str, required=True, 
                         help='group name of the dataset to run program on, e.g. TTbar, DYJets, etc. Note that this must match the key in the availableQuery.json file.')
+    parser.add_argument('-i', '--infile', type=str, required=True, help='path of the json file containing the dataset query string')
     parser.add_argument('-s', '--skip', action='store_true', required=False, help='whether to skip preprocess.')
     parser.add_argument('-q', '--query', type=str, required=False, default=None, help='directory containing custom skim.')
 
@@ -85,4 +85,4 @@ if __name__ == "__main__":
     if args.skip:
         qr.dump_query()
     else:
-        qr(query_dir=args.query)
+        qr(args.infile, args.query)
