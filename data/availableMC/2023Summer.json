@@ -1,0 +1,16 @@
+{
+    "TTbar": {
+        "/TTto4Q_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23NanoAODv12-130X_mcRun3_2023_realistic_v14-v2/NANOAODSIM": {
+            "xsection": 422.0582,
+            "shortname": "TTto4Q_23"
+        },
+        "/TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23NanoAODv12-130X_mcRun3_2023_realistic_v14-v2/NANOAODSIM": {
+            "xsection": 96.978,
+            "shortname": "TTto2L2N_23"
+        },
+        "/TTtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23NanoAODv12-130X_mcRun3_2023_realistic_v14-v2/NANOAODSIM": {
+            "xsection": 404.5368,
+            "shortname": "TTtoLNu2Q_23"
+        }
+    }
+}

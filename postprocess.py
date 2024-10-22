@@ -43,7 +43,7 @@ def __main__():
         pp()
     
     if args.mode == 'clean':
-        pass
+       pp.clean_roots()
         
 if __name__ == '__main__':
     __main__()
