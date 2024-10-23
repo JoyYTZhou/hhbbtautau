@@ -40,7 +40,7 @@ if [ "$PROCESS" = "ALL" ]; then
 else 
     FILENAME="${JOB_DIRNAME}/${PROCESS}*.json"
     rm -rf ${JOB_DIRNAME}/${PROCESS}*.json
-    python3 genjobs.py $PROCESS
+    python3 genjobs.py ${PROCESS}_${YEAR}
 fi
 
 \cp -f hhbbtt.sub runtime/${DYNACONF_ENV}_${PROCESS}.sub
