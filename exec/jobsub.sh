@@ -24,6 +24,7 @@ shift $((OPTIND -1))
 
 DYNACONF_ENV=$1
 PROCESS=$2
+YEAR=$3
 
 cd ..
 source scripts/venv.sh $DYNACONF_ENV
