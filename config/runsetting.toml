@@ -1,12 +1,12 @@
 [PRESELECT]
-SEL_NAME = 'prelim_twolooseb'
+SEL_NAME = 'prelim_onelooseb'
 JOB_PATH = 'skimmed'
 DELAYED_OPEN = false
 JOB_DIRNAME = 'preseljson'
 OUTPUTDIR_PATH = "outputs"
-TRANSFER_PATH = '/store/user/joyzhou/twob'
+TRANSFER_PATH = '/store/user/joyzhou/oneb'
 FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*"]
-OUTENDPATTERN = ['cutflow.csv', 'output.csv']
+OUTPUT_FORMAT = 'csv'
 
 [SKIM]
 SEL_NAME = 'vetoskim'
@@ -14,7 +14,7 @@ JOB_PATH = 'preprocessed'
 # DELAYED_OPEN = true
 OUTPUTDIR_PATH = "outputs"
 JOB_DIRNAME = 'skimjson'
-TRANSFER_PATH = '/store/user/joyzhou/vetoskim_23Summer'
+TRANSFER_PATH = '/store/user/joyzhou/vetoskim'
 OUTPUT_FORMAT = 'root'
 
 [LPCTEST]

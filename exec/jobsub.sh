@@ -39,7 +39,7 @@ if [ "$PROCESS" = "ALL" ]; then
     python3 genjobs.py *
 else 
     FILENAME="${JOB_DIRNAME}/${PROCESS}*.json"
-    rm -rf ${JOB_DIRNAME}/${PROCESS}*.json
+    rm -rf ${JOB_DIRNAME}/${PROCESS}_${YEAR}*.json
     python3 genjobs.py ${PROCESS}_${YEAR}
 fi
 
