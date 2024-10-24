@@ -23,7 +23,7 @@ done
 shift $((OPTIND -1))
 
 DYNACONF_ENV=$1
-PROCESS=$2
+PRCESS=$2
 YEAR=$3
 
 cd ..
@@ -31,7 +31,6 @@ source scripts/venv.sh $DYNACONF_ENV
 cd exec
 
 JOB_DIRNAME=$(python3 -c 'from config.projectconfg import runsetting as rs; print(rs.JOB_DIRNAME)')
-
 
 if [ "$PROCESS" = "ALL" ]; then
     FILENAME="${JOB_DIRNAME}/*.json"
