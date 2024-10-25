@@ -10,7 +10,7 @@ OUTPUT_FORMAT = 'csv'
 [SKIM]
 SEL_NAME = 'vetoskim'
 JOB_PATH = 'preprocessed'
-# DELAYED_OPEN = true
+DELAYED_OPEN = false
 JOB_DIRNAME = 'skimjson'
 TRANSFER_PATH = '/store/user/joyzhou/vetoskim'
 OUTPUT_FORMAT = 'root'
