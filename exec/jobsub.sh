@@ -38,21 +38,23 @@ if [ "$PROCESS" = "ALL" ]; then
     rm -rf ${JOB_DIRNAME}/*.json
     python3 genjobs.py *
 else 
-    FILENAME="${JOB_DIRNAME}/${PROCESS}_${YEAR}.json"
+    FILENAME="${JOB_DIRNAME}/${PROCESS}_${YEAR}*.json"
     rm -rf ${JOB_DIRNAME}/${PROCESS}_${YEAR}*.json
     python3 genjobs.py ${PROCESS}_${YEAR}
 fi
 
-\cp -f hhbbtt.sub runtime/${DYNACONF_ENV}_${PROCESS}.sub
+SUBFILENAME=${DYNACONF_ENV}_${PROCESS}_${YEAR}.sub
 
-cat << EOF >> runtime/${DYNACONF_ENV}_${PROCESS}.sub
+\cp -f hhbbtt.sub runtime/${SUBFILENAME}
+
+cat << EOF >> runtime/${SUBFILENAME}
 DYNACONF = ${DYNACONF_ENV}
 JOB_DIRNAME = ${JOB_DIRNAME}
 queue FILENAME matching files ${FILENAME}
 EOF
 
 if [ "$DISABLE_SUBMISSION" = false ]; then
-    condor_submit runtime/${DYNACONF_ENV}_${PROCESS}.sub
+    condor_submit runtime/${SUBFILENAME}
 else
     echo "Submission disabled for process: $PROCESS"
 fi
