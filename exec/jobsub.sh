@@ -23,7 +23,7 @@ done
 shift $((OPTIND -1))
 
 DYNACONF_ENV=$1
-PRCESS=$2
+PROCESS=$2
 YEAR=$3
 
 cd ..
