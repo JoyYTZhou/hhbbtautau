@@ -34,7 +34,7 @@ JOB_DIRNAME=$(python3 -c 'from config.projectconfg import runsetting as rs; prin
 
 if [ "$PROCESS" = "ALL" ]; then
   PROCESS_KEY='*'
-else 
+else
   PROCESS_KEY=$PROCESS
 fi
 
@@ -44,8 +44,8 @@ else
   YEAR_KEY=$YEAR
 fi
 
-FILENAME="${JOB_DIRNAME}/${PROCESS_KEY}_${YEAR_KEY}.json"
-rm -rf ${JOB_DIRNAME}/${PROCESS_KEY}_${YEAR_KEY}.json
+FILENAME="${JOB_DIRNAME}/${PROCESS_KEY}_${YEAR_KEY}*.json"
+rm -rf ${JOB_DIRNAME}/${PROCESS_KEY}_${YEAR_KEY}*.json
 python3 genjobs.py ${PROCESS_KEY}_${YEAR_KEY}
 
 SUBFILENAME=${DYNACONF_ENV}_${PROCESS}_${YEAR}.sub
