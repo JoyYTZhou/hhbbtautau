@@ -14,7 +14,7 @@ def __main__():
    Usage Examples:
    
    1. Check the integrity of ROOT files:
-      python postprocess.py --mode check --group DYJets TTbar
+      python postprocess.py --mode check --group DYJets TTbar --year 2022PostEE
       
       Check all existing ROOT files:
       python postprocess.py --mode check
