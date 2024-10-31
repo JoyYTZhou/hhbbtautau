@@ -47,7 +47,7 @@ def __main__():
 
    args = parser.parse_args()
    
-   pp = PostProcessor(cleansetting, groups=args.group)
+   pp = PostProcessor(cleansetting, groups=args.group, years=args.year)
 
    if args.mode == 'check':
       pp.check_roots()

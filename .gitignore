@@ -12,6 +12,7 @@ src/data/objectchecks/
 src/analysis/.api_key.txt
 # Ignore outputs
 outputs/
+*.txt
 # Ignore the exec output
 exec/*.log
 exec/*.err
