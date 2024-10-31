@@ -1,6 +1,12 @@
 from config.projectconfg import cleansetting
 from src.plotting.postprocessor import PostProcessor
-import argparse
+import argparse, contextlib
+
+@contextlib.contextmanager
+def silence_output(file_path):
+    with open(file_path, "w") as f:
+        with contextlib.redirect_stdout(f), contextlib.redirect_stderr(f):
+            yield
 
 def __main__():
    description = """
@@ -37,6 +43,7 @@ def __main__():
                      help='Group of the files to be hadded, e.g. DYJets TTbar etc. If not provided, will postprocess all groups.')
    parser.add_argument('--year', type=str, nargs='+', required=False, default=None, 
                        help='Year of the files to be hadded, e.g. 2022PostEE, 2023 etc. If not provided, will postprocess all years.')
+   parser.add_argument("--silence", action="store_true", help="Silence all output to console.")
 
    args = parser.parse_args()
    

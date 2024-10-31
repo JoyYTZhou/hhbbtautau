@@ -1,9 +1,10 @@
-import os, gc, argparse
+import os, gc, argparse 
 
 PARENT_DIR = os.path.dirname(__file__) 
 from src.utils.filesysutil import checkx509, display_top
 from config.projectconfg import dasksetting, runsetting
 from config.customEvtSel import switch_selections
+
 
 def runselections():
     gc.enable()

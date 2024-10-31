@@ -98,13 +98,13 @@
     "ZH": {
         "/ZH_Hto2B_Zto2L_M-125_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6-v2/NANOAODSIM": {
             "xsection": 0.05500221399699999,
-            "shortname": "ZH_HToBB_ZToLL",
+            "shortname": "ZH_Hto2B_Zto2L",
             "nwgt": 176189.69,
             "per_evt_wgt": 0.06867874663574242
         },
         "/ZH_Hto2B_Zto2Q_M-125_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6-v2/NANOAODSIM": {
             "xsection": 0.38075104272999993,
-            "shortname": "ZH_HToBB_ZToQQ",
+            "shortname": "ZH_Hto2B_Zto2Q",
             "nwgt": 2438539.76,
             "per_evt_wgt": 0.03435056945743628
         }
