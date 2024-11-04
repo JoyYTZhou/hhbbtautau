@@ -27,7 +27,7 @@ class QueryRunner:
             self.query_from_dasgo(mcstrings, suffix=name)
         else:
             FileSysHelper.checkpath(query_dir, createdir=False, raiseError=True)
-            self.query_from_dir(query_dir, mcstrings)
+            self.query_from_dir(query_dir, mcstrings, name)
     
     def query_from_dasgo(self, metaquery, suffix) -> None:
         """Query the available files from the DASGO. Produce a json.gz file with the query results (files, redirectors, uuids etc.)"""
@@ -45,12 +45,12 @@ class QueryRunner:
         
         shutil.move(f"{self.dataset}_{suffix}_available.json.gz", f"preprocessed/{self.dataset}_{suffix}.json.gz")
     
-    def query_from_dir(self, query_dir, metaquery) -> None:
+    def query_from_dir(self, query_dir, metaquery, year) -> None:
         """Query the available files from the query_dir, e.g. a directory containing custom skim files. 
         Right now this does not do preprocessing.
         
         Parameters
-        - `query_dir`: str, the directory containing the custom skim files (currently only supports root files).
+        - `query_dir`: str, the directory containing the custom skim files (currently only supports root files)
         - `metaquery`: dict, the metaquery dictionary containing the dataset information."""
         queryed_result = {}
 
@@ -60,7 +60,7 @@ class QueryRunner:
             queryed_result[datasetname] = {"files": {}}
             queryed_result[datasetname]["metadata"] = metaquery[self.dataset][datasetname]
             shortname = metaquery[self.dataset][datasetname]['shortname'] 
-            root_files = FileSysHelper.glob_files(pjoin(query_dir, self.dataset), f'{shortname}*.root')
+            root_files = FileSysHelper.glob_files(pjoin(query_dir, year, self.dataset), f'{shortname}*.root')
             for root_file in root_files:
                 match = pattern.search(root_file)
                 if match:
@@ -69,7 +69,7 @@ class QueryRunner:
         
         FileSysHelper.checkpath('skimmed', createdir=True)
 
-        with gzip.open(f"skimmed/{self.dataset}.json.gz", 'wt') as file:
+        with gzip.open(f"skimmed/{self.dataset}_{year}.json.gz", 'wt') as file:
             json.dump(queryed_result, file)
 
 if __name__ == "__main__":
