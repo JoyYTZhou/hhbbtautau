@@ -10,6 +10,7 @@ hhbbttrun/
 # Ignore datachecks
 src/data/objectchecks/
 src/analysis/.api_key.txt
+data/skimmed/
 # Ignore outputs
 outputs/
 *.txt
