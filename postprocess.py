@@ -57,6 +57,9 @@ def __main__():
    
    if args.mode == 'clean':
       pp.clean_roots()
+   
+   if args.mode == 'yield':
+      pp.get_yield()
         
 if __name__ == '__main__':
    __main__()
