@@ -8,32 +8,40 @@ from src.utils.filesysutil import FileSysHelper, pjoin
 class QueryRunner:
     """Class to run the query on dataset strings and preprocess the dataset.
     Currently only supports MC datasets. Dependent on DataDiscoveryCLI from coffea."""
-    def __init__(self, dataset) -> None:
+    def __init__(self, dataset, infile) -> None:
         """Initialize the QueryRunner object.
         
         Parameters
-        - `dataset`: str, the dataset name key in the json file to query and preprocess."""
+        - `dataset`: str, the dataset name key in the json file to query and preprocess. If none, query over all keys in input files."""
         self.ddc = DataDiscoveryCLI()
         self.ddc.do_regex_sites(r"T[123]_(US)_\w+")
-        self.dataset = dataset
-
-    def __call__(self, infile, query_dir=None) -> None:
-        """Run the query on the dataset and preprocess the dataset."""
         with open(infile, 'r') as file:
-            mcstrings = json.load(file)
-        
-        name = infile.split('/')[-1].split('.')[0]
+            self.mcstrings = json.load(file)
+        self.name = infile.split('/')[-1].split('.')[0]
+        if dataset is None:
+            self.dataset = list(self.mcstrings.keys())
+        else:
+            self.dataset = [dataset]
+
+    def __call__(self, query_dir=None) -> None:
+        """Run the query on the dataset and preprocess the dataset."""
         if query_dir is None:
-            self.query_from_dasgo(mcstrings, suffix=name)
+            for dataset in self.dataset:
+                self.query_from_dasgo(dataset)
         else:
             FileSysHelper.checkpath(query_dir, createdir=False, raiseError=True)
-            self.query_from_dir(query_dir, mcstrings, name)
+            for dataset in self.dataset:
+                if FileSysHelper.checkpath(pjoin(query_dir, self.name, dataset), createdir=False, raiseError=False):
+                    self.query_from_dir(query_dir, dataset, self.name)
+                else:
+                    print(f"No custom skims for {self.name} {dataset} have been produced.")
     
-    def query_from_dasgo(self, metaquery, suffix) -> None:
+    def query_from_dasgo(self, dataset) -> None:
         """Query the available files from the DASGO. Produce a json.gz file with the query results (files, redirectors, uuids etc.)"""
-        self.ddc.load_dataset_definition(dataset_definition=metaquery[self.dataset], query_results_strategy='all', replicas_strategy='manual')
+        suffix = self.name
+        self.ddc.load_dataset_definition(dataset_definition=self.mcstrings[dataset], query_results_strategy='all', replicas_strategy='manual')
 
-        self.ddc.do_preprocess(output_file=f'{self.dataset}_{suffix}',
+        self.ddc.do_preprocess(output_file=f'{dataset}_{suffix}',
             step_size=10000,
             align_to_clusters=False,
             recalculate_steps=False,
@@ -43,24 +51,24 @@ class QueryRunner:
             allow_empty_datasets=True,
             scheduler_url=None)
         
-        shutil.move(f"{self.dataset}_{suffix}_available.json.gz", f"preprocessed/{self.dataset}_{suffix}.json.gz")
+        shutil.move(f"{dataset}_{suffix}_available.json.gz", f"preprocessed/{dataset}_{suffix}.json.gz")
     
-    def query_from_dir(self, query_dir, metaquery, year) -> None:
+    def query_from_dir(self, query_dir, dataset, year) -> None:
         """Query the available files from the query_dir, e.g. a directory containing custom skim files. 
         Right now this does not do preprocessing.
         
         Parameters
         - `query_dir`: str, the directory containing the custom skim files (currently only supports root files)
-        - `metaquery`: dict, the metaquery dictionary containing the dataset information."""
+        """
         queryed_result = {}
 
         pattern = re.compile(r'_(\d+)\.root$')
 
-        for datasetname in metaquery[self.dataset].keys():
+        for datasetname in self.mcstrings[dataset].keys():
             queryed_result[datasetname] = {"files": {}}
-            queryed_result[datasetname]["metadata"] = metaquery[self.dataset][datasetname]
-            shortname = metaquery[self.dataset][datasetname]['shortname'] 
-            root_files = FileSysHelper.glob_files(pjoin(query_dir, year, self.dataset), f'{shortname}*.root')
+            queryed_result[datasetname]["metadata"] = self.mcstrings[dataset][datasetname]
+            shortname = self.mcstrings[dataset][datasetname]['shortname'] 
+            root_files = FileSysHelper.glob_files(pjoin(query_dir, year, dataset), f'{shortname}*.root')
             for root_file in root_files:
                 match = pattern.search(root_file)
                 if match:
@@ -69,20 +77,20 @@ class QueryRunner:
         
         FileSysHelper.checkpath('skimmed', createdir=True)
 
-        with gzip.open(f"skimmed/{self.dataset}_{year}.json.gz", 'wt') as file:
+        with gzip.open(f"skimmed/{dataset}_{year}.json.gz", 'wt') as file:
             json.dump(queryed_result, file)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run preprocessor on fileset')    
-    parser.add_argument('-d', '--dataset', type=str, required=True, 
-                        help='group name of the dataset to run program on, e.g. TTbar, DYJets, etc. Note that this must match the key in the availableQuery.json file.')
+    parser.add_argument('-d', '--dataset', type=str, required=False, default=None, 
+                        help='group name of the dataset to run program on, e.g. TTbar, DYJets, etc. Note that this must match the key in the json input file. If not specified, run over all available datasets found in json input file.')
     parser.add_argument('-i', '--infile', type=str, required=True, help='path of the json file containing the dataset query string')
     parser.add_argument('-s', '--skip', action='store_true', required=False, help='whether to skip preprocess.')
     parser.add_argument('-q', '--query', type=str, required=False, default=None, help='directory containing custom skim.')
 
     args = parser.parse_args()
-    qr = QueryRunner(args.dataset)
+    qr = QueryRunner(args.dataset, args.infile)
     if args.skip:
         qr.dump_query()
     else:
-        qr(args.infile, args.query)
+        qr(args.query)
