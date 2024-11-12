@@ -8,7 +8,7 @@ LUMI = 220 # fb^-1
 OUTTYPE = 'root'
 
 [PRESELECT]
-DIRNAME = 'twob'
+DIRNAME = 'oneb'
 METADATA = "@format {env[DATA_DIR]}/availableMC" 
 INPUTDIR = "@format {env[CONDOR_BASE]}/{this.DIRNAME}"
 LOCALOUTPUT = "@format /uscms/home/joyzhou/nobackup/hadded/{this.DIRNAME}"
