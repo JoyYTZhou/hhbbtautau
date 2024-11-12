@@ -59,11 +59,7 @@ def __main__():
       pp.clean_roots()
    
    if args.mode == 'yield':
-<<<<<<< HEAD
       pp.get_yield()
-=======
-      pp.get_yields()
->>>>>>> ad522ff (Refactor postprocess.py to include yield mode for getting yields)
         
 if __name__ == '__main__':
    __main__()
