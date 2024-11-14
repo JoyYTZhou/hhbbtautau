@@ -22,9 +22,9 @@ default:
     Tau:
       pt: 40
       eta: 2.3
-      idvsjet: 5 # Medium
-      idvsmu: 1 # V loose
-      idvse: 2 # VV loose
+      idvsjet: 1
+      idvsmu: 1
+      idvse: 1
       dz: 0.2
       count: 2
       OS: true

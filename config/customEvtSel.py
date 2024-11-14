@@ -4,7 +4,7 @@
 from src.analysis.evtselutil import BaseEventSelections
 from src.analysis.objutil import Object
 
-from config.projectconfg import namemap, selection
+from config.projectconfg import namemap, selection, alt_selection
 import operator as opr
 import awkward as ak
 
@@ -17,9 +17,12 @@ def switch_selections(sel_name):
     }
     return selections.get(sel_name, BaseEventSelections)
 
-default_trigsel = selection.triggerselections
-default_objsel = selection.objselections
+# default_trigsel = selection.triggerselections
+# default_objsel = selection.objselections
 default_mapcfg = namemap
+
+default_trigsel = alt_selection.triggerselections
+default_objsel = alt_selection.objselections
 
 class skimEvtSel(BaseEventSelections):
     """A class to skim the events based on the trigger and object selections."""
