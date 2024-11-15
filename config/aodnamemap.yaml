@@ -14,6 +14,8 @@ default:
     charge: Electron_charge
   Muon:
     looseid: Muon_looseId
+    mediumid: Muon_mediumId
+    isoid04: Muon_pfRelIso04_all
     isoid: Muon_pfIsoId
     cbtightid: Muon_tightId
     charge: Muon_charge

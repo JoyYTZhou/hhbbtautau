@@ -6,7 +6,7 @@ default:
     GenPart: null
     Electron: 
       mvaisoid: True
-      pt: 25
+      pt: 10
       eta: 2.1
       dxy: 0.045
       dz: 0.2

@@ -6,18 +6,18 @@ default:
     GenPart: null
     Electron: 
       mvaisoid: True
-      pt: 25
-      eta: 2.1
+      pt: 10
+      eta: 2.5
       dxy: 0.045
       dz: 0.2
       count: 0
     Muon: 
-      pt: 20
-      eta: 2.1
+      pt: 10
+      eta: 2.4
       dxy: 0.045
       dz: 0.2
-      looseid: true
-      isoid: 1
+      mediumid: true
+      isoid04: 0.3
       count: 0
     Tau:
       pt: 40

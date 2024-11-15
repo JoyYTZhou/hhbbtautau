@@ -21,8 +21,13 @@ def switch_selections(sel_name):
 # default_objsel = selection.objselections
 default_mapcfg = namemap
 
+tight_trigsel = selection.triggerselections
+
 default_trigsel = alt_selection.triggerselections
 default_objsel = alt_selection.objselections
+
+class tightskimEvtSel(BaseEventSelections):
+    pass
 
 class skimEvtSel(BaseEventSelections):
     """A class to skim the events based on the trigger and object selections."""
