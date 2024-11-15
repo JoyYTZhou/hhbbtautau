@@ -1,7 +1,7 @@
 # This file contains custom event selection classes for the src.analysis.
 # The classes are inherited from the BaseEventSelections class
 # TECHNICALLY THIS SHOULD BE THE ONLY FILE THAT NEEDS TO BE MODIFIED FOR CUSTOM EVENT SELECTIONS
-from src.analysis.evtselutil import BaseEventSelections
+from src.analysis.evtselutil import BaseEventSelections, TriggerEventSelections
 from src.analysis.objutil import Object
 
 from config.projectconfg import namemap, selection, alt_selection
@@ -10,6 +10,7 @@ import awkward as ak
 
 def switch_selections(sel_name):
     selections = {
+        'tightskim': tightskimEvtSel,
         'vetoskim': skimEvtSel,
         'prelim_onelooseb': ControlEvtSel,
         'prelim_twolooseb': SignalEvtSel,
@@ -22,24 +23,42 @@ def switch_selections(sel_name):
 default_mapcfg = namemap
 
 tight_trigsel = selection.triggerselections
+tight_objsel = selection.objselections
 
 default_trigsel = alt_selection.triggerselections
 default_objsel = alt_selection.objselections
 
-class tightskimEvtSel(BaseEventSelections):
-    pass
+class tightskimEvtSel(TriggerEventSelections):
+    def __init__(self, trigcfg=tight_trigsel, objcfg=tight_objsel, mapcfg=default_mapcfg, sequential=False) -> None:
+        super().__init__(trigcfg, objcfg, mapcfg, sequential)
+    
+    def setevtsel(self, events):
+        electron = self.getObj("Electron", events)
+        muon = self.getObj("Muon", events)
 
-class skimEvtSel(BaseEventSelections):
+        e_mask = (electron.ptmask(opr.ge) & \
+                electron.absdxymask(opr.le) & \
+                electron.absetamask(opr.le) & \
+                electron.absdzmask(opr.le) & \
+                electron.custommask('mvaisoid', opr.eq)
+                )
+        elec_nummask = electron.vetomask(e_mask)
+
+        m_mask = (muon.ptmask(opr.ge) & \
+                muon.absdxymask(opr.le) & \
+                muon.absetamask(opr.le) & \
+                muon.absdzmask(opr.le) & \
+                muon.custommask('mediumid', opr.eq) & \
+                muon.custommask('isoid04', opr.le))
+        muon_nummask = muon.vetomask(m_mask)
+
+        self.objsel.add_multiple({"Electron Veto": elec_nummask,
+                                "Muon Veto": muon_nummask})
+
+class skimEvtSel(TriggerEventSelections):
     """A class to skim the events based on the trigger and object selections."""
     def __init__(self, trigcfg=default_trigsel, objcfg=default_objsel, mapcfg=default_mapcfg, sequential=False) -> None:
         super().__init__(trigcfg, objcfg, mapcfg, sequential)
-
-    def triggersel(self, events):
-        for trigname, value in self.trigcfg.items():
-            if value:
-                self.objsel.add(trigname, events[trigname])
-            else:
-                self.objsel.add(trigname, events[~trigname])
 
     def setevtsel(self, events) -> None:
         electron = self.getObj("Electron", events)

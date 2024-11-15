@@ -8,11 +8,11 @@ FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*"]
 OUTENDPATTERN = ["output.csv", "cutflow.csv"]
 
 [SKIM]
-SEL_NAME = 'vetoskim'
+SEL_NAME = 'tightskim'
 JOB_PATH = 'preprocessed'
 DELAYED_OPEN = false
 JOB_DIRNAME = 'skimjson'
-TRANSFER_PATH = '/store/user/joyzhou/vetoskim'
+TRANSFER_PATH = '/store/user/joyzhou/tightskim'
 OUTENDPATTERN = [".root", "cutflow.csv"]
 
 [LPCTEST]
