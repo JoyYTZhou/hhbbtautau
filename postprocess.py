@@ -25,8 +25,8 @@ def __main__():
       Check all existing ROOT files:
       python postprocess.py --mode check
 
-   2. Merge ROOT files:
-      python postprocess.py --mode hadd --group DYJets TTbar
+   2. Merge ROOT/CSV output files and CSV cutflow information per dataset per year:
+      python postprocess.py --mode hadd --group DYJets TTbar --year 2022PostEE
 
    3. Clean corrupted ROOT files:
       python postprocess.py --mode clean --group DYJets TTbar
