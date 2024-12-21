@@ -7,6 +7,8 @@ def silence_output(file_path):
     with open(file_path, "w") as f:
         with contextlib.redirect_stdout(f), contextlib.redirect_stderr(f):
             yield
+   
+luminosity = {"2022PostEE": 41.5, "2023Summer": 32.7}
 
 def __main__():
    description = """
@@ -47,7 +49,7 @@ def __main__():
 
    args = parser.parse_args()
    
-   pp = PostProcessor(cleansetting, groups=args.group, years=args.year)
+   pp = PostProcessor(cleansetting, luminosity, groups=args.group, years=args.year)
 
    if args.mode == 'check':
       pp.check_roots()
