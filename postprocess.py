@@ -1,5 +1,5 @@
 from config.projectconfg import cleansetting
-from src.plotting.postprocessor import PostProcessor
+from src.plotting.summary import PostProcessor
 import argparse, contextlib
 
 @contextlib.contextmanager
