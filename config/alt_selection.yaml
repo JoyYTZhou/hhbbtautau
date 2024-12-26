@@ -1,3 +1,4 @@
+# loose selections for training of NN in datasets
 default:
   name: "tauhtauh"
   triggerselections: 
@@ -6,18 +7,18 @@ default:
     GenPart: null
     Electron: 
       mvaisoid: True
-      pt: 20
+      pt: 40
       eta: 2.1
       dxy: 0.045
       dz: 0.2
       count: 0
     Muon: 
-      pt: 20
+      pt: 40
       eta: 2.1
       dxy: 0.045
       dz: 0.2
-      looseid: true
-      isoid: 1
+      cbtightid: True
+      isoid: 6
       count: 0
     Tau:
       pt: 40

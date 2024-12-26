@@ -8,7 +8,7 @@ def silence_output(file_path):
         with contextlib.redirect_stdout(f), contextlib.redirect_stderr(f):
             yield
    
-luminosity = {"2022PostEE": 41.5, "2023Summer": 32.7}
+luminosity = {"2022PostEE": 41.5 * 1000, "2023Summer": 32.7 * 1000}
 
 def __main__():
    description = """
