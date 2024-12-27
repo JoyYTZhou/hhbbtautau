@@ -44,13 +44,13 @@ tau_gen = {
 
 dR = {
     "Tau_dR": {
-        "hist": {'bins': 10, 'range': [0, 5]},
+        "hist": {'bins': 20, 'range': [0, 5]},
         "plot": {'xlabel': r'|dR $(\tau)$|'}}, 
     "Bjet_dR": {
-        "hist": {'bins': 10, 'range': [0, 5]},
+        "hist": {'bins': 20, 'range': [0, 5]},
         "plot": {'xlabel': r'|dR(b Jets)|'}},
     "RecoH_dR": {
-        "hist": {'bins': 10, 'range': [0, 5]},
+        "hist": {'bins': 20, 'range': [0, 5]},
         "plot": {'xlabel': r'|dR(Reco H)|'}}
 }
 
