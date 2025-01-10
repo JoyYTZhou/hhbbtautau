@@ -11,6 +11,7 @@ OUTENDPATTERN = ["output.csv", "cutflow.csv"]
 SEL_NAME = 'tightskim'
 JOB_PATH = 'preprocessed'
 DELAYED_OPEN = false
+REMOTE_LOAD = false
 JOB_DIRNAME = 'skimjson'
 TRANSFER_PATH = '/store/user/joyzhou/tightskim'
 OUTENDPATTERN = [".root", "cutflow.csv"]
