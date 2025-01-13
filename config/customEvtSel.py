@@ -18,15 +18,13 @@ def switch_selections(sel_name):
     }
     return selections.get(sel_name, BaseEventSelections)
 
-# default_trigsel = selection.triggerselections
-# default_objsel = selection.objselections
 default_mapcfg = namemap
 
 tight_trigsel = selection.triggerselections
 tight_objsel = selection.objselections
 
-default_trigsel = alt_selection.triggerselections
-default_objsel = alt_selection.objselections
+loose_trigsel = alt_selection.triggerselections
+loose_objsel = alt_selection.objselections
 
 class tightskimEvtSel(TriggerEventSelections):
     def __init__(self, trigcfg=tight_trigsel, objcfg=tight_objsel, mapcfg=default_mapcfg, sequential=False) -> None:
@@ -57,7 +55,7 @@ class tightskimEvtSel(TriggerEventSelections):
 
 class skimEvtSel(TriggerEventSelections):
     """A class to skim the events based on the trigger and object selections."""
-    def __init__(self, trigcfg=default_trigsel, objcfg=default_objsel, mapcfg=default_mapcfg, sequential=False) -> None:
+    def __init__(self, trigcfg=loose_trigsel, objcfg=loose_objsel, mapcfg=default_mapcfg, sequential=False) -> None:
         super().__init__(trigcfg, objcfg, mapcfg, sequential)
 
     def setevtsel(self, events) -> None:
@@ -84,7 +82,7 @@ class skimEvtSel(TriggerEventSelections):
                                 "Muon Veto": muon_nummask})
 
 class twoTauEvtSel(BaseEventSelections):
-    def __init__(self, trigcfg=default_trigsel, objcfg=default_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
+    def __init__(self, trigcfg=loose_trigsel, objcfg=loose_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
         super().__init__(trigcfg, objcfg, mapcfg, sequential)
 
     def seltwotaus(self, events) -> ak.Array:
@@ -117,7 +115,7 @@ class twoTauEvtSel(BaseEventSelections):
         return events
 
 class ControlEvtSel(twoTauEvtSel):
-    def __init__(self, trigcfg=default_trigsel, objcfg=default_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
+    def __init__(self, trigcfg=loose_trigsel, objcfg=loose_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
         super().__init__(trigcfg, objcfg, mapcfg, sequential)
 
     def setevtsel(self, events) -> None:
@@ -150,7 +148,7 @@ class ControlEvtSel(twoTauEvtSel):
         self.saveWeights(events)
 
 class SignalEvtSel(twoTauEvtSel):
-    def __init__(self, trigcfg=default_trigsel, objcfg=default_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
+    def __init__(self, trigcfg=loose_trigsel, objcfg=loose_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
         super().__init__(trigcfg, objcfg, mapcfg, sequential)
 
     def setevtsel(self, events) -> None:
@@ -179,7 +177,7 @@ class SignalEvtSel(twoTauEvtSel):
         self.saveWeights(events)
 
 class PrelimEvtSel(twoTauEvtSel):
-    def __init__(self, trigcfg=default_trigsel, objselcfg=default_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
+    def __init__(self, trigcfg=loose_trigsel, objselcfg=loose_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
         super().__init__(trigcfg, objselcfg, mapcfg, sequential)
 
     def setevtsel(self, events):

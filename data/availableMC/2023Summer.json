@@ -13,6 +13,12 @@
             "shortname": "TTtoLNu2Q"
         }
     },
+    "ggF": {
+        "/GluGlutoHHto2B2Tau_kl-1p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23NanoAODv13-133X_mcRun3_2023_realistic_ForNanov13_v1-v3/NANOAODSIM": {
+            "xsection": 0.002489,
+            "shortname": "GluGlutoHHto2B2Tau"
+        }
+    },
     "ZH": {
         "/ZH_Hto2B_Zto2L_M-125_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23NanoAODv12-130X_mcRun3_2023_realistic_v14-v2/NANOAODSIM": {
             "xsection": 0.05500221399699999,
