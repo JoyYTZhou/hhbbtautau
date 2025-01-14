@@ -118,7 +118,7 @@ class ControlEvtSel(twoTauEvtSel):
     def __init__(self, trigcfg=loose_trigsel, objcfg=loose_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
         super().__init__(trigcfg, objcfg, mapcfg, sequential)
 
-    def setevtsel(self, events) -> None:
+    def setevtsel(self, events, bjetcount=1) -> None:
         events = self.seltwotaus(events)
         
         jet = self.getObj("Jet", events)
@@ -133,8 +133,8 @@ class ControlEvtSel(twoTauEvtSel):
         jet_nummask = jet.numselmask(jobjmask(jet), opr.ge)
         jet, events = self.selobjhelper(events, '>=2 ak4 jets', jet, jet_nummask)
 
-        jet_nummask = jet.maskredmask((jobjmask(jet) & jet.custommask('btag', opr.ge)), opr.eq, count=1)
-        jet, events = self.selobjhelper(events, '==1 Loose B-tagged', jet, jet_nummask)
+        jet_nummask = jet.maskredmask((jobjmask(jet) & jet.custommask('btag', opr.ge)), opr.eq, count=bjetcount)
+        jet, events = self.selobjhelper(events, f'=={bjetcount} Loose B-tagged', jet, jet_nummask)
         
         jet_mask = (jobjmask(jet) & jet.custommask('btag', opr.ge))
         ld_j = jet.getld(mask=jet_mask)
@@ -175,6 +175,13 @@ class SignalEvtSel(twoTauEvtSel):
         self.objcollect['SDBjet'] = sd_j[:,0]
 
         self.saveWeights(events)
+
+class ZeroBtagEvtSel(ControlEvtSel):
+    def __init__(self, trigcfg=loose_trigsel, objcfg=loose_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
+        super().__init__(trigcfg, objcfg, mapcfg, sequential)
+    
+    def setevtsel(self, events, bjetcount=0):
+        return super().setevtsel(events, bjetcount)
 
 class PrelimEvtSel(twoTauEvtSel):
     def __init__(self, trigcfg=loose_trigsel, objselcfg=loose_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
