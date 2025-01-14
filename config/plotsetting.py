@@ -30,16 +30,12 @@ tau_eta = {
 }
 
 tau_gen = {
-    "LeadingTau_genflav": {
+    "LDTau_genflav": {
         "hist": {'bins': 6, 'range': [-0.5, 5.5]},
-        "plot": {'xlabel': r'Leading $\tau$ Gen Flavor',
-                 'stack': if_stack,
-                 'histtype': hist_type}},
-    "SubleadingTau_genflav": {
+        "plot": {'xlabel': r'Leading $\tau$ Gen Flavor'}},
+    "SDTau_genflav": {
         "hist": {'bins': 6, 'range': [-0.5, 5.5]},
-        "plot": {'xlabel': r'Subleading $\tau$ Gen Flavor',
-                 'stack': if_stack,
-                 'histtype': hist_type}},
+        "plot": {'xlabel': r'Subleading $\tau$ Gen Flavor'}}
 }
 
 dR = {
