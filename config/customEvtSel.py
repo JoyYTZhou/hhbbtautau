@@ -127,7 +127,7 @@ class ControlEvtSel(twoTauEvtSel):
             j_mask = (jet.ptmask(opr.ge) & jet.absetamask(opr.le))
             tau_ldvec = Object.fourvector(self.objcollect['LDTau'], sort=False)
             tau_sdvec = Object.fourvector(self.objcollect['SDTau'], sort=False)
-            jetdR_mask = jet.dRwOther(tau_ldvec, 0.5) & jet.dRwOther(tau_sdvec, 0.5)
+            jetdR_mask = jet.dRwOther(tau_ldvec, 0.4) & jet.dRwOther(tau_sdvec, 0.4)
             return j_mask & jetdR_mask
         
         jet_nummask = jet.numselmask(jobjmask(jet), opr.ge)
@@ -160,7 +160,7 @@ class SignalEvtSel(twoTauEvtSel):
             j_mask = (jet.ptmask(opr.ge) & jet.absetamask(opr.le))
             tau_ldvec = Object.fourvector(self.objcollect['LDTau'], sort=False)
             tau_sdvec = Object.fourvector(self.objcollect['SDTau'], sort=False)
-            jetdR_mask = jet.dRwOther(tau_ldvec, 0.5) & jet.dRwOther(tau_sdvec, 0.5)
+            jetdR_mask = jet.dRwOther(tau_ldvec, 0.4) & jet.dRwOther(tau_sdvec, 0.4)
             return j_mask & jetdR_mask
         
         jet_nummask = jet.numselmask(jobjmask(jet), opr.ge)
