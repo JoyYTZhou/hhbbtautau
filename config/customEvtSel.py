@@ -142,9 +142,6 @@ class ControlEvtSel(twoTauEvtSel):
         self.objcollect['LDBjet'] = ld_j
         self.objcollect['SDBjet'] = sd_j
 
-        sd_j = jet.getld(mask=(~jet_mask) & jobjmask(jet), sort_by='pt')
-        self.objcollect['SDBjet'] = sd_j
-
         self.saveWeights(events)
 
 class SignalEvtSel(twoTauEvtSel):
