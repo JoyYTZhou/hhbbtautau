@@ -1,9 +1,9 @@
 [PRESELECT]
-SEL_NAME = 'prelim_twolooseb'
+SEL_NAME = 'prelim_zerolooseb'
 JOB_PATH = 'skimmed'
 DELAYED_OPEN = false
 JOB_DIRNAME = 'preseljson'
-TRANSFER_PATH = '/store/user/joyzhou/tight_twob_looseT'
+TRANSFER_PATH = '/store/user/joyzhou/tight_zerob_looseT'
 FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*"]
 OUTENDPATTERN = ["output.csv", "cutflow.csv"]
 

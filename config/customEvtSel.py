@@ -14,6 +14,7 @@ def switch_selections(sel_name):
         'vetoskim': skimEvtSel,
         'prelim_onelooseb': ControlEvtSel,
         'prelim_twolooseb': SignalEvtSel,
+        'prelim_zerolooseb': ZeroBtagEvtSel, 
         'prelim_total': PrelimEvtSel
     }
     return selections.get(sel_name, BaseEventSelections)
