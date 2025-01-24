@@ -12,6 +12,7 @@ def switch_selections(sel_name):
     selections = {
         'tightskim': tightskimEvtSel,
         'vetoskim': skimEvtSel,
+        'training_prelim': trainingEvtSel,
         'prelim_onelooseb': ControlEvtSel,
         'prelim_twolooseb': SignalEvtSel,
         'prelim_zerolooseb': ZeroBtagEvtSel, 
@@ -114,6 +115,32 @@ class twoTauEvtSel(BaseEventSelections):
         self.objcollect['SDTau'] = sd_cand
 
         return events
+
+class trainingEvtSel(twoTauEvtSel):
+    def __init__(self, trigcfg=loose_trigsel, objcfg=loose_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
+        super().__init__(trigcfg, objcfg, mapcfg, sequential)
+
+    def setevtsel(self, events) -> None:
+        events = self.seltwotaus(events)
+        
+        jet = self.getObj("Jet", events)
+    
+        def jobjmask(jet: 'Object'):
+            j_mask = (jet.ptmask(opr.ge) & jet.absetamask(opr.le))
+            tau_ldvec = Object.fourvector(self.objcollect['LDTau'], sort=False)
+            tau_sdvec = Object.fourvector(self.objcollect['SDTau'], sort=False)
+            jetdR_mask = jet.dRwOther(tau_ldvec, 0.4) & jet.dRwOther(tau_sdvec, 0.4)
+            return j_mask & jetdR_mask
+        
+        jet_nummask = jet.numselmask(jobjmask(jet), opr.ge)
+        jet, events = self.selobjhelper(events, '>=2 ak4 jets', jet, jet_nummask)
+        
+        jet_mask = jobjmask(jet)
+        ld_j, sd_j = jet.getldsd(mask=jet_mask, sort_by='btag')
+        self.objcollect['LDBjet'] = ld_j
+        self.objcollect['SDBjet'] = sd_j
+
+        self.saveWeights(events)
 
 class ControlEvtSel(twoTauEvtSel):
     def __init__(self, trigcfg=loose_trigsel, objcfg=loose_objsel, mapcfg=default_mapcfg, sequential=True) -> None:

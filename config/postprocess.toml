@@ -20,6 +20,4 @@ DATAPATH = "@format {env[HHBBTT]}/data"
 INPUTDIR = "@format {env[DATA_DIR]}/{this.DIRNAME}/datasource"
 LOCALOUTPUT = "@format {env[DATA_DIR]}/{this.DIRNAME}"
 TREENAME = 'Events'
-SIGNAL = ['ggF', 'ZH', 'ZZ']
-LUMI = 220 # fb^-1
 OUTTYPE = 'csv'
