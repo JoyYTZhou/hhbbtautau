@@ -7,7 +7,7 @@ TRANSFERPATH = "@format /store/user/joyzhou/{this.DIRNAME}_hadded"
 OUTTYPE = 'root'
 
 [PRESELECT]
-DIRNAME = 'tight_oneb_looseT'
+DIRNAME = 'training_tightskim_looseT'
 METADATA = "@format {env[DATA_DIR]}/availableMC" 
 INPUTDIR = "@format {env[CONDOR_BASE]}/{this.DIRNAME}"
 LOCALOUTPUT = "@format /uscms/home/joyzhou/nobackup/hadded/{this.DIRNAME}"
@@ -16,8 +16,8 @@ OUTTYPE = 'csv'
 
 [LOCAL]
 DIRNAME = 'prelim_onelooseb'
+METADATA = "@format {env[HHBBTT]}/data/availableMC" 
 DATAPATH = "@format {env[HHBBTT]}/data"
 INPUTDIR = "@format {env[DATA_DIR]}/{this.DIRNAME}/datasource"
 LOCALOUTPUT = "@format {env[DATA_DIR]}/{this.DIRNAME}"
-TREENAME = 'Events'
 OUTTYPE = 'csv'
