@@ -1,7 +1,7 @@
 import unittest, os, glob, json
 
 from src.analysis.processor import Processor
-from src.utils.filesysutil import FileSysHelper, XRootDHelper
+from src.utils.filesysutil import XRootDHelper
 from config.projectconfg import runsetting as rs
 from config.customEvtSel import switch_selections
 

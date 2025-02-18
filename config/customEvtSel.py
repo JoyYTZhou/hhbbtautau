@@ -4,7 +4,7 @@
 from src.analysis.evtselutil import BaseEventSelections, TriggerEventSelections
 from src.analysis.objutil import Object
 
-from config.projectconfg import namemap, selection, alt_selection
+from config.projectconfg import namemap, selection, alt_selection, vbf_selection
 import operator as opr
 import awkward as ak
 
@@ -22,11 +22,15 @@ def switch_selections(sel_name):
 
 default_mapcfg = namemap
 
-tight_trigsel = selection.triggerselections
+tight_trigsel = selection.triggerselections # tighter selections on veto objects, looser selections on events
 tight_objsel = selection.objselections
 
 loose_trigsel = alt_selection.triggerselections
 loose_objsel = alt_selection.objselections
+
+vbf_trigsel = vbf_selection.triggerselections
+vbf_objsel = vbf_selection.objselections
+
 
 class tightskimEvtSel(TriggerEventSelections):
     def __init__(self, trigcfg=tight_trigsel, objcfg=tight_objsel, mapcfg=default_mapcfg, sequential=False) -> None:
@@ -55,6 +59,11 @@ class tightskimEvtSel(TriggerEventSelections):
         self.objsel.add_multiple({"Electron Veto": elec_nummask,
                                 "Muon Veto": muon_nummask})
 
+
+class VBFskimEvtSel(tightskimEvtSel):
+    def __init__(self, trigcfg=vbf_trigsel, objcfg=vbf_objsel, mapcfg=default_mapcfg, sequential=False):
+        super().__init__(trigcfg, objcfg, mapcfg, sequential)
+    
 class skimEvtSel(TriggerEventSelections):
     """A class to skim the events based on the trigger and object selections."""
     def __init__(self, trigcfg=loose_trigsel, objcfg=loose_objsel, mapcfg=default_mapcfg, sequential=False) -> None:

@@ -22,7 +22,7 @@ log = joblog/$(OUTNAME)_$(Cluster).$(Process).log
 output = joblog/$(OUTNAME)_$(Cluster).$(Process).out
 error = joblog/$(OUTNAME)_$(Cluster).$(Process).err
 
-request_cpus = 14
-request_memory = 28GB
+request_cpus = 10
+request_memory = 20GB
 request_disk = 12GB
 

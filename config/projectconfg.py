@@ -15,6 +15,12 @@ selection = Dynaconf(
     settings_files=['config/selection.yaml']
 )
 
+vbf_selection = Dynaconf(
+    root_path = root_path,
+    environments=True,
+    settings_files=['config/selection_VBF.yaml'] 
+)
+
 alt_selection = Dynaconf(
     root_path = root_path,
     environments=True,
