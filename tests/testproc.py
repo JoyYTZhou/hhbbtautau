@@ -1,6 +1,5 @@
 import os, json, cProfile, argparse, time, pstats
-from collections import defaultdict
-from memory_profiler import profile
+from memory_profiler import memory_usage
 from line_profiler import LineProfiler
 
 from src.analysis.processor import Processor
@@ -52,13 +51,11 @@ def main():
     print(f"Processing completed in {(end_time-start_time)/60:.2f} minutes")
     print(f"Failed files: {failed_files}")
 
-@profile
 def run_with_memory_profiler():
     main()
 
 if __name__ == '__main__':
     lp = LineProfiler()
-    lp.add_function(run_with_memory_profiler)
     lp.add_function(Processor.runfiles)
     lp.add_function(Processor.loadfile_remote)
     lp.add_function(Processor.loadfile_local)
