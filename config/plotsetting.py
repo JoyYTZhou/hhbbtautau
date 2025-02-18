@@ -2,26 +2,22 @@ if_stack = True
 hist_type = 'fill'
 
 tau_pt = {
-    "LeadingTau_pt": {
+    "LDTau_pt": {
         "hist": {'bins': 30, 'range': [0,300]},
-        "plot": {'histtype': hist_type,
-                'xlabel': r'Leading $\tau$ $P_t$ (GeV)',
-                'alpha': 0.95}},
-    "SubleadingTau_pt": {
+        "plot": {'xlabel': r'Leading $\tau$ $P_t$ (GeV)'}},
+    "SDTau_pt": {
         "hist": {'bins': 30, 'range': [0,300]},
-        "plot": {'xlabel': r'Subleading $\tau$ $P_t$ (GeV)',
-                'histtype': hist_type,
-                'alpha': 0.95}},
+        "plot": {'xlabel': r'Subleading $\tau$ $P_t$ (GeV)'}},
 }
 
 tau_eta = {
-    "LeadingTau_eta": {
+    "LDTau_eta": {
         "hist": {'bins': 42, 'range': [-2.1,2.1]},
         "plot": {'histtype': hist_type,
                  'xlabel': r'Leading $\tau$ $\eta$',
                  'alpha': 0.95,
                  'stack': if_stack}},
-    "SubleadingTau_eta": {
+    "SDTau_eta": {
         "hist": {'bins': 42, 'range': [-2.1,2.1]},
         "plot": {'xlabel': r'Subleading $\tau$ $\eta$',
                  'histtype': hist_type,
