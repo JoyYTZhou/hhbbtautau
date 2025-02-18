@@ -1,82 +1,77 @@
-import unittest, os, glob, json
+import os, json, cProfile, argparse, time, pstats
+from collections import defaultdict
+from memory_profiler import profile
+from line_profiler import LineProfiler
 
 from src.analysis.processor import Processor
-from src.utils.filesysutil import XRootDHelper
-from config.projectconfg import runsetting as rs
 from config.customEvtSel import switch_selections
 
 pjoin = os.path.join
 
-class TestProcessor(unittest.TestCase):
-    def setUp(self):
-        with open(rs.TEST_JSON, 'r') as f:
-            self.preprocessed = json.load(f)
+def main():
+    parser = argparse.ArgumentParser(description='Run processor on a single file')
+    parser.add_argument('selection_name', type=str, help='Name of the selection to run')
 
-        self.eventSelection = switch_selections(rs.SEL_NAME)
-        self.proc = Processor(rs, self.preprocessed, transferP=None, evtselclass=self.eventSelection)
+    args = parser.parse_args()
     
-    def tearDown(self) -> None:
-        files = glob.glob(os.path.join(self.proc.outdir, "*"))
-        for f in files: os.remove(f)
-        xrdhelper = XRootDHelper()
-        xrdhelper.remove_files(rs.TRANSFER_PATH)
+    file_dir = os.path.dirname(os.path.realpath(__file__))
+    testinput = pjoin(file_dir, "testInputs", "DYJets_NANOAOD12.json")
+    with open(testinput, 'r') as f:
+        preprocessed = json.load(f)
     
-    def test_dir_init(self):
-        expected = self.proc.outdir
-        self.assertTrue(os.path.exists(expected), f"Local output Directory {expected} does not exist!")
-        
-    def test_proc_load_remote(self):
-        result = self.proc.loadfile_remote(self.preprocessed)
-
-        self.assertIsNotNone(result)
-        self.assertTrue(hasattr(result, 'fields'), "Events do not have fields attribute")
+    rtcfg_1 = {
+        "OUTPUTDIR_PATH": "/uscms/home/joyzhou/nobackup/tests",
+        "COPYDIR_PATH": "/store/user/joyzhou/temp",
+        "DELAYED_OPEN": True,
+        "REMOTE_LOAD": True,
+        "FILTER_NAME": None,
+        "DELAYED_WRITE": False,
+    }
     
-    def test_proc_run_file(self): 
-        """Run the processor for selecting on a single file"""
-        result = self.proc.runfiles(write_npz=False)
-        expected = pjoin(self.proc.outdir, "*.root")
-        matched = glob.glob(expected)
-        self.assertTrue(len(matched) > 0, f"No root output files found in {expected}")
+    eventselection = switch_selections(args.selection_name)
+    transferP = "/store/user/joyzhou/temp"
 
-        expected = os.path.join(self.proc.outdir, "*.csv")
-        matched = glob.glob(expected)
-        self.assertTrue(len(matched) > 0, f"No cutflow csv files found in {expected}")
+    proc = Processor(rtcfg_1, preprocessed, transferP=transferP, evtselclass=eventselection)
 
-        self.assertEqual(result, 0, "Error encountered")
-    
-    # def test_proc_run_file_with_parquet(self): 
-    #     """Run the processor for selecting on a single file"""
-    #     result = self.proc.runfiles(write_npz=False, parquet=True)
-    #     expected = pjoin(self.proc.outdir, "*.parquet")
-    #     matched = glob.glob(expected)
-    #     self.assertTrue(len(matched) > 0, f"No parquet output files found in {expected}")
+    profiler = cProfile.Profile()
+    profiler.enable()
 
-    #     expected = os.path.join(self.proc.outdir, "*.csv")
-    #     matched = glob.glob(expected)
-    #     self.assertTrue(len(matched) > 0, f"No cutflow csv files found in {expected}")
+    start_time = time.time()
+    failed_files = proc.runfiles(write_npz=False)
+    end_time = time.time()
 
-    #     self.assertEqual(result, 0, "Error encountered")
-    
-    # def test_transfer_file(self):
-    #     proc = Processor(self.preprocessed, transferP=rs.TRANSFER_PATH, evtselclass=self.eventSelection) 
-    #     result = proc.runfiles(write_npz=False)
+    profiler.disable()
 
-    #     self.assertEqual(result, 0, "Error encountered")
+    stats = pstats.Stats(profiler)
+    stats.sort_stats(pstats.SortKey.TIME)
 
-    #     prefix = self.preprocessed['metadata']['shortname']
-    #     uuid = self.preprocessed['files'].values()[0]['uuid']
+    stats_filename = 'cprofile_output.txt'
+    with open(stats_filename, 'w') as f:
+        stats.print_stats(stream=f)
 
-    #     expected_files = [f'{prefix}_{uuid}_cutflow.csv', f'{prefix}_{uuid}-part0.root']
-        
-    #     produced = FileSysHelper.glob_files(proc.transfer)
+    print(f"Processing completed in {(end_time-start_time)/60:.2f} minutes")
+    print(f"Failed files: {failed_files}")
 
-    #     for file in expected_files:
-    #         self.assertIn(file, produced, f"File {file} not found in {proc.transfer}")
+@profile
+def run_with_memory_profiler():
+    main()
 
-    #     local_files = FileSysHelper.glob_files(proc.outdir)
-    #     local_files = [f for f in local_files if not os.path.basename(f).startswith('.')]
-    #     self.assertEqual(len(local_files), 0, f"Files not removed from {proc.outdir}")
-    
 if __name__ == '__main__':
-    unittest.main()
+    lp = LineProfiler()
+    lp.add_function(run_with_memory_profiler)
+    lp.add_function(Processor.runfiles)
+    lp.add_function(Processor.loadfile_remote)
+    lp.add_function(Processor.loadfile_local)
+    lp.add_function(Processor.writeevts)
+    lp.add_function(Processor.writedask)
+    lp.add_function(Processor.writeak)
+    lp.add_function(Processor.writedf)
+    lp.add_function(Processor.writepickle)
 
+    lp.enable_by_count()
+    run_with_memory_profiler()
+    lp.disable_by_count()
+
+    lp_filename = 'line_profiler_output.txt'
+    with open(lp_filename, 'w') as f:
+        lp.print_stats(stream=f)

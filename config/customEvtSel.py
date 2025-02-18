@@ -12,6 +12,7 @@ def switch_selections(sel_name):
     selections = {
         'tightskim': tightskimEvtSel,
         'vetoskim': skimEvtSel,
+        'vbfskim': VBFskimEvtSel,
         'training_prelim': trainingEvtSel,
         'prelim_onelooseb': ControlEvtSel,
         'prelim_twolooseb': SignalEvtSel,
