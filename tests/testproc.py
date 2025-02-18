@@ -41,12 +41,11 @@ def main():
 
     profiler.disable()
 
-    stats = pstats.Stats(profiler)
-    stats.sort_stats(pstats.SortKey.TIME)
-
     stats_filename = 'cprofile_output.txt'
     with open(stats_filename, 'w') as f:
-        stats.print_stats(stream=f)
+        stats = pstats.Stats(profiler, stream=f)
+        stats.sort_stats(pstats.SortKey.TIME)
+        stats.print_stats()
 
     print(f"Processing completed in {(end_time-start_time)/60:.2f} minutes")
     print(f"Failed files: {failed_files}")
