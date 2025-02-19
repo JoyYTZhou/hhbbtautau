@@ -1,6 +1,7 @@
 import os, json, cProfile, argparse, time, pstats, logging
-from memory_profiler import memory_usage, profile
+from memory_profiler import memory_usage
 from line_profiler import LineProfiler
+import gc
 
 from src.analysis.processor import Processor
 from config.customEvtSel import switch_selections
@@ -10,10 +11,12 @@ pjoin = os.path.join
 def setup_logging():
     logging.basicConfig(filename='debug.log', level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s:%(message)s')
-@profile
+
 def main():
     parser = argparse.ArgumentParser(description='Run processor on a single file')
     parser.add_argument('selection_name', type=str, help='Name of the selection to run')
+    parser.add_argument('--profile', choices=['memory', 'line'], default='line',
+                      help='Type of profiling to perform (memory or line)')
 
     args = parser.parse_args()
     
@@ -42,12 +45,28 @@ def main():
     start_time = time.time()
     failed_files = None
 
+    # Record initial memory usage
+    initial_memory = memory_usage(-1, interval=.1, timeout=1)[0]
+    logging.debug(f"Initial memory usage: {initial_memory} MiB")
+
     try:
         logging.debug("Starting processing...")
         failed_files = proc.runfiles(write_npz=False)
         logging.debug("Processing completed.")
     except Exception as e:
         logging.error(f"Error encountered: {e}")
+        raise e
+    finally:
+        # Record final memory usage
+        final_memory = memory_usage(-1, interval=.1, timeout=1)[0]
+        logging.debug(f"Final memory usage: {final_memory} MiB")
+        logging.debug(f"Memory difference: {final_memory - initial_memory} MiB")
+        
+        # Force garbage collection
+        gc.collect()
+        post_gc_memory = memory_usage(-1, interval=.1, timeout=1)[0]
+        logging.debug(f"Memory after garbage collection: {post_gc_memory} MiB")
+
     end_time = time.time()
 
     profiler.disable()
@@ -61,20 +80,18 @@ def main():
     print(f"Processing completed in {(end_time-start_time)/60:.2f} minutes")
     print(f"Failed files: {failed_files}")
 
+    # Write memory usage data
     mem_usage_filename = 'memory_usage_output.txt'
     with open(mem_usage_filename, 'w') as f:
-        mem_usage = memory_usage(proc=run_with_memory_profiler, interval=0.1, include_children=True, multiprocess=True)
-        f.write("Memory usage (MB):\n")
-        for mem in mem_usage:
-            f.write(f"{mem}\n")
-        f.write("\n")
-
-@profile
-def run_with_memory_profiler():
-    main()
+        f.write(f"Initial memory usage: {initial_memory} MiB\n")
+        f.write(f"Final memory usage: {final_memory} MiB\n")
+        f.write(f"Memory difference: {final_memory - initial_memory} MiB\n")
+        f.write(f"Memory after garbage collection: {post_gc_memory} MiB\n")
 
 if __name__ == '__main__':
     setup_logging()
+    
+    # Set up line profiler
     lp = LineProfiler()
     lp.add_function(Processor.runfiles)
     lp.add_function(Processor.loadfile_remote)
@@ -85,10 +102,11 @@ if __name__ == '__main__':
     lp.add_function(Processor.writedf)
     lp.add_function(Processor.writepickle)
 
-    lp.enable_by_count()
-    run_with_memory_profiler()
-    lp.disable_by_count()
+    # Run the profiled version
+    lp_wrapped = lp(main)
+    lp_wrapped()
 
+    # Write line profiler results
     lp_filename = 'line_profiler_output.txt'
     with open(lp_filename, 'w') as f:
         lp.print_stats(stream=f)
