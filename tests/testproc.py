@@ -3,7 +3,7 @@ from memory_profiler import memory_usage
 from line_profiler import LineProfiler
 import gc
 
-from src.analysis.processor import Processor
+from .debug_processor import DebugProcessor  # Import the debug version
 from config.customEvtSel import switch_selections
 
 pjoin = os.path.join
@@ -45,7 +45,7 @@ def main():
 
     tracemalloc.start()
 
-    proc = Processor(rtcfg_1, preprocessed, transferP=transferP, evtselclass=eventselection)
+    proc = DebugProcessor(rtcfg_1, preprocessed, transferP=transferP, evtselclass=eventselection)
 
     profiler = cProfile.Profile()
     profiler.enable()
@@ -115,23 +115,16 @@ if __name__ == '__main__':
 
     # Set up line profiler
     lp = LineProfiler()
-    lp.add_function(Processor.runfiles)
-    lp.add_function(Processor.loadfile_remote)
-    lp.add_function(Processor.loadfile_local)
-    lp.add_function(Processor.writeevts)
-    lp.add_function(Processor.writedask)
-    lp.add_function(Processor.writeak)
-    lp.add_function(Processor.writedf)
-    lp.add_function(Processor.writepickle)
+    lp.add_function(DebugProcessor.runfiles)
+    lp.add_function(DebugProcessor.loadfile_remote)
+    lp.add_function(DebugProcessor.loadfile_local)
+    lp.add_function(DebugProcessor.writeevts)
+    lp.add_function(DebugProcessor.writedask)
+    lp.add_function(DebugProcessor.writeak)
+    lp.add_function(DebugProcessor.writedf)
+    lp.add_function(DebugProcessor.writepickle)
 
     # Run the profiled version
-    lp_wrapped = lp(main)
-    lp_wrapped()
-
-    # Write line profiler results
-    lp_filename = 'line_profiler_output.txt'
-    with open(lp_filename, 'w') as f:
-        lp.print_stats(stream=f)
     lp_wrapped = lp(main)
     lp_wrapped()
 
