@@ -1,5 +1,4 @@
-import tracemalloc, uproot
-import logging, psutil, gc, dask, os
+import tracemalloc, logging, psutil, gc, dask, os
 from uproot.writing._dask_write import ak_to_root
 import dask_awkward as dak
 import awkward as ak
@@ -101,6 +100,7 @@ class DebugProcessor(Processor):
                     computed_chunks = []
                     for i in range(passed.npartitions):
                         chunk = passed.partitions[i]
+                        logging.debug(f"Computing chunk {i}/{passed.npartitions}")
                         print(f"Computing chunk {i}/{passed.npartitions}")
                         computed_chunk = dask.compute(chunk)[0]
                         computed_chunks.append(computed_chunk)
