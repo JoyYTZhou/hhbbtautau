@@ -42,7 +42,7 @@ class QueryRunner:
         self.ddc.load_dataset_definition(dataset_definition=self.mcstrings[dataset], query_results_strategy='all', replicas_strategy='manual')
 
         self.ddc.do_preprocess(output_file=f'{dataset}_{suffix}',
-            step_size=10000,
+            step_size=80000,
             align_to_clusters=False,
             recalculate_steps=False,
             files_per_batch=1,

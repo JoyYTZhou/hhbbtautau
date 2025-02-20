@@ -1,7 +1,11 @@
 import tracemalloc, uproot
-import logging, psutil, gc
+import logging, psutil, gc, dask, os
+from uproot.writing._dask_write import ak_to_root
 import dask_awkward as dak
+import awkward as ak
 from src.analysis.processor import Processor
+
+pjoin = os.path.join
 
 class DebugProcessor(Processor):
     def __init__(self, *args, **kwargs):
@@ -68,6 +72,11 @@ class DebugProcessor(Processor):
             except Exception as e:
                 logging.debug(f"Could not get {name} info: {e}")
         
+        def log_memory(stage):
+            mem_usage = process.memory_info().rss / (1024 * 1024)
+            print(f"Memory usage at {stage}: {mem_usage:.2f} MB")
+            return mem_usage
+        
         log_array_info(passed, "input array")
 
         rc = 0
@@ -85,52 +94,63 @@ class DebugProcessor(Processor):
                 "compression": "ZLIB",
                 "compression_level": 1,         # Lower compression level
             }
+            try:
+                # Step 1: Compute the dask array
+                mem_before_compute = log_memory("before compute")
+                print("Computing dask array...")
+                
+                if hasattr(passed, 'npartitions') and passed.npartitions > 1:
+                    computed_chunks = []
+                    for i in range(passed.npartitions):
+                        chunk = passed.partitions[i]
+                        print(f"Computing chunk {i}/{passed.npartitions}")
+                        computed_chunk = dask.compute(chunk)[0]
+                        computed_chunks.append(computed_chunk)
+                        log_memory(f"after computing chunk {i}")
+                        gc.collect()
+                    computed_data = ak.concatenate(computed_chunks)
+                else:
+                    computed_data = dask.compute(passed)[0]
+            
+                mem_after_compute = log_memory("after compute")
+                print(f"Memory difference after compute: {mem_after_compute - mem_before_compute:.2f} MB")
 
-            if delayed:
-                uproot.dask_write(passed, destination=self.outdir, 
-                                tree_name="Events", compute=False,
-                                prefix=f'{self.dataset}_{suffix}',
-                                **write_options)
-            else:
-                try:
-                    # Process in smaller chunks if possible
-                    if hasattr(passed, 'npartitions') and passed.npartitions > 1:
-                        for i in range(passed.npartitions):
-                            chunk = passed.partitions[i]
-                            chunk_suffix = f"{suffix}_part{i}"
-                            
-                            # Monitor memory before chunk
-                            mem_before_chunk = process.memory_info().rss / (1024 * 1024)
-                            print(f"Memory before chunk {i}: {mem_before_chunk:.2f} MB")
-                            
-                            uproot.dask_write(chunk, destination=self.outdir,
-                                            tree_name="Events", compute=True,
-                                            prefix=f'{self.dataset}_{chunk_suffix}',
-                                            **write_options)
-                            
-                            # Force garbage collection after each chunk
-                            gc.collect()
-                            
-                            # Monitor memory after chunk
-                            mem_after_chunk = process.memory_info().rss / (1024 * 1024)
-                            print(f"Memory after chunk {i}: {mem_after_chunk:.2f} MB")
-                    else:
-                        uproot.dask_write(passed, destination=self.outdir,
-                                        tree_name="Events", compute=True,
-                                        prefix=f'{self.dataset}_{suffix}',
-                                        **write_options)
-                except MemoryError:
-                    print(f"dask_write encountered error: MemoryError for file index {suffix}.")
-                    rc = 1
+                # Step 2: Write to disk
+                print("Writing to disk...")
+                mem_before_write = log_memory("before write")
+
+                output_path = pjoin(self.outdir, f'{self.dataset}_{suffix}.root')
+                ak_to_root(
+                    output_path,
+                    computed_data,
+                    tree_name="Events",
+                    **write_options
+                )
+                
+                mem_after_write = log_memory("after write")
+                print(f"Memory difference after write: {mem_after_write - mem_before_write:.2f} MB")
+
+                del computed_data
+                gc.collect()
+                log_memory("after cleanup")
+            except MemoryError as e:
+                print(f"Memory error during processing: {e}")
+                print("Current memory state:")
+                print(f"Available system memory: {psutil.virtual_memory().available / (1024**3):.2f} GB")
+                print(f"Process memory usage: {process.memory_info().rss / (1024**3):.2f} GB")
+                rc = 1
+            except Exception as e:
+                print(f"Error during processing: {e}")
+                rc = 1
         else:
+            # if delayed:
+            #     uproot.dask_write(passed, destination=self.outdir, 
+            #                     tree_name="Events", compute=False,
+            #                     prefix=f'{self.dataset}_{suffix}',
+            #                    write_options)
+
             dak.to_parquet(passed, destination=self.outdir,
                         prefix=f'{self.dataset}_{suffix}')
-
-        # Get memory usage after writing
-        mem_after = process.memory_info().rss / (1024 * 1024)
-        print(f"Memory usage after writing: {mem_after:.2f} MB")
-        print(f"Memory difference: {mem_after - mem_before:.2f} MB")
-
         return rc
 
     def log_memory_diff(self, snapshot1, snapshot2, message):
