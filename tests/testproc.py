@@ -1,4 +1,4 @@
-import os, json, cProfile, argparse, time, pstats, logging
+import os, json, cProfile, argparse, time, pstats, logging, tracemalloc
 from memory_profiler import memory_usage
 from line_profiler import LineProfiler
 import gc
@@ -10,21 +10,27 @@ pjoin = os.path.join
 
 def setup_logging():
     logging.basicConfig(filename='debug.log', level=logging.DEBUG,
-                    format='%(asctime)s %(levelname)s:%(message)s')
+                        format='%(asctime)s %(levelname)s:%(message)s')
+
+def log_memory_snapshot(snapshot, message):
+    top_stats = snapshot.statistics('lineno')
+    logging.debug(f"Memory snapshot: {message}")
+    for stat in top_stats[:10]:
+        logging.debug(stat)
 
 def main():
     parser = argparse.ArgumentParser(description='Run processor on a single file')
     parser.add_argument('selection_name', type=str, help='Name of the selection to run')
     parser.add_argument('--profile', choices=['memory', 'line'], default='line',
-                      help='Type of profiling to perform (memory or line)')
+                        help='Type of profiling to perform (memory or line)')
 
     args = parser.parse_args()
-    
+
     file_dir = os.path.dirname(os.path.realpath(__file__))
     testinput = pjoin(file_dir, "testInputs", "DYJets_NANOAOD12.json")
     with open(testinput, 'r') as f:
         preprocessed = json.load(f)
-    
+
     rtcfg_1 = {
         "OUTPUTDIR_PATH": "/uscms/home/joyzhou/nobackup/tests",
         "COPYDIR_PATH": "/store/user/joyzhou/temp",
@@ -33,9 +39,11 @@ def main():
         "FILTER_NAME": None,
         "DELAYED_WRITE": False,
     }
-    
+
     eventselection = switch_selections(args.selection_name)
     transferP = "/store/user/joyzhou/temp"
+
+    tracemalloc.start()
 
     proc = Processor(rtcfg_1, preprocessed, transferP=transferP, evtselclass=eventselection)
 
@@ -49,6 +57,10 @@ def main():
     initial_memory = memory_usage(-1, interval=.1, timeout=1)[0]
     logging.debug(f"Initial memory usage: {initial_memory} MiB")
 
+    # Take initial tracemalloc snapshot
+    snapshot1 = tracemalloc.take_snapshot()
+    log_memory_snapshot(snapshot1, "Initial snapshot")
+
     try:
         logging.debug("Starting processing...")
         failed_files = proc.runfiles(write_npz=False)
@@ -57,11 +69,21 @@ def main():
         logging.error(f"Error encountered: {e}")
         raise e
     finally:
+        # Take final tracemalloc snapshot
+        snapshot2 = tracemalloc.take_snapshot()
+        log_memory_snapshot(snapshot2, "Final snapshot")
+
+        # Compare snapshots
+        top_stats = snapshot2.compare_to(snapshot1, 'lineno')
+        logging.debug("[ Top 10 differences ]")
+        for stat in top_stats[:10]:
+            logging.debug(stat)
+
         # Record final memory usage
         final_memory = memory_usage(-1, interval=.1, timeout=1)[0]
         logging.debug(f"Final memory usage: {final_memory} MiB")
         logging.debug(f"Memory difference: {final_memory - initial_memory} MiB")
-        
+
         # Force garbage collection
         gc.collect()
         post_gc_memory = memory_usage(-1, interval=.1, timeout=1)[0]
@@ -90,7 +112,7 @@ def main():
 
 if __name__ == '__main__':
     setup_logging()
-    
+
     # Set up line profiler
     lp = LineProfiler()
     lp.add_function(Processor.runfiles)
@@ -103,6 +125,13 @@ if __name__ == '__main__':
     lp.add_function(Processor.writepickle)
 
     # Run the profiled version
+    lp_wrapped = lp(main)
+    lp_wrapped()
+
+    # Write line profiler results
+    lp_filename = 'line_profiler_output.txt'
+    with open(lp_filename, 'w') as f:
+        lp.print_stats(stream=f)
     lp_wrapped = lp(main)
     lp_wrapped()
 
