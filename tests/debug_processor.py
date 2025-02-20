@@ -71,9 +71,12 @@ class DebugProcessor(Processor):
                 logging.debug(f"DTTypes: {arr.dtypes if hasattr(arr, 'dtypes') else 'N/A'}")
             except Exception as e:
                 logging.debug(f"Could not get {name} info: {e}")
+
+        process = psutil.Process()
         
         def log_memory(stage):
             mem_usage = process.memory_info().rss / (1024 * 1024)
+            logging.debug(f"Memory usage at {stage}: {mem_usage:.2f} MB")
             print(f"Memory usage at {stage}: {mem_usage:.2f} MB")
             return mem_usage
         
@@ -81,11 +84,6 @@ class DebugProcessor(Processor):
 
         rc = 0
         delayed = self.rtcfg.get("DELAYED_WRITE", False)
-
-        # Get memory usage before writing
-        process = psutil.Process()
-        mem_before = process.memory_info().rss / (1024 * 1024)  # Convert to MB
-        print(f"Memory usage before writing: {mem_before:.2f} MB")
 
         if not parquet:
             write_options = {
@@ -97,7 +95,7 @@ class DebugProcessor(Processor):
             try:
                 # Step 1: Compute the dask array
                 mem_before_compute = log_memory("before compute")
-                print("Computing dask array...")
+                logging.debug("Computing dask array...")
                 
                 if hasattr(passed, 'npartitions') and passed.npartitions > 1:
                     computed_chunks = []
@@ -113,26 +111,25 @@ class DebugProcessor(Processor):
                     computed_data = dask.compute(passed)[0]
             
                 mem_after_compute = log_memory("after compute")
-                print(f"Memory difference after compute: {mem_after_compute - mem_before_compute:.2f} MB")
+                logging.debug(f"Memory difference after compute: {mem_after_compute - mem_before_compute:.2f} MB")
 
                 # Step 2: Write to disk
-                print("Writing to disk...")
+                logging.debug("Writing to disk...")
                 mem_before_write = log_memory("before write")
 
                 output_path = pjoin(self.outdir, f'{self.dataset}_{suffix}.root')
-                ak_to_root(
-                    output_path,
-                    computed_data,
-                    tree_name="Events",
-                    **write_options
-                )
+                ak_to_root(output_path, computed_data, tree_name="Events", title="", 
+                           counter_name=lambda counted: 'n' + counted, field_name=lambda outer, inner: inner if outer == "" else outer + "_" + inner,
+                           storage_options=None,
+                           **write_options)
                 
                 mem_after_write = log_memory("after write")
-                print(f"Memory difference after write: {mem_after_write - mem_before_write:.2f} MB")
+                logging.debug(f"Memory difference after write: {mem_after_write - mem_before_write:.2f} MB")
 
                 del computed_data
                 gc.collect()
                 log_memory("after cleanup")
+
             except MemoryError as e:
                 print(f"Memory error during processing: {e}")
                 print("Current memory state:")
