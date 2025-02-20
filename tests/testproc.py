@@ -3,7 +3,7 @@ from memory_profiler import memory_usage
 from line_profiler import LineProfiler
 import gc
 
-from .debug_processor import DebugProcessor  # Import the debug version
+from tests.debug_processor import DebugProcessor  # Import the debug version
 from config.customEvtSel import switch_selections
 
 pjoin = os.path.join
