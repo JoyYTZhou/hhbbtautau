@@ -129,18 +129,17 @@ class DebugProcessor(Processor):
                         logging.debug("Found zero-length partitions, filtering them out")
                         # Filter out zero-length partitions
                         valid_indices = [i for i, l in enumerate(lengths) if l > 0]
+                        logging.debug(f"Valid indices: {valid_indices}")
                         # Create new dask array with only valid partitions
                         valid_data = dak.concatenate([
                             passed.partitions[i] for i in valid_indices
                         ])
-                        uproot.dask_write(
-                            valid_data,
-                            destination=self.outdir,
-                            tree_name="Events",
-                            compute=not delayed,
-                            prefix=f'{self.dataset}_{suffix}',
-                            **write_options
-                        )
+                        computed_data = dask.compute(valid_data)[0]
+                        output_path = pjoin(self.outdir, f'{self.dataset}_{suffix}.root') 
+                        ak_to_root(output_path, computed_data, tree_name="Events", title="", 
+                           counter_name=lambda counted: 'n' + counted, field_name=lambda outer, inner: inner if outer == "" else outer + "_" + inner,
+                           storage_options=None,
+                           **write_options)
                     # # Compute all chunk lengths simultaneously
                     # chunk_counts = dask.compute(*[
                     #     passed.partitions[i].count() 
