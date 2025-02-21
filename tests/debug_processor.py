@@ -105,10 +105,8 @@ class DebugProcessor(Processor):
                         logging.debug(f"Computing chunk {i}/{passed.npartitions}")
                         print(f"Computing chunk {i}/{passed.npartitions}")
                         computed_chunk = dask.compute(chunk)[0]
-                        gc.collect()
                         computed_chunks.append(computed_chunk)
                         log_memory(f"after computing chunk {i}")
-                        del chunk, computed_chunk
                         gc.collect()
 
                     computed_data = ak.concatenate(computed_chunks)
