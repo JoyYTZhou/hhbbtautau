@@ -108,8 +108,14 @@ class DebugProcessor(Processor):
                 logging.debug("Computing dask array...")
                 
                 if hasattr(passed, 'npartitions'):
-                    lengths = passed.map_partitions(len).compute()
-                    if all(lengths > 0):
+                    # lengths = passed.map_partitions(len).compute()
+                    lengths = dask.compute(
+                        *[dask.delayed(len)(passed.partitions[i]) 
+                        for i in range(passed.npartitions)]
+                    )
+                    
+                    has_zero_lengths = any(l == 0 for l in lengths)
+                    if not has_zero_lengths:
                         logging.debug("No zero-arrays found, using uproot.dask_write directly")
                         uproot.dask_write(
                             passed,
@@ -122,9 +128,13 @@ class DebugProcessor(Processor):
                     else:
                         logging.debug("Found zero-length partitions, filtering them out")
                         # Filter out zero-length partitions
-                        valid_partitions = passed.partitions[lengths > 0]
+                        valid_indices = [i for i, l in enumerate(lengths) if l > 0]
+                        # Create new dask array with only valid partitions
+                        valid_data = dak.concatenate([
+                            passed.partitions[i] for i in valid_indices
+                        ])
                         uproot.dask_write(
-                            valid_partitions,
+                            valid_data,
                             destination=self.outdir,
                             tree_name="Events",
                             compute=not delayed,
