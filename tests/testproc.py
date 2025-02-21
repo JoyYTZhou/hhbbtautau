@@ -37,7 +37,8 @@ def main():
 
     rtcfg_1 = {
         "OUTPUTDIR_PATH": "/uscms/home/joyzhou/nobackup/tests",
-        "COPYDIR_PATH": "/store/user/joyzhou/temp",
+        "COPYDIR_PATH": "/uscms/home/joyzhou/nobackup/tests",
+        "TRANSFER_PATH": "/store/user/joyzhou/temp",
         "DELAYED_OPEN": True,
         "REMOTE_LOAD": False,
         "FILTER_NAME": None,
