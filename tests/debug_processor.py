@@ -10,7 +10,7 @@ class DebugProcessor(Processor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def runfiles(self, write_npz=False, **kwargs):
+    def runfiles(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
         print(f"Expected to see {len(self.dsdict['files'])} outputs")
         rc = 0
         for filename, fileinfo in self.dsdict["files"].items():
@@ -19,7 +19,7 @@ class DebugProcessor(Processor):
                 suffix = fileinfo['uuid']
                 self.evtsel = self.evtselclass(**self.evtsel_kwargs)
                 remote_load = self.rtcfg.get("REMOTE_LOAD", True)
-                events = self.loadfile_remote(fileargs={"files": {filename: fileinfo}}) if remote_load else self.loadfile_local(fileargs={"files": {filename: fileinfo}})
+                events = self.loadfile_remote(fileargs={"files": {filename: fileinfo}}, **readkwargs) if remote_load else self.loadfile_local(fileargs={"files": {filename: fileinfo}}, **readkwargs)
                 if events is not None:
                     events = self.evtsel(events)
 
@@ -103,9 +103,12 @@ class DebugProcessor(Processor):
                         logging.debug(f"Computing chunk {i}/{passed.npartitions}")
                         print(f"Computing chunk {i}/{passed.npartitions}")
                         computed_chunk = dask.compute(chunk)[0]
+                        gc.collect()
                         computed_chunks.append(computed_chunk)
                         log_memory(f"after computing chunk {i}")
+                        del chunk, computed_chunk
                         gc.collect()
+
                     computed_data = ak.concatenate(computed_chunks)
                 else:
                     computed_data = dask.compute(passed)[0]
