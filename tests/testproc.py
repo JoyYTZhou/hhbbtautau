@@ -21,6 +21,7 @@ def log_memory_snapshot(snapshot, message):
 def main():
     from dask import config
     config.set({"distributed.worker.memory.target": 0.6, "distributed.worker.memory.spill": 0.8})
+    config.set({'num_workers': 1})
 
     parser = argparse.ArgumentParser(description='Run processor on a single file')
     parser.add_argument('selection_name', type=str, help='Name of the selection to run')
@@ -37,7 +38,7 @@ def main():
     rtcfg_1 = {
         "OUTPUTDIR_PATH": "/uscms/home/joyzhou/nobackup/tests",
         "COPYDIR_PATH": "/store/user/joyzhou/temp",
-        "DELAYED_OPEN": False,
+        "DELAYED_OPEN": True,
         "REMOTE_LOAD": False,
         "FILTER_NAME": None,
         "DELAYED_WRITE": False,
