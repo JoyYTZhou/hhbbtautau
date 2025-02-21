@@ -108,13 +108,21 @@ class DebugProcessor(Processor):
                 logging.debug("Computing dask array...")
                 
                 if hasattr(passed, 'npartitions'):
+                    mem_before_persist = log_memory("before persist")
+                    logging.debug("Persisting dask array...")
+                    passed = passed.persist()
+                    mem_after_persist = log_memory("after persist")
+                 
                     # lengths = passed.map_partitions(len).compute()
-                    lengths = dask.compute(
-                        *[dask.delayed(len)(passed.partitions[i]) 
+                    length_calcs = [dask.delayed(len)(passed.partitions[i]) 
                         for i in range(passed.npartitions)]
-                    )
+                    persisted_lengths = dask.persist(*length_calcs)  # Keeps it lazy
+
+                    # Compute when needed
+                    lengths = dask.compute(*persisted_lengths)
                     
                     has_zero_lengths = any(l == 0 for l in lengths)
+
                     if not has_zero_lengths:
                         logging.debug("No zero-arrays found, using uproot.dask_write directly")
                         uproot.dask_write(
@@ -131,9 +139,9 @@ class DebugProcessor(Processor):
                         valid_indices = [i for i, l in enumerate(lengths) if l > 0]
                         logging.debug(f"Valid indices: {valid_indices}")
                         # Create new dask array with only valid partitions
-                        valid_data = dak.concatenate([
-                            passed.partitions[i] for i in valid_indices
-                        ])
+                        valid_partitions = [passed.partitions[i] for i in valid_indices]
+                        valid_data = dak.concatenate(valid_partitions).persist()
+
                         computed_data = dask.compute(valid_data)[0]
                         output_path = pjoin(self.outdir, f'{self.dataset}_{suffix}.root') 
                         ak_to_root(output_path, computed_data, tree_name="Events", title="", 
@@ -200,6 +208,9 @@ class DebugProcessor(Processor):
             except Exception as e:
                 print(f"Error during processing: {e}")
                 rc = 1
+            finally:
+                if hasattr(passed, 'unpersist'):
+                     passed.unpersist()
         else:
             dak.to_parquet(passed, destination=self.outdir,
                         prefix=f'{self.dataset}_{suffix}')
