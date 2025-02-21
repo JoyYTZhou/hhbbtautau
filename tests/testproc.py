@@ -22,6 +22,7 @@ def main():
     from dask import config
     config.set({"distributed.worker.memory.target": 0.6, "distributed.worker.memory.spill": 0.8})
     config.set({'num_workers': 1})
+    config.set(scheduler="processes")
 
     parser = argparse.ArgumentParser(description='Run processor on a single file')
     parser.add_argument('selection_name', type=str, help='Name of the selection to run')

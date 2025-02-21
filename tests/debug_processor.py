@@ -92,31 +92,71 @@ class DebugProcessor(Processor):
 
         if not parquet:
             write_options = {
-                "initial_basket_capacity": 1024,  # Smaller initial basket size
+                "initial_basket_capacity": 50,  # Smaller initial basket size
                 "resize_factor": 1.5,           # Smaller growth factor
                 "compression": "ZLIB",
                 "compression_level": 1,         # Lower compression level
             }
             try:
                 # Step 1: Compute the dask array
-                log_memory("before uproot.dask_write")
-                uproot.dask_write(passed, destination=self.outdir, tree_name="Events", compute=True, prefix=f'{self.dataset}_{suffix}')
-                log_memory("after uproot.dask_write")
+                # log_memory("before uproot.dask_write")
+                # uproot.dask_write(passed, destination=self.outdir, tree_name="Events", compute=True, prefix=f'{self.dataset}_{suffix}')
+                # log_memory("after uproot.dask_write")
 
                 
-#                 mem_before_compute = log_memory("before compute")
-                # logging.debug("Computing dask array...")
+                mem_before_compute = log_memory("before compute")
+                logging.debug("Computing dask array...")
                 
-                # if hasattr(passed, 'npartitions') and passed.npartitions > 1:
+                if hasattr(passed, 'npartitions'):
+                    lengths = passed.map_partitions(len).compute()
+                    if all(lengths > 0):
+                        logging.debug("No zero-arrays found, using uproot.dask_write directly")
+                        uproot.dask_write(
+                            passed,
+                            destination=self.outdir,
+                            tree_name="Events",
+                            compute=not delayed,
+                            prefix=f'{self.dataset}_{suffix}',
+                            **write_options
+                            )
+                    else:
+                        logging.debug("Found zero-length partitions, filtering them out")
+                        # Filter out zero-length partitions
+                        valid_partitions = passed.partitions[lengths > 0]
+                        uproot.dask_write(
+                            valid_partitions,
+                            destination=self.outdir,
+                            tree_name="Events",
+                            compute=not delayed,
+                            prefix=f'{self.dataset}_{suffix}',
+                            **write_options
+                        )
+                    # # Compute all chunk lengths simultaneously
+                    # chunk_counts = dask.compute(*[
+                    #     passed.partitions[i].count() 
+                    #     for i in range(passed.npartitions)
+                    # ])
+                    # has_zero_chunks = any(count == 0 for count in chunk_counts)
+                    
+                    # if not has_zero_chunks:
+                    #     logging.debug("No zero-arrays found, using uproot.dask_write directly")
+                    #     uproot.dask_write(
+                    #         passed,
+                    #         destination=self.outdir,
+                    #         tree_name="Events",
+                    #         compute=not delayed,
+                    #         prefix=f'{self.dataset}_{suffix}',
+                    #         **write_options
+                    #     )                
                     # computed_chunks = []
                     # for i in range(passed.npartitions):
-                        # chunk = passed.partitions[i]
-                        # logging.debug(f"Computing chunk {i}/{passed.npartitions}")
-                        # print(f"Computing chunk {i}/{passed.npartitions}")
-                        # computed_chunk = dask.compute(chunk)[0]
-                        # computed_chunks.append(computed_chunk)
-                        # log_memory(f"after computing chunk {i}")
-                        # gc.collect()
+                    #     chunk = passed.partitions[i]
+                    #     logging.debug(f"Computing chunk {i}/{passed.npartitions}")
+                    #     print(f"Computing chunk {i}/{passed.npartitions}")
+                    #     computed_chunk = dask.compute(chunk)[0]
+                    #     computed_chunks.append(computed_chunk)
+                    #     log_memory(f"after computing chunk {i}")
+                    #     gc.collect()
 
                     # computed_data = ak.concatenate(computed_chunks)
                 # else:
@@ -152,12 +192,6 @@ class DebugProcessor(Processor):
                 print(f"Error during processing: {e}")
                 rc = 1
         else:
-            # if delayed:
-            #     uproot.dask_write(passed, destination=self.outdir, 
-            #                     tree_name="Events", compute=False,
-            #                     prefix=f'{self.dataset}_{suffix}',
-            #                    write_options)
-
             dak.to_parquet(passed, destination=self.outdir,
                         prefix=f'{self.dataset}_{suffix}')
         return rc
