@@ -69,6 +69,7 @@ class DebugProcessor(Processor):
                 logging.debug(f"Number of partitions: {arr.npartitions if hasattr(arr, 'npartitions') else 'N/A'}")
                 logging.debug(f"Shape: {arr.shape if hasattr(arr, 'shape') else 'N/A'}")
                 logging.debug(f"DTTypes: {arr.dtypes if hasattr(arr, 'dtypes') else 'N/A'}")
+                logging.debug(f"Existing attributes: {arr.__dict__ if hasattr(arr, '__dict__') else 'N/A'}")
             except Exception as e:
                 logging.debug(f"Could not get {name} info: {e}")
 
