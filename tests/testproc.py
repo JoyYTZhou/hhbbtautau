@@ -19,6 +19,9 @@ def log_memory_snapshot(snapshot, message):
         logging.debug(stat)
 
 def main():
+    from dask import config
+    config.set({"distributed.worker.memory.target": 0.6, "distributed.worker.memory.spill": 0.8})
+
     parser = argparse.ArgumentParser(description='Run processor on a single file')
     parser.add_argument('selection_name', type=str, help='Name of the selection to run')
     parser.add_argument('--profile', choices=['memory', 'line'], default='line',
