@@ -108,14 +108,6 @@ def main():
     print(f"Processing completed in {(end_time-start_time)/60:.2f} minutes")
     print(f"Failed files: {failed_files}")
 
-    # Write memory usage data
-    mem_usage_filename = 'memory_usage_output.txt'
-    with open(mem_usage_filename, 'w') as f:
-        f.write(f"Initial memory usage: {initial_memory} MiB\n")
-        f.write(f"Final memory usage: {final_memory} MiB\n")
-        f.write(f"Memory difference: {final_memory - initial_memory} MiB\n")
-        f.write(f"Memory after garbage collection: {post_gc_memory} MiB\n")
-
 if __name__ == '__main__':
     setup_logging()
 

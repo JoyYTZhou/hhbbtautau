@@ -1,5 +1,8 @@
 import tracemalloc, logging, psutil, gc, dask, os, uproot
 from uproot.writing._dask_write import ak_to_root
+from queue import Queue
+from concurrent.futures import ThreadPoolExecutor
+from threading import Thread
 import dask_awkward as dak
 import awkward as ak
 from src.analysis.processor import Processor
@@ -9,6 +12,9 @@ pjoin = os.path.join
 class DebugProcessor(Processor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+    
+    def __pipeline_copy__(self, maxsize):
+        pass
 
     def runfiles(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
         print(f"Expected to see {len(self.dsdict['files'])} outputs")
@@ -67,9 +73,7 @@ class DebugProcessor(Processor):
                 
                 logging.debug(f"{name} info:")
                 logging.debug(f"Number of partitions: {arr.npartitions if hasattr(arr, 'npartitions') else 'N/A'}")
-                logging.debug(f"Shape: {arr.shape if hasattr(arr, 'shape') else 'N/A'}")
-                logging.debug(f"DTTypes: {arr.dtypes if hasattr(arr, 'dtypes') else 'N/A'}")
-                logging.debug(f"Existing attributes: {arr.__dict__ if hasattr(arr, '__dict__') else 'N/A'}")
+                logging.debug(f"Existing attributes: {arr._meta if hasattr(arr, '_meta') else 'N/A'}")
             except Exception as e:
                 logging.debug(f"Could not get {name} info: {e}")
 
