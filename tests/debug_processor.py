@@ -1,4 +1,4 @@
-import tracemalloc, logging, psutil, gc, dask, os
+import tracemalloc, logging, psutil, gc, dask, os, uproot
 from uproot.writing._dask_write import ak_to_root
 import dask_awkward as dak
 import awkward as ak
@@ -95,43 +95,48 @@ class DebugProcessor(Processor):
             }
             try:
                 # Step 1: Compute the dask array
-                mem_before_compute = log_memory("before compute")
-                logging.debug("Computing dask array...")
-                
-                if hasattr(passed, 'npartitions') and passed.npartitions > 1:
-                    computed_chunks = []
-                    for i in range(passed.npartitions):
-                        chunk = passed.partitions[i]
-                        logging.debug(f"Computing chunk {i}/{passed.npartitions}")
-                        print(f"Computing chunk {i}/{passed.npartitions}")
-                        computed_chunk = dask.compute(chunk)[0]
-                        computed_chunks.append(computed_chunk)
-                        log_memory(f"after computing chunk {i}")
-                        gc.collect()
+                log_memory("before uproot.dask_write")
+                uproot.dask_write(passed, destination=self.outdir, tree_name="Events", compute=True, prefix=f'{self.dataset}_{suffix}')
+                log_memory("after uproot.dask_write")
 
-                    computed_data = ak.concatenate(computed_chunks)
-                else:
-                    computed_data = dask.compute(passed)[0]
+                
+#                 mem_before_compute = log_memory("before compute")
+                # logging.debug("Computing dask array...")
+                
+                # if hasattr(passed, 'npartitions') and passed.npartitions > 1:
+                    # computed_chunks = []
+                    # for i in range(passed.npartitions):
+                        # chunk = passed.partitions[i]
+                        # logging.debug(f"Computing chunk {i}/{passed.npartitions}")
+                        # print(f"Computing chunk {i}/{passed.npartitions}")
+                        # computed_chunk = dask.compute(chunk)[0]
+                        # computed_chunks.append(computed_chunk)
+                        # log_memory(f"after computing chunk {i}")
+                        # gc.collect()
+
+                    # computed_data = ak.concatenate(computed_chunks)
+                # else:
+                    # computed_data = dask.compute(passed)[0]
             
-                mem_after_compute = log_memory("after compute")
-                logging.debug(f"Memory difference after compute: {mem_after_compute - mem_before_compute:.2f} MB")
+                # mem_after_compute = log_memory("after compute")
+                # logging.debug(f"Memory difference after compute: {mem_after_compute - mem_before_compute:.2f} MB")
 
-                # Step 2: Write to disk
-                logging.debug("Writing to disk...")
-                mem_before_write = log_memory("before write")
+                # # Step 2: Write to disk
+                # logging.debug("Writing to disk...")
+                # mem_before_write = log_memory("before write")
 
-                output_path = pjoin(self.outdir, f'{self.dataset}_{suffix}.root')
-                ak_to_root(output_path, computed_data, tree_name="Events", title="", 
-                           counter_name=lambda counted: 'n' + counted, field_name=lambda outer, inner: inner if outer == "" else outer + "_" + inner,
-                           storage_options=None,
-                           **write_options)
+                # output_path = pjoin(self.outdir, f'{self.dataset}_{suffix}.root')
+                # ak_to_root(output_path, computed_data, tree_name="Events", title="", 
+                           # counter_name=lambda counted: 'n' + counted, field_name=lambda outer, inner: inner if outer == "" else outer + "_" + inner,
+                           # storage_options=None,
+                           # **write_options)
                 
-                mem_after_write = log_memory("after write")
-                logging.debug(f"Memory difference after write: {mem_after_write - mem_before_write:.2f} MB")
+                # mem_after_write = log_memory("after write")
+                # logging.debug(f"Memory difference after write: {mem_after_write - mem_before_write:.2f} MB")
 
-                del computed_data
-                gc.collect()
-                log_memory("after cleanup")
+                # del computed_data
+                # gc.collect()
+                # log_memory("after cleanup")
 
             except MemoryError as e:
                 print(f"Memory error during processing: {e}")
