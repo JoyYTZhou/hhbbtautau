@@ -64,6 +64,7 @@ class DebugProcessor(Processor):
         - `parquet`: if True, write to parquet instead of root"""
         def log_array_info(arr, name="array"):
             try:
+                
                 logging.debug(f"{name} info:")
                 logging.debug(f"Number of partitions: {arr.npartitions if hasattr(arr, 'npartitions') else 'N/A'}")
                 logging.debug(f"Shape: {arr.shape if hasattr(arr, 'shape') else 'N/A'}")
@@ -80,6 +81,8 @@ class DebugProcessor(Processor):
             return mem_usage
         
         log_array_info(passed, "input array")
+        print("Columns:", passed.columns)
+        print("Schema:", passed.dtypes)
 
         rc = 0
         delayed = self.rtcfg.get("DELAYED_WRITE", False)

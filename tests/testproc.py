@@ -30,7 +30,7 @@ def main():
     args = parser.parse_args()
 
     file_dir = os.path.dirname(os.path.realpath(__file__))
-    testinput = pjoin(file_dir, "testInputs", "DYJets_NANOAOD12.json")
+    testinput = pjoin(file_dir, "testInputs", "ZH_NANOAOD12.json")
     with open(testinput, 'r') as f:
         preprocessed = json.load(f)
 
@@ -66,7 +66,7 @@ def main():
 
     try:
         logging.debug("Starting processing...")
-        readkwargs = {'filter_name': ['Electron*', 'Muon*', 'HLT*']}
+        readkwargs = {'filter_name': ['Electron*', 'Muon*', 'HLT*', 'Generator*']}
         failed_files = proc.runfiles(write_npz=False, readkwargs=readkwargs)
         logging.debug("Processing completed.")
     except Exception as e:
