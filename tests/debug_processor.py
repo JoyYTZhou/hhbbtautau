@@ -88,7 +88,7 @@ class DebugProcessor(Processor):
 
         if not parquet:
             write_options = {
-                "initial_basket_capacity": 512,  # Smaller initial basket size
+                "initial_basket_capacity": 1024,  # Smaller initial basket size
                 "resize_factor": 1.5,           # Smaller growth factor
                 "compression": "ZLIB",
                 "compression_level": 1,         # Lower compression level

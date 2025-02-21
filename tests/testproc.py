@@ -68,7 +68,7 @@ def main():
 
     try:
         logging.debug("Starting processing...")
-        readkwargs = {'filter_name': ['Electron*', 'Muon*', 'HLT*', 'Generator*'], 'open_files': False}
+        readkwargs = {'filter_name': ['Electron*', 'Muon*', 'HLT*', 'Generator*']}
         failed_files = proc.runfiles(write_npz=False, readkwargs=readkwargs)
         logging.debug("Processing completed.")
     except Exception as e:
