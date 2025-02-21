@@ -81,8 +81,6 @@ class DebugProcessor(Processor):
             return mem_usage
         
         log_array_info(passed, "input array")
-        print("Columns:", passed.columns)
-        print("Schema:", passed.dtypes)
 
         rc = 0
         delayed = self.rtcfg.get("DELAYED_WRITE", False)
