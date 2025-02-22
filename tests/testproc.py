@@ -116,13 +116,13 @@ if __name__ == '__main__':
     # Set up line profiler
     lp = LineProfiler()
     lp.add_function(DebugProcessor.runfiles)
-    lp.add_function(DebugProcessor.loadfile_remote)
-    lp.add_function(DebugProcessor.loadfile_local)
+    lp.add_function(DebugProcessor.writeCF)
+    lp.add_function(DebugProcessor.copy_file_worker)
+    lp.add_function(DebugProcessor.pipeline_files)
+    lp.add_function(DebugProcessor.process_file_worker)
     lp.add_function(DebugProcessor.writeevts)
     lp.add_function(DebugProcessor.writedask)
     lp.add_function(DebugProcessor.writeak)
-    lp.add_function(DebugProcessor.writedf)
-    lp.add_function(DebugProcessor.writepickle)
 
     # Run the profiled version
     lp_wrapped = lp(main)
