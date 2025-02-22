@@ -73,14 +73,14 @@ class DebugProcessor(Processor):
                 os.remove(file_info['local_path'])
                 
             except Exception as e:
-                self.logger.error(f"Error processing file {file_info['local_path']}: {e}")
+                logging.error(f"Error processing file {file_info['local_path']}: {e}")
             finally:
                 self.copy_queue.task_done()
                 gc.collect()
 
     async def pipeline_files(self, **kwargs):
         """Pipeline file copying and processing."""
-        self.logger.info(f"Processing {len(self.dsdict['files'])} files")
+        logging.info(f"Processing {len(self.dsdict['files'])} files")
         rc = 0
 
         # Start the processor thread
@@ -105,7 +105,7 @@ class DebugProcessor(Processor):
         try:
             await asyncio.gather(*copy_tasks)
         except Exception as e:
-            self.logger.error(f"Error in copy tasks: {e}")
+            logging.error(f"Error in copy tasks: {e}")
             rc += 1
         finally:
             # Signal end of copying
