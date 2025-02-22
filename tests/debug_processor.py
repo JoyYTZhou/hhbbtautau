@@ -3,50 +3,47 @@ from uproot.writing._dask_write import ak_to_root
 import concurrent.futures
 from threading import Thread
 import dask_awkward as dak
-from src.analysis.processor import Processor
+from src.analysis.processor import Processor, parallel_copy_and_load
 
-from src.utils.filesysutil import pjoin, XRootDHelper
+from src.utils.filesysutil import pjoin
+from tests.test_helpers import log_memory 
 
-def process_file(filename, fileinfo, copydir, rtcfg, read_args) -> tuple:
-        """Handles file copying and loading"""
-        suffix = fileinfo['uuid']
-        dest_file = os.path.join(copydir, f"{suffix}.root")
-        
-        # Copy the file first
-        XRootDHelper.copy_local(filename, dest_file)
-        
-        # Decide on loading strategy
-        delayed_open = rtcfg.get("DELAYED_OPEN", True)
-        if delayed_open:
-            return (uproot.dask(files={dest_file: fileinfo}, **read_args), suffix)
+def compute_dask_array(passed):
+    """Compute the dask array and handle zero-length partitions."""
+    process = psutil.Process()
+
+    log_memory(process, "before compute")
+    logging.debug("Computing dask array...")
+
+    if hasattr(passed, 'npartitions'):
+        passed = passed.persist()
+        log_memory(process, "after persist")
+
+        length_calcs = [dask.delayed(len)(passed.partitions[i]) for i in range(passed.npartitions)]
+        persisted_lengths = dask.persist(*length_calcs)
+        lengths = dask.compute(*persisted_lengths)
+
+        has_zero_lengths = any(l == 0 for l in lengths)
+
+        if not has_zero_lengths:
+            logging.debug("No zero-arrays found, using uproot.dask_write directly")
+            return passed
         else:
-            print(f"Loading {dest_file}")
-            return (uproot.open(dest_file + ":Events", **read_args).arrays(
-                filter_name=rtcfg.get("FILTER_NAME", None)
-            ), suffix)
-
-def parallel_copy_and_load(fileargs, copydir, rtcfg, read_args, max_workers=3):
-    """Runs file copying and loading in parallel"""
-    results = []
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        future_to_file = {
-            executor.submit(process_file, filename, fileinfo, copydir, rtcfg, read_args): filename
-            for filename, fileinfo in fileargs['files'].items()
-        }
-        
-        for future in concurrent.futures.as_completed(future_to_file):
-            try:
-                results.append(future.result())
-            except Exception as e:
-                print(f"Error processing {future_to_file[future]}: {e}")
-
-    return results
+            logging.debug("Found zero-length partitions, filtering them out")
+            valid_indices = [i for i, l in enumerate(lengths) if l > 0]
+            if not valid_indices:
+                logging.debug("No valid partitions found, skipping write")
+                return None
+            else:
+                logging.debug(f"Valid indices: {valid_indices}")
+                valid_partitions = [passed.partitions[i] for i in valid_indices]
+                valid_data = dak.concatenate(valid_partitions)
+                computed_data = dask.compute(valid_data)[0]
+                return computed_data
 
 class DebugProcessor(Processor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-    
 
     def runfiles(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
         print(f"Expected to see {len(self.dsdict['files'])} outputs")
@@ -61,49 +58,51 @@ class DebugProcessor(Processor):
         )
 
         # Step 2: Process, Write Cutflows & Events in Parallel
-        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as thread_executor, \
-            concurrent.futures.ProcessPoolExecutor(max_workers=3) as process_executor:
-            
-            future_cf = {}  # Cutflow writing futures
-            future_evts = {}  # Event writing futures
-            
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+
+            future_events = {}  # For event selection
+            future_cf = []  # For cutflow writing
+            future_evts = []  # For event writing
+
             for events, suffix in events_list:
                 try:
                     self.evtsel = self.evtselclass(**self.evtsel_kwargs)
 
                     if events is not None:
-                        # Step 2a: Process Events (Optional Parallelization)
-                        future_events = thread_executor.submit(self.evtsel, events)
-                        events = future_events.result()  # Blocking, but could be parallelized if needed
+                        # Step 2a: Submit event selection
+                        future_events[suffix] = executor.submit(self.evtsel, events)
 
-                        # Step 2b: Write Cutflow (I/O Bound, Uses ThreadPool)
-                        snapshot_before_writeCF = tracemalloc.take_snapshot()
-                        logging.debug("Took snapshot before writeCF")
-                        
-                        future_cf[suffix] = thread_executor.submit(self.writeCF, suffix, write_npz=write_npz)
-
-                        # Step 2c: Write Events (CPU Bound, Uses ProcessPool)
-                        snapshot_before_writeevts = tracemalloc.take_snapshot()
-                        logging.debug("Took snapshot before writeevts")
-                        
-                        future_evts[suffix] = process_executor.submit(self.writeevts, events, suffix, **kwargs)
-
-                        # Log memory after task submission
-                        self.log_memory_diff(snapshot_before_writeCF, tracemalloc.take_snapshot(), "writeCF")
-                        self.log_memory_diff(snapshot_before_writeevts, tracemalloc.take_snapshot(), "writeevts")
-                    
                     else:
                         rc += 1
-                    del events
-                
+                        continue  # Skip to next file
+
                 except Exception as e:
                     print(f"Error encountered for file with suffix {suffix} in {self.dataset}: {e}")
                     rc += 1
                     gc.collect()
 
+            # Step 2b: Wait for event selection to complete
+            concurrent.futures.wait(future_events.values())
+
+            # Step 2c: Write Cutflows & Events
+            for suffix, future in future_events.items():
+                try:
+                    events = future.result()  # Now block and get processed events
+
+                    # Submit to writeCF (I/O-bound)
+                    future_cf.append(executor.submit(self.writeCF, suffix, write_npz=write_npz))
+
+                    # Submit to writeevts (I/O-bound, runs in parallel)
+                    future_evts.append(executor.submit(self.writeevts, events, suffix, **kwargs))
+
+                except Exception as e:
+                    print(f"Error in processing events for {suffix}: {e}")
+                    rc += 1
+                    gc.collect()
+
             # Step 3: Ensure all tasks are completed before exiting
-            concurrent.futures.wait(future_cf.values())
-            concurrent.futures.wait(future_evts.values())
+            concurrent.futures.wait(future_cf)
+            concurrent.futures.wait(future_evts)
 
         # Step 4: Cleanup if not using remote loading
         if not self.rtcfg.get("REMOTE_LOAD", True):
@@ -165,14 +164,42 @@ class DebugProcessor(Processor):
             
     #     return rc
 
+
+
     def writedask(self, passed, suffix, parquet=False, fields=None) -> int:
         process = psutil.Process()
-        
-        def log_memory(stage):
-            mem_usage = process.memory_info().rss / (1024 * 1024)
-            logging.debug(f"Memory usage at {stage}: {mem_usage:.2f} MB")
-            print(f"Memory usage at {stage}: {mem_usage:.2f} MB")
-            return mem_usage
+
+        rc = 0
+        delayed = self.rtcfg.get("DELAYED_WRITE", False)
+
+        if not parquet:
+            write_options = {
+                "initial_basket_capacity": 50,
+                "resize_factor": 1.5,
+                "compression": "ZLIB",
+                "compression_level": 1,
+            }
+            try:
+                rc = self.process_and_write_dask(passed, suffix, delayed, write_options)
+            except MemoryError as e:
+                print(f"Memory error during processing: {e}")
+                print("Current memory state:")
+                print(f"Available system memory: {psutil.virtual_memory().available / (1024**3):.2f} GB")
+                print(f"Process memory usage: {process.memory_info().rss / (1024**3):.2f} GB")
+                rc = 1
+            except Exception as e:
+                print(f"Error during processing: {e}")
+                rc = 1
+            finally:
+                if hasattr(passed, 'unpersist'):
+                    passed.unpersist()
+        else:
+            dak.to_parquet(passed, destination=self.outdir,
+                        prefix=f'{self.dataset}_{suffix}')
+        return rc
+
+    def writedask(self, passed, suffix, parquet=False, fields=None) -> int:
+        process = psutil.Process()
 
         rc = 0
         delayed = self.rtcfg.get("DELAYED_WRITE", False)
@@ -185,20 +212,14 @@ class DebugProcessor(Processor):
                 "compression_level": 1,         # Lower compression level
             }
             try:
-                # Step 1: Compute the dask array
-                # log_memory("before uproot.dask_write")
-                # uproot.dask_write(passed, destination=self.outdir, tree_name="Events", compute=True, prefix=f'{self.dataset}_{suffix}')
-                # log_memory("after uproot.dask_write")
-
-                
-                mem_before_compute = log_memory("before compute")
+                mem_before_compute = log_memory(process, "before compute")
                 logging.debug("Computing dask array...")
                 
                 if hasattr(passed, 'npartitions'):
-                    mem_before_persist = log_memory("before persist")
+                    mem_before_persist = log_memory(process, "before persist")
                     logging.debug("Persisting dask array...")
                     passed = passed.persist()
-                    mem_after_persist = log_memory("after persist")
+                    mem_after_persist = log_memory(process, "after persist")
                  
                     # lengths = passed.map_partitions(len).compute()
                     length_calcs = [dask.delayed(len)(passed.partitions[i]) 
