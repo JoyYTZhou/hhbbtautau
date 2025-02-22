@@ -47,70 +47,22 @@ class DebugProcessor(Processor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
     
-    def runfiles(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
-        print(f"Expected to see {len(self.dsdict['files'])} outputs")
-        rc = 0
-        
-        events_list = parallel_copy_and_load(
-            fileargs={"files": self.dsdict["files"]}, 
-            copydir=self.copydir, 
-            rtcfg=self.rtcfg, 
-            read_args=readkwargs
-        )
-        
-        # Process each loaded events object
-        for events, suffix in events_list:
-            try:
-                self.evtsel = self.evtselclass(**self.evtsel_kwargs)
-                
-                if events is not None:
-                    events = self.evtsel(events)
-
-                    # Take memory snapshot before writeCF
-                    snapshot_before_writeCF = tracemalloc.take_snapshot()
-                    logging.debug("Took snapshot before writeCF")
-
-                    self.writeCF(suffix, write_npz=write_npz)
-
-                    # Take memory snapshot after writeCF
-                    snapshot_after_writeCF = tracemalloc.take_snapshot()
-                    logging.debug("Took snapshot after writeCF")
-                    self.log_memory_diff(snapshot_before_writeCF, snapshot_after_writeCF, "writeCF")
-
-                    # Take memory snapshot before writeevts
-                    snapshot_before_writeevts = tracemalloc.take_snapshot()
-                    logging.debug("Took snapshot before writeevts")
-
-                    self.writeevts(events, suffix, **kwargs)
-
-                    # Take memory snapshot after writeevts
-                    snapshot_after_writeevts = tracemalloc.take_snapshot()
-                    logging.debug("Took snapshot after writeevts")
-                    self.log_memory_diff(snapshot_before_writeevts, snapshot_after_writeevts, "writeevts")
-                else:
-                    rc += 1
-                del events
-            except Exception as e:
-                print(f"Error encountered for file with suffix {suffix} in {self.dataset}: {e}")
-                rc += 1
-                gc.collect()
-                
-        # Cleanup if not using remote loading
-        if not self.rtcfg.get("REMOTE_LOAD", True):
-            self.filehelper.remove_files(self.copydir)
-            
-        return rc
-    
     # def runfiles(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
     #     print(f"Expected to see {len(self.dsdict['files'])} outputs")
     #     rc = 0
-    #     for filename, fileinfo in self.dsdict["files"].items():
-    #         print(filename)
+        
+    #     events_list = parallel_copy_and_load(
+    #         fileargs={"files": self.dsdict["files"]}, 
+    #         copydir=self.copydir, 
+    #         rtcfg=self.rtcfg, 
+    #         read_args=readkwargs
+    #     )
+        
+    #     # Process each loaded events object
+    #     for events, suffix in events_list:
     #         try:
-    #             suffix = fileinfo['uuid']
     #             self.evtsel = self.evtselclass(**self.evtsel_kwargs)
-    #             remote_load = self.rtcfg.get("REMOTE_LOAD", True)
-    #             events = self.loadfile_remote(fileargs={"files": {filename: fileinfo}}, **readkwargs) if remote_load else self.loadfile_local(fileargs={"files": {filename: fileinfo}}, **readkwargs)
+                
     #             if events is not None:
     #                 events = self.evtsel(events)
 
@@ -135,17 +87,65 @@ class DebugProcessor(Processor):
     #                 snapshot_after_writeevts = tracemalloc.take_snapshot()
     #                 logging.debug("Took snapshot after writeevts")
     #                 self.log_memory_diff(snapshot_before_writeevts, snapshot_after_writeevts, "writeevts")
-
     #             else:
     #                 rc += 1
     #             del events
     #         except Exception as e:
-    #             print(f"Error encountered for file index {suffix} in {self.dataset}: {e}")
+    #             print(f"Error encountered for file with suffix {suffix} in {self.dataset}: {e}")
     #             rc += 1
-    #             import gc
     #             gc.collect()
-    #         if not remote_load: self.filehelper.remove_files(self.copydir)
+                
+    #     # Cleanup if not using remote loading
+    #     if not self.rtcfg.get("REMOTE_LOAD", True):
+    #         self.filehelper.remove_files(self.copydir)
+            
     #     return rc
+    
+    def runfiles(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
+        print(f"Expected to see {len(self.dsdict['files'])} outputs")
+        rc = 0
+        for filename, fileinfo in self.dsdict["files"].items():
+            print(filename)
+            try:
+                suffix = fileinfo['uuid']
+                self.evtsel = self.evtselclass(**self.evtsel_kwargs)
+                remote_load = self.rtcfg.get("REMOTE_LOAD", True)
+                events = self.loadfile_remote(fileargs={"files": {filename: fileinfo}}, **readkwargs) if remote_load else self.loadfile_local(fileargs={"files": {filename: fileinfo}}, **readkwargs)
+                if events is not None:
+                    events = self.evtsel(events)
+
+                    # Take memory snapshot before writeCF
+                    snapshot_before_writeCF = tracemalloc.take_snapshot()
+                    logging.debug("Took snapshot before writeCF")
+
+                    self.writeCF(suffix, write_npz=write_npz)
+
+                    # Take memory snapshot after writeCF
+                    snapshot_after_writeCF = tracemalloc.take_snapshot()
+                    logging.debug("Took snapshot after writeCF")
+                    self.log_memory_diff(snapshot_before_writeCF, snapshot_after_writeCF, "writeCF")
+
+                    # Take memory snapshot before writeevts
+                    snapshot_before_writeevts = tracemalloc.take_snapshot()
+                    logging.debug("Took snapshot before writeevts")
+
+                    self.writeevts(events, suffix, **kwargs)
+
+                    # Take memory snapshot after writeevts
+                    snapshot_after_writeevts = tracemalloc.take_snapshot()
+                    logging.debug("Took snapshot after writeevts")
+                    self.log_memory_diff(snapshot_before_writeevts, snapshot_after_writeevts, "writeevts")
+
+                else:
+                    rc += 1
+                del events
+            except Exception as e:
+                print(f"Error encountered for file index {suffix} in {self.dataset}: {e}")
+                rc += 1
+                import gc
+                gc.collect()
+            if not remote_load: self.filehelper.remove_files(self.copydir)
+        return rc
 
     def writedask(self, passed, suffix, parquet=False, fields=None) -> int:
         process = psutil.Process()
@@ -206,17 +206,21 @@ class DebugProcessor(Processor):
                         logging.debug("Found zero-length partitions, filtering them out")
                         # Filter out zero-length partitions
                         valid_indices = [i for i, l in enumerate(lengths) if l > 0]
-                        logging.debug(f"Valid indices: {valid_indices}")
-                        # Create new dask array with only valid partitions
-                        valid_partitions = [passed.partitions[i] for i in valid_indices]
-                        valid_data = dak.concatenate(valid_partitions).persist()
+                        if not valid_indices:
+                            logging.debug("No valid partitions found, skipping write")
+                            return 0
+                        else:
+                            logging.debug(f"Valid indices: {valid_indices}")
+                            # Create new dask array with only valid partitions
+                            valid_partitions = [passed.partitions[i] for i in valid_indices]
+                            valid_data = dak.concatenate(valid_partitions).persist()
 
-                        computed_data = dask.compute(valid_data)[0]
-                        output_path = pjoin(self.outdir, f'{self.dataset}_{suffix}.root') 
-                        ak_to_root(output_path, computed_data, tree_name="Events", title="", 
-                           counter_name=lambda counted: 'n' + counted, field_name=lambda outer, inner: inner if outer == "" else outer + "_" + inner,
-                           storage_options=None,
-                           **write_options)
+                            computed_data = dask.compute(valid_data)[0]
+                            output_path = pjoin(self.outdir, f'{self.dataset}_{suffix}.root') 
+                            ak_to_root(output_path, computed_data, tree_name="Events", title="", 
+                            counter_name=lambda counted: 'n' + counted, field_name=lambda outer, inner: inner if outer == "" else outer + "_" + inner,
+                            storage_options=None,
+                            **write_options)
                     # # Compute all chunk lengths simultaneously
                     # chunk_counts = dask.compute(*[
                     #     passed.partitions[i].count() 
