@@ -1,16 +1,74 @@
-import tracemalloc, logging, psutil, dask, os, uproot
+import tracemalloc, logging, psutil, dask, os, uproot, gc
 from uproot.writing._dask_write import ak_to_root
 import concurrent.futures
 from threading import Thread
 import dask_awkward as dak
-from src.analysis.processor import Processor
+from src.analysis.processor import Processor, parallel_copy_and_load, writeCF
 
 from src.utils.filesysutil import pjoin
-from tests.test_helpers import log_memory 
+from tests.test_helpers import log_memory, log_dask_status
 
 class DebugProcessor(Processor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+    
+    def run_skims(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
+        print(f"Expected to see {len(self.dsdict['files'])} outputs")
+        rc = 0
+
+        try:
+            # Monitor before loading
+            log_dask_status()
+            
+            events_list = parallel_copy_and_load(
+                fileargs={"files": self.dsdict["files"]}, 
+                copydir=self.copydir,
+                rtcfg=self.rtcfg, 
+                read_args=readkwargs
+            )
+            
+            # Monitor after loading
+            log_dask_status()
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future_cf, future_events, future_evts = [], {}, []
+                
+                for events, suffix in events_list:
+                    try:
+                        evtsel = self.evtselclass(**self.evtsel_kwargs)
+                        if events is not None:
+                            # Monitor before computation
+                            log_dask_status()
+                            
+                            future_events[suffix] = executor.submit(evtsel, events)
+                            events = future_events[suffix].result()
+                            
+                            if hasattr(events, 'persist'):
+                                events = events.persist()
+                                # Monitor after persist
+                                log_dask_status()
+
+                            future_cf.append(executor.submit(writeCF, evtsel, suffix, self.outdir, self.dataset))
+                            future_evts.append(executor.submit(self.writeevts, events, suffix, **kwargs))
+                            
+                            # Clean up events after submission
+                            del events
+                            gc.collect()
+                            log_dask_status()
+                        else:
+                            rc += 1
+                    except Exception as e:
+                        logging.error(f"Error processing {suffix}: {e}")
+                        rc += 1
+
+                concurrent.futures.wait(future_cf)
+                concurrent.futures.wait(future_evts)
+                
+            return rc
+        finally:
+            # Final cleanup
+            gc.collect()
+            log_dask_status()
 
     def writedask(self, passed, suffix, parquet=False, fields=None) -> int:
         process = psutil.Process()
