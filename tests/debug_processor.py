@@ -1,66 +1,171 @@
-import tracemalloc, logging, psutil, gc, dask, os, uproot
+import tracemalloc, logging, psutil, dask, os, uproot, asyncio, gc
 from uproot.writing._dask_write import ak_to_root
-from queue import Queue
 from concurrent.futures import ThreadPoolExecutor
 from threading import Thread
 import dask_awkward as dak
-import awkward as ak
 from src.analysis.processor import Processor
 
-pjoin = os.path.join
+from src.utils.filesysutil import pjoin, XRootDHelper
 
 class DebugProcessor(Processor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
     
-    def __pipeline_copy__(self, maxsize):
-        pass
+    async def copy_file_worker(self, filename: str, suffix: str):
+        """Worker that copies files to local storage."""
+        try:
+            dest_file = pjoin(self.copydir, f"copy_{suffix}.root")
+            logging.debug(f"Copying {filename} to {dest_file}")
+            
+            # Perform the copy operation
+            await asyncio.get_event_loop().run_in_executor(
+                None,
+                XRootDHelper.copy_local,
+                filename,
+                dest_file
+            )
+            
+            # Put the copied file info into the queue
+            self.copy_queue.put({
+                'local_path': dest_file,
+                'suffix': suffix,
+                'original': filename
+            })
 
-    def runfiles(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
-        print(f"Expected to see {len(self.dsdict['files'])} outputs")
-        rc = 0
-        for filename, fileinfo in self.dsdict["files"].items():
-            print(filename)
+            logging.debug(f"Finished copying {filename}")
+            
+        except Exception as e:
+            logging.error(f"Error copying file {filename}: {e}")
+            self.copy_queue.put(None)
+
+    def process_file_worker(self, readkwargs={}, writekwargs={}, **kwargs):
+        """Worker that processes copied files."""
+        while True:
+            file_info = self.copy_queue.get()
+            if file_info is None:
+                self.copy_queue.task_done()
+                break
+
             try:
-                suffix = fileinfo['uuid']
-                self.evtsel = self.evtselclass(**self.evtsel_kwargs)
-                remote_load = self.rtcfg.get("REMOTE_LOAD", True)
-                events = self.loadfile_remote(fileargs={"files": {filename: fileinfo}}, **readkwargs) if remote_load else self.loadfile_local(fileargs={"files": {filename: fileinfo}}, **readkwargs)
+                logging.debug(f"Processing {file_info['local_path']}")
+                
+                # Create new fileargs for the copied file
+                new_filename = f"{file_info['local_path']}:Events"
+                new_fileargs = {
+                    "files": {
+                        new_filename: self.dsdict['files'][file_info['original']]
+                    }
+                }
+
+                # Process the file
+                events = (uproot.dask(**new_fileargs, **readkwargs) 
+                         if self.rtcfg.get("DELAYED_OPEN", True) 
+                         else uproot.open(new_filename).arrays(**kwargs))
+
                 if events is not None:
+                    self.evtsel = self.evtselclass(**self.evtsel_kwargs)
                     events = self.evtsel(events)
-
-                    # Take memory snapshot before writeCF
-                    snapshot_before_writeCF = tracemalloc.take_snapshot()
-                    logging.debug("Took snapshot before writeCF")
-
-                    self.writeCF(suffix, write_npz=write_npz)
-
-                    # Take memory snapshot after writeCF
-                    snapshot_after_writeCF = tracemalloc.take_snapshot()
-                    logging.debug("Took snapshot after writeCF")
-                    self.log_memory_diff(snapshot_before_writeCF, snapshot_after_writeCF, "writeCF")
-
-                    # Take memory snapshot before writeevts
-                    snapshot_before_writeevts = tracemalloc.take_snapshot()
-                    logging.debug("Took snapshot before writeevts")
-
-                    self.writeevts(events, suffix, **kwargs)
-
-                    # Take memory snapshot after writeevts
-                    snapshot_after_writeevts = tracemalloc.take_snapshot()
-                    logging.debug("Took snapshot after writeevts")
-                    self.log_memory_diff(snapshot_before_writeevts, snapshot_after_writeevts, "writeevts")
-
-                else:
-                    rc += 1
+                    self.writeCF(file_info['suffix'], write_npz=kwargs.get('write_npz', False))
+                    self.writeevts(events, file_info['suffix'], **kwargs)
+                
+                # Cleanup
                 del events
+                os.remove(file_info['local_path'])
+                
             except Exception as e:
-                print(f"Error encountered for file index {suffix} in {self.dataset}: {e}")
-                rc += 1
-                import gc
+                self.logger.error(f"Error processing file {file_info['local_path']}: {e}")
+            finally:
+                self.copy_queue.task_done()
                 gc.collect()
-            if not remote_load: self.filehelper.remove_files(self.copydir)
-        return rc
+
+    async def pipeline_files(self, **kwargs):
+        """Pipeline file copying and processing."""
+        self.logger.info(f"Processing {len(self.dsdict['files'])} files")
+        rc = 0
+
+        # Start the processor thread
+        processor_thread = Thread(
+            target=self.process_file_worker,
+            kwargs=kwargs,
+            daemon=True
+        )
+        processor_thread.start()
+
+        # Create copy tasks
+        copy_tasks = []
+        for filename, fileinfo in self.dsdict["files"].items():
+            if filename.endswith(":Events"):
+                filename = filename.split(":Events")[0]
+            
+            copy_tasks.append(
+                self.copy_file_worker(filename, fileinfo['uuid'])
+            )
+
+        # Run copy tasks
+        try:
+            await asyncio.gather(*copy_tasks)
+        except Exception as e:
+            self.logger.error(f"Error in copy tasks: {e}")
+            rc += 1
+        finally:
+            # Signal end of copying
+            self.copy_queue.put(None)
+
+        # Wait for processor to finish
+        self.copy_queue.join()
+        processor_thread.join()
+
+        return rc 
+
+    def runfiles(self, write_npz=False, **kwargs):
+        """Run the pipeline."""
+        return asyncio.run(self.pipeline_files(write_npz=write_npz, **kwargs))
+
+    # def runfiles(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
+    #     print(f"Expected to see {len(self.dsdict['files'])} outputs")
+    #     rc = 0
+    #     for filename, fileinfo in self.dsdict["files"].items():
+    #         print(filename)
+    #         try:
+    #             suffix = fileinfo['uuid']
+    #             self.evtsel = self.evtselclass(**self.evtsel_kwargs)
+    #             remote_load = self.rtcfg.get("REMOTE_LOAD", True)
+    #             events = self.loadfile_remote(fileargs={"files": {filename: fileinfo}}, **readkwargs) if remote_load else self.loadfile_local(fileargs={"files": {filename: fileinfo}}, **readkwargs)
+    #             if events is not None:
+    #                 events = self.evtsel(events)
+
+    #                 # Take memory snapshot before writeCF
+    #                 snapshot_before_writeCF = tracemalloc.take_snapshot()
+    #                 logging.debug("Took snapshot before writeCF")
+
+    #                 self.writeCF(suffix, write_npz=write_npz)
+
+    #                 # Take memory snapshot after writeCF
+    #                 snapshot_after_writeCF = tracemalloc.take_snapshot()
+    #                 logging.debug("Took snapshot after writeCF")
+    #                 self.log_memory_diff(snapshot_before_writeCF, snapshot_after_writeCF, "writeCF")
+
+    #                 # Take memory snapshot before writeevts
+    #                 snapshot_before_writeevts = tracemalloc.take_snapshot()
+    #                 logging.debug("Took snapshot before writeevts")
+
+    #                 self.writeevts(events, suffix, **kwargs)
+
+    #                 # Take memory snapshot after writeevts
+    #                 snapshot_after_writeevts = tracemalloc.take_snapshot()
+    #                 logging.debug("Took snapshot after writeevts")
+    #                 self.log_memory_diff(snapshot_before_writeevts, snapshot_after_writeevts, "writeevts")
+
+    #             else:
+    #                 rc += 1
+    #             del events
+    #         except Exception as e:
+    #             print(f"Error encountered for file index {suffix} in {self.dataset}: {e}")
+    #             rc += 1
+    #             import gc
+    #             gc.collect()
+    #         if not remote_load: self.filehelper.remove_files(self.copydir)
+    #     return rc
 
     def writedask(self, passed, suffix, parquet=False, fields=None) -> int:
         """Wrapper around uproot.dask_write(),
