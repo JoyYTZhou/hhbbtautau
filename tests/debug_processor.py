@@ -47,6 +47,70 @@ class DebugProcessor(Processor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
     
+
+    def runfiles(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
+        print(f"Expected to see {len(self.dsdict['files'])} outputs")
+        rc = 0
+
+        # Step 1: Copy & Load Files in Parallel
+        events_list = parallel_copy_and_load(
+            fileargs={"files": self.dsdict["files"]},
+            copydir=self.copydir,
+            rtcfg=self.rtcfg,
+            read_args=readkwargs
+        )
+
+        # Step 2: Process, Write Cutflows & Events in Parallel
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as thread_executor, \
+            concurrent.futures.ProcessPoolExecutor(max_workers=3) as process_executor:
+            
+            future_cf = {}  # Cutflow writing futures
+            future_evts = {}  # Event writing futures
+            
+            for events, suffix in events_list:
+                try:
+                    self.evtsel = self.evtselclass(**self.evtsel_kwargs)
+
+                    if events is not None:
+                        # Step 2a: Process Events (Optional Parallelization)
+                        future_events = thread_executor.submit(self.evtsel, events)
+                        events = future_events.result()  # Blocking, but could be parallelized if needed
+
+                        # Step 2b: Write Cutflow (I/O Bound, Uses ThreadPool)
+                        snapshot_before_writeCF = tracemalloc.take_snapshot()
+                        logging.debug("Took snapshot before writeCF")
+                        
+                        future_cf[suffix] = thread_executor.submit(self.writeCF, suffix, write_npz=write_npz)
+
+                        # Step 2c: Write Events (CPU Bound, Uses ProcessPool)
+                        snapshot_before_writeevts = tracemalloc.take_snapshot()
+                        logging.debug("Took snapshot before writeevts")
+                        
+                        future_evts[suffix] = process_executor.submit(self.writeevts, events, suffix, **kwargs)
+
+                        # Log memory after task submission
+                        self.log_memory_diff(snapshot_before_writeCF, tracemalloc.take_snapshot(), "writeCF")
+                        self.log_memory_diff(snapshot_before_writeevts, tracemalloc.take_snapshot(), "writeevts")
+                    
+                    else:
+                        rc += 1
+                    del events
+                
+                except Exception as e:
+                    print(f"Error encountered for file with suffix {suffix} in {self.dataset}: {e}")
+                    rc += 1
+                    gc.collect()
+
+            # Step 3: Ensure all tasks are completed before exiting
+            concurrent.futures.wait(future_cf.values())
+            concurrent.futures.wait(future_evts.values())
+
+        # Step 4: Cleanup if not using remote loading
+        if not self.rtcfg.get("REMOTE_LOAD", True):
+            self.filehelper.remove_files(self.copydir)
+
+        return rc
+
     # def runfiles(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
     #     print(f"Expected to see {len(self.dsdict['files'])} outputs")
     #     rc = 0
@@ -100,52 +164,6 @@ class DebugProcessor(Processor):
     #         self.filehelper.remove_files(self.copydir)
             
     #     return rc
-    
-    def runfiles(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
-        print(f"Expected to see {len(self.dsdict['files'])} outputs")
-        rc = 0
-        for filename, fileinfo in self.dsdict["files"].items():
-            print(filename)
-            try:
-                suffix = fileinfo['uuid']
-                self.evtsel = self.evtselclass(**self.evtsel_kwargs)
-                remote_load = self.rtcfg.get("REMOTE_LOAD", True)
-                events = self.loadfile(fileargs={"files": {filename: fileinfo}}, copy_local=True, **readkwargs)
-                if events is not None:
-                    events = self.evtsel(events)
-
-                    # Take memory snapshot before writeCF
-                    snapshot_before_writeCF = tracemalloc.take_snapshot()
-                    logging.debug("Took snapshot before writeCF")
-
-                    self.writeCF(suffix, write_npz=write_npz)
-
-                    # Take memory snapshot after writeCF
-                    snapshot_after_writeCF = tracemalloc.take_snapshot()
-                    logging.debug("Took snapshot after writeCF")
-                    self.log_memory_diff(snapshot_before_writeCF, snapshot_after_writeCF, "writeCF")
-
-                    # Take memory snapshot before writeevts
-                    snapshot_before_writeevts = tracemalloc.take_snapshot()
-                    logging.debug("Took snapshot before writeevts")
-
-                    self.writeevts(events, suffix, **kwargs)
-
-                    # Take memory snapshot after writeevts
-                    snapshot_after_writeevts = tracemalloc.take_snapshot()
-                    logging.debug("Took snapshot after writeevts")
-                    self.log_memory_diff(snapshot_before_writeevts, snapshot_after_writeevts, "writeevts")
-
-                else:
-                    rc += 1
-                del events
-            except Exception as e:
-                print(f"Error encountered for file index {suffix} in {self.dataset}: {e}")
-                rc += 1
-                import gc
-                gc.collect()
-            if not remote_load: self.filehelper.remove_files(self.copydir)
-        return rc
 
     def writedask(self, passed, suffix, parquet=False, fields=None) -> int:
         process = psutil.Process()
