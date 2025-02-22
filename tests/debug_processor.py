@@ -1,9 +1,9 @@
-import tracemalloc, logging, psutil, dask, os, uproot, asyncio, gc
+import tracemalloc, logging, psutil, dask, os, uproot
 from uproot.writing._dask_write import ak_to_root
 import concurrent.futures
 from threading import Thread
 import dask_awkward as dak
-from src.analysis.processor import Processor, parallel_copy_and_load
+from src.analysis.processor import Processor
 
 from src.utils.filesysutil import pjoin
 from tests.test_helpers import log_memory 
@@ -45,159 +45,6 @@ class DebugProcessor(Processor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def runfiles(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
-        print(f"Expected to see {len(self.dsdict['files'])} outputs")
-        rc = 0
-
-        # Step 1: Copy & Load Files in Parallel
-        events_list = parallel_copy_and_load(
-            fileargs={"files": self.dsdict["files"]},
-            copydir=self.copydir,
-            rtcfg=self.rtcfg,
-            read_args=readkwargs
-        )
-
-        # Step 2: Process, Write Cutflows & Events in Parallel
-        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-
-            future_events = {}  # For event selection
-            future_cf = []  # For cutflow writing
-            future_evts = []  # For event writing
-
-            for events, suffix in events_list:
-                try:
-                    self.evtsel = self.evtselclass(**self.evtsel_kwargs)
-
-                    if events is not None:
-                        # Step 2a: Submit event selection
-                        future_events[suffix] = executor.submit(self.evtsel, events)
-
-                    else:
-                        rc += 1
-                        continue  # Skip to next file
-
-                except Exception as e:
-                    print(f"Error encountered for file with suffix {suffix} in {self.dataset}: {e}")
-                    rc += 1
-                    gc.collect()
-
-            # Step 2b: Wait for event selection to complete
-            concurrent.futures.wait(future_events.values())
-
-            # Step 2c: Write Cutflows & Events
-            for suffix, future in future_events.items():
-                try:
-                    events = future.result()  # Now block and get processed events
-
-                    # Submit to writeCF (I/O-bound)
-                    future_cf.append(executor.submit(self.writeCF, suffix, write_npz=write_npz))
-
-                    # Submit to writeevts (I/O-bound, runs in parallel)
-                    future_evts.append(executor.submit(self.writeevts, events, suffix, **kwargs))
-
-                except Exception as e:
-                    print(f"Error in processing events for {suffix}: {e}")
-                    rc += 1
-                    gc.collect()
-
-            # Step 3: Ensure all tasks are completed before exiting
-            concurrent.futures.wait(future_cf)
-            concurrent.futures.wait(future_evts)
-
-        # Step 4: Cleanup if not using remote loading
-        if not self.rtcfg.get("REMOTE_LOAD", True):
-            self.filehelper.remove_files(self.copydir)
-
-        return rc
-
-    # def runfiles(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
-    #     print(f"Expected to see {len(self.dsdict['files'])} outputs")
-    #     rc = 0
-        
-    #     events_list = parallel_copy_and_load(
-    #         fileargs={"files": self.dsdict["files"]}, 
-    #         copydir=self.copydir, 
-    #         rtcfg=self.rtcfg, 
-    #         read_args=readkwargs
-    #     )
-        
-    #     # Process each loaded events object
-    #     for events, suffix in events_list:
-    #         try:
-    #             self.evtsel = self.evtselclass(**self.evtsel_kwargs)
-                
-    #             if events is not None:
-    #                 events = self.evtsel(events)
-
-    #                 # Take memory snapshot before writeCF
-    #                 snapshot_before_writeCF = tracemalloc.take_snapshot()
-    #                 logging.debug("Took snapshot before writeCF")
-
-    #                 self.writeCF(suffix, write_npz=write_npz)
-
-    #                 # Take memory snapshot after writeCF
-    #                 snapshot_after_writeCF = tracemalloc.take_snapshot()
-    #                 logging.debug("Took snapshot after writeCF")
-    #                 self.log_memory_diff(snapshot_before_writeCF, snapshot_after_writeCF, "writeCF")
-
-    #                 # Take memory snapshot before writeevts
-    #                 snapshot_before_writeevts = tracemalloc.take_snapshot()
-    #                 logging.debug("Took snapshot before writeevts")
-
-    #                 self.writeevts(events, suffix, **kwargs)
-
-    #                 # Take memory snapshot after writeevts
-    #                 snapshot_after_writeevts = tracemalloc.take_snapshot()
-    #                 logging.debug("Took snapshot after writeevts")
-    #                 self.log_memory_diff(snapshot_before_writeevts, snapshot_after_writeevts, "writeevts")
-    #             else:
-    #                 rc += 1
-    #             del events
-    #         except Exception as e:
-    #             print(f"Error encountered for file with suffix {suffix} in {self.dataset}: {e}")
-    #             rc += 1
-    #             gc.collect()
-                
-    #     # Cleanup if not using remote loading
-    #     if not self.rtcfg.get("REMOTE_LOAD", True):
-    #         self.filehelper.remove_files(self.copydir)
-            
-    #     return rc
-
-
-
-    def writedask(self, passed, suffix, parquet=False, fields=None) -> int:
-        process = psutil.Process()
-
-        rc = 0
-        delayed = self.rtcfg.get("DELAYED_WRITE", False)
-
-        if not parquet:
-            write_options = {
-                "initial_basket_capacity": 50,
-                "resize_factor": 1.5,
-                "compression": "ZLIB",
-                "compression_level": 1,
-            }
-            try:
-                rc = self.process_and_write_dask(passed, suffix, delayed, write_options)
-            except MemoryError as e:
-                print(f"Memory error during processing: {e}")
-                print("Current memory state:")
-                print(f"Available system memory: {psutil.virtual_memory().available / (1024**3):.2f} GB")
-                print(f"Process memory usage: {process.memory_info().rss / (1024**3):.2f} GB")
-                rc = 1
-            except Exception as e:
-                print(f"Error during processing: {e}")
-                rc = 1
-            finally:
-                if hasattr(passed, 'unpersist'):
-                    passed.unpersist()
-        else:
-            dak.to_parquet(passed, destination=self.outdir,
-                        prefix=f'{self.dataset}_{suffix}')
-        return rc
-
     def writedask(self, passed, suffix, parquet=False, fields=None) -> int:
         process = psutil.Process()
 
@@ -221,9 +68,7 @@ class DebugProcessor(Processor):
                     passed = passed.persist()
                     mem_after_persist = log_memory(process, "after persist")
                  
-                    # lengths = passed.map_partitions(len).compute()
-                    length_calcs = [dask.delayed(len)(passed.partitions[i]) 
-                        for i in range(passed.npartitions)]
+                    length_calcs = [dask.delayed(len)(passed.partitions[i]) for i in range(passed.npartitions)]
                     persisted_lengths = dask.persist(*length_calcs)  # Keeps it lazy
 
                     # Compute when needed

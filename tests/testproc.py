@@ -70,8 +70,7 @@ def main():
 
     try:
         logging.debug("Starting processing...")
-        readkwargs = {'filter_name': ['Electron*', 'Muon*', 'HLT*', 'Generator*']}
-        failed_files = proc.runfiles(write_npz=False, readkwargs=readkwargs)
+        failed_files = proc.run_skims(write_npz=False)
         logging.debug("Processing completed.")
     except Exception as e:
         logging.error(f"Error encountered: {e}")
@@ -115,11 +114,9 @@ if __name__ == '__main__':
 
     # Set up line profiler
     lp = LineProfiler()
-    lp.add_function(DebugProcessor.runfiles)
+    lp.add_function(DebugProcessor.run_skims)
     lp.add_function(DebugProcessor.writeCF)
-    # lp.add_function(DebugProcessor.copy_file_worker)
     # lp.add_function(DebugProcessor.pipeline_files)
-    #lp.add_function(DebugProcessor.process_file_worker)
     lp.add_function(DebugProcessor.writeevts)
     lp.add_function(DebugProcessor.writedask)
     lp.add_function(DebugProcessor.writeak)
