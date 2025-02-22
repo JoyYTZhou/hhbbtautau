@@ -110,7 +110,7 @@ class DebugProcessor(Processor):
                 suffix = fileinfo['uuid']
                 self.evtsel = self.evtselclass(**self.evtsel_kwargs)
                 remote_load = self.rtcfg.get("REMOTE_LOAD", True)
-                events = self.loadfile_remote(fileargs={"files": {filename: fileinfo}}, **readkwargs) if remote_load else self.loadfile_local(fileargs={"files": {filename: fileinfo}}, **readkwargs)
+                events = self.loadfile(fileargs={"files": {filename: fileinfo}}, copy_local=True, **readkwargs)
                 if events is not None:
                     events = self.evtsel(events)
 
