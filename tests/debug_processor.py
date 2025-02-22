@@ -8,39 +8,6 @@ from src.analysis.processor import Processor
 from src.utils.filesysutil import pjoin
 from tests.test_helpers import log_memory 
 
-def compute_dask_array(passed):
-    """Compute the dask array and handle zero-length partitions."""
-    process = psutil.Process()
-
-    log_memory(process, "before compute")
-    logging.debug("Computing dask array...")
-
-    if hasattr(passed, 'npartitions'):
-        passed = passed.persist()
-        log_memory(process, "after persist")
-
-        length_calcs = [dask.delayed(len)(passed.partitions[i]) for i in range(passed.npartitions)]
-        persisted_lengths = dask.persist(*length_calcs)
-        lengths = dask.compute(*persisted_lengths)
-
-        has_zero_lengths = any(l == 0 for l in lengths)
-
-        if not has_zero_lengths:
-            logging.debug("No zero-arrays found, using uproot.dask_write directly")
-            return passed
-        else:
-            logging.debug("Found zero-length partitions, filtering them out")
-            valid_indices = [i for i, l in enumerate(lengths) if l > 0]
-            if not valid_indices:
-                logging.debug("No valid partitions found, skipping write")
-                return None
-            else:
-                logging.debug(f"Valid indices: {valid_indices}")
-                valid_partitions = [passed.partitions[i] for i in valid_indices]
-                valid_data = dak.concatenate(valid_partitions)
-                computed_data = dask.compute(valid_data)[0]
-                return computed_data
-
 class DebugProcessor(Processor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -69,10 +36,7 @@ class DebugProcessor(Processor):
                     mem_after_persist = log_memory(process, "after persist")
                  
                     length_calcs = [dask.delayed(len)(passed.partitions[i]) for i in range(passed.npartitions)]
-                    persisted_lengths = dask.persist(*length_calcs)  # Keeps it lazy
-
-                    # Compute when needed
-                    lengths = dask.compute(*persisted_lengths)
+                    lengths = dask.compute(*length_calcs)
                     
                     has_zero_lengths = any(l == 0 for l in lengths)
 
@@ -97,64 +61,13 @@ class DebugProcessor(Processor):
                             logging.debug(f"Valid indices: {valid_indices}")
                             # Create new dask array with only valid partitions
                             valid_partitions = [passed.partitions[i] for i in valid_indices]
-                            valid_data = dak.concatenate(valid_partitions).persist()
-
+                            valid_data = dak.concatenate(valid_partitions)
                             computed_data = dask.compute(valid_data)[0]
                             output_path = pjoin(self.outdir, f'{self.dataset}_{suffix}.root') 
                             ak_to_root(output_path, computed_data, tree_name="Events", title="", 
-                            counter_name=lambda counted: 'n' + counted, field_name=lambda outer, inner: inner if outer == "" else outer + "_" + inner,
-                            storage_options=None,
-                            **write_options)
-                    # # Compute all chunk lengths simultaneously
-                    # chunk_counts = dask.compute(*[
-                    #     passed.partitions[i].count() 
-                    #     for i in range(passed.npartitions)
-                    # ])
-                    # has_zero_chunks = any(count == 0 for count in chunk_counts)
-                    
-                    # if not has_zero_chunks:
-                    #     logging.debug("No zero-arrays found, using uproot.dask_write directly")
-                    #     uproot.dask_write(
-                    #         passed,
-                    #         destination=self.outdir,
-                    #         tree_name="Events",
-                    #         compute=not delayed,
-                    #         prefix=f'{self.dataset}_{suffix}',
-                    #         **write_options
-                    #     )                
-                    # computed_chunks = []
-                    # for i in range(passed.npartitions):
-                    #     chunk = passed.partitions[i]
-                    #     logging.debug(f"Computing chunk {i}/{passed.npartitions}")
-                    #     print(f"Computing chunk {i}/{passed.npartitions}")
-                    #     computed_chunk = dask.compute(chunk)[0]
-                    #     computed_chunks.append(computed_chunk)
-                    #     log_memory(f"after computing chunk {i}")
-                    #     gc.collect()
-
-                    # computed_data = ak.concatenate(computed_chunks)
-                # else:
-                    # computed_data = dask.compute(passed)[0]
-            
-                # mem_after_compute = log_memory("after compute")
-                # logging.debug(f"Memory difference after compute: {mem_after_compute - mem_before_compute:.2f} MB")
-
-                # # Step 2: Write to disk
-                # logging.debug("Writing to disk...")
-                # mem_before_write = log_memory("before write")
-
-                # output_path = pjoin(self.outdir, f'{self.dataset}_{suffix}.root')
-                # ak_to_root(output_path, computed_data, tree_name="Events", title="", 
-                           # counter_name=lambda counted: 'n' + counted, field_name=lambda outer, inner: inner if outer == "" else outer + "_" + inner,
-                           # storage_options=None,
-                           # **write_options)
-                
-                # mem_after_write = log_memory("after write")
-                # logging.debug(f"Memory difference after write: {mem_after_write - mem_before_write:.2f} MB")
-
-                # del computed_data
-                # gc.collect()
-                # log_memory("after cleanup")
+                                counter_name=lambda counted: 'n' + counted, field_name=lambda outer, inner: inner if outer == "" else outer + "_" + inner,
+                                storage_options=None,
+                                **write_options)
 
             except MemoryError as e:
                 print(f"Memory error during processing: {e}")
