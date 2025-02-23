@@ -15,8 +15,24 @@ class DebugProcessor(Processor):
     def run_skims(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
         print(f"Expected to see {len(self.dsdict['files'])} outputs")
         rc = 0
+        from dask.distributed import get_client
+        import psutil
+        process = psutil.Process()
 
+        def log_detailed_memory():
+            client = get_client()
+            worker = client.scheduler_info()['workers']
+            memory_info = process.memory_info()
+            logging.debug(f"""
+            Memory Status:
+            RSS: {memory_info.rss / 1e9:.2f} GB
+            VMS: {memory_info.vms / 1e9:.2f} GB
+            Shared: {memory_info.shared / 1e9:.2f} GB
+            Dask Worker Memory: {[w['memory'] for w in worker.values()]}
+            System Memory: {psutil.virtual_memory().percent}%
+            """)
         try:
+            log_detailed_memory()
             
             events_list = parallel_copy_and_load(
                 fileargs={"files": self.dsdict["files"]}, 
@@ -25,12 +41,14 @@ class DebugProcessor(Processor):
                 read_args=readkwargs
             )
             
+            log_detailed_memory()
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
                 future_cf, future_events, future_evts = [], {}, []
                 
                 for events, suffix in events_list:
                     try:
+                        log_detailed_memory()
                         evtsel = self.evtselclass(**self.evtsel_kwargs)
                         if events is not None:
                             
@@ -39,6 +57,7 @@ class DebugProcessor(Processor):
                             
                             if hasattr(events, 'persist'):
                                 events = events.persist()
+                                log_detailed_memory()
 
                             future_cf.append(executor.submit(writeCF, evtsel, suffix, self.outdir, self.dataset))
                             future_evts.append(executor.submit(self.writeevts, events, suffix, **kwargs))
@@ -46,6 +65,7 @@ class DebugProcessor(Processor):
                             # Clean up events after submission
                             del events
                             gc.collect()
+                            log_detailed_memory()
                         else:
                             rc += 1
                     except Exception as e:
