@@ -23,6 +23,9 @@ class DebugProcessor(Processor):
         import psutil
         process = psutil.Process()
 
+        available_mem = psutil.virtual_memory().available / (1024**3)
+        logging.debug(f"Available system memory: {available_mem:.2f} GB")
+
         def log_detailed_memory():
             client = get_client()
             worker = client.scheduler_info()['workers']
