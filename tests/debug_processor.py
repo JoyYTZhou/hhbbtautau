@@ -3,10 +3,49 @@ from uproot.writing._dask_write import ak_to_root
 import concurrent.futures
 from threading import Thread, current_thread
 import dask_awkward as dak
-from src.analysis.processor import Processor, parallel_copy_and_load, writeCF, process_file
+from src.analysis.processor import Processor, parallel_copy_and_load, writeCF
 
 from src.utils.filesysutil import pjoin, XRootDHelper
 from tests.test_helpers import log_memory
+
+def process_file(filename, fileinfo, copydir, rtcfg, read_args) -> tuple:
+    """Handles file copying and loading"""
+    suffix = fileinfo['uuid']
+    dest_file = pjoin(copydir, f"{suffix}.root")
+    
+    logging.debug(f"Copying {filename} to {dest_file}")
+    XRootDHelper.copy_local(filename, dest_file)
+    logging.debug(f"File copied successfully to {dest_file}")
+    
+    delayed_open = rtcfg.get("DELAYED_OPEN", True)
+    try:
+        if delayed_open:
+            logging.debug(f"Using delayed opening for {dest_file}")
+            # Try direct array reading first to get structure
+            with uproot.open(dest_file) as f:
+                events = f["Events"].arrays(
+                    library="ak", entry_start=0, entry_stop=2,
+                    **read_args
+                )
+                logging.debug(f"Test read successful, found branches: {events.fields}")
+            
+            # Now do the full dask read
+            events = uproot.dask(
+                files={dest_file: fileinfo},
+                **read_args
+            )
+            logging.debug(f"Dask read completed for {dest_file}")
+            return (events, suffix)
+        else:
+            logging.debug(f"Using direct opening for {dest_file}")
+            events = uproot.open(dest_file + ":Events").arrays(**read_args)
+            logging.debug(f"Successfully loaded {len(events)} events")
+            return (events, suffix)
+    except Exception as e:
+        logging.error(f"Error loading file {dest_file}: {str(e)}")
+        raise
+    finally:
+        logging.debug(f"Finished processing {dest_file}")
 
 class DebugProcessor(Processor):
     def __init__(self, *args, **kwargs):
