@@ -31,7 +31,7 @@ def main():
     args = parser.parse_args()
 
     file_dir = os.path.dirname(os.path.realpath(__file__))
-    testinput = pjoin(file_dir, "testInputs", "DYJets_NANOAOD12.json")
+    testinput = pjoin(file_dir, "testInputs", "DYJets_NANOAOD12_2.json")
     with open(testinput, 'r') as f:
         preprocessed = json.load(f)
 

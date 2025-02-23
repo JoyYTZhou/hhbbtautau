@@ -52,7 +52,7 @@ class DebugProcessor(Processor):
             # log_detailed_memory()
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-                future_events = {suffix: executor.submit(self.evtselclass(**self.evtsel_kwargs), events) for events, suffix in events_list}
+                future_events = {suffix: executor.submit(self.evtselclass(**self.evtsel_kwargs).callevtsel, events) for events, suffix in events_list}
                 # passed_results = {suffix: future.result() for suffix, future in future_events.items()}
                 # future_cf, future_events, future_evts = [], {}, []
                 future_cf, future_evts = [], []
@@ -78,34 +78,6 @@ class DebugProcessor(Processor):
 
                 if not self.rtcfg.get("REMOTE_LOAD", True):
                     self.filehelper.remove_files(self.copydir)
-#                     try:
-                        # # log_detailed_memory()
-                #         evtsel = self.evtselclass(**self.evtsel_kwargs)
-                #         if events is not None:
-                            
-                #             future_events[suffix] = executor.submit(evtsel, events)
-                #             passed = future_events[suffix].result()
-                #             del events
-
-                #             if hasattr(passed, 'persist'):
-                #                 passed = passed.persist()
-                #                 # log_detailed_memory()
-
-                #             future_cf.append(executor.submit(writeCF, evtsel, suffix, self.outdir, self.dataset))
-                #             future_evts.append(executor.submit(self.writeevts, passed, suffix, **kwargs))
-                            
-                #             # Clean up events after submission
-                #             gc.collect()
-                #             # log_detailed_memory()
-                #         else:
-                #             rc += 1
-                #     except Exception as e:
-                #         logging.error(f"Error processing {suffix}: {e}")
-                #         rc += 1
-
-                # concurrent.futures.wait(future_cf)
-                # concurrent.futures.wait(future_evts)
-                
             return rc
         finally:
             # Final cleanup
