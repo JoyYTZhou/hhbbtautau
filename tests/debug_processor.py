@@ -23,8 +23,7 @@ def process_file(filename, fileinfo, copydir, rtcfg, read_args) -> tuple:
             logging.debug(f"Using delayed opening for {dest_file}")
             # Try direct array reading first to get structure
             with uproot.open(dest_file) as f:
-                events = f["Events"].arrays(
-                    library="ak", entry_start=0, entry_stop=2,
+                events = f["Events"].arrays(entry_start=0, entry_stop=2,
                     **read_args
                 )
                 logging.debug(f"Test read successful, found branches: {events.fields}")
