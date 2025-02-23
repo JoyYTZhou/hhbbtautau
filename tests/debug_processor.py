@@ -8,42 +8,6 @@ from src.analysis.processor import Processor, parallel_copy_and_load, writeCF
 from src.utils.filesysutil import pjoin, XRootDHelper
 from tests.test_helpers import log_memory
 
-def process_file(filename, fileinfo, copydir, rtcfg, read_args) -> tuple:
-    """Handles file copying and loading"""
-    suffix = fileinfo['uuid']
-    dest_file = pjoin(copydir, f"{suffix}.root")
-    
-    logging.debug(f"Copying {filename} to {dest_file}")
-    XRootDHelper.copy_local(filename, dest_file)
-    logging.debug(f"File copied successfully to {dest_file}")
-    
-    delayed_open = rtcfg.get("DELAYED_OPEN", True)
-    try:
-        if delayed_open:
-            logging.debug(f"Using delayed opening for {dest_file}")
-            # Try direct array reading first to get structure
-            with uproot.open(dest_file) as f:
-                events = f["Events"].arrays(entry_start=0, entry_stop=2,
-                    **read_args
-                )
-            # Now do the full dask read
-            events = uproot.dask(
-                files={dest_file: fileinfo},
-                **read_args
-            )
-            logging.debug(f"Dask read completed for {dest_file}")
-            return (events, suffix)
-        else:
-            logging.debug(f"Using direct opening for {dest_file}")
-            events = uproot.open(dest_file + ":Events").arrays(**read_args)
-            logging.debug(f"Successfully loaded {len(events)} events")
-            return (events, suffix)
-    except Exception as e:
-        logging.error(f"Error loading file {dest_file}: {str(e)}")
-        raise
-    finally:
-        logging.debug(f"Finished processing {dest_file}")
-
 class DebugProcessor(Processor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -51,53 +15,6 @@ class DebugProcessor(Processor):
             format='%(asctime)s - %(threadName)s - %(levelname)s - %(message)s',
             level=logging.DEBUG
         )
-    def run_load(self, readkwargs={}, **kwargs) -> int:
-        """Sequential version of file loading for debugging purposes"""
-        logging.info(f"Starting sequential file loading for {len(self.dsdict['files'])} files")
-        rc = 0
-        results = []
-
-        # Process files one by one using the existing process_file function
-        for filename, fileinfo in self.dsdict["files"].items():
-            try:
-                logging.info(f"Processing file: {filename}")
-                
-                # Use the existing process_file function
-                try:
-                    result = process_file(
-                        filename=filename,
-                        fileinfo=fileinfo,
-                        copydir=self.copydir,
-                        rtcfg=self.rtcfg,
-                        read_args=readkwargs
-                    )
-                    results.append(result)
-                    events, suffix = result
-                    
-                except Exception as e:
-                    logging.error(f"Error in process_file for {filename}")
-                    logging.error(f"Error details: {str(e)}")
-                    logging.error("Full traceback:", exc_info=True)
-                    rc += 1
-                    
-            except Exception as e:
-                logging.error(f"Error in outer processing loop for {filename}: {str(e)}")
-                logging.error("Full traceback:", exc_info=True)
-                rc += 1
-                
-            finally:
-                # Clean up copied file if it exists
-                suffix = fileinfo['uuid']
-                dest_file = pjoin(self.copydir, f"{suffix}.root")
-                if os.path.exists(dest_file):
-                    logging.debug(f"Cleaning up {dest_file}")
-                    os.remove(dest_file)
-        
-        logging.info(f"Completed loading {len(results)} files successfully out of {len(self.dsdict['files'])} total files")
-        if rc > 0:
-            logging.warning(f"Failed to process {rc} files")
-        
-        return rc, results
 
     def run_skims_dummy(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
         print(f"Expected to see {len(self.dsdict['files'])} outputs")
@@ -107,11 +24,9 @@ class DebugProcessor(Processor):
         available_mem = psutil.virtual_memory().available / (1024**3)
         logging.debug(f"Available system memory: {available_mem:.2f} GB")
 
-        # 🔹 Keep track of file access attempts
         file_access_counter = {}
 
         try:
-            # 🔹 Log start of data loading
             logging.debug("Starting file read operations...")
 
             events_list = parallel_copy_and_load(
@@ -126,7 +41,6 @@ class DebugProcessor(Processor):
             with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
                 future_events = {}
 
-                # 🔹 Track how many times a file is being accessed
                 for events, suffix in events_list:
                     if suffix not in file_access_counter:
                         file_access_counter[suffix] = 0
@@ -138,7 +52,6 @@ class DebugProcessor(Processor):
                         self.evtselclass(**self.evtsel_kwargs).callevtsel, events
                     )
 
-                # 🔹 Log number of accesses per file
                 logging.debug(f"File Access Count: {file_access_counter}")
 
                 for future in concurrent.futures.as_completed(future_events.values()):

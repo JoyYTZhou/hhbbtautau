@@ -84,23 +84,9 @@ def main():
         
         # Use the new run_load function instead of run_skims
         readkwargs = {'filter_name': ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "HLT*", "MET"]}
-        rc, results = proc.run_load(readkwargs=readkwargs)
-        
-        if rc == 0:
-            logging.info(f"Successfully loaded {len(results)} files")
-            # Optionally process the results
-            for i, (events, suffix) in enumerate(results):
-                logging.debug(f"File {i+1}/{len(results)} (suffix: {suffix}):")
-                if hasattr(events, 'fields'):
-                    logging.debug(f"Available fields: {events.fields}")
-                if hasattr(events, 'type'):
-                    logging.debug(f"Events type: {events.type}")
-        else:
-            logging.error(f"Failed to load some files (rc={rc})")
-            
+        rc = proc.run_skims_dummy(readkwargs=readkwargs)
     except Exception as e:
         logging.error(f"Error encountered: {str(e)}")
-        logging.error(f"Traceback: {traceback.format_exc()}")
         raise
     finally:
         # Take final tracemalloc snapshot
@@ -141,7 +127,7 @@ if __name__ == '__main__':
     # Set up line profiler
     lp = LineProfiler()
     # Add the functions you want to profile
-    lp.add_function(DebugProcessor.run_load)  # Profile the new sequential function
+    lp.add_function(DebugProcessor.run_skims_dummy)
     # lp.add_function(DebugProcessor.writeevts)
     # lp.add_function(DebugProcessor.writedask)
 
