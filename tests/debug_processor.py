@@ -32,7 +32,7 @@ class DebugProcessor(Processor):
             System Memory: {psutil.virtual_memory().percent}%
             """)
         try:
-            log_detailed_memory()
+            # log_detailed_memory()
             
             events_list = parallel_copy_and_load(
                 fileargs={"files": self.dsdict["files"]}, 
@@ -41,14 +41,14 @@ class DebugProcessor(Processor):
                 read_args=readkwargs
             )
             
-            log_detailed_memory()
+            # log_detailed_memory()
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
                 future_cf, future_events, future_evts = [], {}, []
                 
                 for events, suffix in events_list:
                     try:
-                        log_detailed_memory()
+                        # log_detailed_memory()
                         evtsel = self.evtselclass(**self.evtsel_kwargs)
                         if events is not None:
                             
@@ -57,7 +57,7 @@ class DebugProcessor(Processor):
                             
                             if hasattr(events, 'persist'):
                                 events = events.persist()
-                                log_detailed_memory()
+                                # log_detailed_memory()
 
                             future_cf.append(executor.submit(writeCF, evtsel, suffix, self.outdir, self.dataset))
                             future_evts.append(executor.submit(self.writeevts, events, suffix, **kwargs))
@@ -65,7 +65,7 @@ class DebugProcessor(Processor):
                             # Clean up events after submission
                             del events
                             gc.collect()
-                            log_detailed_memory()
+                            # log_detailed_memory()
                         else:
                             rc += 1
                     except Exception as e:
