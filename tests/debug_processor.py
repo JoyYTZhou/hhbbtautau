@@ -11,10 +11,6 @@ from tests.test_helpers import log_memory
 class DebugProcessor(Processor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        logging.basicConfig(
-            format='%(asctime)s - %(threadName)s - %(levelname)s - %(message)s',
-            level=logging.DEBUG
-        )
 
     def run_skims(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
         print(f"Expected to see {len(self.dsdict['files'])} outputs")

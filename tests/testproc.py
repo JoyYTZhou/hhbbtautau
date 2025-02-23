@@ -12,6 +12,7 @@ pjoin = os.path.join
 
 def setup_logging():
     # Enhanced logging format for debugging
+    logging.getLogger().handlers.clear()
     logging.basicConfig(
         filename='debug.log',
         level=logging.DEBUG,
@@ -21,6 +22,8 @@ def setup_logging():
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.DEBUG)
     logging.getLogger().addHandler(console_handler)
+    
+    logging.getLogger('uproot').setLevel(logging.WARNING)
 
 def log_memory_snapshot(snapshot, message):
     top_stats = snapshot.statistics('lineno')
