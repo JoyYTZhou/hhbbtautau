@@ -83,7 +83,8 @@ def main():
         logging.info("Starting sequential file loading...")
         
         # Use the new run_load function instead of run_skims
-        rc, results = proc.run_load()
+        readkwargs = {'filter_name': ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "HLT*", "MET"]}
+        rc, results = proc.run_load(readkwargs=readkwargs)
         
         if rc == 0:
             logging.info(f"Successfully loaded {len(results)} files")
