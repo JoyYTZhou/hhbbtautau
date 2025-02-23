@@ -21,119 +21,96 @@ def log_memory_snapshot(snapshot, message):
         logging.debug(stat)
 
 def main():
-    client = Client(processes=False, threads_per_worker=4, n_workers=1)
-    # Configure Dask with more conservative memory limits
-    config.set({
-        "distributed.worker.memory.target": 0.6,  # Spill to disk at 60% memory use
-        "distributed.worker.memory.spill": 0.8,   # Pause work at 80% memory use
-        "distributed.worker.memory.pause": 0.92,  # Terminate at 92% memory use
-        "distributed.worker.memory.terminate": 0.95,
-    })
+    config.set(scheduler='synchronous')
     client = Client(processes=True, n_workers=1)
 
-    # Set up profiling
-    with performance_report(filename="dask-report.html"):
-        try:
-            parser = argparse.ArgumentParser(description='Run processor on a single file')
-            parser.add_argument('selection_name', type=str, help='Name of the selection to run')
-            parser.add_argument('--profile', choices=['memory', 'line'], default='line',
-                                help='Type of profiling to perform (memory or line)')
 
-            args = parser.parse_args()
+    parser = argparse.ArgumentParser(description='Run processor on a single file')
+    parser.add_argument('selection_name', type=str, help='Name of the selection to run')
+    parser.add_argument('--profile', choices=['memory', 'line'], default='line',
+                        help='Type of profiling to perform (memory or line)')
 
-            file_dir = os.path.dirname(os.path.realpath(__file__))
-            testinput = pjoin(file_dir, "testInputs", "DYJets_NANOAOD12.json")
-            with open(testinput, 'r') as f:
-                preprocessed = json.load(f)
+    args = parser.parse_args()
 
-            rtcfg_1 = {
-                "OUTPUTDIR_PATH": "/uscms/home/joyzhou/nobackup/tests",
-                "COPYDIR_PATH": "/uscms/home/joyzhou/nobackup/temp",
-                "TRANSFER_PATH": "/store/user/joyzhou/temp",
-                "DELAYED_OPEN": True,
-                "REMOTE_LOAD": False,
-                "FILTER_NAME": None,
-                "DELAYED_WRITE": False,
-            }
+    file_dir = os.path.dirname(os.path.realpath(__file__))
+    testinput = pjoin(file_dir, "testInputs", "DYJets_NANOAOD12.json")
+    with open(testinput, 'r') as f:
+        preprocessed = json.load(f)
 
-            eventselection = switch_selections(args.selection_name)
-            transferP = "/store/user/joyzhou/temp"
+    rtcfg_1 = {
+        "OUTPUTDIR_PATH": "/uscms/home/joyzhou/nobackup/tests",
+        "COPYDIR_PATH": "/uscms/home/joyzhou/nobackup/temp",
+        "TRANSFER_PATH": "/store/user/joyzhou/temp",
+        "DELAYED_OPEN": True,
+        "REMOTE_LOAD": False,
+        "FILTER_NAME": None,
+        "DELAYED_WRITE": False,
+    }
 
-            tracemalloc.start()
+    eventselection = switch_selections(args.selection_name)
+    transferP = "/store/user/joyzhou/temp"
 
-            proc = DebugProcessor(rtcfg_1, preprocessed, transferP=transferP, evtselclass=eventselection)
+    tracemalloc.start()
 
-            profiler = cProfile.Profile()
-            profiler.enable()
+    proc = DebugProcessor(rtcfg_1, preprocessed, transferP=transferP, evtselclass=eventselection)
 
-            start_time = time.time()
-            failed_files = None
+    profiler = cProfile.Profile()
+    profiler.enable()
 
-            # Record initial memory usage
-            initial_memory = memory_usage(-1, interval=.1, timeout=1)[0]
-            logging.debug(f"Initial memory usage: {initial_memory} MiB")
+    start_time = time.time()
+    failed_files = None
 
-            # Take initial tracemalloc snapshot
-            snapshot1 = tracemalloc.take_snapshot()
-            log_memory_snapshot(snapshot1, "Initial snapshot")
+    # Record initial memory usage
+    initial_memory = memory_usage(-1, interval=.1, timeout=1)[0]
+    logging.debug(f"Initial memory usage: {initial_memory} MiB")
 
-            try:
-                logging.debug("Starting processing...")
-                failed_files = proc.run_skims(write_npz=False)
-                logging.debug("Processing completed.")
-            except Exception as e:
-                logging.error(f"Error encountered: {e}")
-                raise e
-            finally:
-                # Take final tracemalloc snapshot
-                snapshot2 = tracemalloc.take_snapshot()
-                log_memory_snapshot(snapshot2, "Final snapshot")
+    # Take initial tracemalloc snapshot
+    snapshot1 = tracemalloc.take_snapshot()
+    log_memory_snapshot(snapshot1, "Initial snapshot")
 
-                # Compare snapshots
-                top_stats = snapshot2.compare_to(snapshot1, 'lineno')
-                logging.debug("[ Top 10 differences ]")
-                for stat in top_stats[:10]:
-                    logging.debug(stat)
+    try:
+        logging.debug("Starting processing...")
+        failed_files = proc.run_skims(write_npz=False)
+        logging.debug("Processing completed.")
+    except Exception as e:
+        logging.error(f"Error encountered: {e}")
+        raise e
+    finally:
+        # Take final tracemalloc snapshot
+        snapshot2 = tracemalloc.take_snapshot()
+        log_memory_snapshot(snapshot2, "Final snapshot")
 
-                # Record final memory usage
-                final_memory = memory_usage(-1, interval=.1, timeout=1)[0]
-                logging.debug(f"Final memory usage: {final_memory} MiB")
-                logging.debug(f"Memory difference: {final_memory - initial_memory} MiB")
+        # Compare snapshots
+        top_stats = snapshot2.compare_to(snapshot1, 'lineno')
+        logging.debug("[ Top 10 differences ]")
+        for stat in top_stats[:10]:
+            logging.debug(stat)
 
-                # Force garbage collection
-                gc.collect()
-                post_gc_memory = memory_usage(-1, interval=.1, timeout=1)[0]
-                logging.debug(f"Memory after garbage collection: {post_gc_memory} MiB")
+        # Record final memory usage
+        final_memory = memory_usage(-1, interval=.1, timeout=1)[0]
+        logging.debug(f"Final memory usage: {final_memory} MiB")
+        logging.debug(f"Memory difference: {final_memory - initial_memory} MiB")
 
-            end_time = time.time()
+        # Force garbage collection
+        gc.collect()
+        post_gc_memory = memory_usage(-1, interval=.1, timeout=1)[0]
+        logging.debug(f"Memory after garbage collection: {post_gc_memory} MiB")
 
-            profiler.disable()
+    end_time = time.time()
 
-            stats_filename = 'cprofile_output.txt'
-            with open(stats_filename, 'w') as f:
-                stats = pstats.Stats(profiler, stream=f)
-                stats.sort_stats(pstats.SortKey.TIME)
-                stats.print_stats()
+    profiler.disable()
 
-            print(f"Processing completed in {(end_time-start_time)/60:.2f} minutes")
-            print(f"Failed files: {failed_files}")
-                # Add Dask diagnostic logging
-            client.get_task_stream()
-            
-            failed_files = proc.run_skims(write_npz=False)
-            
-            # Log Dask diagnostics
-            task_stream = client.get_task_stream()
-            logging.debug("Dask task stream:")
-            for task in task_stream:
-                logging.debug(f"Task: {task}")
-                
-        finally:
-            client.close()
+    stats_filename = 'cprofile_output.txt'
+    with open(stats_filename, 'w') as f:
+        stats = pstats.Stats(profiler, stream=f)
+        stats.sort_stats(pstats.SortKey.TIME)
+        stats.print_stats()
 
+    print(f"Processing completed in {(end_time-start_time)/60:.2f} minutes")
+    print(f"Failed files: {failed_files}")
+       
 if __name__ == '__main__':
     setup_logging()
-    logging.getLogger("distributed").setLevel(logging.INFO)
     # Set up line profiler
     lp = LineProfiler()
     lp.add_function(DebugProcessor.run_skims)

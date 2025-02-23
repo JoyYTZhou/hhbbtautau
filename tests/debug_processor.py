@@ -6,7 +6,7 @@ import dask_awkward as dak
 from src.analysis.processor import Processor, parallel_copy_and_load, writeCF
 
 from src.utils.filesysutil import pjoin
-from tests.test_helpers import log_memory, log_dask_status
+from tests.test_helpers import log_memory
 
 class DebugProcessor(Processor):
     def __init__(self, *args, **kwargs):
@@ -17,8 +17,6 @@ class DebugProcessor(Processor):
         rc = 0
 
         try:
-            # Monitor before loading
-            log_dask_status()
             
             events_list = parallel_copy_and_load(
                 fileargs={"files": self.dsdict["files"]}, 
@@ -27,26 +25,20 @@ class DebugProcessor(Processor):
                 read_args=readkwargs
             )
             
-            # Monitor after loading
-            log_dask_status()
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
                 future_cf, future_events, future_evts = [], {}, []
                 
                 for events, suffix in events_list:
                     try:
                         evtsel = self.evtselclass(**self.evtsel_kwargs)
                         if events is not None:
-                            # Monitor before computation
-                            log_dask_status()
                             
                             future_events[suffix] = executor.submit(evtsel, events)
                             events = future_events[suffix].result()
                             
                             if hasattr(events, 'persist'):
                                 events = events.persist()
-                                # Monitor after persist
-                                log_dask_status()
 
                             future_cf.append(executor.submit(writeCF, evtsel, suffix, self.outdir, self.dataset))
                             future_evts.append(executor.submit(self.writeevts, events, suffix, **kwargs))
@@ -54,7 +46,6 @@ class DebugProcessor(Processor):
                             # Clean up events after submission
                             del events
                             gc.collect()
-                            log_dask_status()
                         else:
                             rc += 1
                     except Exception as e:
@@ -68,7 +59,6 @@ class DebugProcessor(Processor):
         finally:
             # Final cleanup
             gc.collect()
-            log_dask_status()
 
     def writedask(self, passed, suffix, parquet=False, fields=None) -> int:
         process = psutil.Process()

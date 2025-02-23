@@ -12,5 +12,18 @@ def log_memory(process, stage):
 def log_dask_status():
     client = get_client()
     workers = client.scheduler_info()['workers']
-    logging.debug(f"Dask workers memory: {[w['memory'] for w in workers.values()]}")
+
+    worker_memory = []
+    for worker in workers.values():
+        try:
+            if 'memory' in worker:
+                worker_memory.append(worker['memory'])
+        except Exception as e:
+            logging.warning(f"Could not get memory info from worker: {e}")
+
+    if worker_memory:
+        logging.debug(f"Dask workers memory: {worker_memory}")
+    else:
+        logging.debug("No memory information available from Dask workers")
+
     logging.debug(f"System memory: {psutil.virtual_memory().percent}%")
