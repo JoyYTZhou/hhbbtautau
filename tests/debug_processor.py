@@ -53,19 +53,18 @@ class DebugProcessor(Processor):
                 # passed_results = {suffix: future.result() for suffix, future in future_events.items()}
                 # future_cf, future_events, future_evts = [], {}, []
                 future_cf, future_evts = [], []
-                
-                for suffix, future in future_events.items():
-                # for events, suffix in events_list:
-                    def process_evtsel(future, suffix):
-                        try:
-                            logging.debug(f"Processing event selection results for suffix {suffix} in thread {current_thread().name}")
-                            passed_events, evtsel_state = future.result()  # Extract results *inside* the thread
-                            future_cf.append(executor.submit(writeCF, evtsel_state, suffix, self.outdir, self.dataset))
-                            future_evts.append(executor.submit(self.writeevts, passed_events, suffix, **kwargs))
-                        except Exception as e:
-                            print(f"Error processing {suffix}: {e}")
-                    
-                    future.add_done_callback(lambda f, suffix=suffix: process_evtsel(f, suffix))
+
+                for future in concurrent.futures.as_completed(future_events.values()):
+                    suffix = next(s for s, f in future_events.items() if f == future)
+
+                    try:
+                        passed, evtsel_state = future.result()
+
+                        future_cf.append(executor.submit(writeCF, evtsel_state, suffix, self.outdir, self.dataset))
+                        future_evts.append(executor.submit(self.writeevts, passed, suffix, **kwargs))
+                    except Exception as e:
+                        logging.error(f"Error processing {suffix}: {e}")
+                        print(f"Error processing {suffix}: {e}")
                 
                 concurrent.futures.wait(future_cf + future_evts)
                 cutflow_files = [f.result() for f in future_cf]
