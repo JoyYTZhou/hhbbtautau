@@ -108,6 +108,7 @@ class DebugProcessor(Processor):
                             prefix=f'{self.dataset}_{suffix}',
                             **write_options
                             )
+                        print(f"Finished writing {self.dataset}_{suffix}.root")
                     else:
                         logging.debug("Found zero-length partitions, filtering them out")
                         # Filter out zero-length partitions
@@ -126,7 +127,7 @@ class DebugProcessor(Processor):
                                 counter_name=lambda counted: 'n' + counted, field_name=lambda outer, inner: inner if outer == "" else outer + "_" + inner,
                                 storage_options=None,
                                 **write_options)
-
+                            print("Finished writing", output_path)
             except MemoryError as e:
                 print(f"Memory error during processing: {e}")
                 print("Current memory state:")
@@ -149,7 +150,6 @@ class DebugProcessor(Processor):
         logging.debug(f"[ Memory differences after {message} ]")
         for stat in top_stats[:10]:
             logging.debug(stat)
-
 
     
     # async def copy_file_worker(self, filename: str, suffix: str):
