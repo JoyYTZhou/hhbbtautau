@@ -4,9 +4,8 @@ import concurrent.futures
 from threading import Thread, current_thread
 import dask_awkward as dak
 from src.analysis.processor import Processor, parallel_copy_and_load, writeCF, process_file
-from src.utils.filehelper import XRootDHelper
 
-from src.utils.filesysutil import pjoin
+from src.utils.filesysutil import pjoin, XRootDHelper
 from tests.test_helpers import log_memory
 
 class DebugProcessor(Processor):
