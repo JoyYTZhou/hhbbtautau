@@ -15,7 +15,7 @@ def setup_logging():
     logging.getLogger().handlers.clear()
     logging.basicConfig(
         filename='debug.log',
-        level=logging.WARNING,
+        level=logging.DEBUG,
         format='%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s'
     )
     # Also show logs in console
@@ -124,7 +124,7 @@ def main():
         stats.sort_stats(pstats.SortKey.TIME)
         stats.print_stats()
 
-    logging.info(f"Processing completed in {(end_time-start_time)/60:.2f} minutes")
+    logging.debug(f"Processing completed in {(end_time-start_time)/60:.2f} minutes")
        
 if __name__ == '__main__':
     setup_logging()
