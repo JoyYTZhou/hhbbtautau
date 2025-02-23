@@ -21,7 +21,7 @@ def log_memory_snapshot(snapshot, message):
         logging.debug(stat)
 
 def main():
-    client = Client(processes=True)
+    client = Client(processes=False, threads_per_worker=4, n_workers=1)
     # Configure Dask with more conservative memory limits
     config.set({
         "distributed.worker.memory.target": 0.6,  # Spill to disk at 60% memory use
