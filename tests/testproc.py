@@ -22,8 +22,6 @@ def log_memory_snapshot(snapshot, message):
 
 def main():
     config.set(scheduler='synchronous')
-    client = Client(processes=True, n_workers=1)
-
 
     parser = argparse.ArgumentParser(description='Run processor on a single file')
     parser.add_argument('selection_name', type=str, help='Name of the selection to run')
