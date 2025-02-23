@@ -1,7 +1,7 @@
 import tracemalloc, logging, psutil, dask, os, uproot, gc
 from uproot.writing._dask_write import ak_to_root
 import concurrent.futures
-from threading import Thread
+from threading import Thread, current_thread
 import dask_awkward as dak
 from src.analysis.processor import Processor, parallel_copy_and_load, writeCF
 
@@ -11,6 +11,10 @@ from tests.test_helpers import log_memory
 class DebugProcessor(Processor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        logging.basicConfig(
+            format='%(asctime)s - %(threadName)s - %(levelname)s - %(message)s',
+            level=logging.DEBUG
+        )
     
     def run_skims(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
         print(f"Expected to see {len(self.dsdict['files'])} outputs")
@@ -40,40 +44,57 @@ class DebugProcessor(Processor):
                 rtcfg=self.rtcfg, 
                 read_args=readkwargs
             )
+            logging.debug(f"Loaded {len(events_list)} files")
             
             # log_detailed_memory()
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-                future_cf, future_events, future_evts = [], {}, []
+                future_events = {suffix: executor.submit(self.evtselclass(**self.evtsel_kwargs), events) for events, suffix in events_list}
+                # passed_results = {suffix: future.result() for suffix, future in future_events.items()}
+                # future_cf, future_events, future_evts = [], {}, []
+                future_cf, future_evts = [], []
                 
-                for events, suffix in events_list:
-                    try:
-                        # log_detailed_memory()
-                        evtsel = self.evtselclass(**self.evtsel_kwargs)
-                        if events is not None:
+                for suffix, future in future_events.items():
+                # for events, suffix in events_list:
+                    def process_evtsel(future, suffix):
+                        try:
+                            logging.debug(f"Processing event selection results for suffix {suffix} in thread {current_thread().name}")
+                            passed_events, evtsel_state = future.result()  # Extract results *inside* the thread
+                            future_cf.append(executor.submit(writeCF, evtsel_state, suffix, self.outdir, self.dataset))
+                            future_evts.append(executor.submit(self.writeevts, passed_events, suffix, **kwargs))
+                        except Exception as e:
+                            print(f"Error processing {suffix}: {e}")
+                    
+                    future.add_done_callback(lambda f, suffix=suffix: process_evtsel(f, suffix))
+                
+                concurrent.futures.wait(future_cf + future_evts)
+#                     try:
+                        # # log_detailed_memory()
+                #         evtsel = self.evtselclass(**self.evtsel_kwargs)
+                #         if events is not None:
                             
-                            future_events[suffix] = executor.submit(evtsel, events)
-                            events = future_events[suffix].result()
-                            
-                            if hasattr(events, 'persist'):
-                                events = events.persist()
-                                # log_detailed_memory()
+                #             future_events[suffix] = executor.submit(evtsel, events)
+                #             passed = future_events[suffix].result()
+                #             del events
 
-                            future_cf.append(executor.submit(writeCF, evtsel, suffix, self.outdir, self.dataset))
-                            future_evts.append(executor.submit(self.writeevts, events, suffix, **kwargs))
-                            
-                            # Clean up events after submission
-                            del events
-                            gc.collect()
-                            # log_detailed_memory()
-                        else:
-                            rc += 1
-                    except Exception as e:
-                        logging.error(f"Error processing {suffix}: {e}")
-                        rc += 1
+                #             if hasattr(passed, 'persist'):
+                #                 passed = passed.persist()
+                #                 # log_detailed_memory()
 
-                concurrent.futures.wait(future_cf)
-                concurrent.futures.wait(future_evts)
+                #             future_cf.append(executor.submit(writeCF, evtsel, suffix, self.outdir, self.dataset))
+                #             future_evts.append(executor.submit(self.writeevts, passed, suffix, **kwargs))
+                            
+                #             # Clean up events after submission
+                #             gc.collect()
+                #             # log_detailed_memory()
+                #         else:
+                #             rc += 1
+                #     except Exception as e:
+                #         logging.error(f"Error processing {suffix}: {e}")
+                #         rc += 1
+
+                # concurrent.futures.wait(future_cf)
+                # concurrent.futures.wait(future_evts)
                 
             return rc
         finally:
