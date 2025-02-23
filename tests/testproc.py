@@ -35,8 +35,9 @@ def log_memory_snapshot(snapshot, message):
 
 def main():
     # Force synchronous scheduler for debugging
-    config.set(scheduler='synchronous')
-    logging.info("Set Dask to synchronous scheduler")
+    # config.set(scheduler='threads')
+    logging.debug("Dask config not explicitly set")
+    # logging.info("Set Dask to synchronous scheduler")
 
     parser = argparse.ArgumentParser(description='Debug processor on a single file')
     parser.add_argument('selection_name', type=str, help='Name of the selection to run')
@@ -47,7 +48,7 @@ def main():
     logging.info(f"Running with selection: {args.selection_name}")
 
     file_dir = os.path.dirname(os.path.realpath(__file__))
-    testinput = pjoin(file_dir, "testInputs", "DYJets_NANOAOD12_2.json")
+    testinput = pjoin(file_dir, "testInputs", "DYJets_NANOAOD12.json")
     with open(testinput, 'r') as f:
         preprocessed = json.load(f)
     
@@ -86,6 +87,8 @@ def main():
 
     try:
         logging.info("Starting sequential file loading...")
+        cpu_count = os.cpu_count()
+        logging.debug("CPU count: %d", cpu_count)
         
         # Use the new run_load function instead of run_skims
         readkwargs = {'filter_name': ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "HLT*", "MET"]}

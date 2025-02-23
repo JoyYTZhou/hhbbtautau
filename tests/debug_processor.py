@@ -12,7 +12,7 @@ class DebugProcessor(Processor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def run_skims(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
+    def run_skims(self, write_npz=False, max_workers=2, readkwargs={}, writekwargs={}, **kwargs) -> int:
         print(f"Expected to see {len(self.dsdict['files'])} outputs")
         rc = 0
         import psutil
@@ -30,7 +30,7 @@ class DebugProcessor(Processor):
             )
             logging.debug(f"Loaded {len(events_list)} files")
             
-            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                 log_memory(process, "before processing")
                 future_events = {suffix: executor.submit(self.evtselclass(**self.evtsel_kwargs).callevtsel, events) for events, suffix in events_list}
                 future_cf, future_evts = [], []
