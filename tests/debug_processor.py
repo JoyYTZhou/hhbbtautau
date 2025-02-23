@@ -51,7 +51,7 @@ class DebugProcessor(Processor):
             
             # log_detailed_memory()
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
                 future_events = {suffix: executor.submit(self.evtselclass(**self.evtsel_kwargs), events) for events, suffix in events_list}
                 # passed_results = {suffix: future.result() for suffix, future in future_events.items()}
                 # future_cf, future_events, future_evts = [], {}, []
