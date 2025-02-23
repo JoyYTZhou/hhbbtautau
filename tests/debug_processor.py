@@ -15,6 +15,66 @@ class DebugProcessor(Processor):
             format='%(asctime)s - %(threadName)s - %(levelname)s - %(message)s',
             level=logging.DEBUG
         )
+
+    def run_skims_dummy(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
+        print(f"Expected to see {len(self.dsdict['files'])} outputs")
+        rc = 0
+        process = psutil.Process()
+
+        available_mem = psutil.virtual_memory().available / (1024**3)
+        logging.debug(f"Available system memory: {available_mem:.2f} GB")
+
+        # 🔹 Keep track of file access attempts
+        file_access_counter = {}
+
+        try:
+            # 🔹 Log start of data loading
+            logging.debug("Starting file read operations...")
+
+            events_list = parallel_copy_and_load(
+                fileargs={"files": self.dsdict["files"]}, 
+                copydir=self.copydir,
+                rtcfg=self.rtcfg, 
+                read_args=readkwargs
+            )
+
+            logging.debug(f"Loaded {len(events_list)} files")
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+                future_events = {}
+
+                # 🔹 Track how many times a file is being accessed
+                for events, suffix in events_list:
+                    if suffix not in file_access_counter:
+                        file_access_counter[suffix] = 0
+                    file_access_counter[suffix] += 1  # Count file access
+
+                    logging.debug(f"Submitting {suffix} for event selection ({file_access_counter[suffix]}th access)")
+
+                    future_events[suffix] = executor.submit(
+                        self.evtselclass(**self.evtsel_kwargs).callevtsel, events
+                    )
+
+                # 🔹 Log number of accesses per file
+                logging.debug(f"File Access Count: {file_access_counter}")
+
+                for future in concurrent.futures.as_completed(future_events.values()):
+                    suffix = next(s for s, f in future_events.items() if f == future)
+
+                    try:
+                        passed, evtsel_state = future.result()
+                        logging.debug(f"Completed processing {suffix}")
+                    except Exception as e:
+                        logging.error(f"Error processing {suffix}: {e}")
+                        print(f"Error processing {suffix}: {e}")
+
+                if not self.rtcfg.get("REMOTE_LOAD", True):
+                    self.filehelper.remove_files(self.copydir)
+
+            return rc
+
+        finally:
+            gc.collect()
     
     def run_skims(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
         print(f"Expected to see {len(self.dsdict['files'])} outputs")

@@ -68,7 +68,7 @@ def main():
 
     try:
         logging.debug("Starting processing...")
-        failed_files = proc.run_skims(write_npz=False)
+        failed_files = proc.run_skims_dummy(write_npz=False)
         logging.debug("Processing completed.")
     except Exception as e:
         logging.error(f"Error encountered: {e}")
@@ -111,7 +111,8 @@ if __name__ == '__main__':
     setup_logging()
     # Set up line profiler
     lp = LineProfiler()
-    lp.add_function(DebugProcessor.run_skims)
+    # lp.add_function(DebugProcessor.run_skims)
+    lp.add_function(DebugProcessor.run_skims_dummy)
     # lp.add_function(DebugProcessor.pipeline_files)
     lp.add_function(DebugProcessor.writeevts)
     lp.add_function(DebugProcessor.writedask)
