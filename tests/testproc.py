@@ -15,7 +15,7 @@ def setup_logging():
     logging.getLogger().handlers.clear()
     logging.basicConfig(
         filename='debug.log',
-        level=logging.DEBUG,
+        level=logging.WARNING,
         format='%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s'
     )
     # Also show logs in console
