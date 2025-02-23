@@ -80,10 +80,6 @@ class DebugProcessor(Processor):
                 logging.debug("Computing dask array...")
                 
                 if hasattr(passed, 'npartitions'):
-                    # mem_before_persist = log_memory(process, "before persist")
-                    #logging.debug("Persisting dask array...")
-                    #passed = passed.persist()
-                    #mem_after_persist = log_memory(process, "after persist")
                  
                     length_calcs = [dask.delayed(len)(passed.partitions[i]) for i in range(passed.npartitions)]
                     lengths = dask.compute(*length_calcs)
