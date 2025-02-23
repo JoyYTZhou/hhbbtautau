@@ -26,7 +26,6 @@ def process_file(filename, fileinfo, copydir, rtcfg, read_args) -> tuple:
                 events = f["Events"].arrays(entry_start=0, entry_stop=2,
                     **read_args
                 )
-            
             # Now do the full dask read
             events = uproot.dask(
                 files={dest_file: fileinfo},
