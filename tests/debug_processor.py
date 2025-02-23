@@ -68,6 +68,14 @@ class DebugProcessor(Processor):
                     future.add_done_callback(lambda f, suffix=suffix: process_evtsel(f, suffix))
                 
                 concurrent.futures.wait(future_cf + future_evts)
+                cutflow_files = [f.result() for f in future_cf]
+        
+                if self.transfer:
+                    for cutflow_file in cutflow_files:
+                        self.filehelper.transfer_files(self.outdir, self.transfer, filepattern=cutflow_file, remove=True)
+
+                if not self.rtcfg.get("REMOTE_LOAD", True):
+                    self.filehelper.remove_files(self.copydir)
 #                     try:
                         # # log_detailed_memory()
                 #         evtsel = self.evtselclass(**self.evtsel_kwargs)
