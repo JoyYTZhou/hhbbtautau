@@ -74,10 +74,6 @@ class DebugProcessor(Processor):
                     )
                     results.append(result)
                     events, suffix = result
-                    if hasattr(events, 'nbytes'):
-                        logging.info(f"Successfully loaded file {suffix} with size {events.nbytes}")
-                    else:
-                        logging.info(f"Successfully loaded file {suffix}")
                     
                 except Exception as e:
                     logging.error(f"Error in process_file for {filename}")
