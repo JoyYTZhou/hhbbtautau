@@ -16,87 +16,16 @@ class DebugProcessor(Processor):
             level=logging.DEBUG
         )
 
-    def run_skims_dummy(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
-        print(f"Expected to see {len(self.dsdict['files'])} outputs")
-        rc = 0
-        process = psutil.Process()
-
-        available_mem = psutil.virtual_memory().available / (1024**3)
-        logging.debug(f"Available system memory: {available_mem:.2f} GB")
-
-        file_access_counter = {}
-
-        try:
-            logging.debug("Starting file read operations...")
-
-            events_list = parallel_copy_and_load(
-                fileargs={"files": self.dsdict["files"]}, 
-                copydir=self.copydir,
-                rtcfg=self.rtcfg, 
-                read_args=readkwargs
-            )
-
-            logging.debug(f"Loaded {len(events_list)} files")
-
-            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-                future_events = {}
-
-                for events, suffix in events_list:
-                    if suffix not in file_access_counter:
-                        file_access_counter[suffix] = 0
-                    file_access_counter[suffix] += 1  # Count file access
-
-                    logging.debug(f"Submitting {suffix} for event selection ({file_access_counter[suffix]}th access)")
-
-                    future_events[suffix] = executor.submit(
-                        self.evtselclass(**self.evtsel_kwargs).callevtsel, events
-                    )
-
-                logging.debug(f"File Access Count: {file_access_counter}")
-
-                for future in concurrent.futures.as_completed(future_events.values()):
-                    suffix = next(s for s, f in future_events.items() if f == future)
-
-                    try:
-                        passed, evtsel_state = future.result()
-                        logging.debug(f"Completed processing {suffix}")
-                    except Exception as e:
-                        logging.error(f"Error processing {suffix}: {e}")
-                        print(f"Error processing {suffix}: {e}")
-
-                if not self.rtcfg.get("REMOTE_LOAD", True):
-                    self.filehelper.remove_files(self.copydir)
-
-            return rc
-
-        finally:
-            gc.collect()
-    
     def run_skims(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
         print(f"Expected to see {len(self.dsdict['files'])} outputs")
         rc = 0
-        from dask.distributed import get_client
         import psutil
         process = psutil.Process()
 
         available_mem = psutil.virtual_memory().available / (1024**3)
         logging.debug(f"Available system memory: {available_mem:.2f} GB")
 
-        def log_detailed_memory():
-            client = get_client()
-            worker = client.scheduler_info()['workers']
-            memory_info = process.memory_info()
-            logging.debug(f"""
-            Memory Status:
-            RSS: {memory_info.rss / 1e9:.2f} GB
-            VMS: {memory_info.vms / 1e9:.2f} GB
-            Shared: {memory_info.shared / 1e9:.2f} GB
-            Dask Worker Memory: {[w['memory'] for w in worker.values()]}
-            System Memory: {psutil.virtual_memory().percent}%
-            """)
         try:
-            # log_detailed_memory()
-            
             events_list = parallel_copy_and_load(
                 fileargs={"files": self.dsdict["files"]}, 
                 copydir=self.copydir,
@@ -105,12 +34,9 @@ class DebugProcessor(Processor):
             )
             logging.debug(f"Loaded {len(events_list)} files")
             
-            # log_detailed_memory()
-
             with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+                log_memory(process, "before processing")
                 future_events = {suffix: executor.submit(self.evtselclass(**self.evtsel_kwargs).callevtsel, events) for events, suffix in events_list}
-                # passed_results = {suffix: future.result() for suffix, future in future_events.items()}
-                # future_cf, future_events, future_evts = [], {}, []
                 future_cf, future_evts = [], []
 
                 for future in concurrent.futures.as_completed(future_events.values()):
@@ -127,6 +53,7 @@ class DebugProcessor(Processor):
                 
                 concurrent.futures.wait(future_cf + future_evts)
                 cutflow_files = [f.result() for f in future_cf]
+                log_memory(process, "after processing")
         
                 if self.transfer:
                     for cutflow_file in cutflow_files:
