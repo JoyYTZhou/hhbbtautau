@@ -84,7 +84,7 @@ def main():
         
         # Use the new run_load function instead of run_skims
         readkwargs = {'filter_name': ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "HLT*", "MET"]}
-        rc = proc.run_skims_dummy(readkwargs=readkwargs)
+        rc = proc.run_skims(readkwargs=readkwargs)
     except Exception as e:
         logging.error(f"Error encountered: {str(e)}")
         raise
@@ -127,9 +127,10 @@ if __name__ == '__main__':
     # Set up line profiler
     lp = LineProfiler()
     # Add the functions you want to profile
-    lp.add_function(DebugProcessor.run_skims_dummy)
+    # lp.add_function(DebugProcessor.run_skims_dummy)
+    lp.add_function(DebugProcessor.run_skims)
     # lp.add_function(DebugProcessor.writeevts)
-    # lp.add_function(DebugProcessor.writedask)
+    lp.add_function(DebugProcessor.writedask)
 
     # Run the profiled version
     lp_wrapped = lp(main)
