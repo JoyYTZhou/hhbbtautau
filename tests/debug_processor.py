@@ -3,7 +3,8 @@ from uproot.writing._dask_write import ak_to_root
 import concurrent.futures
 from threading import Thread, current_thread
 import dask_awkward as dak
-from src.analysis.processor import Processor, parallel_copy_and_load, writeCF
+from src.analysis.processor import Processor, parallel_copy_and_load, writeCF, process_file
+from src.utils.filehelper import XRootDHelper
 
 from src.utils.filesysutil import pjoin
 from tests.test_helpers import log_memory
@@ -15,6 +16,57 @@ class DebugProcessor(Processor):
             format='%(asctime)s - %(threadName)s - %(levelname)s - %(message)s',
             level=logging.DEBUG
         )
+    def run_load(self, readkwargs={}, **kwargs) -> int:
+        """Sequential version of file loading for debugging purposes"""
+        logging.info(f"Starting sequential file loading for {len(self.dsdict['files'])} files")
+        rc = 0
+        results = []
+
+        # Process files one by one using the existing process_file function
+        for filename, fileinfo in self.dsdict["files"].items():
+            try:
+                logging.info(f"Processing file: {filename}")
+                
+                # Use the existing process_file function
+                try:
+                    result = process_file(
+                        filename=filename,
+                        fileinfo=fileinfo,
+                        copydir=self.copydir,
+                        rtcfg=self.rtcfg,
+                        read_args=readkwargs
+                    )
+                    results.append(result)
+                    events, suffix = result
+                    if hasattr(events, 'nbytes'):
+                        logging.info(f"Successfully loaded file {suffix} with size {events.nbytes}")
+                    else:
+                        logging.info(f"Successfully loaded file {suffix}")
+                    
+                except Exception as e:
+                    logging.error(f"Error in process_file for {filename}")
+                    logging.error(f"Error details: {str(e)}")
+                    logging.error("Full traceback:", exc_info=True)
+                    rc += 1
+                    
+            except Exception as e:
+                logging.error(f"Error in outer processing loop for {filename}: {str(e)}")
+                logging.error("Full traceback:", exc_info=True)
+                rc += 1
+                
+            finally:
+                # Clean up copied file if it exists
+                suffix = fileinfo['uuid']
+                dest_file = pjoin(self.copydir, f"{suffix}.root")
+                if os.path.exists(dest_file):
+                    logging.debug(f"Cleaning up {dest_file}")
+                    os.remove(dest_file)
+        
+        logging.info(f"Completed loading {len(results)} files successfully out of {len(self.dsdict['files'])} total files")
+        if rc > 0:
+            logging.warning(f"Failed to process {rc} files")
+        
+        return rc, results
 
     def run_skims_dummy(self, write_npz=False, readkwargs={}, writekwargs={}, **kwargs) -> int:
         print(f"Expected to see {len(self.dsdict['files'])} outputs")

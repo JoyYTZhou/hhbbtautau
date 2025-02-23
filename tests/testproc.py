@@ -4,15 +4,23 @@ from memory_profiler import memory_usage
 from line_profiler import LineProfiler
 import gc
 
-from tests.debug_processor import DebugProcessor  # Import the debug version
+from tests.debug_processor import DebugProcessor
 from config.customEvtSel import switch_selections
 from dask import config
 
 pjoin = os.path.join
 
 def setup_logging():
-    logging.basicConfig(filename='debug.log', level=logging.DEBUG,
-                        format='%(asctime)s %(levelname)s:%(message)s')
+    # Enhanced logging format for debugging
+    logging.basicConfig(
+        filename='debug.log',
+        level=logging.DEBUG,
+        format='%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s'
+    )
+    # Also show logs in console
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.DEBUG)
+    logging.getLogger().addHandler(console_handler)
 
 def log_memory_snapshot(snapshot, message):
     top_stats = snapshot.statistics('lineno')
@@ -21,19 +29,24 @@ def log_memory_snapshot(snapshot, message):
         logging.debug(stat)
 
 def main():
+    # Force synchronous scheduler for debugging
     config.set(scheduler='synchronous')
+    logging.info("Set Dask to synchronous scheduler")
 
-    parser = argparse.ArgumentParser(description='Run processor on a single file')
+    parser = argparse.ArgumentParser(description='Debug processor on a single file')
     parser.add_argument('selection_name', type=str, help='Name of the selection to run')
     parser.add_argument('--profile', choices=['memory', 'line'], default='line',
                         help='Type of profiling to perform (memory or line)')
 
     args = parser.parse_args()
+    logging.info(f"Running with selection: {args.selection_name}")
 
     file_dir = os.path.dirname(os.path.realpath(__file__))
     testinput = pjoin(file_dir, "testInputs", "DYJets_NANOAOD12_2.json")
     with open(testinput, 'r') as f:
         preprocessed = json.load(f)
+    
+    logging.info(f"Loaded test input with {len(preprocessed['files'])} files")
 
     rtcfg_1 = {
         "OUTPUTDIR_PATH": "/uscms/home/joyzhou/nobackup/tests",
@@ -49,6 +62,7 @@ def main():
     transferP = "/store/user/joyzhou/temp"
 
     tracemalloc.start()
+    logging.info("Started tracemalloc")
 
     proc = DebugProcessor(rtcfg_1, preprocessed, transferP=transferP, evtselclass=eventselection)
 
@@ -56,23 +70,41 @@ def main():
     profiler.enable()
 
     start_time = time.time()
-    failed_files = None
 
     # Record initial memory usage
     initial_memory = memory_usage(-1, interval=.1, timeout=1)[0]
-    logging.debug(f"Initial memory usage: {initial_memory} MiB")
+    logging.info(f"Initial memory usage: {initial_memory} MiB")
 
     # Take initial tracemalloc snapshot
     snapshot1 = tracemalloc.take_snapshot()
     log_memory_snapshot(snapshot1, "Initial snapshot")
 
     try:
-        logging.debug("Starting processing...")
-        failed_files = proc.run_skims_dummy(write_npz=False)
-        logging.debug("Processing completed.")
+        logging.info("Starting sequential file loading...")
+        
+        # Use the new run_load function instead of run_skims
+        rc, results = proc.run_load(readkwargs={
+            # Add any specific read arguments here
+            "library": "ak",  # Use awkward array backend
+            # "filter_name": ["your", "branches", "here"]  # Uncomment to filter branches
+        })
+        
+        if rc == 0:
+            logging.info(f"Successfully loaded {len(results)} files")
+            # Optionally process the results
+            for i, (events, suffix) in enumerate(results):
+                logging.debug(f"File {i+1}/{len(results)} (suffix: {suffix}):")
+                if hasattr(events, 'fields'):
+                    logging.debug(f"Available fields: {events.fields}")
+                if hasattr(events, 'type'):
+                    logging.debug(f"Events type: {events.type}")
+        else:
+            logging.error(f"Failed to load some files (rc={rc})")
+            
     except Exception as e:
-        logging.error(f"Error encountered: {e}")
-        raise e
+        logging.error(f"Error encountered: {str(e)}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
+        raise
     finally:
         # Take final tracemalloc snapshot
         snapshot2 = tracemalloc.take_snapshot()
@@ -80,43 +112,41 @@ def main():
 
         # Compare snapshots
         top_stats = snapshot2.compare_to(snapshot1, 'lineno')
-        logging.debug("[ Top 10 differences ]")
+        logging.debug("[ Top 10 memory differences ]")
         for stat in top_stats[:10]:
             logging.debug(stat)
 
         # Record final memory usage
         final_memory = memory_usage(-1, interval=.1, timeout=1)[0]
-        logging.debug(f"Final memory usage: {final_memory} MiB")
-        logging.debug(f"Memory difference: {final_memory - initial_memory} MiB")
+        logging.info(f"Final memory usage: {final_memory} MiB")
+        logging.info(f"Memory difference: {final_memory - initial_memory} MiB")
 
         # Force garbage collection
         gc.collect()
         post_gc_memory = memory_usage(-1, interval=.1, timeout=1)[0]
-        logging.debug(f"Memory after garbage collection: {post_gc_memory} MiB")
+        logging.info(f"Memory after garbage collection: {post_gc_memory} MiB")
 
     end_time = time.time()
-
     profiler.disable()
 
+    # Write profiling results
     stats_filename = 'cprofile_output.txt'
     with open(stats_filename, 'w') as f:
         stats = pstats.Stats(profiler, stream=f)
         stats.sort_stats(pstats.SortKey.TIME)
         stats.print_stats()
 
-    print(f"Processing completed in {(end_time-start_time)/60:.2f} minutes")
-    print(f"Failed files: {failed_files}")
+    logging.info(f"Processing completed in {(end_time-start_time)/60:.2f} minutes")
        
 if __name__ == '__main__':
     setup_logging()
+    
     # Set up line profiler
     lp = LineProfiler()
-    # lp.add_function(DebugProcessor.run_skims)
-    lp.add_function(DebugProcessor.run_skims_dummy)
-    # lp.add_function(DebugProcessor.pipeline_files)
-    lp.add_function(DebugProcessor.writeevts)
-    lp.add_function(DebugProcessor.writedask)
-    # lp.add_function(DebugProcessor.writeak)
+    # Add the functions you want to profile
+    lp.add_function(DebugProcessor.run_load)  # Profile the new sequential function
+    # lp.add_function(DebugProcessor.writeevts)
+    # lp.add_function(DebugProcessor.writedask)
 
     # Run the profiled version
     lp_wrapped = lp(main)
@@ -126,3 +156,6 @@ if __name__ == '__main__':
     lp_filename = 'line_profiler_output.txt'
     with open(lp_filename, 'w') as f:
         lp.print_stats(stream=f)
+
+
+# ... existing code...
