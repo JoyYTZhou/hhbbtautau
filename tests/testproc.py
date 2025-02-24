@@ -5,7 +5,7 @@ from line_profiler import LineProfiler
 import gc
 
 from tests.debug_processor import DebugProcessor
-from tests.test_helpers import setup_logging, log_memory_snapshot
+from tests.test_helpers import setup_logging, log_memory_snapshot, analyze_memory, get_size
 from config.customEvtSel import switch_selections
 from dask import config
 
@@ -72,10 +72,14 @@ def main():
         # Use the new run_load function instead of run_skims
         readkwargs = {'filter_name': ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "HLT*", "MET"]}
         rc = proc.run_skims(readkwargs=readkwargs)
+        end_exec_time = time.time()
+        logging.warning(f"Finished processing events in {end_exec_time-start_time:.2f} seconds")
     except Exception as e:
         logging.error(f"Error encountered: {str(e)}")
         raise
     finally:
+        gc.collect()
+        
         # Take final tracemalloc snapshot
         snapshot2 = tracemalloc.take_snapshot()
         log_memory_snapshot(snapshot2, "Final snapshot")
@@ -85,16 +89,25 @@ def main():
         logging.debug("[ Top 10 memory differences ]")
         for stat in top_stats[:10]:
             logging.debug(stat)
-
-        # Record final memory usage
-        final_memory = memory_usage(-1, interval=.1, timeout=1)[0]
-        logging.info(f"Final memory usage: {final_memory} MiB")
-        logging.info(f"Memory difference: {final_memory - initial_memory} MiB")
-
+        
         # Force garbage collection
         gc.collect()
         post_gc_memory = memory_usage(-1, interval=.1, timeout=1)[0]
         logging.info(f"Memory after garbage collection: {post_gc_memory} MiB")
+
+        logging.info("Analyzing remaining objects...")
+        analyze_memory()
+
+        logging.info("Checking for circular references...")
+        for obj in gc.get_objects():
+            try:
+                if hasattr(obj, '__dict__'):
+                    if gc.is_tracked(obj):
+                        referrers = gc.get_referrers(obj)
+                        if len(referrers) > 1:  # More than one reference
+                            logging.debug(f"Multiple referrers for {type(obj).__name__}: {len(referrers)}")
+            except Exception as e:
+                logging.debug(f"Error checking references: {e}")
 
     end_time = time.time()
     profiler.disable()
@@ -105,9 +118,7 @@ def main():
         stats = pstats.Stats(profiler, stream=f)
         stats.sort_stats(pstats.SortKey.TIME)
         stats.print_stats()
-
-    logging.debug(f"Processing completed in {(end_time-start_time)/60:.2f} minutes")
-       
+    
 if __name__ == '__main__':
     setup_logging()
     
