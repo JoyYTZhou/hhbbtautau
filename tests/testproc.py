@@ -16,7 +16,7 @@ def main():
     # config.set(scheduler='threads')
     config.set(schedule='synchronous')
     # logging.debug("Dask config not explicitly set")
-    logging.DEBUG("Set Dask to synchronous scheduler")
+    logging.debug("Set Dask to synchronous scheduler")
 
     parser = argparse.ArgumentParser(description='Debug processor on a single file')
     parser.add_argument('selection_name', type=str, help='Name of the selection to run')
