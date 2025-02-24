@@ -4,10 +4,15 @@ import concurrent.futures
 import awkward as ak
 from threading import Thread, current_thread
 import dask_awkward as dak
-from src.analysis.processor import Processor, parallel_copy_and_load, writeCF
+from src.analysis.processor import Processor, parallel_copy_and_load, writeCF, process_file
 
 from src.utils.filesysutil import pjoin, XRootDHelper
 from tests.test_helpers import log_memory
+
+def parallel_copy_and_load(fileargs, copydir, executor, rtcfg, read_args):
+    """Runs file copying and loading in parallel"""
+    future_to_file = {filename: executor.submit(process_file, filename, fileinfo, copydir, rtcfg, read_args) for filename, fileinfo in fileargs['files'].items()}
+    return future_to_file
 
 class DebugProcessor(Processor):
     def __init__(self, *args, **kwargs):
@@ -22,46 +27,52 @@ class DebugProcessor(Processor):
         available_mem = psutil.virtual_memory().available / (1024**3)
         logging.debug(f"Available system memory: {available_mem:.2f} GB")
 
-        try:
-            events_list = parallel_copy_and_load(
-                fileargs={"files": self.dsdict["files"]}, 
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            log_memory(process, "before processing")
+            future_loaded = parallel_copy_and_load(
+                fileargs={"files": self.dsdict["files"]},
                 copydir=self.copydir,
-                rtcfg=self.rtcfg, 
-                read_args=readkwargs
-            )
-            logging.debug(f"Loaded {len(events_list)} files")
+                executor=executor,
+                rtcfg=self.rtcfg,
+                read_args=readkwargs)
             
-            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-                log_memory(process, "before processing")
-                future_events = {suffix: executor.submit(self.evtselclass(**self.evtsel_kwargs).callevtsel, events) for events, suffix in events_list}
-                future_cf, future_evts = [], []
-
-                for future in concurrent.futures.as_completed(future_events.values()):
-                    suffix = next(s for s, f in future_events.items() if f == future)
-
-                    try:
-                        passed, evtsel_state = future.result()
-
-                        future_cf.append(executor.submit(writeCF, evtsel_state, suffix, self.outdir, self.dataset))
-                        future_evts.append(executor.submit(self.writeevts, passed, suffix, **kwargs))
-                    except Exception as e:
-                        logging.error(f"Error processing {suffix}: {e}")
-                        print(f"Error processing {suffix}: {e}")
+            future_cf, future_evts = [], []
+            
+            for future in concurrent.futures.as_completed(future_loaded.values()):
+                filename = next(f for f, future in future_loaded.items() if future == future)
                 
-                concurrent.futures.wait(future_cf + future_evts)
-                cutflow_files = [f.result() for f in future_cf]
-                log_memory(process, "after processing")
-        
-                if self.transfer:
-                    for cutflow_file in cutflow_files:
-                        self.filehelper.transfer_files(self.outdir, self.transfer, filepattern=cutflow_file, remove=True)
+                try: 
+                    events, suffix = future.result()
+                    future_events = {suffix: executor.submit(self.evtselclass(**self.evtsel_kwargs).callevtsel, events) for events, suffix in events_list}
+                except Exception as e:
+                    logging.exception(f"Error copying and loading {filename}: {e}")
+                    gc.collect()
+                
+            for future in concurrent.futures.as_completed(future_events.values()):
+                suffix = next(s for s, f in future_events.items() if f == future)
 
-                if not self.rtcfg.get("REMOTE_LOAD", True):
-                    self.filehelper.remove_files(self.copydir)
-            return rc
-        finally:
-            # Final cleanup
+                try:
+                    log_memory(process, f"before writing for file {suffix}")
+                    passed, evtsel_state = future.result()
+
+                    future_cf.append(executor.submit(writeCF, evtsel_state, suffix, self.outdir, self.dataset))
+                    future_evts.append(executor.submit(self.writeevts, passed, suffix, **kwargs))
+                except Exception as e:
+                    logging.exception(f"Error processing {suffix}: {e}")
+                
+            concurrent.futures.wait(future_cf + future_evts)
+            cutflow_files = [f.result() for f in future_cf]
+            log_memory(process, "after processing + writing")
+
             gc.collect()
+        
+            if self.transfer:
+                for cutflow_file in cutflow_files:
+                    self.filehelper.transfer_files(self.outdir, self.transfer, filepattern=cutflow_file, remove=True)
+
+            if not self.rtcfg.get("REMOTE_LOAD", True):
+                self.filehelper.remove_files(self.copydir)
+        return rc
 
     def writedask(self, passed, suffix, parquet=False, fields=None) -> int:
         process = psutil.Process()
