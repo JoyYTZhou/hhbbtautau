@@ -50,3 +50,9 @@ def log_memory_snapshot(snapshot, message):
     logging.debug(f"Memory snapshot: {message}")
     for stat in top_stats[:10]:
         logging.debug(stat)
+    
+def log_memory_diff(snapshot1, snapshot2, message):
+    top_stats = snapshot2.compare_to(snapshot1, 'lineno')
+    logging.debug(f"[ Memory differences after {message} ]")
+    for stat in top_stats[:10]:
+        logging.debug(stat)

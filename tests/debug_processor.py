@@ -1,10 +1,9 @@
-import tracemalloc, logging, psutil, dask, os, uproot, gc
+import tracemalloc, logging, psutil, dask, uproot, gc, threading
 from uproot.writing._dask_write import ak_to_root
 import concurrent.futures
 import awkward as ak
-from threading import Thread, current_thread
 import dask_awkward as dak
-from src.analysis.processor import Processor, parallel_copy_and_load, writeCF, process_file
+from src.analysis.processor import Processor, writeCF, process_file
 
 from src.utils.filesysutil import pjoin, XRootDHelper
 from tests.test_helpers import log_memory
@@ -15,11 +14,16 @@ def parallel_copy_and_load(fileargs, copydir, executor, rtcfg, read_args):
     return future_to_file
 
 class DebugProcessor(Processor):
+    write_skim_semaphore = threading.Semaphore(2)
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+    
+    def writedask(self, passed, suffix, **kwargs):
+        with self.write_skim_semaphore:
+            return write_skimmed(passed, self.outdir, self.dataset, suffix, self.rtcfg, **kwargs)
 
     def run_skims(self, write_npz=False, max_workers=2, readkwargs={}, writekwargs={}, **kwargs) -> int:
-        print(f"Expected to see {len(self.dsdict['files'])} outputs")
+        logging.debug(f"Expected to see {len(self.dsdict['files'])} outputs")
         rc = 0
         import psutil
         process = psutil.Process()
@@ -73,84 +77,91 @@ class DebugProcessor(Processor):
             if not self.rtcfg.get("REMOTE_LOAD", True):
                 self.filehelper.remove_files(self.copydir)
         return rc
+    
 
-    def writedask(self, passed, suffix, parquet=False, fields=None) -> int:
-        process = psutil.Process()
+def write_skimmed(passed, outdir, dataset, suffix, rtcfg, parquet=False, fields=None) -> int:
+    """
+    Write skimmed data to ROOT or parquet files.
 
-        rc = 0
-        delayed = self.rtcfg.get("DELAYED_WRITE", False)
+    Args:
+        passed: The data to write (dask_awkward or awkward array)
+        outdir: Output directory path
+        dataset: Dataset name
+        suffix: File suffix
+        rtcfg: Runtime configuration dictionary
+        parquet: If True, write to parquet format instead of ROOT
+        fields: Fields to write (optional)
 
-        if not parquet:
-            write_options = {
-                "initial_basket_capacity": 50,  # Smaller initial basket size
-                "resize_factor": 1.5,           # Smaller growth factor
-                "compression": "ZLIB",
-                "compression_level": 1,         # Lower compression level
-            }
-            try:
-                mem_before_compute = log_memory(process, "before compute")
-                logging.debug("Computing dask array...")
-                
-                if hasattr(passed, 'npartitions'):
-                 
-                    length_calcs = [dask.delayed(len)(passed.partitions[i]) for i in range(passed.npartitions)]
-                    lengths = dask.compute(*length_calcs)
-                    
-                    has_zero_lengths = any(l == 0 for l in lengths)
+    Returns:
+        int: Return code (0 for success, 1 for failure)
+    """
+    process = psutil.Process()
+    rc = 0
+    delayed = rtcfg.get("DELAYED_WRITE", False)
 
-                    if not has_zero_lengths:
-                        logging.debug("No zero-arrays found, using uproot.dask_write directly")
-                        uproot.dask_write(
-                            passed,
-                            destination=self.outdir,
-                            tree_name="Events",
-                            compute=not delayed,
-                            prefix=f'{self.dataset}_{suffix}',
-                            **write_options
-                            )
-                        logging.debug(f"Finished writing {self.dataset}_{suffix}.root")
-                    else:
-                        logging.debug("Found zero-length partitions, filtering them out")
-                        # Filter out zero-length partitions
-                        valid_indices = [i for i, l in enumerate(lengths) if l > 0]
-                        if not valid_indices:
-                            logging.debug("No valid partitions found, skipping write")
-                            del passed, length_calcs, lengths
-                            return None
-                        logging.debug(f"Valid indices: {valid_indices}")
-                        # Create new dask array with only valid partitions
-                        computed_partitions = [dask.compute(passed.partitions[i])[0] for i in valid_indices]
-                        computed_data = ak.concatenate(computed_partitions)
-                        computed_data = dask.compute(valid_data)[0]
-                        output_path = pjoin(self.outdir, f'{self.dataset}_{suffix}.root') 
-                        ak_to_root(output_path, computed_data, tree_name="Events", title="", 
-                            counter_name=lambda counted: 'n' + counted, field_name=lambda outer, inner: inner if outer == "" else outer + "_" + inner,
-                            storage_options=None,
-                            **write_options)
-                        logging.debug(f"Finished writing {output_path}")
-                        del valid_partitions, valid_data, computed_data
-            except MemoryError as e:
-                logging.error(f"Memory error during processing: {e}")
-                logging.debug("Current memory state:")
-                logging.debug(f"Available system memory: {psutil.virtual_memory().available / (1024**3):.2f} GB")
-                logging.debug(f"Process memory usage: {process.memory_info().rss / (1024**3):.2f} GB")
-                rc = 1
-            except Exception as e:
-                logging.error(f"Error during processing: {e}")
-                rc = 1
-            finally:
-                if hasattr(passed, 'unpersist'):
-                    passed.unpersist()
-        else:
-            dak.to_parquet(passed, destination=self.outdir,
-                        prefix=f'{self.dataset}_{suffix}')
-        return rc
+    if not parquet:
+        write_options = {
+            "initial_basket_capacity": 50,  # Smaller initial basket size
+            "resize_factor": 1.5,           # Smaller growth factor
+            "compression": "ZLIB",
+            "compression_level": 1,         # Lower compression level
+        }
+        try:
+            mem_before_compute = log_memory(process, "before compute")
+            logging.debug("Computing dask array...")
 
-    def log_memory_diff(self, snapshot1, snapshot2, message):
-        top_stats = snapshot2.compare_to(snapshot1, 'lineno')
-        logging.debug(f"[ Memory differences after {message} ]")
-        for stat in top_stats[:10]:
-            logging.debug(stat)
+            if hasattr(passed, 'npartitions'):
+                length_calcs = [dask.delayed(len)(passed.partitions[i]) for i in range(passed.npartitions)]
+                lengths = dask.compute(*length_calcs)
+
+                has_zero_lengths = any(l == 0 for l in lengths)
+
+                if not has_zero_lengths:
+                    logging.debug("No zero-arrays found, using uproot.dask_write directly")
+                    uproot.dask_write(
+                        passed,
+                    destination=outdir,
+                        tree_name="Events",
+                        compute=not delayed,
+                    prefix=f'{dataset}_{suffix}',
+                        **write_options
+                        )
+                    logging.debug(f"Finished writing {dataset}_{suffix}.root")
+                else:
+                    logging.debug("Found zero-length partitions, filtering them out")
+                    # Filter out zero-length partitions
+                    valid_indices = [i for i, l in enumerate(lengths) if l > 0]
+                    if not valid_indices:
+                        logging.debug("No valid partitions found, skipping write")
+                        del passed, length_calcs, lengths
+                        return None
+                    logging.debug(f"Valid indices: {valid_indices}")
+                    # Create new dask array with only valid partitions
+                    computed_partitions = [dask.compute(passed.partitions[i])[0] for i in valid_indices]
+                    computed_data = ak.concatenate(computed_partitions)
+                    output_path = pjoin(outdir, f'{dataset}_{suffix}.root')
+                    ak_to_root(output_path, computed_data, tree_name="Events", title="",
+                        counter_name=lambda counted: 'n' + counted,
+                        field_name=lambda outer, inner: inner if outer == "" else outer + "_" + inner,
+                        storage_options=None,
+                        **write_options)
+                    logging.debug(f"Finished writing {output_path}")
+                del valid_indices, computed_partitions, computed_data
+            else: 
+                logging.error("Passed object does not have npartitions attribute, skipping write")
+        except MemoryError as e:
+            logging.error(f"Memory error during processing: {e}")
+            logging.debug("Current memory state:")
+            logging.debug(f"Available system memory: {psutil.virtual_memory().available / (1024**3):.2f} GB")
+            logging.debug(f"Process memory usage: {process.memory_info().rss / (1024**3):.2f} GB")
+            rc = 1
+        except Exception as e:
+            logging.error(f"Error during processing: {e}")
+            rc = 1
+        finally:
+            if hasattr(passed, 'unpersist'):
+                passed.unpersist()
+    return rc
 
     
     # async def copy_file_worker(self, filename: str, suffix: str):
