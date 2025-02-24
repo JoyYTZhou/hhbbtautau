@@ -1,6 +1,7 @@
 import tracemalloc, logging, psutil, dask, os, uproot, gc
 from uproot.writing._dask_write import ak_to_root
 import concurrent.futures
+import awkward as ak
 from threading import Thread, current_thread
 import dask_awkward as dak
 from src.analysis.processor import Processor, parallel_copy_and_load, writeCF
@@ -96,7 +97,7 @@ class DebugProcessor(Processor):
                             prefix=f'{self.dataset}_{suffix}',
                             **write_options
                             )
-                        print(f"Finished writing {self.dataset}_{suffix}.root")
+                        logging.debug(f"Finished writing {self.dataset}_{suffix}.root")
                     else:
                         logging.debug("Found zero-length partitions, filtering them out")
                         # Filter out zero-length partitions
@@ -105,19 +106,18 @@ class DebugProcessor(Processor):
                             logging.debug("No valid partitions found, skipping write")
                             del passed, length_calcs, lengths
                             return None
-                        else:
-                            logging.debug(f"Valid indices: {valid_indices}")
-                            # Create new dask array with only valid partitions
-                            valid_partitions = [passed.partitions[i] for i in valid_indices]
-                            valid_data = dak.concatenate(valid_partitions)
-                            computed_data = dask.compute(valid_data)[0]
-                            output_path = pjoin(self.outdir, f'{self.dataset}_{suffix}.root') 
-                            ak_to_root(output_path, computed_data, tree_name="Events", title="", 
-                                counter_name=lambda counted: 'n' + counted, field_name=lambda outer, inner: inner if outer == "" else outer + "_" + inner,
-                                storage_options=None,
-                                **write_options)
-                            print("Finished writing", output_path)
-                            del valid_partitions, valid_data, computed_data
+                        logging.debug(f"Valid indices: {valid_indices}")
+                        # Create new dask array with only valid partitions
+                        computed_partitions = [dask.compute(passed.partitions[i])[0] for i in valid_indices]
+                        computed_data = ak.concatenate(computed_partitions)
+                        computed_data = dask.compute(valid_data)[0]
+                        output_path = pjoin(self.outdir, f'{self.dataset}_{suffix}.root') 
+                        ak_to_root(output_path, computed_data, tree_name="Events", title="", 
+                            counter_name=lambda counted: 'n' + counted, field_name=lambda outer, inner: inner if outer == "" else outer + "_" + inner,
+                            storage_options=None,
+                            **write_options)
+                        logging.debug(f"Finished writing {output_path}")
+                        del valid_partitions, valid_data, computed_data
             except MemoryError as e:
                 logging.error(f"Memory error during processing: {e}")
                 logging.debug("Current memory state:")
