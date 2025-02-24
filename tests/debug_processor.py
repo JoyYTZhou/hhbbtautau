@@ -103,7 +103,8 @@ class DebugProcessor(Processor):
                         valid_indices = [i for i, l in enumerate(lengths) if l > 0]
                         if not valid_indices:
                             logging.debug("No valid partitions found, skipping write")
-                            return 0
+                            del passed, length_calcs, lengths
+                            return None
                         else:
                             logging.debug(f"Valid indices: {valid_indices}")
                             # Create new dask array with only valid partitions
@@ -116,18 +117,19 @@ class DebugProcessor(Processor):
                                 storage_options=None,
                                 **write_options)
                             print("Finished writing", output_path)
+                            del valid_partitions, valid_data, computed_data
             except MemoryError as e:
-                print(f"Memory error during processing: {e}")
-                print("Current memory state:")
-                print(f"Available system memory: {psutil.virtual_memory().available / (1024**3):.2f} GB")
-                print(f"Process memory usage: {process.memory_info().rss / (1024**3):.2f} GB")
+                logging.error(f"Memory error during processing: {e}")
+                logging.debug("Current memory state:")
+                logging.debug(f"Available system memory: {psutil.virtual_memory().available / (1024**3):.2f} GB")
+                logging.debug(f"Process memory usage: {process.memory_info().rss / (1024**3):.2f} GB")
                 rc = 1
             except Exception as e:
-                print(f"Error during processing: {e}")
+                logging.error(f"Error during processing: {e}")
                 rc = 1
             finally:
                 if hasattr(passed, 'unpersist'):
-                     passed.unpersist()
+                    passed.unpersist()
         else:
             dak.to_parquet(passed, destination=self.outdir,
                         prefix=f'{self.dataset}_{suffix}')

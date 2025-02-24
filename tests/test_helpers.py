@@ -27,3 +27,26 @@ def log_dask_status():
         logging.debug("No memory information available from Dask workers")
 
     logging.debug(f"System memory: {psutil.virtual_memory().percent}%")
+
+def setup_logging():
+    # Enhanced logging format for debugging
+    logging.getLogger().handlers.clear()
+    logging.basicConfig(
+        filename='debug.log',
+        level=logging.DEBUG,
+        format='%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s'
+    )
+    # Also show logs in console
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.WARNING)
+    logging.getLogger().addHandler(console_handler)
+    logging.getLogger("uproot").setLevel(logging.WARNING)
+    logging.getLogger("dask").setLevel(logging.DEBUG)
+    logging.getLogger("distributed").setLevel(logging.DEBUG)
+    logging.getLogger("fsspec").setLevel(logging.WARNING)
+
+def log_memory_snapshot(snapshot, message):
+    top_stats = snapshot.statistics('lineno')
+    logging.debug(f"Memory snapshot: {message}")
+    for stat in top_stats[:10]:
+        logging.debug(stat)

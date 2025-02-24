@@ -5,39 +5,18 @@ from line_profiler import LineProfiler
 import gc
 
 from tests.debug_processor import DebugProcessor
+from tests.test_helpers import setup_logging, log_memory_snapshot
 from config.customEvtSel import switch_selections
 from dask import config
 
 pjoin = os.path.join
 
-def setup_logging():
-    # Enhanced logging format for debugging
-    logging.getLogger().handlers.clear()
-    logging.basicConfig(
-        filename='debug.log',
-        level=logging.DEBUG,
-        format='%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s'
-    )
-    # Also show logs in console
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.DEBUG)
-    logging.getLogger().addHandler(console_handler)
-    logging.getLogger("uproot").setLevel(logging.WARNING)
-    logging.getLogger("dask").setLevel(logging.WARNING)
-    logging.getLogger("distributed").setLevel(logging.WARNING)
-    logging.getLogger("fsspec").setLevel(logging.WARNING)
-
-def log_memory_snapshot(snapshot, message):
-    top_stats = snapshot.statistics('lineno')
-    logging.debug(f"Memory snapshot: {message}")
-    for stat in top_stats[:10]:
-        logging.debug(stat)
-
 def main():
     # Force synchronous scheduler for debugging
     # config.set(scheduler='threads')
-    logging.debug("Dask config not explicitly set")
-    # logging.info("Set Dask to synchronous scheduler")
+    config.set(schedule='synchronous')
+    # logging.debug("Dask config not explicitly set")
+    logging.DEBUG("Set Dask to synchronous scheduler")
 
     parser = argparse.ArgumentParser(description='Debug processor on a single file')
     parser.add_argument('selection_name', type=str, help='Name of the selection to run')
