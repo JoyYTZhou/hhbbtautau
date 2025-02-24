@@ -36,31 +36,31 @@ class DebugProcessor(Processor):
                 rtcfg=self.rtcfg,
                 read_args=readkwargs)
             
-            future_cf, future_evts = [], []
+            future_cf, future_writes, future_passed = [], [], {}
             
             for future in concurrent.futures.as_completed(future_loaded.values()):
                 filename = next(f for f, future in future_loaded.items() if future == future)
                 
                 try: 
                     events, suffix = future.result()
-                    future_events = {suffix: executor.submit(self.evtselclass(**self.evtsel_kwargs).callevtsel, events) for events, suffix in events_list}
+                    future_passed[suffix] = executor.submit(self.evtselclass(**self.evtsel_kwargs).callevtsel, events)
                 except Exception as e:
                     logging.exception(f"Error copying and loading {filename}: {e}")
                     gc.collect()
                 
-            for future in concurrent.futures.as_completed(future_events.values()):
-                suffix = next(s for s, f in future_events.items() if f == future)
+            for future in concurrent.futures.as_completed(future_passed.values()):
+                suffix = next(s for s, f in future_passed.items() if f == future)
 
                 try:
                     log_memory(process, f"before writing for file {suffix}")
                     passed, evtsel_state = future.result()
 
                     future_cf.append(executor.submit(writeCF, evtsel_state, suffix, self.outdir, self.dataset))
-                    future_evts.append(executor.submit(self.writeevts, passed, suffix, **kwargs))
+                    future_writes.append(executor.submit(self.writedask, passed, suffix, **writekwargs))
                 except Exception as e:
                     logging.exception(f"Error processing {suffix}: {e}")
                 
-            concurrent.futures.wait(future_cf + future_evts)
+            concurrent.futures.wait(future_cf + future_writes)
             cutflow_files = [f.result() for f in future_cf]
             log_memory(process, "after processing + writing")
 
