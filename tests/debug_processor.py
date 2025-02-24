@@ -161,6 +161,7 @@ def write_skimmed(passed, outdir, dataset, suffix, rtcfg, parquet=False, fields=
         finally:
             if hasattr(passed, 'unpersist'):
                 passed.unpersist()
+    gc.collect()
     return rc
 
     
