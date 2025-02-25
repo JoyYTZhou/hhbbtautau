@@ -136,7 +136,6 @@ def write_skimmed(passed, outdir, dataset, suffix, rtcfg, parquet=False, fields=
                         del passed, length_calcs, lengths
                         return None
                     logging.debug(f"Valid indices: {valid_indices}")
-                    # Create new dask array with only valid partitions
                     # valid_partitions = dak.concatenate([passed.partitions[i] for i in valid_indices])
                     # computed_data = dask.compute(valid_partitions)[0]
                     computed_partitions = [dask.compute(passed.partitions[i])[0] for i in valid_indices]

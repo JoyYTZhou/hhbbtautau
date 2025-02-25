@@ -73,7 +73,7 @@ def main():
         readkwargs = {'filter_name': ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "HLT*", "MET"]}
         rc = proc.run_skims(readkwargs=readkwargs)
         end_exec_time = time.time()
-        logging.warning(f"Finished processing events in {end_exec_time-start_time:.2f} seconds")
+        logging.warning(f"Finished processing events in {(end_exec_time-start_time)/60:.2f} minutes")
     except Exception as e:
         logging.error(f"Error encountered: {str(e)}")
         raise
@@ -110,7 +110,9 @@ def main():
                 logging.debug(f"Error checking references: {e}")
 
     end_time = time.time()
+    logging.warning(f"Finished processing events in {(end_time-start_time)/60:.2f} minutes")
     profiler.disable()
+
 
     # Write profiling results
     stats_filename = 'cprofile_output.txt'
