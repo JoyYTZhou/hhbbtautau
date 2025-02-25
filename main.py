@@ -2,6 +2,7 @@ import os, gc, argparse
 
 PARENT_DIR = os.path.dirname(__file__) 
 from src.utils.filesysutil import checkx509, display_top
+from src.utils.testutils import setup_logging
 from config.projectconfg import dasksetting, runsetting
 from config.customEvtSel import switch_selections
 
@@ -26,8 +27,7 @@ def runselections():
     args = parser.parse_args()
     
     if args.diagnose:
-        import tracemalloc
-        tracemalloc.start()
+        setup_logging()
 
     checkx509()
     
