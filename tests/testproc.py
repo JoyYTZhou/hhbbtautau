@@ -93,26 +93,14 @@ def main():
         # Force garbage collection
         gc.collect()
         post_gc_memory = memory_usage(-1, interval=.1, timeout=1)[0]
-        logging.info(f"Memory after garbage collection: {post_gc_memory} MiB")
+        logging.warning(f"Memory after garbage collection: {post_gc_memory} MiB")
 
-        logging.info("Analyzing remaining objects...")
+        logging.warning("Analyzing remaining objects...")
         analyze_memory()
-
-        logging.info("Checking for circular references...")
-        for obj in gc.get_objects():
-            try:
-                if hasattr(obj, '__dict__'):
-                    if gc.is_tracked(obj):
-                        referrers = gc.get_referrers(obj)
-                        if len(referrers) > 1:  # More than one reference
-                            logging.debug(f"Multiple referrers for {type(obj).__name__}: {len(referrers)}")
-            except Exception as e:
-                logging.debug(f"Error checking references: {e}")
 
     end_time = time.time()
     logging.warning(f"Finished processing events in {(end_time-start_time)/60:.2f} minutes")
     profiler.disable()
-
 
     # Write profiling results
     stats_filename = 'cprofile_output.txt'
