@@ -6,7 +6,7 @@ import dask_awkward as dak
 from src.analysis.processor import Processor, writeCF, process_file
 
 from src.utils.filesysutil import pjoin, XRootDHelper
-from tests.test_helpers import log_memory
+from src.utils.testutils import log_memory
 
 class DebugProcessor(Processor):
     write_skim_semaphore = threading.Semaphore(2)

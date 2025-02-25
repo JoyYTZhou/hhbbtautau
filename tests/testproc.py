@@ -6,7 +6,7 @@ import gc
 
 from tests.debug_processor import DebugProcessor
 from src.analysis.processor import Processor
-from tests.test_helpers import setup_logging, log_memory_snapshot, analyze_memory, get_size
+from src.utils.testutils import setup_logging, log_memory_snapshot, analyze_memory, get_size
 from config.customEvtSel import switch_selections
 from dask import config
 
