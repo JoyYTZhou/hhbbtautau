@@ -1,11 +1,10 @@
-import os, gc, argparse, logging
+import os, gc, argparse, logging, time
 
 PARENT_DIR = os.path.dirname(__file__) 
 from src.utils.filesysutil import checkx509
 from src.utils.testutils import setup_logging
 from config.projectconfg import dasksetting, runsetting
 from config.customEvtSel import switch_selections
-
 
 def runselections():
     gc.enable()
@@ -38,7 +37,7 @@ def runselections():
     print("======================================================================")
     print("Enter Main Python program: Event selection Mode!")
     print("======================================================================")
-    jr.submitjobs(client=None)
+    jr.submitskims(client=None)
 
     if args.dignose:
         end_time = time.time()
