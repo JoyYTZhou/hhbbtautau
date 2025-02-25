@@ -8,11 +8,6 @@ from src.analysis.processor import Processor, writeCF, process_file
 from src.utils.filesysutil import pjoin, XRootDHelper
 from tests.test_helpers import log_memory
 
-def parallel_copy_and_load(fileargs, copydir, executor, rtcfg, read_args):
-    """Runs file copying and loading in parallel"""
-    future_to_file = {filename: executor.submit(process_file, filename, fileinfo, copydir, rtcfg, read_args) for filename, fileinfo in fileargs['files'].items()}
-    return future_to_file
-
 class DebugProcessor(Processor):
     write_skim_semaphore = threading.Semaphore(2)
     def __init__(self, *args, **kwargs):
@@ -116,7 +111,7 @@ def write_skimmed(passed, outdir, dataset, suffix, rtcfg, parquet=False, fields=
             "compression_level": 1,         # Lower compression level
         }
         try:
-            mem_before_compute = log_memory(process, "before compute")
+            log_memory(process, "before compute")
             logging.debug("Computing dask array...")
 
             if hasattr(passed, 'npartitions'):
