@@ -1,7 +1,7 @@
-import os, gc, argparse 
+import os, gc, argparse, logging
 
 PARENT_DIR = os.path.dirname(__file__) 
-from src.utils.filesysutil import checkx509, display_top
+from src.utils.filesysutil import checkx509, time
 from src.utils.testutils import setup_logging
 from config.projectconfg import dasksetting, runsetting
 from config.customEvtSel import switch_selections
@@ -28,6 +28,7 @@ def runselections():
     
     if args.diagnose:
         setup_logging()
+        start_time = time.time()
 
     checkx509()
     
@@ -38,10 +39,10 @@ def runselections():
     print("Enter Main Python program: Event selection Mode!")
     print("======================================================================")
     jr.submitjobs(client=None)
-    
-    if args.diagnose:
-        snapshot = tracemalloc.take_snapshot()
-        display_top(snapshot)
+
+    if args.dignose:
+        end_time = time.time()
+        logging.warning(f"Total time: {end_time - start_time:.2f}s")
 
 if __name__ == '__main__':
     runselections()
