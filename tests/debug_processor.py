@@ -174,34 +174,6 @@ def write_skimmed(passed, outdir, dataset, suffix, rtcfg, parquet=False, fields=
     gc.collect()
     return rc
 
-    
-    # async def copy_file_worker(self, filename: str, suffix: str):
-    #     """Worker that copies files to local storage."""
-    #     try:
-    #         dest_file = pjoin(self.copydir, f"copy_{suffix}.root")
-    #         logging.debug(f"Copying {filename} to {dest_file}")
-            
-    #         # Perform the copy operation
-    #         await asyncio.get_event_loop().run_in_executor(
-    #             None,
-    #             XRootDHelper.copy_local,
-    #             filename,
-    #             dest_file
-    #         )
-            
-    #         # Put the copied file info into the queue
-    #         self.copy_queue.put({
-    #             'local_path': dest_file,
-    #             'suffix': suffix,
-    #             'original': filename
-    #         })
-
-    #         logging.debug(f"Finished copying {filename}")
-            
-    #     except Exception as e:
-    #         logging.error(f"Error copying file {filename}: {e}")
-    #         self.copy_queue.put(None)
-
     # def process_file_worker(self, readkwargs={}, writekwargs={}, **kwargs):
     #     """Worker that processes copied files."""
     #     while True:
