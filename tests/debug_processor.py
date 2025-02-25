@@ -137,10 +137,10 @@ def write_skimmed(passed, outdir, dataset, suffix, rtcfg, parquet=False, fields=
                         return None
                     logging.debug(f"Valid indices: {valid_indices}")
                     # Create new dask array with only valid partitions
-                    valid_partitions = dak.concatenate([passed.partitions[i] for i in valid_indices])
-                    computed_data = dask.compute(valid_partitions)[0]
-                    # computed_partitions = [dask.compute(passed.partitions[i])[0] for i in valid_indices]
-                    # computed_data = ak.concatenate(computed_partitions)
+                    # valid_partitions = dak.concatenate([passed.partitions[i] for i in valid_indices])
+                    # computed_data = dask.compute(valid_partitions)[0]
+                    computed_partitions = [dask.compute(passed.partitions[i])[0] for i in valid_indices]
+                    computed_data = ak.concatenate(computed_partitions)
                     output_path = pjoin(outdir, f'{dataset}_{suffix}.root')
                     ak_to_root(output_path, computed_data, tree_name="Events", title="",
                         counter_name=lambda counted: 'n' + counted,
