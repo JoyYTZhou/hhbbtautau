@@ -5,6 +5,7 @@ from line_profiler import LineProfiler
 import gc
 
 from tests.debug_processor import DebugProcessor
+from src.analysis.processor import Processor
 from tests.test_helpers import setup_logging, log_memory_snapshot, analyze_memory, get_size
 from config.customEvtSel import switch_selections
 from dask import config
@@ -49,7 +50,7 @@ def main():
     tracemalloc.start()
     logging.info("Started tracemalloc")
 
-    proc = DebugProcessor(rtcfg_1, preprocessed, transferP=transferP, evtselclass=eventselection)
+    proc = Processor(rtcfg_1, preprocessed, transferP=transferP, evtselclass=eventselection)
 
     profiler = cProfile.Profile()
     profiler.enable()

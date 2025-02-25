@@ -43,46 +43,17 @@
       "num_entries": 687592,
       "uuid": "0f7376a8-61bc-11ee-95cf-3401a8c0beef"
     },
-    "root://xrootd-local.unl.edu:1094//store/mc/Run3Summer22EENanoAODv12/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/NANOAODSIM/forPOG_130X_mcRun3_2022_realistic_postEE_v6-v2/2520000/39816213-50a8-4730-814a-a73f642c2681.root": {
+    "root://xrootd-local.unl.edu:1094//store/mc/Run3Summer22EENanoAODv12/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/NANOAODSIM/forPOG_130X_mcRun3_2022_realistic_postEE_v6-v2/2520000/344faad6-749a-42c3-b635-8d3e04c58de6.root": {
       "object_path": "Events",
       "steps": [
         [
           0,
-          84860
-        ],
-        [
-          84860,
-          169720
-        ],
-        [
-          169720,
-          254580
-        ],
-        [
-          254580,
-          339440
-        ],
-        [
-          339440,
-          424300
-        ],
-        [
-          424300,
-          509160
-        ],
-        [
-          509160,
-          594020
-        ],
-        [
-          594020,
-          678880
+          81307
         ]
       ],
-      "num_entries": 678880,
-      "uuid": "93a1fbaa-6286-11ee-8247-6e01a8c0beef"
-    }
-  },
+      "num_entries": 81307,
+      "uuid": "3bf0d556-6831-11ee-bee9-2701a8c0beef"
+    }},
   "metadata": {
     "shortname": "DYJets"
   }
