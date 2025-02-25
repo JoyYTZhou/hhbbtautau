@@ -117,9 +117,9 @@ if __name__ == '__main__':
     lp = LineProfiler()
     # Add the functions you want to profile
     # lp.add_function(DebugProcessor.run_skims_dummy)
-    lp.add_function(DebugProcessor.run_skims)
+    lp.add_function(Processor.run_skims)
     # lp.add_function(DebugProcessor.writeevts)
-    lp.add_function(DebugProcessor.writedask)
+    lp.add_function(Processor.writeskimmed)
 
     # Run the profiled version
     lp_wrapped = lp(main)
