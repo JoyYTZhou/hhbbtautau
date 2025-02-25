@@ -63,11 +63,20 @@ class DebugProcessor(Processor):
                     future_writes.append(executor.submit(self.writedask, passed, suffix, **writekwargs))
                 except Exception as e:
                     logging.exception(f"Error processing {suffix}: {e}")
-                
-            concurrent.futures.wait(future_cf + future_writes)
-            cutflow_files = [f.result() for f in future_cf]
+            
+            cutflow_files = []
+            for future in concurrent.futures.as_completed(future_cf):
+                cutflow_files.append(future.result())
+                del future
+                gc.collect()
+            
+            for future in concurrent.futures.as_completed(future_writes):
+                rc += future.result()
+                del future
+                gc.collect()
+            
+            del future_cf, future_writes, future_passed, future_loaded
             log_memory(process, "after processing + writing")
-
             gc.collect()
         
             if self.transfer:
@@ -147,7 +156,7 @@ def write_skimmed(passed, outdir, dataset, suffix, rtcfg, parquet=False, fields=
                         storage_options=None,
                         **write_options)
                     logging.debug(f"Finished writing {output_path}")
-                del valid_indices, computed_partitions, computed_data
+                del valid_indices, computed_partitions, computed_data, passed
             else: 
                 logging.error("Passed object does not have npartitions attribute, skipping write")
         except MemoryError as e:
