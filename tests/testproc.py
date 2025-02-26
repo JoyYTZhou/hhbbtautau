@@ -4,7 +4,7 @@ from memory_profiler import memory_usage
 from line_profiler import LineProfiler
 
 from src.analysis.processor import Processor
-from src.utils.testutils import setup_logging, get_large_storage, analyze_memory, get_size, get_reference
+from src.utils.testutils import setup_logging, analyze_memory, get_reference, find_largest_objects
 from config.customEvtSel import switch_selections
 from dask import config
 
@@ -91,11 +91,10 @@ def main():
         stats.sort_stats(pstats.SortKey.TIME)
         stats.print_stats()
 
+    find_largest_objects()
+
     unreachable_objects = gc.garbage
     logging.debug(f"Unreachable objects: {len(unreachable_objects)}")
-
-    logging.debug("Finding large tuples, lists, and dicts...")
-    get_large_storage()
 
     for obj in unreachable_objects[:10]:  # Print first 10 problematic objects
         logging.debug(f"Type: {type(obj)}, Size: {sys.getsizeof(obj)} bytes")
