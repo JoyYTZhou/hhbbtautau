@@ -86,9 +86,7 @@ def main():
         logging.debug("[ Top 10 memory differences ]")
         for stat in top_stats[:10]:
             logging.debug(stat)
-        
-        # Force garbage collection
-        globals().clear()
+
         gc.collect()
         post_gc_memory = memory_usage(-1, interval=.1, timeout=1)[0]
         logging.warning(f"Memory after garbage collection: {post_gc_memory} MiB")
@@ -112,6 +110,15 @@ def main():
 
     for obj in unreachable_objects[:10]:  # Print first 10 problematic objects
         logging.debug(f"Type: {type(obj)}, Size: {sys.getsizeof(obj)} bytes")
+    
+    # Force garbage collection
+    logging.debug("Forcing garbage collection...")
+    for name in dir():
+        if not name.startswith("__"):  # Avoid deleting built-ins
+            del globals()[name]
+    
+    memory_usage = memory_usage(-1, interval=.1, timeout=1)
+    logging.debug(f"Memory usage: {memory_usage} MiB")
     
 if __name__ == '__main__':
     setup_logging()
