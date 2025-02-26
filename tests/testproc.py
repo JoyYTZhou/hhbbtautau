@@ -12,7 +12,6 @@ from dask import config
 pjoin = os.path.join
 
 def main():
-    gc.set_debug(gc.DEBUG_LEAK)
     # Force synchronous scheduler for debugging
     # config.set(scheduler='threads')
     config.set(schedule='synchronous')
@@ -57,7 +56,6 @@ def main():
 
     start_time = time.time()
 
-    # Record initial memory usage
     initial_memory = memory_usage(-1, interval=.1, timeout=1)[0]
     logging.info(f"Initial memory usage: {initial_memory} MiB")
 
@@ -70,7 +68,6 @@ def main():
         cpu_count = os.cpu_count()
         logging.debug("CPU count: %d", cpu_count)
         
-        # Use the new run_load function instead of run_skims
         readkwargs = {'filter_name': ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "HLT*", "MET"]}
         rc = proc.run_skims(readkwargs=readkwargs)
         end_exec_time = time.time()
@@ -81,7 +78,6 @@ def main():
     finally:
         gc.collect()
         
-        # Take final tracemalloc snapshot
         snapshot2 = tracemalloc.take_snapshot()
         log_memory_snapshot(snapshot2, "Final snapshot")
 
