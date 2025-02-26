@@ -4,7 +4,7 @@ from memory_profiler import memory_usage
 from line_profiler import LineProfiler
 
 from src.analysis.processor import Processor
-from src.utils.testutils import setup_logging, analyze_memory, get_reference, find_largest_objects
+from src.utils.testutils import setup_logging, analyze_memory, get_reference
 from config.customEvtSel import switch_selections
 from dask import config
 
@@ -90,8 +90,6 @@ def main():
         stats = pstats.Stats(profiler, stream=f)
         stats.sort_stats(pstats.SortKey.TIME)
         stats.print_stats()
-
-    find_largest_objects()
 
     unreachable_objects = gc.garbage
     logging.debug(f"Unreachable objects: {len(unreachable_objects)}")
