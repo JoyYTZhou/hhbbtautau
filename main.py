@@ -39,7 +39,7 @@ def runselections():
     print("======================================================================")
     jr.submitskims(client=None)
 
-    if args.dignose:
+    if args.diagnose:
         end_time = time.time()
         logging.warning(f"Total time: {end_time - start_time:.2f}s")
 
