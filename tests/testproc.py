@@ -5,7 +5,7 @@ from line_profiler import LineProfiler
 
 from tests.debug_processor import DebugProcessor
 from src.analysis.processor import Processor
-from src.utils.testutils import setup_logging, log_memory_snapshot, analyze_memory, get_size, get_reference
+from src.utils.testutils import setup_logging, get_large_storage, analyze_memory, get_size, get_reference
 from config.customEvtSel import switch_selections
 from dask import config
 
@@ -59,10 +59,6 @@ def main():
     initial_memory = memory_usage(-1, interval=.1, timeout=1)[0]
     logging.info(f"Initial memory usage: {initial_memory} MiB")
 
-    # Take initial tracemalloc snapshot
-    snapshot1 = tracemalloc.take_snapshot()
-    log_memory_snapshot(snapshot1, "Initial snapshot")
-
     try:
         logging.info("Starting sequential file loading...")
         cpu_count = os.cpu_count()
@@ -76,17 +72,6 @@ def main():
         logging.error(f"Error encountered: {str(e)}")
         raise
     finally:
-        gc.collect()
-        
-        snapshot2 = tracemalloc.take_snapshot()
-        log_memory_snapshot(snapshot2, "Final snapshot")
-
-        # Compare snapshots
-        top_stats = snapshot2.compare_to(snapshot1, 'lineno')
-        logging.debug("[ Top 10 memory differences ]")
-        for stat in top_stats[:10]:
-            logging.debug(stat)
-
         gc.collect()
         post_gc_memory = memory_usage(-1, interval=.1, timeout=1)[0]
         logging.warning(f"Memory after garbage collection: {post_gc_memory} MiB")
@@ -109,6 +94,9 @@ def main():
 
     unreachable_objects = gc.garbage
     logging.debug(f"Unreachable objects: {len(unreachable_objects)}")
+
+    logging.debug("Finding large tuples, lists, and dicts...")
+    get_large_storage()
 
     for obj in unreachable_objects[:10]:  # Print first 10 problematic objects
         logging.debug(f"Type: {type(obj)}, Size: {sys.getsizeof(obj)} bytes")
