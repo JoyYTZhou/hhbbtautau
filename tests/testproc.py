@@ -1,8 +1,7 @@
-import os, json, cProfile, argparse, time, pstats, logging, tracemalloc
+import os, json, cProfile, argparse, time, pstats, logging, tracemalloc, sys, gc
 from dask.distributed import Client, performance_report
 from memory_profiler import memory_usage
 from line_profiler import LineProfiler
-import gc
 
 from tests.debug_processor import DebugProcessor
 from src.analysis.processor import Processor
@@ -13,6 +12,7 @@ from dask import config
 pjoin = os.path.join
 
 def main():
+    gc.set_debug(gc.DEBUG_LEAK)
     # Force synchronous scheduler for debugging
     # config.set(scheduler='threads')
     config.set(schedule='synchronous')
@@ -92,6 +92,7 @@ def main():
             logging.debug(stat)
         
         # Force garbage collection
+        globals().clear()
         gc.collect()
         post_gc_memory = memory_usage(-1, interval=.1, timeout=1)[0]
         logging.warning(f"Memory after garbage collection: {post_gc_memory} MiB")
@@ -109,6 +110,12 @@ def main():
         stats = pstats.Stats(profiler, stream=f)
         stats.sort_stats(pstats.SortKey.TIME)
         stats.print_stats()
+
+    unreachable_objects = gc.garbage
+    logging.debug(f"Unreachable objects: {len(unreachable_objects)}")
+
+    for obj in unreachable_objects[:10]:  # Print first 10 problematic objects
+        logging.debug(f"Type: {type(obj)}, Size: {sys.getsizeof(obj)} bytes")
     
 if __name__ == '__main__':
     setup_logging()
