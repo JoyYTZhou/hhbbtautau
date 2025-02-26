@@ -3,7 +3,6 @@ from dask.distributed import Client, performance_report
 from memory_profiler import memory_usage
 from line_profiler import LineProfiler
 
-from tests.debug_processor import DebugProcessor
 from src.analysis.processor import Processor
 from src.utils.testutils import setup_logging, get_large_storage, analyze_memory, get_size, get_reference
 from config.customEvtSel import switch_selections

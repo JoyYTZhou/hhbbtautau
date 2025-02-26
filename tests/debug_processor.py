@@ -3,7 +3,7 @@ from uproot.writing._dask_write import ak_to_root
 import concurrent.futures
 import awkward as ak
 import dask_awkward as dak
-from src.analysis.processor import Processor, writeCF, process_file
+from src.analysis.processor import Processor, writeCF
 
 from src.utils.filesysutil import pjoin, XRootDHelper
 from src.utils.testutils import log_memory
@@ -17,72 +17,6 @@ class DebugProcessor(Processor):
     def writedask(self, passed, suffix, **kwargs):
         with self.write_skim_semaphore:
             return write_skimmed(passed, self.outdir, self.dataset, suffix, self.rtcfg, **kwargs)
-
-    def run_skims(self, write_npz=False, max_workers=2, readkwargs={}, writekwargs={}, **kwargs) -> int:
-        logging.debug(f"Expected to see {len(self.dsdict['files'])} outputs")
-        rc = 0
-        import psutil
-        process = psutil.Process()
-
-        available_mem = psutil.virtual_memory().available / (1024**3)
-        logging.debug(f"Available system memory: {available_mem:.2f} GB")
-
-        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-            log_memory(process, "before processing")
-            future_loaded = parallel_copy_and_load(
-                fileargs={"files": self.dsdict["files"]},
-                copydir=self.copydir,
-                executor=executor,
-                rtcfg=self.rtcfg,
-                read_args=readkwargs)
-            
-            future_cf, future_writes, future_passed = [], [], {}
-            
-            for future in concurrent.futures.as_completed(future_loaded.values()):
-                filename = next(f for f, future in future_loaded.items() if future == future)
-                
-                try: 
-                    events, suffix = future.result()
-                    future_passed[suffix] = executor.submit(self.evtselclass(**self.evtsel_kwargs).callevtsel, events)
-                except Exception as e:
-                    logging.exception(f"Error copying and loading {filename}: {e}")
-                    gc.collect()
-                
-            for future in concurrent.futures.as_completed(future_passed.values()):
-                suffix = next(s for s, f in future_passed.items() if f == future)
-
-                try:
-                    log_memory(process, f"before writing for file {suffix}")
-                    passed, evtsel_state = future.result()
-
-                    future_cf.append(executor.submit(writeCF, evtsel_state, suffix, self.outdir, self.dataset))
-                    future_writes.append(executor.submit(self.writedask, passed, suffix, **writekwargs))
-                except Exception as e:
-                    logging.exception(f"Error processing {suffix}: {e}")
-            
-            cutflow_files = []
-            for future in concurrent.futures.as_completed(future_cf):
-                cutflow_files.append(future.result())
-                del future
-                gc.collect()
-            
-            for future in concurrent.futures.as_completed(future_writes):
-                rc += future.result()
-                del future
-                gc.collect()
-            
-            del future_cf, future_writes, future_passed, future_loaded
-            log_memory(process, "after processing + writing")
-            gc.collect()
-        
-            if self.transfer:
-                for cutflow_file in cutflow_files:
-                    self.filehelper.transfer_files(self.outdir, self.transfer, filepattern=cutflow_file, remove=True)
-
-            if not self.rtcfg.get("REMOTE_LOAD", True):
-                self.filehelper.remove_files(self.copydir)
-        return rc
-    
 
 def write_skimmed(passed, outdir, dataset, suffix, rtcfg, parquet=False, fields=None) -> int:
     """
