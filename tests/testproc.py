@@ -55,7 +55,7 @@ def main():
     profiler.enable()
 
     start_time = time.time()
-
+    
     initial_memory = memory_usage(-1, interval=.1, timeout=1)[0]
     logging.info(f"Initial memory usage: {initial_memory} MiB")
 
@@ -117,8 +117,8 @@ def main():
         if not name.startswith("__"):  # Avoid deleting built-ins
             del globals()[name]
     
-    memory_usage = memory_usage(-1, interval=.1, timeout=1)
-    logging.debug(f"Memory usage: {memory_usage} MiB")
+    final_memory = memory_usage(-1, interval=.1, timeout=1)
+    logging.debug(f"Memory usage: {final_memory} MiB")
     
 if __name__ == '__main__':
     setup_logging()
