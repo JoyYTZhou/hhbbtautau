@@ -5,7 +5,7 @@ from line_profiler import LineProfiler
 
 from tests.debug_processor import DebugProcessor
 from src.analysis.processor import Processor
-from src.utils.testutils import setup_logging, log_memory_snapshot, analyze_memory, get_size
+from src.utils.testutils import setup_logging, log_memory_snapshot, analyze_memory, get_size, get_reference
 from config.customEvtSel import switch_selections
 from dask import config
 
@@ -94,6 +94,8 @@ def main():
         logging.warning("Analyzing remaining objects...")
         analyze_memory()
 
+        get_reference()
+
     end_time = time.time()
     logging.warning(f"Finished processing events in {(end_time-start_time)/60:.2f} minutes")
     profiler.disable()
@@ -113,8 +115,8 @@ def main():
     
     # Force garbage collection
     logging.debug("Forcing garbage collection...")
-    for name in dir():
-        if not name.startswith("__"):  # Avoid deleting built-ins
+    for name in list(globals()):  # Copy keys before iteration
+        if not name.startswith("__"):
             del globals()[name]
     
     final_memory = memory_usage(-1, interval=.1, timeout=1)
