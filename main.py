@@ -26,7 +26,7 @@ def runselections():
     args = parser.parse_args()
     
     if args.diagnose:
-        setup_logging()
+        setup_logging(console_level=logging.DEBUG)
         start_time = time.time()
 
     checkx509()
@@ -41,7 +41,7 @@ def runselections():
 
     if args.diagnose:
         end_time = time.time()
-        logging.warning(f"Total time: {end_time - start_time:.2f}s")
+        logging.warning(f"Finished processing events in {(end_time-start_time)/60:.2f} minutes")
 
 if __name__ == '__main__':
     runselections()
