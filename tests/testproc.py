@@ -77,8 +77,12 @@ def main():
 
         logging.warning("Analyzing remaining objects...")
         analyze_memory()
-
         get_reference()
+
+        del proc
+        logging.warning("Deleted Processor object, analyzing memory again...")
+        analyze_memory()
+        
 
     end_time = time.time()
     logging.warning(f"Finished processing events in {(end_time-start_time)/60:.2f} minutes")
