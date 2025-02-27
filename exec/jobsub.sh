@@ -25,6 +25,7 @@ shift $((OPTIND -1))
 DYNACONF_ENV=$1
 PROCESS=$2
 YEAR=$3
+BATCHSIZE=$4
 
 cd ..
 source scripts/venv.sh $DYNACONF_ENV
@@ -46,7 +47,7 @@ fi
 
 FILENAME="${JOB_DIRNAME}/${PROCESS_KEY}_${YEAR_KEY}*.json"
 rm -rf ${JOB_DIRNAME}/${PROCESS_KEY}_${YEAR_KEY}*.json
-python3 genjobs.py ${PROCESS_KEY}_${YEAR_KEY}
+python3 genjobs.py ${PROCESS_KEY}_${YEAR_KEY} $BATCHSIZE
 
 SUBFILENAME=${DYNACONF_ENV}_${PROCESS}_${YEAR}.sub
 
