@@ -4,7 +4,7 @@ from memory_profiler import memory_usage
 from line_profiler import LineProfiler
 
 from src.analysis.processor import Processor
-from src.utils.testutils import setup_logging, analyze_memory, get_reference, find_reference_cycles, report_rss_memory, analyze_memory_pympler
+from src.utils.testutils import setup_logging, analyze_memory, get_reference, find_reference_cycles, report_rss_memory, check_open_files
 from config.customEvtSel import switch_selections
 from dask import config
 
@@ -72,6 +72,13 @@ def main():
         raise
     finally:
         gc.collect()
+
+        count, files = check_open_files()
+        if count > 0:
+            logging.warning(f"Found {count} open files: {files}")
+            for file in files:
+                logging.warning(f"File {file} still open.")
+
         post_gc_memory = memory_usage(-1, interval=.1, timeout=1)[0]
         logging.warning(f"Memory after garbage collection: {post_gc_memory} MiB")
 
@@ -86,8 +93,6 @@ def main():
     profiler.disable()
 
     find_reference_cycles()
-
-    analyze_memory_pympler()
 
     # Write profiling results
     stats_filename = 'cprofile_output.txt'
