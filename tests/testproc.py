@@ -1,10 +1,10 @@
-import os, json, cProfile, argparse, time, pstats, logging, tracemalloc, sys, gc
+import os, json, cProfile, argparse, time, pstats, logging, tracemalloc, gc
 from dask.distributed import Client, performance_report
 from memory_profiler import memory_usage
 from line_profiler import LineProfiler
 
 from src.analysis.processor import Processor
-from src.utils.testutils import setup_logging, analyze_memory, get_reference, find_reference_cycles
+from src.utils.testutils import setup_logging, analyze_memory, get_reference, find_reference_cycles, report_rss_memory, analyze_memory_pympler
 from config.customEvtSel import switch_selections
 from dask import config
 
@@ -80,12 +80,14 @@ def main():
         get_reference()
 
         del proc
-        logging.warning("Deleted Processor object, analyzing memory again...")
-        analyze_memory()
+        post_proc_memory = memory_usage(-1, interval=.1, timeout=1)[0]
+        logging.warning(f"Memory after Processor deletion: {post_proc_memory} MiB")
 
     profiler.disable()
 
     find_reference_cycles()
+
+    analyze_memory_pympler()
 
     # Write profiling results
     stats_filename = 'cprofile_output.txt'
@@ -93,18 +95,10 @@ def main():
         stats = pstats.Stats(profiler, stream=f)
         stats.sort_stats(pstats.SortKey.TIME)
         stats.print_stats()
-
-    unreachable_objects = gc.garbage
-    logging.debug(f"Unreachable objects: {len(unreachable_objects)}")
-
-    for obj in unreachable_objects[:10]:  # Print first 10 problematic objects
-        logging.debug(f"Type: {type(obj)}, Size: {sys.getsizeof(obj)} bytes")
     
-    # Force garbage colle# ction
-    # logging.debug("Forcing garbage collection...")
-    # for name in list(globals()):  # Copy keys before iteration
-        # if not name.startswith("__"):
-            # del globals()[name]
+    report_rss_memory()
+
+
     
 if __name__ == '__main__':
     setup_logging()
