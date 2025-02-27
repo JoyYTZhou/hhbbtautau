@@ -27,6 +27,8 @@ PROCESS=$2
 YEAR=$3
 BATCHSIZE=$4
 
+echo "Batch size: $BATCHSIZE"
+
 cd ..
 source scripts/venv.sh $DYNACONF_ENV
 cd exec
