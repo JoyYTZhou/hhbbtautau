@@ -4,7 +4,7 @@ from memory_profiler import memory_usage
 from line_profiler import LineProfiler
 
 from src.analysis.processor import Processor
-from src.utils.testutils import setup_logging, analyze_memory, get_reference, find_reference_cycles, report_rss_memory, check_open_files
+from src.utils.testutils import setup_logging, check_open_files, analyze_memory_status
 from config.customEvtSel import switch_selections
 from dask import config
 
@@ -83,16 +83,13 @@ def main():
         logging.warning(f"Memory after garbage collection: {post_gc_memory} MiB")
 
         logging.warning("Analyzing remaining objects...")
-        analyze_memory()
-        get_reference()
+        analyze_memory_status()
 
         del proc
         post_proc_memory = memory_usage(-1, interval=.1, timeout=1)[0]
         logging.warning(f"Memory after Processor deletion: {post_proc_memory} MiB")
 
     profiler.disable()
-
-    find_reference_cycles()
 
     # Write profiling results
     stats_filename = 'cprofile_output.txt'
@@ -101,9 +98,6 @@ def main():
         stats.sort_stats(pstats.SortKey.TIME)
         stats.print_stats()
     
-    report_rss_memory()
-
-
     
 if __name__ == '__main__':
     setup_logging()
