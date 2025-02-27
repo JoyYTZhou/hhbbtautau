@@ -4,7 +4,7 @@ from memory_profiler import memory_usage
 from line_profiler import LineProfiler
 
 from src.analysis.processor import Processor
-from src.utils.testutils import setup_logging, analyze_memory, get_reference
+from src.utils.testutils import setup_logging, analyze_memory, get_reference, find_reference_cycles
 from config.customEvtSel import switch_selections
 from dask import config
 
@@ -82,11 +82,10 @@ def main():
         del proc
         logging.warning("Deleted Processor object, analyzing memory again...")
         analyze_memory()
-        
 
-    end_time = time.time()
-    logging.warning(f"Finished processing events in {(end_time-start_time)/60:.2f} minutes")
     profiler.disable()
+
+    find_reference_cycles()
 
     # Write profiling results
     stats_filename = 'cprofile_output.txt'
@@ -101,14 +100,11 @@ def main():
     for obj in unreachable_objects[:10]:  # Print first 10 problematic objects
         logging.debug(f"Type: {type(obj)}, Size: {sys.getsizeof(obj)} bytes")
     
-    # Force garbage collection
-    logging.debug("Forcing garbage collection...")
-    for name in list(globals()):  # Copy keys before iteration
-        if not name.startswith("__"):
-            del globals()[name]
-    
-    final_memory = memory_usage(-1, interval=.1, timeout=1)
-    logging.debug(f"Memory usage: {final_memory} MiB")
+    # Force garbage colle# ction
+    # logging.debug("Forcing garbage collection...")
+    # for name in list(globals()):  # Copy keys before iteration
+        # if not name.startswith("__"):
+            # del globals()[name]
     
 if __name__ == '__main__':
     setup_logging()
