@@ -2,7 +2,7 @@ import os, gc, argparse, logging, time
 
 PARENT_DIR = os.path.dirname(__file__) 
 from src.utils.filesysutil import checkx509
-from src.utils.testutils import setup_logging, analyze_memory
+from src.utils.testutils import setup_logging, analyze_memory_status
 from config.projectconfg import dasksetting, runsetting
 from config.customEvtSel import switch_selections
 
@@ -43,7 +43,7 @@ def runselections():
         end_time = time.time()
         logging.warning(f"Finished processing events in {(end_time-start_time)/60:.2f} minutes")
         logging.debug("Analyzing memory usage and debug potential memory leak...")
-        analyze_memory()
+        analyze_memory_status(True)
 
 
 if __name__ == '__main__':

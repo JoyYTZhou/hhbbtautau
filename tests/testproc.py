@@ -4,7 +4,7 @@ from memory_profiler import memory_usage
 from line_profiler import LineProfiler
 
 from src.analysis.processor import Processor
-from src.utils.testutils import setup_logging, check_open_files, analyze_memory_status
+from src.utils.testutils import setup_logging, check_open_files, analyze_memory_status,
 from config.customEvtSel import switch_selections
 from dask import config
 
@@ -83,7 +83,7 @@ def main():
         logging.warning(f"Memory after garbage collection: {post_gc_memory} MiB")
 
         logging.warning("Analyzing remaining objects...")
-        analyze_memory_status()
+        analyze_memory_status(True)
 
         del proc
         post_proc_memory = memory_usage(-1, interval=.1, timeout=1)[0]
@@ -97,6 +97,8 @@ def main():
         stats = pstats.Stats(profiler, stream=f)
         stats.sort_stats(pstats.SortKey.TIME)
         stats.print_stats()
+    
+    
     
     
 if __name__ == '__main__':
