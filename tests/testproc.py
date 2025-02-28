@@ -98,9 +98,14 @@ def main():
         stats.sort_stats(pstats.SortKey.TIME)
         stats.print_stats()
     
+    start_time = time.time()
+    
     force_release_memory()
     post_release_memory = memory_usage(-1, interval=.1, timeout=1)[0]
     logging.warning(f"Memory after forced memory release: {post_release_memory} MiB")
+
+    end_time = time.time()
+    logging.warning(f"Finished releasing memory in {(end_time-start_time)/60:.2f} minutes")
     
     
 if __name__ == '__main__':
