@@ -64,7 +64,7 @@ def main():
         logging.debug("CPU count: %d", cpu_count)
         
         readkwargs = {'filter_name': ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "HLT*", "MET"]}
-        rc = proc.run_skims(readkwargs=readkwargs)
+        rc = proc.run_skims(frag_threshold=3, readkwargs=readkwargs)
         end_exec_time = time.time()
         logging.warning(f"Finished processing events in {(end_exec_time-start_time)/60:.2f} minutes")
     except Exception as e:
