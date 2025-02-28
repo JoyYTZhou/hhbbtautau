@@ -21,10 +21,11 @@ echo "=================================================================="
 rm ${ENV_NAME}.tar.gz
 rm -r ${ENV_NAME}
 
-python -m venv ${ENV_NAME}
+python -m venv ${ENV_NAME} --system-site-packages
 echo "creating new venv..."
 source ${ENV_NAME}/bin/activate
 
+pip install --upgrade pip
 python -m pip install coffea --upgrade --no-cache-dir
 echo "Installed coffea"
 python -m pip install dynaconf --no-cache-dir
@@ -42,6 +43,10 @@ echo "Installed matplotlib"
 python -m pip install dask --upgrade --no-cache-dir
 echo "Installed dask"
 python -m pip install dask_awkward --upgrade --no-cache-dir
+python -m pip install pympler --upgrade --no-cache-dir
+python -m pip install memory-profiler --upgrade --no-cache-dir
+python -m pip install line-profiler --upgrade --no-cache-dir
+python -m pip install "dask[distributed]" --upgrade --no-cache-dir
 
 deactivate
 
