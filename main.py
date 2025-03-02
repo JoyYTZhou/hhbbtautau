@@ -26,7 +26,7 @@ def runselections():
     args = parser.parse_args()
     
     if args.diagnose:
-        setup_logging(console_level=logging.DEBUG)
+        setup_logging(console_level=logging.DEBUG, log_to_file=False)
         start_time = time.time()
 
     checkx509()
