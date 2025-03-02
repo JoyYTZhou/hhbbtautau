@@ -44,7 +44,7 @@ def runselections():
         end_time = time.time()
         logging.warning(f"Finished processing events in {(end_time-start_time)/60:.2f} minutes")
         logging.debug("Analyzing memory usage and debug potential memory leak...")
-        analyze_memory_status(True)
+        analyze_memory_status(use_pympler=True)
 
 
 if __name__ == '__main__':

@@ -84,7 +84,7 @@ def main():
         logging.warning(f"Memory after garbage collection: {post_gc_memory} MiB")
 
         logging.warning("Analyzing remaining objects...")
-        analyze_memory_status(True)
+        analyze_memory_status(use_pympler=True)
 
         del proc
         post_proc_memory = memory_usage(-1, interval=.1, timeout=1)[0]
