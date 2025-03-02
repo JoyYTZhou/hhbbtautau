@@ -2,7 +2,8 @@ import os, gc, argparse, logging, time
 
 PARENT_DIR = os.path.dirname(__file__) 
 from src.utils.filesysutil import checkx509
-from src.utils.testutils import setup_logging, analyze_memory_status
+from src.utils.ioutil import setup_logging
+from src.utils.memoryutil import analyze_memory_status
 from config.projectconfg import dasksetting, runsetting
 from config.customEvtSel import switch_selections
 
