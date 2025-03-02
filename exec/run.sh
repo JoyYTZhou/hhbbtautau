@@ -46,5 +46,8 @@ checkproxy
 # export PYTHONFAULTHANDLER=1
 # export PYTHONVERBOSE=1
 
+export MALLOC_ARENA_MAX=4
+export MALLOC_MMAP_THRESHOLD_=1048576
+
 python -u main.py --input ${JSONPATH} --diagnose
 # gdb --args python -u main.py --input ${JSONPATH} --diagnose
