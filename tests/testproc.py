@@ -4,8 +4,9 @@ from memory_profiler import memory_usage
 from line_profiler import LineProfiler
 
 from src.analysis.processor import Processor
-from src.utils.testutils import setup_logging, check_open_files, analyze_memory_status, force_release_memory
 from config.customEvtSel import switch_selections
+from src.utils.memoryutil import analyze_memory_status, force_release_memory
+from src.utils.ioutil import setup_logging, check_open_files
 from dask import config
 
 pjoin = os.path.join
