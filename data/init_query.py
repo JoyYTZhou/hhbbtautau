@@ -41,11 +41,7 @@ def query_datasets():
     print("\nRunning DAS query:", query)
 
     try:
-        result = runcom('dasgoclient -query="{}"'.format(query),
-            capture_output=True,
-            text=True,
-            check=True
-        )
+        result = runcom(f'dasgoclient -query="{query}"', shell=True, capture_output=True)
         datasets = result.stdout.strip().split("\n")
         datasets = [ds for ds in datasets if ds]  # Remove empty lines
 
