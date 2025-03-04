@@ -39,8 +39,7 @@ def query_datasets():
     print("\nRunning DAS query:", query)
 
     try:
-        result = subprocess.run(
-            ["dasgoclient", "-query", query],
+        result = subprocess.run(command='dasgoclient -query="{}"'.format(query),
             capture_output=True,
             text=True,
             check=True
