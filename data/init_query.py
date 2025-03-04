@@ -26,9 +26,9 @@ def query_datasets():
         return []
 
     # Construct DAS query
-    query = f"dataset dataset={prefix}*/*{year}*/{data_tier}*"
+    query = f"dataset={prefix}*/*{year}*/{data_tier}*"
     if nanoaod_version:
-        query = f"dataset dataset={prefix}*/*{year}*v{nanoaod_version}*/{data_tier}*"
+        query = f"dataset={prefix}*/*{year}*v{nanoaod_version}*/{data_tier}*"
 
     print("\nRunning DAS query:", query)
 
