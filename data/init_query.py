@@ -1,5 +1,6 @@
 import subprocess
-from tabulate import tabulate
+from rich.console import Console
+from rich.table import Table
 
 runcom = subprocess.run
 
@@ -14,7 +15,7 @@ def query_datasets():
     
     # Prompt user for input
     prefix = input("Enter dataset name prefix (e.g., TTToSemiLeptonic): ").strip()
-    year = input("Enter year (e.g., 2022PostEE): ").strip()
+    year = input("Enter year (e.g., Summer23): ").strip()
     nanoaod_version = input("Enter NANOAOD version (or press enter to skip): ").strip()
 
     print("Select data tier: 1. NANOAOD 2. MINIAOD")
@@ -34,27 +35,33 @@ def query_datasets():
         return []
 
     # Construct DAS query
-    query = f"dataset={prefix}*/*{year}*/{data_tier}*"
+    query = f"dataset=/{prefix}*/*{year}*/{data_tier}*"
     if nanoaod_version:
-        query = f"dataset={prefix}*/*{year}*v{nanoaod_version}*/{data_tier}*"
+        query = f"dataset=/{prefix}*/*{year}*v{nanoaod_version}*/{data_tier}*"
 
     print("\nRunning DAS query:", query)
 
     try:
-        result = runcom(f'dasgoclient -query="{query}"', shell=True, capture_output=True)
+        result = runcom(f'dasgoclient -query="{query}"', shell=True, capture_output=True, text=True)
         datasets = result.stdout.strip().split("\n")
-        datasets = [ds for ds in datasets if ds]  # Remove empty lines
+        datasets = [ds for ds in datasets if ds]
 
         if not datasets:
             print("\nNo matching datasets found.")
             return None
+        
+        console = Console()
 
-        # Print results in a table format
-        table_data = [[i, ds] for i, ds in enumerate(datasets, 1)]
-        print("\nMatching Datasets:\n")
-        print(tabulate(table_data, headers=["Index", "Dataset Name"], tablefmt="grid"))
+        table = Table(title="Matching Datasets", show_lines=True)
 
-        # Prompt user to select a dataset
+        table.add_column("Index", style="bold cyan")
+        table.add_column("Dataset Name", style="bold yellow")
+
+        for i, ds in enumerate(datasets, 1):
+            table.add_row(str(i), ds)
+
+        console.print(table)
+
         while True:
             try:
                 selection = int(input("\nEnter the index of the dataset to select: "))
