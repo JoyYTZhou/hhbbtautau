@@ -1,6 +1,8 @@
 import subprocess
 from tabulate import tabulate
 
+runcom = subprocess.run
+
 def query_datasets():
     """
     Prompts the user for dataset search parameters, queries DAS using dasgoclient,
@@ -39,7 +41,7 @@ def query_datasets():
     print("\nRunning DAS query:", query)
 
     try:
-        result = subprocess.run(command='dasgoclient -query="{}"'.format(query),
+        result = runcom('dasgoclient -query="{}"'.format(query),
             capture_output=True,
             text=True,
             check=True
