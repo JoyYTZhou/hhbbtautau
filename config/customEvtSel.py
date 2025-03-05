@@ -60,7 +60,6 @@ class tightskimEvtSel(TriggerEventSelections):
         self.objsel.add_multiple({"Electron Veto": elec_nummask,
                                 "Muon Veto": muon_nummask})
 
-
 class VBFskimEvtSel(tightskimEvtSel):
     def __init__(self, trigcfg=vbf_trigsel, objcfg=vbf_objsel, mapcfg=default_mapcfg, sequential=False):
         super().__init__(trigcfg, objcfg, mapcfg, sequential)
