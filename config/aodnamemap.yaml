@@ -1,4 +1,4 @@
-default:
+default: # provide additional name mappings besides four-momentum
   Tau:
     dxy: Tau_dxy
     dz: Tau_dz
@@ -8,6 +8,7 @@ default:
     idvsmu: Tau_idDeepTau2017v2p1VSmu
     idvse: Tau_idDeepTau2017v2p1VSe
     genflav: Tau_genPartFlav
+    nSVs: Tau_nSVs
   Electron:
     cbtightid: Electron_cutBased
     mvaisoid: Electron_mvaIso_WP90
@@ -23,6 +24,11 @@ default:
     btag: Jet_btagDeepFlavB
     # pnetbtag: Jet_btagPNetB
     jetid: Jet_jetId
+    nconstituents: Jet_nConstituents
+    hadronEfraction: Jet_neHEF
+    EMfraction: Jet_neEmEF
+    nSVs: Jet_nSVs
+
   GenPart:
     pdgid: GenPart_pdgId
     motherid: GenPart_genPartIdxMother

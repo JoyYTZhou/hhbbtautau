@@ -13,11 +13,9 @@ def switch_selections(sel_name):
         'tightskim': tightskimEvtSel,
         'vetoskim': skimEvtSel,
         'vbfskim': VBFskimEvtSel,
-        'training_prelim': trainingEvtSel,
-        'prelim_onelooseb': ControlEvtSel,
+        'prelim_onelooseb': OneBEvtSel,
         'prelim_twolooseb': SignalEvtSel,
         'prelim_zerolooseb': ZeroBtagEvtSel, 
-        'prelim_total': PrelimEvtSel
     }
     return selections.get(sel_name, BaseEventSelections)
 
@@ -41,20 +39,22 @@ class tightskimEvtSel(TriggerEventSelections):
         electron = self.getObj("Electron", events)
         muon = self.getObj("Muon", events)
 
-        e_mask = (electron.ptmask(opr.ge) & \
-                electron.absdxymask(opr.le) & \
-                electron.absetamask(opr.le) & \
-                electron.absdzmask(opr.le) & \
+        e_mask = (electron.common_mask('pt', opr.ge) & \
+                electron.common_mask('dxy', opr.le) & \
+                electron.common_mask('dz', opr.le) & \
+                electron.common_mask('eta', opr.le) & \
                 electron.custommask('mvaisoid', opr.eq)
                 )
+
         elec_nummask = electron.vetomask(e_mask)
 
-        m_mask = (muon.ptmask(opr.ge) & \
-                muon.absdxymask(opr.le) & \
-                muon.absetamask(opr.le) & \
-                muon.absdzmask(opr.le) & \
+        m_mask = (muon.common_mask('pt', opr.ge) & \
+                muon.common_mask('dxy', opr.le) & \
+                muon.common_mask('dz', opr.le) & \
+                muon.common_mask('eta', opr.le) & \
                 muon.custommask('mediumid', opr.eq) & \
                 muon.custommask('isoid04', opr.le))
+
         muon_nummask = muon.vetomask(m_mask)
 
         self.objsel.add_multiple({"Electron Veto": elec_nummask,
@@ -125,33 +125,7 @@ class twoTauEvtSel(BaseEventSelections):
 
         return events
 
-class trainingEvtSel(twoTauEvtSel):
-    def __init__(self, trigcfg=loose_trigsel, objcfg=loose_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
-        super().__init__(trigcfg, objcfg, mapcfg, sequential)
-
-    def setevtsel(self, events) -> None:
-        events = self.seltwotaus(events)
-        
-        jet = self.getObj("Jet", events)
-    
-        def jobjmask(jet: 'Object'):
-            j_mask = (jet.ptmask(opr.ge) & jet.absetamask(opr.le))
-            tau_ldvec = Object.fourvector(self.objcollect['LDTau'], sort=False)
-            tau_sdvec = Object.fourvector(self.objcollect['SDTau'], sort=False)
-            jetdR_mask = jet.dRwOther(tau_ldvec, 0.4) & jet.dRwOther(tau_sdvec, 0.4)
-            return j_mask & jetdR_mask
-        
-        jet_nummask = jet.numselmask(jobjmask(jet), opr.ge)
-        jet, events = self.selobjhelper(events, '>=2 ak4 jets', jet, jet_nummask)
-        
-        jet_mask = jobjmask(jet)
-        ld_j, sd_j = jet.getldsd(mask=jet_mask, sort_by='btag')
-        self.objcollect['LDBjet'] = ld_j
-        self.objcollect['SDBjet'] = sd_j
-
-        self.saveWeights(events)
-
-class ControlEvtSel(twoTauEvtSel):
+class OneBEvtSel(twoTauEvtSel):
     def __init__(self, trigcfg=loose_trigsel, objcfg=loose_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
         super().__init__(trigcfg, objcfg, mapcfg, sequential)
 
@@ -172,6 +146,8 @@ class ControlEvtSel(twoTauEvtSel):
 
         jet_nummask = jet.maskredmask((jobjmask(jet) & jet.custommask('btag', opr.ge)), opr.eq, count=bjetcount)
         jet, events = self.selobjhelper(events, f'=={bjetcount} Loose B-tagged', jet, jet_nummask)
+
+        self.objcollect['n_Jet'] = ak.num(jet, axis=1)
         
         jet_mask = (jobjmask(jet) & jet.custommask('btag', opr.ge))
         ld_j = jet.getld(mask=jet_mask)
@@ -210,7 +186,7 @@ class SignalEvtSel(twoTauEvtSel):
 
         self.saveWeights(events)
 
-class ZeroBtagEvtSel(ControlEvtSel):
+class ZeroBtagEvtSel(OneBEvtSel):
     def __init__(self, trigcfg=loose_trigsel, objcfg=loose_objsel, mapcfg=default_mapcfg, sequential=True) -> None:
         super().__init__(trigcfg, objcfg, mapcfg, sequential)
     
