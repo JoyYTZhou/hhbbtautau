@@ -9,8 +9,8 @@ OUTENDPATTERN = ["output.csv", "cutflow.csv"]
 
 [SKIM]
 SEL_NAME = 'vbfskim'
+PROC_NAME = 'skim'
 JOB_PATH = 'preprocessed'
-DELAYED_OPEN = true
 REMOTE_LOAD = false
 JOB_DIRNAME = 'skimjson'
 TRANSFER_PATH = '/store/user/joyzhou/vbfskim'

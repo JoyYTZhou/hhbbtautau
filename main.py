@@ -38,7 +38,7 @@ def runselections():
     print("======================================================================")
     print("Enter Main Python program: Event selection Mode!")
     print("======================================================================")
-    jr.submitskims(client=None, proc_kwargs={})
+    jr.submitjobs(client=None, proc_kwargs={})
 
     if args.diagnose:
         end_time = time.time()
