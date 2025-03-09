@@ -4,8 +4,9 @@ PARENT_DIR = os.path.dirname(__file__)
 from src.utils.filesysutil import checkx509
 from src.utils.ioutil import setup_logging
 from src.utils.memoryutil import analyze_memory_status
-from config.projectconfg import dasksetting, runsetting
+from config.projectconfg import runsetting
 from config.customEvtSel import switch_selections
+from config.customProc import switch_processors
 
 def runselections():
     gc.enable()
@@ -33,8 +34,9 @@ def runselections():
     checkx509()
     
     selectionclass = switch_selections(runsetting.SEL_NAME)
+    proc_class = switch_processors(runsetting.PROC_NAME)
 
-    jr = JobRunner(runsetting, args.input, selectionclass, dasksetting)
+    jr = JobRunner(runsetting, args.input, selectionclass, proc_class, None)
     print("======================================================================")
     print("Enter Main Python program: Event selection Mode!")
     print("======================================================================")

@@ -33,12 +33,6 @@ runsetting = Dynaconf(
     settings_files=['config/runsetting.toml']
 )
 
-dasksetting = Dynaconf(
-    root_path = root_path,
-    environments=True,
-    settings_file=['config/dasksetting.toml']
-)
-
 cleansetting = Dynaconf(
     root_path=root_path,
     environments=True,
