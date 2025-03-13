@@ -11,7 +11,6 @@ OUTENDPATTERN = ["output.csv", "cutflow.csv"]
 SEL_NAME = 'vbfskim'
 PROC_NAME = 'skim'
 JOB_PATH = 'preprocessed'
-REMOTE_LOAD = false
 JOB_DIRNAME = 'skimjson'
 TRANSFER_PATH = '/store/user/joyzhou/vbfskim'
 FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "HLT*", "MET"]
