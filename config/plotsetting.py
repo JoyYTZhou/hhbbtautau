@@ -55,6 +55,15 @@ H_mass = {
         "plot": {'xlabel': r'Invariant Mass (2b) (GeV)'}},
 }
 
+H_pt = {
+    "DiTau_pt": {
+        "hist": {'bins': 25, 'range': [0,500]},
+        "plot": {'xlabel': r'Visible $P_t$ (2$\tau$) (GeV)'}},
+    "DiJet_pt": {
+        "hist": {'bins': 20, 'range': [0,400]},
+        "plot": {'xlabel': r'Invariant $P_t$ (2b) (GeV)'}}
+    }
+
 
 bjetbytag_pt = {
     "LDBjetBYtag_pt": {
