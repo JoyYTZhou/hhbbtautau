@@ -1,6 +1,7 @@
 [SKIM]
 DIRNAME = 'vbfskim'
-METADATA = "@format {env[DATA_DIR]}/availableMC" 
+DATA_DIR = "@format {env[HHBBTT]}/data"
+METADATA = "@format {this.DATA_DIR}/availableMC" 
 INPUTDIR = "@format {env[CONDOR_BASE]}/{this.DIRNAME}"
 LOCALOUTPUT = "@format /uscms/home/joyzhou/nobackup/hadded/{this.DIRNAME}"
 TRANSFERPATH = "@format /store/user/joyzhou/{this.DIRNAME}_hadded"
