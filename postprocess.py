@@ -30,7 +30,7 @@ def __main__():
    2. Merge ROOT/CSV output files and CSV cutflow information per dataset per year:
       python postprocess.py --mode hadd --group DYJets TTbar --year 2022PostEE
 
-   3. Clean corrupted ROOT files:
+   3. Clean corrupted/empty ROOT files:
       python postprocess.py --mode clean --group DYJets TTbar
 
    4. Calculate yields:
