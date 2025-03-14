@@ -1,6 +1,7 @@
 from config.projectconfg import cleansetting
 from src.plotting.summary import PostProcessor
 import argparse, contextlib
+from src.utils.ioutil import setup_logging
 
 @contextlib.contextmanager
 def silence_output(file_path):
@@ -51,6 +52,8 @@ def __main__():
    
    pp = PostProcessor(cleansetting, luminosity, groups=args.group, years=args.year)
 
+   setup_logging()
+   
    if args.mode == 'check':
       pp.check_roots()
 
