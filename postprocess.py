@@ -1,6 +1,6 @@
 from config.projectconfg import cleansetting
 from src.plotting.summary import PostProcessor
-import argparse, contextlib
+import argparse, contextlib, logging
 from src.utils.ioutil import setup_logging
 
 @contextlib.contextmanager
@@ -46,13 +46,21 @@ def __main__():
                      help='Group of the files to be hadded, e.g. DYJets TTbar etc. If not provided, will postprocess all groups.')
    parser.add_argument('--year', type=str, nargs='+', required=False, default=None, 
                        help='Year of the files to be hadded, e.g. 2022PostEE, 2023 etc. If not provided, will postprocess all years.')
-   parser.add_argument("--silence", action="store_true", help="Silence all output to console.")
+   parser.add_argument('--quiet', '-q', action='store_true', help='Suppress all output to stdout and stderr')
 
    args = parser.parse_args()
+
+   if args.quiet:
+      console_level = logging.ERROR
+   else:
+      console_level = logging.INFO
    
+   setup_logging(console_level=console_level, 
+                 file_level=logging.DEBUG,
+                 log_to_file=True,)
+
    pp = PostProcessor(cleansetting, luminosity, groups=args.group, years=args.year)
 
-   setup_logging()
    
    if args.mode == 'check':
       pp.check_roots()
