@@ -26,8 +26,7 @@ class QueryRunner:
     def __call__(self, query_dir=None) -> None:
         """Run the query on the dataset and preprocess the dataset."""
         if query_dir is None:
-            for dataset in self.dataset:
-                self.query_from_dasgo(dataset)
+            self.query_from_dasgo()
         else:
             FileSysHelper.checkpath(query_dir, createdir=False, raiseError=True)
             for dataset in self.dataset:
@@ -36,12 +35,15 @@ class QueryRunner:
                 else:
                     print(f"No custom skims for {self.name} {dataset} have been produced.")
     
-    def query_from_dasgo(self, dataset) -> None:
+    def query_from_dasgo(self) -> None:
         """Query the available files from the DASGO. Produce a json.gz file with the query results (files, redirectors, uuids etc.)"""
         suffix = self.name
-        self.ddc.load_dataset_definition(dataset_definition=self.mcstrings[dataset], query_results_strategy='all', replicas_strategy='manual')
+        for dataset in self.dataset:
+            self.ddc.load_dataset_definition(dataset_definition=self.mcstrings[dataset], query_results_strategy='all', replicas_strategy='manual')
+        
+        out_name = f'{dataset}_{suffix}' if len(self.dataset) == 1 else suffix
 
-        self.ddc.do_preprocess(output_file=f'{dataset}_{suffix}',
+        self.ddc.do_preprocess(output_file=out_name,
             step_size=80000,
             align_to_clusters=False,
             recalculate_steps=False,
@@ -51,7 +53,7 @@ class QueryRunner:
             allow_empty_datasets=True,
             scheduler_url=None)
         
-        shutil.move(f"{dataset}_{suffix}_available.json.gz", f"preprocessed/{dataset}_{suffix}.json.gz")
+        shutil.move(f"{out_name}_available.json.gz", f"preprocessed/{out_name}.json.gz")
     
     def query_from_dir(self, query_dir, dataset, year) -> None:
         """Query the available files from the query_dir, e.g. a directory containing custom skim files. 
