@@ -1,6 +1,6 @@
 [SKIM]
 DIRNAME = 'vbfskim'
-DATA_DIR = "@format {env[HHBBTT]}/data"
+DATA_DIR = "@format {env[DATA_DIR]}"
 METADATA = "@format {this.DATA_DIR}/availableMC" 
 INPUTDIR = "@format {env[CONDOR_BASE]}/{this.DIRNAME}"
 LOCALOUTPUT = "@format /uscms/home/joyzhou/nobackup/hadded/{this.DIRNAME}"
@@ -13,12 +13,4 @@ METADATA = "@format {env[DATA_DIR]}/weightedMC"
 INPUTDIR = "@format {env[CONDOR_BASE]}/{this.DIRNAME}"
 LOCALOUTPUT = "@format /uscms/home/joyzhou/nobackup/hadded/{this.DIRNAME}"
 TRANSFERPATH = "@format /store/user/joyzhou/{this.DIRNAME}_hadded"
-OUTTYPE = 'csv'
-
-[LOCAL]
-DIRNAME = 'postprocessed'
-DATAPATH = "@format {env[HHBBTT]}/data"
-METADATA = "@format {this.DATAPATH}/weightedMC" 
-INPUTDIR = "@format {env[DATA_DIR]}/{this.DIRNAME}/oneb"
-LOCALOUTPUT = "@format {env[DATA_DIR]}/{this.DIRNAME}"
 OUTTYPE = 'csv'
