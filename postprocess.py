@@ -1,5 +1,5 @@
 from config.projectconfg import cleansetting
-from src.plotting.summary import PostProcessor
+from src.plotting.summary import PostProcessor, PostSkimProcessor
 import argparse, contextlib, logging
 from src.utils.ioutil import setup_logging
 
@@ -47,6 +47,7 @@ def __main__():
    parser.add_argument('--year', type=str, nargs='+', required=False, default=None, 
                        help='Year of the files to be hadded, e.g. 2022PostEE, 2023 etc. If not provided, will postprocess all years.')
    parser.add_argument('--quiet', '-q', action='store_true', help='Suppress all output to stdout and stderr')
+   parser.add_argument('--skim', '-s', action='store_true', help='Use this flag to postprocess skimmed files')
 
    args = parser.parse_args()
 
@@ -58,18 +59,20 @@ def __main__():
    setup_logging(console_level=console_level, 
                  file_level=logging.DEBUG,
                  log_to_file=True,)
-
-   pp = PostProcessor(cleansetting, luminosity, groups=args.group, years=args.year)
-
+   
+   if args.skim:
+      pp = PostSkimProcessor(cleansetting, luminosity, groups=args.group, years=args.year)
+   else:
+      pp = PostProcessor(cleansetting, luminosity, groups=args.group, years=args.year)
    
    if args.mode == 'check':
-      pp.check_roots()
+      pp.check_results()
 
    if args.mode == 'hadd':
       pp()
    
    if args.mode == 'clean':
-      pp.clean_roots()
+      pp.clean_results()
    
    if args.mode == 'yield':
       pp.get_yield()
