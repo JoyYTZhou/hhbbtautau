@@ -1,5 +1,5 @@
 from config.projectconfg import cleansetting
-from src.plotting.summary import PostProcessor
+from src.plotting.summary import PostProcessor, PostSkimProcessor
 import argparse, contextlib, logging
 from src.utils.ioutil import setup_logging
 
@@ -63,7 +63,7 @@ def __main__():
 
    
    if args.mode == 'check':
-      pp.check_roots()
+      pass
 
    if args.mode == 'hadd':
       pp()
