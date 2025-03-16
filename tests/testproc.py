@@ -5,6 +5,7 @@ from line_profiler import LineProfiler
 
 from src.analysis.processor import Processor
 from config.customEvtSel import switch_selections
+from config.customProc import switch_processors
 from src.utils.memoryutil import analyze_memory_status, force_release_memory
 from src.utils.ioutil import setup_logging, check_open_files
 from dask import config
@@ -20,6 +21,7 @@ def main():
 
     parser = argparse.ArgumentParser(description='Debug processor on a single file')
     parser.add_argument('selection_name', type=str, help='Name of the selection to run')
+    parser.add_argument('processor_name', type=str, help='Name of the processor to run')
     parser.add_argument('--profile', choices=['memory', 'line'], default='line',
                         help='Type of profiling to perform (memory or line)')
 
@@ -44,12 +46,14 @@ def main():
     }
 
     eventselection = switch_selections(args.selection_name)
+    processor_class = switch_processors(args.processor_name)
+
     transferP = "/store/user/joyzhou/temp"
 
     tracemalloc.start()
     logging.info("Started tracemalloc")
 
-    proc = Processor(rtcfg_1, preprocessed, transferP=transferP, evtselclass=eventselection)
+    proc = processor_class(rtcfg_1, preprocessed, transferP=transferP, evtselclass=eventselection)
 
     profiler = cProfile.Profile()
     profiler.enable()
