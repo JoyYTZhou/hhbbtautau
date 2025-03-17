@@ -69,7 +69,7 @@ def main():
         logging.debug("CPU count: %d", cpu_count)
         
         readkwargs = {'filter_name': ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "HLT*", "MET"]}
-        rc = proc.run_skims(readkwargs=readkwargs)
+        rc = proc.run(readkwargs=readkwargs)
         end_exec_time = time.time()
         logging.warning(f"Finished processing events in {(end_exec_time-start_time)/60:.2f} minutes")
     except Exception as e:
@@ -119,10 +119,7 @@ if __name__ == '__main__':
     # Set up line profiler
     lp = LineProfiler()
     # Add the functions you want to profile
-    # lp.add_function(DebugProcessor.run_skims_dummy)
-    lp.add_function(Processor.run_skims)
-    # lp.add_function(DebugProcessor.writeevts)
-    lp.add_function(Processor.writeskimmed)
+    lp.add_function(Processor.run)
 
     # Run the profiled version
     lp_wrapped = lp(main)
