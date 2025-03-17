@@ -64,7 +64,6 @@ def main():
     logging.info(f"Initial memory usage: {initial_memory} MiB")
 
     try:
-        logging.info("Starting sequential file loading...")
         cpu_count = os.cpu_count()
         logging.debug("CPU count: %d", cpu_count)
         
