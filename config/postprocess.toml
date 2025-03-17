@@ -1,5 +1,5 @@
 [SKIM]
-DIRNAME = 'tightskim'
+DIRNAME = 'vbfskim'
 DATA_DIR = "@format {env[DATA_DIR]}"
 METADATA = "@format {this.DATA_DIR}/availableMC" 
 INPUTDIR = "@format {env[CONDOR_BASE]}/{this.DIRNAME}"

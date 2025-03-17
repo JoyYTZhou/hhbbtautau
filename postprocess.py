@@ -70,7 +70,7 @@ def __main__():
       pp.check_results()
 
    if args.mode == 'hadd':
-      pp()
+      pp.hadd_results()
    
    if args.mode == 'clean':
       pp.clean_results()
