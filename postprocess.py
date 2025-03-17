@@ -48,6 +48,7 @@ def __main__():
    parser.add_argument('--year', type=str, nargs='+', required=False, default=None, 
                        help='Year of the files to be hadded, e.g. 2022PostEE, 2023 etc. If not provided, will postprocess all years.')
    parser.add_argument('--quiet', '-q', action='store_true', help='Suppress all output to stdout and stderr')
+   parser.add_argument('--debug', '-d', action='store_true', help='Set logging to debug level')
    parser.add_argument('--skim', '-s', action='store_true', help='Use this flag to postprocess skimmed files')
 
    args = parser.parse_args()
@@ -56,6 +57,9 @@ def __main__():
       console_level = logging.ERROR
    else:
       console_level = logging.INFO
+   
+   if args.debug:
+      console_level = logging.DEBUG
    
    setup_logging(console_level=console_level, 
                  file_level=logging.DEBUG,
