@@ -59,7 +59,7 @@ def __main__():
    
    setup_logging(console_level=console_level, 
                  file_level=logging.DEBUG,
-                 log_to_file=True,)
+                 log_to_file=True)
    
    if args.skim:
       pp = PostSkimProcessor(cleansetting, luminosity, groups=args.group, years=args.year)

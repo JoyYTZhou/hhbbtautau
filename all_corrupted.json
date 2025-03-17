@@ -1,0 +1,100 @@
+{
+    "2022PostEE": {
+        "ZZ": {
+            "mismatched_events": [
+                {
+                    "shortname": "ZZto4L",
+                    "root": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto4L_179c92c4-631f-11ee-a723-563a8e80beef_empty.root",
+                    "csv": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto4L_179c92c4-631f-11ee-a723-563a8e80beef_cutflow.csv",
+                    "uuid": "179c92c4-631f-11ee-a723-563a8e80beef"
+                },
+                {
+                    "shortname": "ZZto4L",
+                    "root": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto4L_6d2d79b8-6407-11ee-a0b8-4b0110acbeef_empty.root",
+                    "csv": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto4L_6d2d79b8-6407-11ee-a0b8-4b0110acbeef_cutflow.csv",
+                    "uuid": "6d2d79b8-6407-11ee-a0b8-4b0110acbeef"
+                },
+                {
+                    "shortname": "ZZto4L",
+                    "root": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto4L_ec504d9e-6789-11ee-896c-b5c28e80beef_empty.root",
+                    "csv": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto4L_ec504d9e-6789-11ee-896c-b5c28e80beef_cutflow.csv",
+                    "uuid": "ec504d9e-6789-11ee-896c-b5c28e80beef"
+                },
+                {
+                    "shortname": "ZZto2L2Nu",
+                    "root": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto2L2Nu_f9d4324e-63f8-11ee-9e71-b00d010abeef_empty.root",
+                    "csv": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto2L2Nu_f9d4324e-63f8-11ee-9e71-b00d010abeef_cutflow.csv",
+                    "uuid": "f9d4324e-63f8-11ee-9e71-b00d010abeef"
+                },
+                {
+                    "shortname": "ZZto2Nu2Q",
+                    "root": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto2Nu2Q_28ff0c3c-63e1-11ee-a230-d1803c0abeef_empty.root",
+                    "csv": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto2Nu2Q_28ff0c3c-63e1-11ee-a230-d1803c0abeef_cutflow.csv",
+                    "uuid": "28ff0c3c-63e1-11ee-a230-d1803c0abeef"
+                },
+                {
+                    "shortname": "ZZto2Nu2Q",
+                    "root": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto2Nu2Q_a1736aea-680b-11ee-b4ca-7184e4a9beef_empty.root",
+                    "csv": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto2Nu2Q_a1736aea-680b-11ee-b4ca-7184e4a9beef_cutflow.csv",
+                    "uuid": "a1736aea-680b-11ee-b4ca-7184e4a9beef"
+                },
+                {
+                    "shortname": "ZZto2Nu2Q",
+                    "root": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto2Nu2Q_beabae4c-6671-11ee-aed3-5fe36880beef_empty.root",
+                    "csv": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto2Nu2Q_beabae4c-6671-11ee-aed3-5fe36880beef_cutflow.csv",
+                    "uuid": "beabae4c-6671-11ee-aed3-5fe36880beef"
+                },
+                {
+                    "shortname": "ZZto2Nu2Q",
+                    "root": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto2Nu2Q_9b559e10-6434-11ee-955a-0421a8c0beef_empty.root",
+                    "csv": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto2Nu2Q_9b559e10-6434-11ee-955a-0421a8c0beef_cutflow.csv",
+                    "uuid": "9b559e10-6434-11ee-955a-0421a8c0beef"
+                },
+                {
+                    "shortname": "ZZto2Nu2Q",
+                    "root": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto2Nu2Q_dc2205a0-6290-11ee-88f9-c9bde183beef_empty.root",
+                    "csv": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto2Nu2Q_dc2205a0-6290-11ee-88f9-c9bde183beef_cutflow.csv",
+                    "uuid": "dc2205a0-6290-11ee-88f9-c9bde183beef"
+                },
+                {
+                    "shortname": "ZZto2Nu2Q",
+                    "root": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto2Nu2Q_cee5f04c-6270-11ee-b797-cfdc210abeef_empty.root",
+                    "csv": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto2Nu2Q_cee5f04c-6270-11ee-b797-cfdc210abeef_cutflow.csv",
+                    "uuid": "cee5f04c-6270-11ee-b797-cfdc210abeef"
+                },
+                {
+                    "shortname": "ZZto2Nu2Q",
+                    "root": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto2Nu2Q_e8e912ae-621a-11ee-a12c-3f00640abeef_empty.root",
+                    "csv": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto2Nu2Q_e8e912ae-621a-11ee-a12c-3f00640abeef_cutflow.csv",
+                    "uuid": "e8e912ae-621a-11ee-a12c-3f00640abeef"
+                },
+                {
+                    "shortname": "ZZto2Nu2Q",
+                    "root": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto2Nu2Q_1dc6cdc6-6285-11ee-9fe1-2d94d380beef_empty.root",
+                    "csv": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto2Nu2Q_1dc6cdc6-6285-11ee-9fe1-2d94d380beef_cutflow.csv",
+                    "uuid": "1dc6cdc6-6285-11ee-9fe1-2d94d380beef"
+                },
+                {
+                    "shortname": "ZZto2Nu2Q",
+                    "root": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto2Nu2Q_dd2e467c-627f-11ee-b10c-3be36880beef_empty.root",
+                    "csv": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto2Nu2Q_dd2e467c-627f-11ee-b10c-3be36880beef_cutflow.csv",
+                    "uuid": "dd2e467c-627f-11ee-b10c-3be36880beef"
+                },
+                {
+                    "shortname": "ZZto2Nu2Q",
+                    "root": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto2Nu2Q_1bbb502e-621c-11ee-bad5-a9c38e80beef_empty.root",
+                    "csv": "root://cmseos.fnal.gov//store/user/joyzhou/tightskim/2022PostEE/ZZ/ZZto2Nu2Q_1bbb502e-621c-11ee-bad5-a9c38e80beef_cutflow.csv",
+                    "uuid": "1bbb502e-621c-11ee-bad5-a9c38e80beef"
+                }
+            ],
+            "missing_files": []
+        }
+    },
+    "2022PreEE": {},
+    "2023Summer": {
+        "ZZ": {
+            "mismatched_events": [],
+            "missing_files": []
+        }
+    }
+}
