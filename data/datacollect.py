@@ -41,7 +41,7 @@ class QueryRunner:
         for dataset in self.dataset:
             self.ddc.load_dataset_definition(dataset_definition=self.mcstrings[dataset], query_results_strategy='all', replicas_strategy='manual')
         
-        out_name = f'{dataset}_{suffix}' if len(self.dataset) == 1 else suffix
+        out_name = f'{dataset}_{suffix}' if len(self.dataset) == 1 else 'Data' #! A hack for now
 
         self.ddc.do_preprocess(output_file=out_name,
             step_size=80000,
