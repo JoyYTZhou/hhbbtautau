@@ -1,7 +1,7 @@
 # This file contains custom event selection classes for the src.analysis.
 # The classes are inherited from the BaseEventSelections class
 # TECHNICALLY THIS SHOULD BE THE ONLY FILE THAT NEEDS TO BE MODIFIED FOR CUSTOM EVENT SELECTIONS
-from src.analysis.evtselutil import BaseEventSelections, TriggerEventSelections
+from src.analysis.evtselutil import SkimSelections, BaseEventSelections, PreselSelections
 from src.analysis.objutil import Object
 
 from config.projectconfg import namemap, selection, alt_selection, vbf_selection
@@ -10,9 +10,8 @@ import awkward as ak
 
 def switch_selections(sel_name):
     selections = {
-        'tightskim': tightskimEvtSel,
-        'vetoskim': skimEvtSel,
-        'vbfskim': VBFskimEvtSel,
+        'tightskim': tightSkim,
+        'vbfskim': VBFSkim,
         'training_prelim': trainingEvtSel,
         'prelim_onelooseb': ControlEvtSel,
         'prelim_twolooseb': SignalEvtSel,
@@ -32,11 +31,10 @@ loose_objsel = alt_selection.objselections
 vbf_trigsel = vbf_selection.triggerselections
 vbf_objsel = vbf_selection.objselections
 
+class tightSkim(SkimSelections):
+    def __init__(self, is_mc) -> None:
+        super().__init__(trigcfg=tight_trigsel, objcfg=tight_objsel, mapcfg=default_mapcfg, sequential=False, is_mc=is_mc)
 
-class tightskimEvtSel(TriggerEventSelections):
-    def __init__(self, trigcfg=tight_trigsel, objcfg=tight_objsel, mapcfg=default_mapcfg, sequential=False) -> None:
-        super().__init__(trigcfg, objcfg, mapcfg, sequential)
-    
     def setevtsel(self, events):
         electron = self.getObj("Electron", events)
         muon = self.getObj("Muon", events)
@@ -60,11 +58,11 @@ class tightskimEvtSel(TriggerEventSelections):
         self.objsel.add_multiple({"Electron Veto": elec_nummask,
                                 "Muon Veto": muon_nummask})
 
-class VBFskimEvtSel(tightskimEvtSel):
-    def __init__(self, trigcfg=vbf_trigsel, objcfg=vbf_objsel, mapcfg=default_mapcfg, sequential=False):
-        super().__init__(trigcfg, objcfg, mapcfg, sequential)
+class VBFSkim(SkimSelections):
+    def __init__(self, is_mc):
+        super().__init__(trigcfg=vbf_trigsel, objcfg=vbf_objsel, mapcfg=default_mapcfg, sequential=False, is_mc=is_mc)
     
-class skimEvtSel(TriggerEventSelections):
+class skimEvtSel(SkimSelections):
     """A class to skim the events based on the trigger and object selections."""
     def __init__(self, trigcfg=loose_trigsel, objcfg=loose_objsel, mapcfg=default_mapcfg, sequential=False) -> None:
         super().__init__(trigcfg, objcfg, mapcfg, sequential)
