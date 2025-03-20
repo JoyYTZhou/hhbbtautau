@@ -8,7 +8,7 @@ from src.utils.filesysutil import FileSysHelper, pjoin
 class QueryRunner:
     """Class to run the query on dataset strings and preprocess the dataset.
     Currently only supports MC datasets. Dependent on DataDiscoveryCLI from coffea."""
-    def __init__(self, dataset, infile) -> None:
+    def __init__(self, dataset, infile, is_mc) -> None:
         """Initialize the QueryRunner object.
         
         Parameters
@@ -18,6 +18,7 @@ class QueryRunner:
         with open(infile, 'r') as file:
             self.mcstrings = json.load(file)
         self.name = infile.split('/')[-1].split('.')[0]
+        self._isMC = is_mc
         if dataset is None:
             self.dataset = list(self.mcstrings.keys())
         else:
@@ -35,13 +36,27 @@ class QueryRunner:
                 else:
                     print(f"No custom skims for {self.name} {dataset} have been produced.")
     
+    def __add_MC_meta(self):
+        if self._isMC:
+            for dataset in self.dataset:
+                for datasetname in self.mcstrings[dataset].keys():
+                    self.mcstrings[dataset][datasetname]["metadata"]["is_mc"] = True
+    
     def query_from_dasgo(self) -> None:
         """Query the available files from the DASGO. Produce a json.gz file with the query results (files, redirectors, uuids etc.)"""
         suffix = self.name
+        self.__add_MC_meta()
+        
         for dataset in self.dataset:
             self.ddc.load_dataset_definition(dataset_definition=self.mcstrings[dataset], query_results_strategy='all', replicas_strategy='manual')
-        
-        out_name = f'{dataset}_{suffix}' if len(self.dataset) == 1 else 'Data' #! A hack for now
+    
+        if not self._isMC:
+            out_name = f"Data_{suffix}"
+        else:
+            if len(self.dataset) > 1:
+                out_name = f'{suffix}'
+            else:
+                out_name = f'{self.dataset[0]}_{suffix}'
 
         self.ddc.do_preprocess(output_file=out_name,
             step_size=80000,
@@ -83,15 +98,23 @@ class QueryRunner:
             json.dump(queryed_result, file)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Run preprocessor on fileset')    
-    parser.add_argument('-d', '--dataset', type=str, required=False, default=None, 
-                        help='group name of the dataset to run program on, e.g. TTbar, DYJets, etc. Note that this must match the key in the json input file. If not specified, run over all available datasets found in json input file.')
+    program_description = """Run the preprocessor on the dataset strings in the json file.
+    The preprocessor will query the dataset strings and preprocess the dataset.
+    If the --skip flag is set, the program will only dump the query results to a json file.
+    If the --query flag is set, the program will query the custom skims in the directory.
+    """
+
+    parser = argparse.ArgumentParser(description=program_description, formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('-d', '--dataset', type=str, required=False, default=None,
+                        help='group name of the dataset to run program on, e.g. TTbar, DYJets, etc. Note that this must match the key in the json input file.')
     parser.add_argument('-i', '--infile', type=str, required=True, help='path of the json file containing the dataset query string')
     parser.add_argument('-s', '--skip', action='store_true', required=False, help='whether to skip preprocess.')
     parser.add_argument('-q', '--query', type=str, required=False, default=None, help='directory containing custom skim.')
+    parser.add_argument('--is_mc', type=bool, required=True, help='specify if processing Monte Carlo samples (True) or collision data (False)')
 
     args = parser.parse_args()
-    qr = QueryRunner(args.dataset, args.infile)
+
+    qr = QueryRunner(args.dataset, args.infile, is_mc=args.is_mc)
     if args.skip:
         qr.dump_query()
     else:

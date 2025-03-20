@@ -16,7 +16,6 @@ usage() {
     echo "  PROCESS       Process name (use 'ALL' for all processes)"
     echo "  YEAR         Year to process (use 'ALL' for all years)"
     echo "  BATCHSIZE    Number of jobs per batch (must be positive integer)"
-    echo "  JOBDIR       Directory for job files (must exist)"
     echo
     echo "Options:"
     echo "  -d           Disable job submission (dry run)"
@@ -57,7 +56,6 @@ DYNACONF_ENV=$1
 PROCESS=$2
 YEAR=$3
 BATCHSIZE=$4
-JOBDIR=$5
 
 # Validate batch size is a positive integer
 if ! [[ "$BATCHSIZE" =~ ^[0-9]+$ ]] || [ "$BATCHSIZE" -eq 0 ]; then
@@ -91,7 +89,7 @@ mkdir -p "${JOB_DIRNAME}"
 FILENAME=".${JOB_DIRNAME}/${PROCESS_KEY}_${YEAR_KEY}*.json"
 rm -f ${JOB_DIRNAME}/${PROCESS_KEY}_${YEAR_KEY}*.json
 
-if ! python3 genjobs.py ${PROCESS_KEY}_${YEAR_KEY} ${JOBDIR} ${JOB_DIRNAME} --batch $BATCHSIZE; then
+if ! python3 genjobs.py ${PROCESS_KEY}_${YEAR_KEY} ${JOB_DIRNAME} --batch $BATCHSIZE; then
     echo "Error: Job generation failed"
     exit 1
 fi
