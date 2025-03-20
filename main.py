@@ -20,10 +20,12 @@ def runselections():
 
     Arguments:
     - --input: Path to the input file containing data to be processed. See example input files in example/ directory.
+    - --ismc: Enable MC mode to process Monte Carlo data (using WeightedCutflow).
     - --diagnose: Enable memory diagnostics to track memory usage during execution.
             '''
         )
     parser.add_argument('--input', type=str, help='input file path', default=None)
+    parser.add_argument('--ismc', action='store_true', default=False, help='Enable MC mode')
     parser.add_argument('--diagnose', action='store_true', default=False, help='Enable memory diagnose')
     args = parser.parse_args()
     
@@ -36,11 +38,11 @@ def runselections():
     selectionclass = switch_selections(runsetting.SEL_NAME)
     proc_class = switch_processors(runsetting.PROC_NAME)
 
-    jr = JobRunner(runsetting, args.input, selectionclass, proc_class, None)
+    jr = JobRunner(runsetting, args.input, selectionclass, proc_class)
     print("======================================================================")
     print("Enter Main Python program: Event selection Mode!")
     print("======================================================================")
-    jr.submitjobs(client=None, proc_kwargs={})
+    jr.submitjobs(client=None, proc_kwargs={}, evtsel_kwargs={'is_mc': args.ismc})
 
     if args.diagnose:
         end_time = time.time()
