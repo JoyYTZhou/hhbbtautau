@@ -1,6 +1,5 @@
 [PRESELECT]
 SEL_NAME = 'training_prelim'
-JOB_PATH = 'skimmed'
 DELAYED_OPEN = false
 JOB_DIRNAME = 'preseljson'
 TRANSFER_PATH = '/store/user/joyzhou/training_tightskim_looseT'
@@ -10,7 +9,6 @@ OUTENDPATTERN = ["output.csv", "cutflow.csv"]
 [SKIM]
 SEL_NAME = 'vbfskim'
 PROC_NAME = 'skim'
-JOB_PATH = 'preprocessed'
 JOB_DIRNAME = 'skimjson'
 TRANSFER_PATH = '/store/user/joyzhou/vbfskim'
 FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "HLT*", "MET"]
@@ -19,7 +17,6 @@ OUTENDPATTERN = [".root", "cutflow.csv"]
 [TIGHTSKIM]
 SEL_NAME = 'tightskim'
 PROC_NAME = 'skim'
-JOB_PATH = 'preprocessed'
 JOB_DIRNAME = 'skimjson'
 TRANSFER_PATH = '/store/user/joyzhou/tightskim'
 FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "HLT*", "MET"]
