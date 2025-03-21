@@ -22,7 +22,6 @@ def main():
     parser = argparse.ArgumentParser(description='Debug processor on a single file')
     parser.add_argument('selection_name', type=str, help='Name of the selection to run')
     parser.add_argument('processor_name', type=str, help='Name of the processor to run')
-    parser.add_argument('--ismc', action='store_true', default=True, help='Enable MC mode')
     parser.add_argument('--profile', choices=['memory', 'line'], default='line',
                         help='Type of profiling to perform (memory or line)')
 
@@ -54,7 +53,7 @@ def main():
     tracemalloc.start()
     logging.info("Started tracemalloc")
 
-    proc = processor_class(rtcfg_1, preprocessed, transferP=transferP, evtselclass=eventselection, evtsel_kwargs={'is_mc': args.ismc})
+    proc = processor_class(rtcfg_1, preprocessed, transferP=transferP, evtselclass=eventselection)
 
     profiler = cProfile.Profile()
     profiler.enable()

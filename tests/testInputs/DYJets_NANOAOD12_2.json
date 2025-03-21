@@ -83,6 +83,7 @@
       "uuid": "93a1fbaa-6286-11ee-8247-6e01a8c0beef"
     }},
   "metadata": {
-    "shortname": "DYJets"
+    "shortname": "DYJets",
+    "is_mc": false
   }
 }
