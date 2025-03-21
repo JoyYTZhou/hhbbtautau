@@ -40,7 +40,7 @@ class QueryRunner:
         if self._isMC:
             for dataset in self.dataset:
                 for datasetname in self.mcstrings[dataset].keys():
-                    self.mcstrings[dataset][datasetname]["metadata"]["is_mc"] = True
+                    self.mcstrings[dataset][datasetname]["is_mc"] = True
     
     def query_from_dasgo(self) -> None:
         """Query the available files from the DASGO. Produce a json.gz file with the query results (files, redirectors, uuids etc.)"""
