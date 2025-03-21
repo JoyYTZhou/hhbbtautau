@@ -1,4 +1,5 @@
 # synchronized selections
+# ! needs to be re-verified
 default:
   name: "tauhtauh"
   triggerselections: 

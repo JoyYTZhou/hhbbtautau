@@ -3,29 +3,39 @@ from pathlib import Path
 
 root_path = Path(__file__).parent
 
-namemap = Dynaconf(
+mc_nm = Dynaconf(
     root_path = root_path,
     environments=True,
-    settings_files=['config/aodnamemap.yaml']
+    settings_files=['config/aod_namemaps/MC_Namemap.yaml']
 )
 
-selection = Dynaconf(
+data_nm = Dynaconf(
     root_path = root_path,
     environments=True,
-    settings_files=['config/selection.yaml']
+    settings_files=['config/aod_namemaps/Data_Namemap.yaml']
 )
 
-vbf_selection = Dynaconf(
+selection_sync = Dynaconf(
     root_path = root_path,
     environments=True,
-    settings_files=['config/selection_VBF.yaml'] 
+    settings_files=['config/object_selections/sync.yaml'])
+
+selection_vbf = Dynaconf(
+    root_path = root_path,
+    environments=True,
+    settings_files=['config/object_selections/vbf.yaml']
 )
 
-alt_selection = Dynaconf(
+selection_loose = Dynaconf(
     root_path = root_path,
     environments=True,
-    settings_files=['config/alt_selection.yaml']
+    settings_files=['config/object_selections/loosetau.yaml']
 )
+
+selection_tight = Dynaconf(
+    root_path = root_path,
+    environments=True,
+    settings_files=['config/object_selections/tight.yaml'])
 
 runsetting = Dynaconf(
     root_path = root_path,

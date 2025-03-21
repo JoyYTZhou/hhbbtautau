@@ -1,4 +1,5 @@
-# loose selections for training of NN in datasets
+# synchronized selections
+# ! Not really
 default:
   name: "tauhtauh"
   triggerselections: 
@@ -7,32 +8,33 @@ default:
     GenPart: null
     Electron: 
       mvaisoid: True
-      pt: 40
-      eta: 2.1
+      pt: 10
+      eta: 2.5
       dxy: 0.045
       dz: 0.2
       count: 0
     Muon: 
-      pt: 40
-      eta: 2.1
+      pt: 10
+      eta: 2.4
       dxy: 0.045
       dz: 0.2
-      cbtightid: True
-      isoid: 6
+      mediumid: true
+      isoid04: 0.3
       count: 0
     Tau:
       pt: 40
-      eta: 2.5
-      idvsjet: 1 # VVVLoose
-      idvsmu: 1 # VLoose
-      idvse: 1 # VVVLoose 
+      eta: 2.3
+      idvsjet: 5 # Medium
+      idvsmu: 1 # V loose
+      idvse: 2 # VV loose
       dz: 0.2
       count: 2
+      OS: true
     Jet:
       pt: 20
-      eta: 2.4
+      eta: 2.5
       btag: 0.0614 # loose WP
       # btag: 0.3196 # medium WP
       # pnetbtag: 0.0499 # loose WP
       count: 2
-      jetid: 6
+      jetid: 6 # tight ID + tight Lepton Veto ID

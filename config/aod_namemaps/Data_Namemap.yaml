@@ -1,0 +1,24 @@
+default:
+  Tau:
+    jetidx: Tau_jetIdx
+    idvsjet: Tau_idDeepTau2017v2p1VSjet
+    idvsmu: Tau_idDeepTau2017v2p1VSmu
+    idvse: Tau_idDeepTau2017v2p1VSe
+  Electron:
+    cbtightid: Electron_cutBased
+    mvaisoid: Electron_mvaIso_WP90
+  Muon:
+    looseid: Muon_looseId
+    mediumid: Muon_mediumId
+    isoid04: Muon_pfRelIso04_all
+    isoid: Muon_pfIsoId
+    tightid: Muon_tightId
+  Jet:
+    btag: Jet_btagDeepFlavB
+    # pnetbtag: Jet_btagPNetB
+    jetid: Jet_jetId
+
+
+
+          
+          
