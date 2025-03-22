@@ -17,7 +17,7 @@ class QueryRunner:
         self.ddc.do_regex_sites(r"T[123]_(US)_\w+")
         with open(infile, 'r') as file:
             self.mcstrings = json.load(file)
-        self.name = infile.split('/')[-1].split('.')[0]
+        self.year = infile.split('/')[-1].split('.')[0]
         self._isMC = is_mc
         if dataset is None:
             self.dataset = list(self.mcstrings.keys())
@@ -31,10 +31,10 @@ class QueryRunner:
         else:
             FileSysHelper.checkpath(query_dir, createdir=False, raiseError=True)
             for dataset in self.dataset:
-                if FileSysHelper.checkpath(pjoin(query_dir, self.name, dataset), createdir=False, raiseError=False):
-                    self.query_from_dir(query_dir, dataset, self.name)
+                if FileSysHelper.checkpath(pjoin(query_dir, self.year, dataset), createdir=False, raiseError=False):
+                    self.query_from_dir(query_dir, dataset, self.year)
                 else:
-                    print(f"No custom skims for {self.name} {dataset} have been produced.")
+                    print(f"No custom skims for {self.year} {dataset} have been produced.")
     
     def __add_MC_meta(self):
         if self._isMC:
@@ -44,7 +44,7 @@ class QueryRunner:
     
     def query_from_dasgo(self) -> None:
         """Query the available files from the DASGO. Produce a json.gz file with the query results (files, redirectors, uuids etc.)"""
-        suffix = self.name
+        suffix = self.year
         self.__add_MC_meta()
         
         for dataset in self.dataset:
@@ -84,6 +84,7 @@ class QueryRunner:
         for datasetname in self.mcstrings[dataset].keys():
             queryed_result[datasetname] = {"files": {}}
             queryed_result[datasetname]["metadata"] = self.mcstrings[dataset][datasetname]
+            queryed_result[datasetname]["metadata"]["is_mc"] = self._isMC
             shortname = self.mcstrings[dataset][datasetname]['shortname'] 
             root_files = FileSysHelper.glob_files(pjoin(query_dir, year, dataset), f'{shortname}*.root')
             for root_file in root_files:
