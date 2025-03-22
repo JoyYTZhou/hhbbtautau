@@ -30,11 +30,11 @@ class tightSkim(SkimSelections):
             mapcfg = mc_nm
         else:
             mapcfg = data_nm
-        super().__init__(trigcfg=ditau_trigsel, objcfg=sync_objsel, mapcfg=mapcfg, sequential=False, is_mc=is_mc)
+        super().__init__(trigcfg=ditau_trigsel, objselcfg=sync_objsel, mapcfg=mapcfg, sequential=False, is_mc=is_mc)
 
     def _setevtsel(self, events):
-        electron = self.getObjMasker("Electron", events)
-        muon = self.getObjMasker("Muon", events)
+        electron = self.getObjMasker(events, "Electron")
+        muon = self.getObjMasker(events, "Muon")
 
         e_mask = (electron.ptmask(opr.ge) & \
                 electron.absdxymask(opr.le) & \
@@ -63,7 +63,7 @@ class VBFSkim(tightSkim):
             mapcfg = mc_nm
         else:
             mapcfg = data_nm
-        super().__init__(trigcfg=vbf_trigsel, objcfg=sync_objsel, mapcfg=mapcfg, sequential=False, is_mc=is_mc)
+        super().__init__(trigcfg=vbf_trigsel, objselcfg=sync_objsel, mapcfg=mapcfg, sequential=False, is_mc=is_mc)
     
 class LoosetwoTau(PreselSelections):
     """Implement Loose Tau Selections + b jet selections."""
@@ -72,10 +72,10 @@ class LoosetwoTau(PreselSelections):
             mapcfg = mc_nm
         else:
             mapcfg = data_nm
-        super().__init__(trigcfg=ditau_trigsel, objcfg=loose_objsel, mapcfg=mapcfg, sequential=True, is_mc=is_mc)
+        super().__init__(trigcfg=ditau_trigsel, objselcfg=loose_objsel, mapcfg=mapcfg, sequential=True, is_mc=is_mc)
 
     def seltwotaus(self, events) -> ak.Array:
-        tau_masker = self.getObjMasker("Tau", events)
+        tau_masker = self.getObjMasker(events, "Tau")
 
         base_conditions = {
             'pt': (opr.ge,),
@@ -110,7 +110,7 @@ class LoosetwoTau(PreselSelections):
             'pt': (opr.ge,),
             'eta': (opr.le, abs),
         }
-        jet_masker = self.getObjMasker("Jet", events)
+        jet_masker = self.getObjMasker(events, "Jet")
         j_mask = jet_masker.create_combined_mask(base_conditions)
         ld_tau = ObjectProcessor.fourvector(self.objcollect, 'LDTau', sort=False)
         sd_tau = ObjectProcessor.fourvector(self.objcollect, 'SDTau', sort=False)

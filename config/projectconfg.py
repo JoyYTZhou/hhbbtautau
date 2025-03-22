@@ -23,7 +23,7 @@ selection_sync = Dynaconf(
 selection_vbf = Dynaconf(
     root_path = root_path,
     environments=True,
-    settings_files=['config/object_selections/vbf.yaml']
+    settings_files=['config/object_selections/VBF.yaml']
 )
 
 selection_loose = Dynaconf(
