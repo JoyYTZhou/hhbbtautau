@@ -25,7 +25,6 @@ def runselections():
             '''
         )
     parser.add_argument('--input', type=str, help='input file path', default=None)
-    parser.add_argument('--ismc', action='store_true', default=False, help='Enable MC mode')
     parser.add_argument('--diagnose', action='store_true', default=False, help='Enable memory diagnose')
     args = parser.parse_args()
     
@@ -42,7 +41,7 @@ def runselections():
     print("======================================================================")
     print("Enter Main Python program: Event selection Mode!")
     print("======================================================================")
-    jr.submitjobs(client=None, proc_kwargs={}, evtsel_kwargs={'is_mc': args.ismc})
+    jr.submitjobs(client=None, proc_kwargs={})
 
     if args.diagnose:
         end_time = time.time()

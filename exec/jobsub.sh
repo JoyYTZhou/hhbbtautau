@@ -47,7 +47,7 @@ while getopts ":dh" opt; do
 done
 shift $((OPTIND -1))
 
-if [ $# -ne 5 ]; then
+if [ $# -ne 4 ]; then
     echo "Error: Incorrect number of arguments"
     usage
 fi
@@ -86,7 +86,7 @@ JOB_DIRNAME=".${DYNACONF_ENV}"
 # Ensure job directory exists
 mkdir -p "${JOB_DIRNAME}"
 
-FILENAME=".${JOB_DIRNAME}/${PROCESS_KEY}_${YEAR_KEY}*.json"
+FILENAME="${JOB_DIRNAME}/${PROCESS_KEY}_${YEAR_KEY}*.json"
 rm -f ${JOB_DIRNAME}/${PROCESS_KEY}_${YEAR_KEY}*.json
 
 if ! python3 genjobs.py ${PROCESS_KEY}_${YEAR_KEY} ${JOB_DIRNAME} --batch $BATCHSIZE; then

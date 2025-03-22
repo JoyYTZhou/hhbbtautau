@@ -110,8 +110,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--infile', type=str, required=True, help='path of the json file containing the dataset query string')
     parser.add_argument('-s', '--skip', action='store_true', required=False, help='whether to skip preprocess.')
     parser.add_argument('-q', '--query', type=str, required=False, default=None, help='directory containing custom skim.')
-    parser.add_argument('--is_mc', type=bool, required=True, help='specify if processing Monte Carlo samples (True) or collision data (False)')
-
+    parser.add_argument('--is_mc', action='store_true', help='specify if processing Monte Carlo samples (if set) or collision data (if not set)')
     args = parser.parse_args()
 
     qr = QueryRunner(args.dataset, args.infile, is_mc=args.is_mc)
