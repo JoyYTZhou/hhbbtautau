@@ -36,21 +36,26 @@ class tightSkim(SkimSelections):
         electron = self.getObjMasker(events, "Electron")
         muon = self.getObjMasker(events, "Muon")
 
-        e_mask = (electron.ptmask(opr.ge) & \
-                electron.absdxymask(opr.le) & \
-                electron.absetamask(opr.le) & \
-                electron.absdzmask(opr.le) & \
-                electron.custommask('mvaisoid', opr.eq)
-                )
+        e_base_conditions = {
+            'pt': (opr.ge,),
+            'dxy': (opr.le, abs),
+            'eta': (opr.le, abs),
+            'dz': (opr.le, abs),
+            'mvaisoid': (opr.eq,)
+        }
+        e_mask = electron.create_combined_mask(e_base_conditions)
         elec_nummask = electron.vetomask(e_mask)
 
-        m_mask = (muon.ptmask(opr.ge) & \
-                muon.absdxymask(opr.le) & \
-                muon.absetamask(opr.le) & \
-                muon.absdzmask(opr.le) & \
-                muon.custommask('mediumid', opr.eq) & \
-                muon.custommask('tightid', opr.eq) & \
-                muon.custommask('isoid04', opr.le))
+        m_base_conditions = {
+            'pt': (opr.ge,),
+            'dxy': (opr.le, abs),
+            'eta': (opr.le, abs),
+            'dz': (opr.le, abs),
+            'mediumid': (opr.eq,),
+            'tightid': (opr.eq,),
+            'isoid04': (opr.le,)
+        }
+        m_mask = muon.create_combined_mask(m_base_conditions)
         muon_nummask = muon.vetomask(m_mask)
 
         self.objsel.add_multiple({"Electron Veto": elec_nummask,
