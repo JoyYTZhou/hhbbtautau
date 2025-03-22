@@ -7,7 +7,7 @@ default:
   objselections:
     GenPart: null
     Electron: 
-      mvaisoid: True
+      mvaisoid: true
       pt: 10
       eta: 2.5
       dxy: 0.045

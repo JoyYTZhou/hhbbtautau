@@ -41,7 +41,7 @@ class tightSkim(SkimSelections):
             'dxy': (opr.le, abs),
             'eta': (opr.le, abs),
             'dz': (opr.le, abs),
-            'mvaisoid': (opr.eq,)
+            'mvaIso_WP90': (opr.eq,)
         }
         e_mask = electron.create_combined_mask(e_base_conditions)
         elec_nummask = electron.vetomask(e_mask)
