@@ -15,9 +15,9 @@ pjoin = os.path.join
 def main():
     # Force synchronous scheduler for debugging
     # config.set(scheduler='threads')
-    config.set(schedule='synchronous')
+    # config.set(schedule='synchronous')
     # logging.debug("Dask config not explicitly set")
-    logging.debug("Set Dask to synchronous scheduler")
+    # logging.debug("Set Dask to synchronous scheduler")
 
     parser = argparse.ArgumentParser(description='Debug processor on a single file')
     parser.add_argument('selection_name', type=str, help='Name of the selection to run')
@@ -29,7 +29,7 @@ def main():
     logging.info(f"Running with selection: {args.selection_name}")
 
     file_dir = os.path.dirname(os.path.realpath(__file__))
-    testinput = pjoin(file_dir, "testInputs", "DYJets_NANOAOD12_2.json")
+    testinput = pjoin(file_dir, "testInputs", "custom_SKIM.json")
     with open(testinput, 'r') as f:
         preprocessed = json.load(f)
     

@@ -1,9 +1,9 @@
-from src.analysis.processor import Processor, SkimProcessor
+from src.analysis.processor import Processor, SkimProcessor, PreselProcessor
 
 def switch_processors(sel_name) -> Processor:
     processors = {
         'skim': SkimProcessor,
-        'selection': Processor
+        'preselect': PreselProcessor
     }
 
     return processors.get(sel_name, Processor)
