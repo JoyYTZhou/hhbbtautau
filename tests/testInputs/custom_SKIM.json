@@ -1,11 +1,18 @@
 {
     "files": {
-        "root://cmseos.fnal.gov//store/user/joyzhou/vetoskim_hadded/ggF/GluGlutoHHto2B2Tau_1.root:Events": {
+        "root://cmseos.fnal.gov//store/user/joyzhou/vbfskim_hadded/2022PostEE/TTbar/TTtoLNu2Q_1.root:Events": {
             "uuid": "1"
+        },
+        "root://cmseos.fnal.gov//store/user/joyzhou/vbfskim_hadded/2022PostEE/TTbar/TTtoLNu2Q_2.root:Events": {
+            "uuid": "2"
+        },
+        "root://cmseos.fnal.gov//store/user/joyzhou/vbfskim_hadded/2022PostEE/TTbar/TTtoLNu2Q_3.root:Events": {
+            "uuid": "3"
         }
     },
     "metadata": {
         "xsection": 0.05500221399699999,
-        "shortname": "GluGlutoHH"
+        "shortname": "TTtoLNu2Q",
+        "is_mc": true
     }
 }

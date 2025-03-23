@@ -91,7 +91,7 @@ class QueryRunner:
                 match = pattern.search(root_file)
                 if match:
                     index = match.group(1)
-                    queryed_result[datasetname]["files"][f'{root_file}:Events'] = {"uuid": index}
+                    queryed_result[datasetname]["files"][root_file] = {"uuid": index, "object_path": "Events"}
         
         FileSysHelper.checkpath('skimmed', createdir=True)
 
