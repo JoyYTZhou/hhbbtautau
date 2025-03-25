@@ -23,6 +23,7 @@ sync_objsel = selection_sync.objselections
 vbf_trigsel = selection_vbf.triggerselections
 loose_objsel = selection_loose.objselections
 
+
 class tightSkim(SkimSelections):
     """Di-Tau Trigger + Sync Vetos"""
     def __init__(self, is_mc) -> None:
@@ -61,7 +62,7 @@ class tightSkim(SkimSelections):
         self.objsel.add_multiple({"Electron Veto": elec_nummask,
                                 "Muon Veto": muon_nummask})
 
-class VBFSkim(tightSkim):
+class VBFSkim(SkimSelections):
     """VBF Trigger + Sync Vetos"""
     def __init__(self, is_mc):
         if is_mc:
