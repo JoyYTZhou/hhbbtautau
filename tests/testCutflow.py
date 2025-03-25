@@ -1,6 +1,7 @@
 from src.utils.coffeautil import weightedSelection
 import numpy as np
 import dask_awkward
+import awkward as ak
 
 def test_add_sequential():
     """Test the add_sequential method of weightedSelection class"""
@@ -27,8 +28,8 @@ def test_add_sequential():
 
     # Test with dask_awkward arrays
     print("\nTesting with dask_awkward arrays:")
-    lastsel_da = dask_awkward.from_numpy([True, False, True, False])
-    thissel_da = dask_awkward.from_numpy([True, False])
+    lastsel_da = dask_awkward.from_awkward(ak.Array([True, False, True, False]), npartitions=1)
+    thissel_da = dask_awkward.from_awkward(ak.Array([True, False]), npartitions=1) 
     
     print("Input lastsel:", lastsel_da.compute())
     print("Input thissel:", thissel_da.compute())
