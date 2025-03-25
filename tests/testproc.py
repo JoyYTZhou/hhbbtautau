@@ -29,7 +29,9 @@ def main():
     logging.info(f"Running with selection: {args.selection_name}")
 
     file_dir = os.path.dirname(os.path.realpath(__file__))
-    testinput = pjoin(file_dir, "testInputs", "DYJets_NANOAOD12_2.json")
+    # testinput = pjoin(file_dir, "testInputs", "DYJets_NANOAOD12_2.json")
+
+    testinput = pjoin(file_dir, "testInputs", "custom_SKIM.json")
     with open(testinput, 'r') as f:
         preprocessed = json.load(f)
     
