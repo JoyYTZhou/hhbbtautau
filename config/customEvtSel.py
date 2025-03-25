@@ -23,15 +23,7 @@ sync_objsel = selection_sync.objselections
 vbf_trigsel = selection_vbf.triggerselections
 loose_objsel = selection_loose.objselections
 
-class tightSkim(SkimSelections):
-    """Di-Tau Trigger + Sync Vetos"""
-    def __init__(self, is_mc) -> None:
-        if is_mc:
-            mapcfg = mc_nm
-        else:
-            mapcfg = data_nm
-        super().__init__(trigcfg=ditau_trigsel, objselcfg=sync_objsel, mapcfg=mapcfg, sequential=False, is_mc=is_mc)
-
+class vetoSkim(SkimSelections):
     def _setevtsel(self, events):
         electron = self.getObjMasker(events, "Electron")
         muon = self.getObjMasker(events, "Muon")
@@ -61,7 +53,16 @@ class tightSkim(SkimSelections):
         self.objsel.add_multiple({"Electron Veto": elec_nummask,
                                 "Muon Veto": muon_nummask})
 
-class VBFSkim(tightSkim):
+class tightSkim(vetoSkim):
+    """Di-Tau Trigger + Sync Vetos"""
+    def __init__(self, is_mc) -> None:
+        if is_mc:
+            mapcfg = mc_nm
+        else:
+            mapcfg = data_nm
+        super().__init__(trigcfg=ditau_trigsel, objselcfg=sync_objsel, mapcfg=mapcfg, sequential=False, is_mc=is_mc)
+
+class VBFSkim(vetoSkim):
     """VBF Trigger + Sync Vetos"""
     def __init__(self, is_mc):
         if is_mc:
