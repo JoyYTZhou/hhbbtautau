@@ -118,8 +118,8 @@ class LoosetwoTau(PreselSelections):
         }
         jet_masker = self.getObjMasker(events, "Jet")
         j_mask = jet_masker.create_combined_mask(base_conditions)
-        ld_tau = ObjectProcessor.fourvector(self.objcollect, 'LDTau', sort=False)
-        sd_tau = ObjectProcessor.fourvector(self.objcollect, 'SDTau', sort=False)
+        ld_tau = ObjectProcessor.fourvector(self.objcollect['LDTau'], None, sort=False)
+        sd_tau = ObjectProcessor.fourvector(self.objcollect['SDTau'], None, sort=False)
         jet_proc = self.getObjProc('Jet') 
         jetdR_mask = jet_proc.dRwOther(events, ld_tau, 0.4) & jet_proc.dRwOther(events, sd_tau, 0.4)
             
