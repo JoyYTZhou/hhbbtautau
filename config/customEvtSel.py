@@ -7,6 +7,7 @@ from src.analysis.objutil import ObjectMasker, ObjectProcessor
 from config.projectconfg import mc_nm, data_nm, selection_sync, selection_loose, selection_vbf
 import operator as opr
 import awkward as ak
+import dask_awkward as dak
 
 def switch_selections(sel_name):
     selections = {
@@ -108,8 +109,8 @@ class LoosetwoTau(PreselSelections):
 
         self.objcollect['LDTau'] = ld_tau
         self.objcollect['SDTau'] = sd_tau
-        self.objcollect['nTau'] = ak.sum(tau_mask, axis=1)
-        self.objcollect['nTauSD'] = ak.sum(dR_mask, axis=1)
+        self.objcollect['nTau'] = dak.sum(tau_mask, axis=1)
+        self.objcollect['nTauSD'] = dak.sum(dR_mask, axis=1)
 
         return events
     
