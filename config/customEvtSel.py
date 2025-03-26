@@ -102,6 +102,8 @@ class LoosetwoTau(PreselSelections):
         tau_dRmask = ObjectMasker.maskredmask(dR_mask, opr.ge, 1)
         tau_masker, events = self.selobjhelper(events,'Tau dR >= 0.5', tau_masker, tau_dRmask)
 
+        tau_mask = tau_masker.create_combined_mask(base_conditions)
+
         ld_tau, sd_tau = tau_proc.apply_dr_selections(events, tau_mask, 0.5)
 
         self.objcollect['LDTau'] = ld_tau
