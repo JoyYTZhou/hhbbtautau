@@ -41,11 +41,12 @@ def main():
         "OUTPUTDIR_PATH": "/uscms/home/joyzhou/nobackup/tests",
         "COPYDIR_PATH": "/uscms/home/joyzhou/nobackup/temp",
         "TRANSFER_PATH": "/store/user/joyzhou/temp",
-        "DELAYED_OPEN": True,
+        "DELAYED_OPEN": False,
         "REMOTE_LOAD": False,
         "FILTER_NAME": None,
         "DELAYED_WRITE": False,
     }
+
 
     eventselection = switch_selections(args.selection_name)
     processor_class = switch_processors(args.processor_name)

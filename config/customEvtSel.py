@@ -109,8 +109,8 @@ class LoosetwoTau(PreselSelections):
 
         self.objcollect['LDTau'] = ld_tau
         self.objcollect['SDTau'] = sd_tau
-        self.objcollect['nTau'] = dak.sum(tau_mask, axis=1)
-        self.objcollect['nTauSD'] = dak.sum(dR_mask, axis=1)
+        self.objcollect['nTau'] = ak.sum(tau_mask, axis=1)
+        self.objcollect['nTauSD'] = ak.sum(dR_mask, axis=1)
 
         return events
     
