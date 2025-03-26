@@ -3,10 +3,6 @@
         "root://cmseos.fnal.gov//store/user/joyzhou/vbfskim_hadded/2022PostEE/TTbar/TTtoLNu2Q_5.root": {
             "uuid": "5",
             "object_path": "Events"
-        },
-        "root://cmseos.fnal.gov//store/user/joyzhou/vbfskim_hadded/2022PostEE/TTbar/TTtoLNu2Q_6.root": {
-            "uuid": "6",
-            "object_path": "Events"
         }
     },
     "metadata": {
