@@ -99,13 +99,10 @@ class LoosetwoTau(PreselSelections):
         tau_mask = tau_masker.create_combined_mask(base_conditions)
 
         tau_proc = self.getObjProc('Tau')
-        dR_mask = tau_proc.dRwSelf(events, threshold=0.5, mask=tau_mask, sort=True)
-        tau_dRmask = ObjectMasker.maskredmask(dR_mask, opr.ge, 1)
-        tau_masker, events = self.selobjhelper(events,'Tau dR >= 0.5', tau_masker, tau_dRmask)
+        
+        dR_mask, events, ld_tau, sd_tau = tau_proc.get_dr_selection_results(events, tau_mask, 0.5)
 
-        tau_mask = tau_masker.create_combined_mask(base_conditions)
-
-        ld_tau, sd_tau = tau_proc.apply_dr_selections(events, tau_mask, 0.5)
+        self.handle_selection_masks("Tau dR >= 0.5", dR_mask)
 
         self.objcollect['LDTau'] = ld_tau
         self.objcollect['SDTau'] = sd_tau
