@@ -56,16 +56,33 @@ def test_dRwSelf():
     result_unsorted = obj_processor.dRwSelf(events, threshold, mask, sort=False)
     assert len(result_unsorted) == 2
 
-def test_apply_dr_selections_basic(sample_events, object_processor, sample_mask):
-    leading, subleading = object_processor.apply_dr_selections(
+def test_get_dr_selection_results(sample_events, object_processor, sample_mask):
+    # Get selection results
+    event_mask, filtered_events, leading, subleading = object_processor.get_dr_selection_results(
         sample_events, 
-        sample_mask, 
+        sample_mask,
         dr_threshold=0.5
     )
     
-    assert len(leading) == len(sample_events)
-    assert len(subleading) == len(sample_events)
-    assert all(ak.to_numpy(leading.pt) >= ak.to_numpy(subleading.pt))
+    # Test 1: Check return types and lengths
+    assert len(event_mask) == len(sample_events)
+    assert len(filtered_events) == ak.sum(event_mask)
+    assert len(leading) == len(filtered_events)
+    assert len(subleading) == len(filtered_events)
+    
+    # Test 2: Verify leading objects have highest pT
+    assert ak.all(leading.pt >= ak.max(subleading.pt, axis=1, keepdims=True))
+    
+    # Test 3: Check deltaR separation
+    for evt_idx in range(len(leading)):
+        if len(subleading[evt_idx]) > 0:
+            deta = leading[evt_idx].eta - subleading[evt_idx].eta
+            dphi = leading[evt_idx].phi - subleading[evt_idx].phi
+            dr = np.sqrt(deta**2 + dphi**2)
+            assert ak.all(dr >= 0.5)
+            
+    # Test 4: Verify event filtering
+    assert len(filtered_events) <= len(sample_events)
 
 # def test_apply_dr_selections_empty(object_processor):
 #     empty_events = ak.Array({
