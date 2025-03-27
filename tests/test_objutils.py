@@ -72,7 +72,7 @@ def test_get_dr_selection_results(sample_events, object_processor, sample_mask):
     
     # Test 2: Verify leading objects have highest pT
     assert ak.all(leading.pt >= ak.max(subleading.pt, axis=1, keepdims=True))
-    
+
     # Test 3: Check deltaR separation
     for evt_idx in range(len(leading)):
         if len(subleading[evt_idx]) > 0:
