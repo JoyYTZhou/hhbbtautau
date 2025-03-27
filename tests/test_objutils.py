@@ -188,6 +188,16 @@ def test_get_dr_selection_results(sample_events, object_processor, sample_mask):
     # Test 3: Verify event filtering
     assert len(filtered_events) <= len(sample_events)
 
+     # Test 4: Calculate and verify delta R between leading and subleading objects
+    delta_eta = leading.eta - subleading.eta
+    delta_phi = leading.phi - subleading.phi
+    # Ensure phi difference is between -π and π
+    delta_phi = np.where(delta_phi > np.pi, delta_phi - 2*np.pi, delta_phi)
+    delta_phi = np.where(delta_phi < -np.pi, delta_phi + 2*np.pi, delta_phi)
+    
+    delta_r = np.sqrt(delta_eta**2 + delta_phi**2)
+    assert ak.all(delta_r >= 0.5), "Found objects with ΔR below threshold"
+
 # def test_apply_dr_selections_empty(object_processor):
 #     empty_events = ak.Array({
 #         'Muon_pt': ak.Array([[], []]),
