@@ -142,7 +142,7 @@ def test_dRwSelf():
     obj_processor = ObjectProcessor('obj', {})
     mask = ak.Array([[True, True, True], [True, True, True]])
     threshold = 0.4
-    result = obj_processor.dRwSelf(events, threshold, mask)
+    result, sort_mask = obj_processor.dRwSelf(events, threshold, mask)
 
     # Check basic length
     assert len(result) == 2
@@ -164,8 +164,9 @@ def test_dRwSelf():
     assert result[0][0] == (dr1 > threshold)
     assert result[0][1] == (dr2 > threshold)
 
-    result_unsorted = obj_processor.dRwSelf(events, threshold, mask, sort=False)
+    result_unsorted, sort_mask = obj_processor.dRwSelf(events, threshold, mask, sort=False)
     assert len(result_unsorted) == 2
+    assert sort_mask == None
 
 def test_get_dr_selection_results(sample_events, object_processor, sample_mask):
     # Get selection results
