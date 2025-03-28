@@ -103,13 +103,13 @@ class LoosetwoTau(PreselSelections):
         dR_mask, events = tau_proc.apply_event_level_dr(events, tau_mask, 0.5)
         self.handle_selection_masks("Tau dR >= 0.5", dR_mask)
 
+        tau_masker.events = events
         tau_mask = tau_masker.create_combined_mask(base_conditions)
         ld_tau, sd_tau = tau_proc.apply_obj_level_dr(events, tau_mask, 0.5)
         
         self.objcollect['LDTau'] = ld_tau
         self.objcollect['SDTau'] = sd_tau
         self.objcollect['nTau'] = ak.sum(tau_mask, axis=1)
-        self.objcollect['nTauSD'] = ak.sum(dR_mask, axis=1)
 
         return events
     
@@ -120,10 +120,10 @@ class LoosetwoTau(PreselSelections):
         }
         jet_masker = self.getObjMasker(events, "Jet")
         j_mask = jet_masker.create_combined_mask(base_conditions)
-        ld_tau = ObjectProcessor.fourvector(self.objcollect['LDTau'], None, sort=False)
-        sd_tau = ObjectProcessor.fourvector(self.objcollect['SDTau'], None, sort=False)
+        ld_tau, _ = ObjectProcessor.fourvector(self.objcollect['LDTau'], None, sort=False)
+        sd_tau, _ = ObjectProcessor.fourvector(self.objcollect['SDTau'], None, sort=False)
         jet_proc = self.getObjProc('Jet') 
-        jetdR_mask = jet_proc.dRwOther(events, ld_tau, 0.4) & jet_proc.dRwOther(events, sd_tau, 0.4)
+        jetdR_mask, _ = jet_proc.dRwOther(events, ld_tau, 0.4) & jet_proc.dRwOther(events, sd_tau, 0.4)
             
         return j_mask & jetdR_mask, jet_masker
 
