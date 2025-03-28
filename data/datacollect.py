@@ -5,24 +5,56 @@ import json, shutil, argparse, re, gzip
 from coffea.dataset_tools.dataset_query import DataDiscoveryCLI
 from src.utils.filesysutil import FileSysHelper, pjoin
 
+mc_dir = "availableMC"
+data_dir = "availableData"
+
 class QueryRunner:
     """Class to run the query on dataset strings and preprocess the dataset.
     Currently only supports MC datasets. Dependent on DataDiscoveryCLI from coffea."""
-    def __init__(self, dataset, infile, is_mc) -> None:
+    def __init__(self, dataset, year, is_mc) -> None:
         """Initialize the QueryRunner object.
         
         Parameters
-        - `dataset`: str, the dataset name key in the json file to query and preprocess. If none, query over all keys in input files."""
+        - `dataset`: str, the dataset name key in the json file to query and preprocess.
+                    If None, query over all keys in input files.
+        - `year`: str, the year to process (e.g., '2022', '2023'). If None, process all years.
+        - `is_mc`: bool, whether to process Monte Carlo (True) or collision data (False)
+        """
+        # Initialize DAS client
         self.ddc = DataDiscoveryCLI()
         self.ddc.do_regex_sites(r"T[123]_(US)_\w+")
-        with open(infile, 'r') as file:
-            self.mcstrings = json.load(file)
-        self.year = infile.split('/')[-1].split('.')[0]
+
+        # Set instance variables
         self._isMC = is_mc
-        if dataset is None:
-            self.dataset = list(self.mcstrings.keys())
+        self.year = year
+
+        # Get input directory and files
+        base_dir = mc_dir if is_mc else data_dir
+
+        if year:
+            # Single year processing
+            json_files = {year: pjoin(base_dir, f"{year}.json")}
         else:
-            self.dataset = [dataset]
+            # Multi-year processing
+            json_files = {
+                f.split('/')[-1].split('.')[0]: f
+                for f in FileSysHelper.glob_files(base_dir, "*.json")
+            }
+
+        # Load JSON data
+        self.mcstrings = {
+            year: self._load_json(filename)
+            for year, filename in json_files.items()
+        }
+
+        # Set datasets to process
+        self.dataset = [dataset] if dataset else list(self.mcstrings.keys())
+
+    @staticmethod
+    def _load_json(filepath):
+        """Helper method to load JSON file"""
+        with open(filepath, 'r') as f:
+            return json.load(f)
 
     def __call__(self, query_dir=None) -> None:
         """Run the query on the dataset and preprocess the dataset."""
@@ -108,13 +140,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=program_description, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-d', '--dataset', type=str, required=False, default=None,
                         help='group name of the dataset to run program on, e.g. TTbar, DYJets, etc. Note that this must match the key in the json input file.')
-    parser.add_argument('-i', '--infile', type=str, required=True, help='path of the json file containing the dataset query string')
+    parser.add_argument('-y', '--year', type=str, required=False, default=None, help='year of the dataset to run program on, e.g. 2022PostEE, 2023, etc.')
     parser.add_argument('-s', '--skip', action='store_true', required=False, help='whether to skip preprocess.')
     parser.add_argument('-q', '--query', type=str, required=False, default=None, help='directory containing custom skim.')
     parser.add_argument('--is_mc', action='store_true', help='specify if processing Monte Carlo samples (if set) or collision data (if not set)')
     args = parser.parse_args()
 
-    qr = QueryRunner(args.dataset, args.infile, is_mc=args.is_mc)
+    qr = QueryRunner(args.dataset, args.year, is_mc=args.is_mc)
     if args.skip:
         qr.dump_query()
     else:
