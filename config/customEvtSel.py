@@ -123,7 +123,7 @@ class LoosetwoTau(PreselSelections):
         ld_tau, _ = ObjectProcessor.fourvector(self.objcollect['LDTau'], None, sort=False)
         sd_tau, _ = ObjectProcessor.fourvector(self.objcollect['SDTau'], None, sort=False)
         jet_proc = self.getObjProc('Jet') 
-        jetdR_mask, _ = jet_proc.dRwOther(events, ld_tau, 0.4) & jet_proc.dRwOther(events, sd_tau, 0.4)
+        jetdR_mask = jet_proc.dRwOther(events, ld_tau, 0.4)[0] & jet_proc.dRwOther(events, sd_tau, 0.4)[0]
             
         return j_mask & jetdR_mask, jet_masker
 
@@ -146,7 +146,7 @@ class LoosetwoTau(PreselSelections):
         # - Combines basic jet requirements with b-tagging requirement
         # - operator can be 'equal to' or 'greater than or equal to'
         jet_nummask = jet_masker.maskredmask(
-            (self._jobjmask(events) & jet_masker.custommask('btag', opr.ge)),
+            (self._jobjmask(events)[0] & jet_masker.custommask('btag', opr.ge)),
             operator,
             count=bjet_count
         )
@@ -163,7 +163,7 @@ class LoosetwoTau(PreselSelections):
 
         # Step 7: Get final jet mask
         # - Gets updated mask with all requirements
-        jet_mask = self._jobjmask(events)
+        jet_mask = self._jobjmask(events)[0]
 
         # Step 8: Process jets
         # - Gets jet processor object

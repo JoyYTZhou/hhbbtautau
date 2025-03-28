@@ -1,7 +1,21 @@
-[PRESELECT]
-SEL_NAME = 'training_prelim'
+[ONEB]
+SEL_NAME = 'onelooseb'
 DELAYED_OPEN = false
-TRANSFER_PATH = '/store/user/joyzhou/training_tightskim_looseT'
+TRANSFER_PATH = '/store/user/joyzhou/onelooseb'
+FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*"]
+OUTENDPATTERN = ["output.csv", "cutflow.csv"]
+
+[TWOB]
+SEL_NAME = 'twolooseb'
+DELAYED_OPEN = false
+TRANSFER_PATH = '/store/user/joyzhou/twolooseb'
+FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*"]
+OUTENDPATTERN = ["output.csv", "cutflow.csv"]
+
+[NOB]
+SEL_NAME = 'zerolooseb'
+DELAYED_OPEN = false
+TRANSFER_PATH = '/store/user/joyzhou/zerolooseb'
 FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*"]
 OUTENDPATTERN = ["output.csv", "cutflow.csv"]
 
