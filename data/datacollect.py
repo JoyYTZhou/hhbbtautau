@@ -2,6 +2,8 @@
 # adapted from: https://github.com/bu-cms/bucoffea/blob/83daf25146d883df5131d0b50a51c0a6512d7c5f/bucoffea/helpers/dasgowrapper.py
 
 import json, shutil, argparse, re, gzip, logging
+from rich.console import Console
+from rich.table import Table
 from coffea.dataset_tools.dataset_query import DataDiscoveryCLI
 from src.utils.filesysutil import FileSysHelper, pjoin
 
@@ -47,12 +49,43 @@ class QueryRunner:
             for year, filename in json_files.items()
         }
 
+        self.display_mcstrings()
+
         self.dataset = dataset
 
         self.outpath = out_path
         
         FileSysHelper.checkpath(self.outpath, createdir=True)
 
+    def display_mcstrings(self):
+        """Display mcstrings data in a formatted rich table."""
+        console = Console()
+
+        # Create table
+        table = Table(title="Dataset Information")
+
+        # Add columns
+        table.add_column("Year", style="cyan")
+        table.add_column("Dataset", style="green")
+        table.add_column("Sample Name", style="yellow")
+        table.add_column("Short Name", style="magenta")
+        table.add_column("Sample Type", style="blue")
+
+        # Add rows
+        for year, year_data in self.mcstrings.items():
+            for dataset, samples in year_data.items():
+                for sample_name, details in samples.items():
+                    table.add_row(
+                        str(year),
+                        str(dataset),
+                        str(sample_name),
+                        str(details.get('shortname', 'N/A')),
+                        'MC' if self._isMC else 'Data'
+                    )
+
+        # Print table
+        console.print(table)
+        
     @staticmethod
     def _load_json(filepath):
         """Helper method to load JSON file"""
@@ -149,11 +182,13 @@ class QueryRunner:
 
         pattern = re.compile(r'_(\d+)\.root$')
 
-        for datasetname in self.mcstrings[dataset].keys():
+        sub_dictionary = self.mcstrings[year][dataset] 
+
+        for datasetname in sub_dictionary.keys():
             queryed_result[datasetname] = {"files": {}}
-            queryed_result[datasetname]["metadata"] = self.mcstrings[dataset][datasetname]
+            queryed_result[datasetname]["metadata"] = sub_dictionary[datasetname]
             queryed_result[datasetname]["metadata"]["is_mc"] = self._isMC
-            shortname = self.mcstrings[dataset][datasetname]['shortname'] 
+            shortname = sub_dictionary[datasetname]['shortname'] 
             root_files = FileSysHelper.glob_files(pjoin(query_dir, year, dataset), f'{shortname}*.root')
             for root_file in root_files:
                 match = pattern.search(root_file)
@@ -181,7 +216,7 @@ if __name__ == "__main__":
     parser.add_argument('-o', '--outpath', type=str, required=False, default='skimmed', help='output path for collecting skimmed data')
     args = parser.parse_args()
 
-    qr = QueryRunner(args.dataset, args.year, is_mc=args.is_mc)
+    qr = QueryRunner(args.dataset, args.year, is_mc=args.is_mc, out_path=args.outpath)
     if args.skip:
         qr.dump_query()
     else:
