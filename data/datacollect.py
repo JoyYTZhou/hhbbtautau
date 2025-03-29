@@ -160,10 +160,8 @@ class QueryRunner:
                 if match:
                     index = match.group(1)
                     queryed_result[datasetname]["files"][root_file] = {"uuid": index, "object_path": "Events"}
-        
-        FileSysHelper.checkpath('skimmed', createdir=True)
 
-        with gzip.open(f"skimmed/{dataset}_{year}.json.gz", 'wt') as file:
+        with gzip.open(f"{outpath}/{dataset}_{year}.json.gz", 'wt') as file:
             json.dump(queryed_result, file)
 
 if __name__ == "__main__":
