@@ -1,8 +1,9 @@
 from config.projectconfg import cleansetting
 from src.plotting.summary import PostProcessor, PostSkimProcessor
 from src.plotting.summary import PostProcessor, PostSkimProcessor
-import argparse, contextlib, logging
+import contextlib, logging
 from src.utils.ioutil import setup_logging
+from src.utils.displayutil import RichArgumentParser
 
 @contextlib.contextmanager
 def silence_output(file_path):
@@ -14,42 +15,44 @@ luminosity = {"2022PostEE": 41.5 * 1000, "2023Summer": 32.7 * 1000}
 
 def __main__():
    description = """
-   This script is a postprocessor for handling ROOT files. It supports various modes of operation:
+    Postprocessor for handling ROOT files with various operational modes:
    
-   - check: Check the integrity of ROOT files in the specified groups.
-   - hadd: Merge (hadd) ROOT files in the specified groups.
-   - clean: Clean corrupted ROOT files.
-   - yield: Calculate the yields from the ROOT files.
-
-   Usage Examples:
-   
-   1. Check the integrity of ROOT files:
-      python postprocess.py --mode check --group DYJets TTbar --year 2022PostEE
-      
-      Check all existing ROOT files:
-      python postprocess.py --mode check
-
-   2. Merge ROOT/CSV output files and CSV cutflow information per dataset per year:
-      python postprocess.py --mode hadd --group DYJets TTbar --year 2022PostEE
-
-   3. Clean corrupted/empty ROOT files:
-      python postprocess.py --mode clean --group DYJets TTbar
-
-   4. Calculate yields:
-      python postprocess.py --mode yield --group DYJets TTbar
+    Supports checking file integrity, merging files, cleaning corrupted files,
+    and calculating yields across different data groups and years.
    """
 
-   parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
+   examples = [
+        {
+            "cmd": "python postprocess.py --mode check --group DYJets TTbar --year 2022PostEE",
+            "desc": "Check integrity of ROOT files for specific groups and year"
+        },
+        {
+            "cmd": "python postprocess.py --mode hadd --group DYJets TTbar --year 2022PostEE",
+            "desc": "Merge ROOT/CSV files for specific groups and year"
+        },
+        {
+            "cmd": "python postprocess.py --mode clean --group DYJets TTbar",
+            "desc": "Clean corrupted ROOT files"
+        },
+        {
+            "cmd": "python postprocess.py --mode yield --group DYJets TTbar",
+            "desc": "Calculate yields for specific groups"
+        }
+    ]
 
+   parser = RichArgumentParser(
+      description=description,
+      examples=examples
+   )
    parser.add_argument('--mode', choices=['check', 'hadd', 'clean', 'yield'], required=True, 
-                     help='Choose the mode to run the postprocessor. Check the roots, hadd the files, clean the (corrupted) files, or get the yields.')
+                        help='Choose the mode to run the postprocessor.')
    parser.add_argument('--group', type=str, nargs='+', required=False, default=None, 
-                     help='Group of the files to be hadded, e.g. DYJets TTbar etc. If not provided, will postprocess all groups.')
+                        help='Group of files to process. If not provided, will process all groups.')
    parser.add_argument('--year', type=str, nargs='+', required=False, default=None, 
-                       help='Year of the files to be hadded, e.g. 2022PostEE, 2023 etc. If not provided, will postprocess all years.')
-   parser.add_argument('--quiet', '-q', action='store_true', help='Suppress all output to stdout and stderr')
+                        help='Year of files to process. If not provided, will process all years.')
+   parser.add_argument('--quiet', '-q', action='store_true', help='Suppress all output')
    parser.add_argument('--debug', '-d', action='store_true', help='Set logging to debug level')
-   parser.add_argument('--skim', '-s', action='store_true', help='Use this flag to postprocess skimmed files')
+   parser.add_argument('--skim', '-s', action='store_true', help='Postprocess skimmed files')
 
    args = parser.parse_args()
 
