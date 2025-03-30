@@ -1,4 +1,4 @@
-import os, json, cProfile, argparse, time, pstats, logging, tracemalloc, gc, sys
+import os, json, cProfile, time, pstats, logging, tracemalloc, gc, sys
 from dask.distributed import Client, performance_report
 from memory_profiler import memory_usage
 from line_profiler import LineProfiler
@@ -47,6 +47,9 @@ def run_basic_test(selection_name, processor_name):
     
     proc = processor_class(rtcfg, preprocessed, transferP="/store/user/joyzhou/temp", 
                          evtselclass=eventselection)
+    
+    logging.info("Processor class: %s", processor_class)
+    logging.info("Event selection class: %s", eventselection)
     
     readkwargs = {'filter_name': ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "HLT*", "MET"]}
     try:
