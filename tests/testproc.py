@@ -1,4 +1,4 @@
-import os, json, cProfile, argparse, time, pstats, logging, tracemalloc, gc
+import os, json, cProfile, argparse, time, pstats, logging, tracemalloc, gc, sys
 from dask.distributed import Client, performance_report
 from memory_profiler import memory_usage
 from line_profiler import LineProfiler
@@ -9,128 +9,131 @@ from config.customProc import switch_processors
 from src.utils.memoryutil import analyze_memory_status, force_release_memory
 from src.utils.ioutil import setup_logging, check_open_files
 from dask import config
+from src.utils.displayutil import RichArgumentParser
 
 pjoin = os.path.join
 
-def main():
-    # Force synchronous scheduler for debugging
-    # config.set(scheduler='threads')
-    # config.set(schedule='synchronous')
-    # logging.debug("Dask config not explicitly set")
-    # logging.debug("Set Dask to synchronous scheduler")
-
-    parser = argparse.ArgumentParser(description='Debug processor on a single file')
-    parser.add_argument('selection_name', type=str, help='Name of the selection to run')
-    parser.add_argument('processor_name', type=str, help='Name of the processor to run')
-    parser.add_argument('--profile', choices=['memory', 'line'], default='line',
-                        help='Type of profiling to perform (memory or line)')
-
-    args = parser.parse_args()
-    logging.info(f"Running with selection: {args.selection_name}")
-
-    file_dir = os.path.dirname(os.path.realpath(__file__))
-    # testinput = pjoin(file_dir, "testInputs", "DYJets_NANOAOD12_2.json")
-
-    testinput = pjoin(file_dir, "testInputs", "custom_SKIM.json")
-    with open(testinput, 'r') as f:
-        preprocessed = json.load(f)
-    
-    logging.info(f"Loaded test input with {len(preprocessed['files'])} files")
-
-    rtcfg_1 = {
+def get_test_config():
+    """Return standard test configuration"""
+    return {
         "OUTPUTDIR_PATH": "/uscms/home/joyzhou/nobackup/tests",
         "COPYDIR_PATH": "/uscms/home/joyzhou/nobackup/temp",
         "TRANSFER_PATH": "/store/user/joyzhou/temp",
-        "DELAYED_OPEN": False,
-        "REMOTE_LOAD": False,
         "FILTER_NAME": None,
         "DELAYED_WRITE": False,
     }
+    
+def load_test_input(processor_name, file_dir):
+    """Load test input file based on processor name"""
+    if processor_name == 'preselect':
+        testinput = pjoin(file_dir, "testInputs", "custom_SKIM.json")
+    else:
+        testinput = pjoin(file_dir, "testInputs", "DYJets_NANOAOD12_2.json")
+    
+    with open(testinput, 'r') as f:
+        return json.load(f)
+    
+def run_basic_test(selection_name, processor_name):
+    """Run basic test without profiling"""
+    file_dir = os.path.dirname(os.path.realpath(__file__))
+    preprocessed = load_test_input(processor_name, file_dir)
+    rtcfg = get_test_config(False)
+    
+    logging.info(f"Running basic test with selection: {selection_name}")
+    logging.info(f"Loaded test input with {len(preprocessed['files'])} files")
 
+    eventselection = switch_selections(selection_name)
+    processor_class = switch_processors(processor_name)
+    
+    proc = processor_class(rtcfg, preprocessed, transferP="/store/user/joyzhou/temp", 
+                         evtselclass=eventselection)
+    
+    readkwargs = {'filter_name': ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "HLT*", "MET"]}
+    try:
+        rc = proc.run(readkwargs=readkwargs)
+        logging.info("Basic test completed successfully")
+    finally:
+        del proc
+        gc.collect()
 
-    eventselection = switch_selections(args.selection_name)
-    processor_class = switch_processors(args.processor_name)
-
-    transferP = "/store/user/joyzhou/temp"
-
+def run_profiled_test(selection_name, processor_name, profile_type):
+    """Run test with profiling"""
+    file_dir = os.path.dirname(os.path.realpath(__file__))
+    preprocessed = load_test_input(processor_name, file_dir)
+    rtcfg = get_test_config()
+    
     tracemalloc.start()
-    logging.info("Started tracemalloc")
+    logging.info(f"Running profiled test ({profile_type}) with selection: {selection_name}")
 
-    proc = processor_class(rtcfg_1, preprocessed, transferP=transferP, evtselclass=eventselection)
+    eventselection = switch_selections(selection_name)
+    processor_class = switch_processors(processor_name)
+    
+    proc = processor_class(rtcfg, preprocessed, transferP="/store/user/joyzhou/temp", 
+                         evtselclass=eventselection)
 
     profiler = cProfile.Profile()
     profiler.enable()
-
-    start_time = time.time()
     
     initial_memory = memory_usage(-1, interval=.1, timeout=1)[0]
-    logging.info(f"Initial memory usage: {initial_memory} MiB")
-
-    try:
-        cpu_count = os.cpu_count()
-        logging.debug("CPU count: %d", cpu_count)
-        
-        readkwargs = {'filter_name': ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "HLT*", "MET"]}
-        rc = proc.run(readkwargs=readkwargs)
-        end_exec_time = time.time()
-        logging.warning(f"Finished processing events in {(end_exec_time-start_time)/60:.2f} minutes")
-    except Exception as e:
-        logging.error(f"Error encountered: {str(e)}")
-        raise
-    finally:
-        gc.collect()
-
-        count, files = check_open_files()
-        if count > 0:
-            logging.warning(f"Found {count} open files: {files}")
-            for file in files:
-                logging.warning(f"File {file} still open.")
-
-        post_gc_memory = memory_usage(-1, interval=.1, timeout=1)[0]
-        logging.warning(f"Memory after garbage collection: {post_gc_memory} MiB")
-
-        logging.warning("Analyzing remaining objects...")
-        analyze_memory_status(use_pympler=True)
-
-        del proc
-        post_proc_memory = memory_usage(-1, interval=.1, timeout=1)[0]
-        logging.warning(f"Memory after Processor deletion: {post_proc_memory} MiB")
-
-    profiler.disable()
-
-    # Write profiling results
-    stats_filename = 'cprofile_output.txt'
-    with open(stats_filename, 'w') as f:
-        stats = pstats.Stats(profiler, stream=f)
-        stats.sort_stats(pstats.SortKey.TIME)
-        stats.print_stats()
-    
     start_time = time.time()
     
-    force_release_memory()
-    post_release_memory = memory_usage(-1, interval=.1, timeout=1)[0]
-    logging.warning(f"Memory after forced memory release: {post_release_memory} MiB")
+    readkwargs = {'filter_name': ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "HLT*", "MET"]}
+    try:
+        rc = proc.run(readkwargs=readkwargs)
+        end_exec_time = time.time()
+        logging.warning(f"Processing time: {(end_exec_time-start_time)/60:.2f} minutes")
+    finally:
+        # Memory analysis
+        gc.collect()
+        count, files = check_open_files()
+        if count > 0:
+            logging.warning(f"Found {count} open files")
+        
+        post_gc_memory = memory_usage(-1, interval=.1, timeout=1)[0]
+        analyze_memory_status(use_pympler=True)
+        
+        del proc
+        force_release_memory()
+        
+        # Save profiling results
+        profiler.disable()
+        with open('cprofile_output.txt', 'w') as f:
+            stats = pstats.Stats(profiler, stream=f)
+            stats.sort_stats(pstats.SortKey.TIME)
+            stats.print_stats()
 
-    end_time = time.time()
-    logging.warning(f"Finished releasing memory in {(end_time-start_time)/60:.2f} minutes")
-    
-    
-if __name__ == '__main__':
+def main():
     setup_logging()
-    
-    # Set up line profiler
-    lp = LineProfiler()
-    # Add the functions you want to profile
-    lp.add_function(Processor.run)
 
-    # Run the profiled version
-    lp_wrapped = lp(main)
-    lp_wrapped()
+    parser = RichArgumentParser(description="Test Processor on a single input json file")
 
-    # Write line profiler results
-    lp_filename = 'line_profiler_output.txt'
-    with open(lp_filename, 'w') as f:
-        lp.print_stats(stream=f)
+    parser.add_argument('selection_name', type=str, help='Name of the selection to run')
+    parser.add_argument('processor_name', type=str, help='Name of the processor to run')
+    parser.add_argument('--profile', choices=['memory', 'line', 'none'], default='none',
+                        help='Type of profiling to perform (memory, line, or none)')
 
+    args = parser.parse_args()
+   
+    if args.profile == 'line':
+        # Set up line profiler
+        lp = LineProfiler()
+        lp.add_function(Processor.run)
 
-# ... existing code...
+        # Wrap and run the test function
+        def run_test():
+            run_basic_test(args.selection_name, args.processor_name)
+        lp_wrapped = lp(run_test)
+        lp_wrapped()
+
+        # Save line profiler results
+        with open('line_profiler_output.txt', 'w') as f:
+            lp.print_stats(stream=f)
+
+    elif args.profile == 'memory':
+        run_profiled_test(args.selection_name, args.processor_name, args.profile)
+
+    else:  # args.profile == 'none'
+        run_basic_test(args.selection_name, args.processor_name)
+
+if __name__ == '__main__':
+    main()
