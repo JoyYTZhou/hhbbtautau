@@ -37,7 +37,7 @@ def run_basic_test(selection_name, processor_name):
     """Run basic test without profiling"""
     file_dir = os.path.dirname(os.path.realpath(__file__))
     preprocessed = load_test_input(processor_name, file_dir)
-    rtcfg = get_test_config(False)
+    rtcfg = get_test_config()
     
     logging.info(f"Running basic test with selection: {selection_name}")
     logging.info(f"Loaded test input with {len(preprocessed['files'])} files")
