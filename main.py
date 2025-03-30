@@ -7,6 +7,7 @@ from src.utils.memoryutil import analyze_memory_status
 from config.projectconfg import runsetting
 from config.customEvtSel import switch_selections
 from config.customProc import switch_processors
+from src.utils.displayutil import RichArgumentParser
 
 def runselections():
     gc.enable()
