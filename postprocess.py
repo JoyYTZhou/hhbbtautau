@@ -1,9 +1,8 @@
-from config.projectconfg import cleansetting
 from src.plotting.summary import PostProcessor, PostSkimProcessor
 from src.plotting.summary import PostProcessor, PostSkimProcessor
-import contextlib, logging
+import contextlib, logging, os
 from src.utils.ioutil import setup_logging
-from src.utils.displayutil import RichArgumentParser
+from src.utils.displayutil import RichArgumentParser, create_table
 
 @contextlib.contextmanager
 def silence_output(file_path):
@@ -12,6 +11,18 @@ def silence_output(file_path):
             yield
    
 luminosity = {"2022PostEE": 41.5 * 1000, "2023Summer": 32.7 * 1000}
+
+DATA_DIR = os.environ.get('DATA_DIR', None)
+if DATA_DIR is None:
+   raise EnvironmentError("DATA_DIR environment variable not set. Please set it to the data directory.")
+
+CONDOR_BASE = os.environ.get('CONDOR_BASE', None)
+if CONDOR_BASE is None:
+   raise EnvironmentError("CONDOR_BASE environment variable not set. Please set it to the condor base directory.")
+
+USER = os.environ.get('USER', None)
+if USER is None:
+   raise EnvironmentError("USER environment variable not set. Please set it to the user directory.")
 
 def __main__():
    description = """
@@ -44,6 +55,8 @@ def __main__():
       description=description,
       examples=examples
    )
+   parser.add_argument('--dirname', type=str, required=True, 
+                        help='Directory containing the output and cutflow files to process')
    parser.add_argument('--mode', choices=['check', 'hadd', 'clean', 'yield'], required=True, 
                         help='Choose the mode to run the postprocessor.')
    parser.add_argument('--group', type=str, nargs='+', required=False, default=None, 
@@ -53,8 +66,17 @@ def __main__():
    parser.add_argument('--quiet', '-q', action='store_true', help='Suppress all output')
    parser.add_argument('--debug', '-d', action='store_true', help='Set logging to debug level')
    parser.add_argument('--skim', '-s', action='store_true', help='Postprocess skimmed files')
+   parser.add_argument('--is_mc', '-m', action='store_true', help='Process MC files')
 
    args = parser.parse_args()
+
+   cleansetting = {"DIRNAME": args.dirname, "DATA_DIR": DATA_DIR, 
+                   "INPUTDIR": os.path.join(CONDOR_BASE, args.dirname),
+                   "LOCALOUTPUT": f"/uscms/home/{USER}/nobackup/hadded/{args.dirname}",
+                   "TRANSFERPATH": f"/uscms/home/{USER}/nobackup/{args.dirname}_hadded", 
+                   "IS_MC": args.is_mc}
+   
+   create_table(cleansetting, "PostProcessor Settings")
 
    if args.quiet:
       console_level = logging.ERROR
