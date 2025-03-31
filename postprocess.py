@@ -79,17 +79,20 @@ def __main__():
    create_table(cleansetting, "PostProcessor Settings")
 
    if args.quiet:
-      console_level = logging.ERROR
+      console_level = logging.WARNING
+      file_level = logging.INFO
    else:
       console_level = logging.INFO
+      file_level = logging.DEBUG
    
    if args.debug:
       console_level = logging.DEBUG
-   
+      file_level = logging.DEBUG
+
    setup_logging(console_level=console_level, 
-                 file_level=logging.DEBUG,
-                 log_to_file=True)
-   
+               file_level=file_level,
+               log_to_file=True)
+
    if args.skim:
       pp = PostSkimProcessor(cleansetting, luminosity, groups=args.group, years=args.year)
    else:
