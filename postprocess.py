@@ -34,11 +34,11 @@ def __main__():
 
    examples = [
         {
-            "cmd": "python postprocess.py --mode check --group DYJets TTbar --year 2022PostEE",
+            "cmd": "python postprocess.py --dirname vbfskim --mode check --group DYJets TTbar --year 2022PostEE -m",
             "desc": "Check integrity of ROOT files for specific groups and year"
         },
         {
-            "cmd": "python postprocess.py --mode hadd --group DYJets TTbar --year 2022PostEE",
+            "cmd": "python postprocess.py --dirname tightskim --mode hadd --year 2022PostEE",
             "desc": "Merge ROOT/CSV files for specific groups and year"
         },
         {
