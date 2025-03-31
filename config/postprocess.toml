@@ -1,7 +1,16 @@
 [SKIM]
 DIRNAME = 'tightskim'
 DATA_DIR = "@format {env[DATA_DIR]}"
-METADATA = "@format {this.DATA_DIR}/availableMC" 
+METADATA = ['availableMC', 'availableData']
+INPUTDIR = "@format {env[CONDOR_BASE]}/{this.DIRNAME}"
+LOCALOUTPUT = "@format /uscms/home/joyzhou/nobackup/hadded/{this.DIRNAME}"
+TRANSFERPATH = "@format /store/user/joyzhou/{this.DIRNAME}_hadded"
+OUTTYPE = 'root'
+
+[VBFSKIM]
+DIRNAME = 'vbfskim'
+DATA_DIR = "@format {env[DATA_DIR]}"
+METADATA = ['availableMC', 'availableData']
 INPUTDIR = "@format {env[CONDOR_BASE]}/{this.DIRNAME}"
 LOCALOUTPUT = "@format /uscms/home/joyzhou/nobackup/hadded/{this.DIRNAME}"
 TRANSFERPATH = "@format /store/user/joyzhou/{this.DIRNAME}_hadded"
