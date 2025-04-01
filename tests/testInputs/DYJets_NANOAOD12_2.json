@@ -45,6 +45,6 @@
     }},
   "metadata": {
     "shortname": "DYJets",
-    "is_mc": false
+    "is_mc": true
   }
 }
