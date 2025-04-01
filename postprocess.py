@@ -34,20 +34,36 @@ def __main__():
 
    examples = [
         {
-            "cmd": "python postprocess.py --dirname vbfskim --mode check --group DYJets TTbar --year 2022PostEE -m",
-            "desc": "Check integrity of ROOT files for specific groups and year"
+            "cmd": "python postprocess.py -d vbfskim --mode check --group DYJets TTbar --year 2022PostEE -m",
+            "desc": "Check integrity of MC ROOT files for specific groups and year"
         },
         {
-            "cmd": "python postprocess.py --dirname tightskim --mode hadd --year 2022PostEE",
-            "desc": "Merge ROOT/CSV files for specific groups and year"
+            "cmd": "python postprocess.py -d vbfskim --mode check --year 2022PostEE",
+            "desc": "Check integrity of Data ROOT files for a specific year"
         },
         {
-            "cmd": "python postprocess.py --mode clean --group DYJets TTbar",
-            "desc": "Clean corrupted ROOT files"
+            "cmd": "python postprocess.py -d tightskim --mode hadd --year 2022PostEE -m",
+            "desc": "Merge ROOT/CSV files for all MC groups and a specific year"
         },
         {
-            "cmd": "python postprocess.py --mode yield --group DYJets TTbar",
-            "desc": "Calculate yields for specific groups"
+            "cmd": "python postprocess.py -d tightskim --mode hadd --year 2022PostEE",
+            "desc": "Merge ROOT/CSV files for specific Data groups and year"
+        },
+        {
+            "cmd": "python postprocess.py -d tightskim --mode clean --group DYJets TTbar -m",
+            "desc": "Clean corrupted MC ROOT files"
+        },
+        {
+            "cmd": "python postprocess.py -d tightskim --mode clean --group SingleMuon",
+            "desc": "Clean corrupted Data ROOT files"
+        },
+        {
+            "cmd": "python postprocess.py -d tightskim --mode yield --group DYJets TTbar -m",
+            "desc": "Calculate yields for specific MC groups"
+        },
+        {
+            "cmd": "python postprocess.py -d tightskim --mode yield --group SingleMuon",
+            "desc": "Calculate yields for specific Data groups"
         }
     ]
 
@@ -55,7 +71,7 @@ def __main__():
       description=description,
       examples=examples
    )
-   parser.add_argument('--dirname', type=str, required=True, 
+   parser.add_argument('-d', '--dirname', type=str, required=True,
                         help='Directory containing the output and cutflow files to process')
    parser.add_argument('--mode', choices=['check', 'hadd', 'clean', 'yield'], required=True, 
                         help='Choose the mode to run the postprocessor.')
@@ -63,10 +79,10 @@ def __main__():
                         help='Group of files to process. If not provided, will process all groups.')
    parser.add_argument('--year', type=str, nargs='+', required=False, default=None, 
                         help='Year of files to process. If not provided, will process all years.')
-   parser.add_argument('--quiet', '-q', action='store_true', help='Suppress all output')
-   parser.add_argument('--debug', '-d', action='store_true', help='Set logging to debug level')
-   parser.add_argument('--skim', '-s', action='store_true', help='Postprocess skimmed files')
-   parser.add_argument('--is_mc', '-m', action='store_true', help='Process MC files')
+   parser.add_argument('-q', '--quiet', action='store_true', help='Suppress all output')
+   parser.add_argument('-d', '--debug', action='store_true', help='Set logging to debug level')
+   parser.add_argument('-s', '--skim', action='store_true', help='Postprocess skimmed files')
+   parser.add_argument('-m', '--is_mc', action='store_true', help='Process MC files')
 
    args = parser.parse_args()
 
