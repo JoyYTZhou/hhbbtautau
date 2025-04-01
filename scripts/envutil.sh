@@ -183,21 +183,19 @@ function sum_genweight {
         return 1
     fi
 
-    # ROOT one-liner to sum Generator_weight
-    root -l -b -q << 'EOF'
-    {
-        TFile *f = TFile::Open("'"$ROOT_FILE"'");
-        TTree *t = (TTree*)f->Get("'"$TREE_NAME"'");
-Double_t sum = 0;
-Double_t weight;
-t->SetBranchAddress("Generator_weight", &weight);
-Long64_t entries = t->GetEntries();
-for(Long64_t i=0; i<entries; i++) {
-    t->GetEntry(i);
-    sum += weight;
-}
-printf("\nSum of Generator_weight: %.6f\n", sum);
-f->Close();
-}
+    # Create a temporary Python script
+    TEMP_SCRIPT=$(mktemp)
+    cat << EOF > "$TEMP_SCRIPT"
+from utils.rootutil import RootUtil
+
+try:
+    total_weight = RootUtil.print_total_wgt("$ROOT_FILE", "$TREE_NAME")
+    print(f"Processing completed successfully.")
+except Exception as e:
+    print(f"Error: {str(e)}")
 EOF
+
+    # Execute the Python script and clean up
+    python "$TEMP_SCRIPT"
+    rm "$TEMP_SCRIPT"
 }
