@@ -146,32 +146,52 @@ class QueryRunner:
                 # Process all datasets in this year
                 datasets_to_process = year_data.keys()
             
-            # Process each dataset
-            for dataset in datasets_to_process:
-                self.ddc.load_dataset_definition(dataset_definition=self.mcstrings[dataset], query_results_strategy='all', replicas_strategy='manual')
-    
+            # If not MC, collect all datasets to process together
             if not self._isMC:
-                out_name = f"Data_{suffix}"
-            else:
-                if len(self.dataset) > 1:
-                    out_name = f'{suffix}'
-                else:
-                    out_name = f'{self.dataset[0]}_{suffix}'
+                # Collect all datasets in the year
+                datasets_to_process = year_data.keys()
 
-            self.ddc.do_preprocess(output_file=out_name,
-                step_size=80000,
-                align_to_clusters=False,
-                recalculate_steps=False,
-                files_per_batch=1,
-                file_exceptions=(OSError, IndexError),
-                save_form=False,
-                allow_empty_datasets=True,
-                scheduler_url=None)
+                # Load all dataset definitions
+                for dataset in datasets_to_process:
+                    self.ddc.load_dataset_definition(dataset_definition=year_data[dataset], query_results_strategy='all', replicas_strategy='manual')
+
+                # Preprocess all data datasets together
+                out_name = f"Data_{suffix}"
+                self.ddc.do_preprocess(output_file=out_name,
+                    step_size=80000,
+                    align_to_clusters=False,
+                    recalculate_steps=False,
+                    files_per_batch=1,
+                    file_exceptions=(OSError, IndexError),
+                    save_form=False,
+                    allow_empty_datasets=True,
+                    scheduler_url=None)
             
-            shutil.move(f"{out_name}_available.json.gz", f"preprocessed/{out_name}.json.gz")
+                shutil.move(f"{out_name}_available.json.gz", f"preprocessed/{out_name}.json.gz")
         
-            self.ddc = DataDiscoveryCLI()
-            self.ddc.do_regex_sites(r"T[123]_(US)_\w+")
+            # If MC, process each dataset separately
+            else:
+                for dataset in datasets_to_process:
+                    # Reset DataDiscoveryCLI for each dataset
+                    self.ddc = DataDiscoveryCLI()
+                    self.ddc.do_regex_sites(r"T[123]_(US)_\w+")
+
+                    # Load dataset definition
+                    self.ddc.load_dataset_definition(dataset_definition=year_data[dataset], query_results_strategy='all', replicas_strategy='manual')
+
+                    # Preprocess the dataset
+                    out_name = f'{dataset}_{suffix}'
+                    self.ddc.do_preprocess(output_file=out_name,
+                        step_size=80000,
+                        align_to_clusters=False,
+                        recalculate_steps=False,
+                        files_per_batch=1,
+                        file_exceptions=(OSError, IndexError),
+                        save_form=False,
+                        allow_empty_datasets=True,
+                        scheduler_url=None)
+
+                    shutil.move(f"{out_name}_available.json.gz", f"preprocessed/{out_name}.json.gz")
     
     def query_from_dir(self, query_dir, dataset, year, outpath) -> None:
         """Query the available files from the query_dir, e.g. a directory containing custom skim files. 
