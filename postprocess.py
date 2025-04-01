@@ -80,7 +80,7 @@ def __main__():
    parser.add_argument('--year', type=str, nargs='+', required=False, default=None, 
                         help='Year of files to process. If not provided, will process all years.')
    parser.add_argument('-q', '--quiet', action='store_true', help='Suppress all output')
-   parser.add_argument('-d', '--debug', action='store_true', help='Set logging to debug level')
+   parser.add_argument('--debug', action='store_true', help='Set logging to debug level')
    parser.add_argument('-s', '--skim', action='store_true', help='Postprocess skimmed files')
    parser.add_argument('-m', '--is_mc', action='store_true', help='Process MC files')
 
