@@ -89,7 +89,7 @@ def __main__():
    cleansetting = {"DIRNAME": args.dirname, "DATA_DIR": DATA_DIR, 
                    "INPUTDIR": os.path.join(CONDOR_BASE, args.dirname),
                    "LOCALOUTPUT": f"/uscms/home/{USER}/nobackup/hadded/{args.dirname}",
-                   "TRANSFERPATH": f"/uscms/home/{USER}/nobackup/{args.dirname}_hadded", 
+                   "TRANSFERPATH": os.path.join(CONDOR_BASE, f"{args.dirname}_hadded"), 
                    "IS_MC": args.is_mc}
    
    create_table(cleansetting, "PostProcessor Settings")
