@@ -166,3 +166,38 @@ function csvview {
     # Call the displayutil.py directly
     python -m src.utils.displayutil "$@"
 }
+
+function sum_genweight {
+    if [ $# -eq 0 ]; then
+        echo "Usage: sum_genweight <root_file> [tree_name]"
+        echo "Example: sum_genweight myfile.root Events"
+        return 1
+    fi
+
+    ROOT_FILE=$1
+    TREE_NAME=${2:-Events}  # Default to 'Events' if not specified
+
+    # Check if file exists and is accessible
+    if [ ! -f "$ROOT_FILE" ]; then
+        echo "Error: File $ROOT_FILE does not exist or is not accessible"
+        return 1
+    }
+
+    # ROOT one-liner to sum Generator_weight
+    root -l -b -q << EOF
+.x
+TFile *f = TFile::Open("$ROOT_FILE");
+TTree *t = (TTree*)f->Get("$TREE_NAME");
+Double_t sum = 0;
+Double_t weight;
+t->SetBranchAddress("Generator_weight", &weight);
+Long64_t entries = t->GetEntries();
+for(Long64_t i=0; i<entries; i++) {
+    t->GetEntry(i);
+    sum += weight;
+}
+printf("\nSum of Generator_weight: %.6f\n", sum);
+f->Close();
+.q
+EOF
+}
