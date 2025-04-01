@@ -183,19 +183,6 @@ function sum_genweight {
         return 1
     fi
 
-    # Create a temporary Python script
-    TEMP_SCRIPT=$(mktemp)
-    cat << EOF > "$TEMP_SCRIPT"
-from utils.rootutil import RootUtil
-
-try:
-    total_weight = RootUtil.print_total_wgt("$ROOT_FILE", "$TREE_NAME")
-    print(f"Processing completed successfully.")
-except Exception as e:
-    print(f"Error: {str(e)}")
-EOF
-
-    # Execute the Python script and clean up
-    python "$TEMP_SCRIPT"
-    rm "$TEMP_SCRIPT"
+    # Execute the Python script directly
+    python -m src.utils.rootutil "$ROOT_FILE" "$TREE_NAME"
 }
