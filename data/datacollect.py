@@ -6,6 +6,8 @@ from rich.console import Console
 from rich.table import Table
 from coffea.dataset_tools.dataset_query import DataDiscoveryCLI
 from src.utils.filesysutil import FileSysHelper, pjoin
+import warnings
+warnings.filterwarnings("ignore", module="coffea*")
 
 mc_dir = "availableMC"
 data_dir = "availableData"
