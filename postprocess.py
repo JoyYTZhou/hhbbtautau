@@ -1,5 +1,4 @@
-from src.plotting.summary import PostProcessor, PostSkimProcessor
-from src.plotting.summary import PostProcessor, PostSkimProcessor
+from src.plotting.summary import PostSkimProcessor, PostPreselProcessor
 import contextlib, logging, os
 from src.utils.ioutil import setup_logging
 from src.utils.displayutil import RichArgumentParser, create_table
@@ -112,7 +111,7 @@ def __main__():
    if args.skim:
       pp = PostSkimProcessor(cleansetting, luminosity, groups=args.group, years=args.year)
    else:
-      pp = PostProcessor(cleansetting, luminosity, groups=args.group, years=args.year)
+      pp = PostPreselProcessor(cleansetting, luminosity, groups=args.group, years=args.year)
    
    if args.mode == 'check':
       pp.check_results()
