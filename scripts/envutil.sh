@@ -150,3 +150,19 @@ function cplocal {
     echo "Copying from condor to local ........................"
     xrdcp -r root://cmseos.fnal.gov/${CONDOR_BASE}/${DIRNAME} ${OUTPUT_BASE}
 }
+
+function csvview {
+    if [ $# -eq 0 ]; then
+        echo "Usage: csvview <file.csv> [--title TITLE] [--max-rows N]"
+        echo "Example: csvview data.csv --title 'My Data' --max-rows 10"
+        return 1
+    fi
+
+    if [ -z "$SRC_DIR" ]; then
+        echo "Error: SRC_DIR environment variable not set. Please run setup_dirname_local first."
+        return 1
+    fi
+
+    # Call the displayutil.py directly
+    python -m src.utils.displayutil "$@"
+}
