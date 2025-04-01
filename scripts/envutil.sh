@@ -181,13 +181,13 @@ function sum_genweight {
     if [ ! -f "$ROOT_FILE" ]; then
         echo "Error: File $ROOT_FILE does not exist or is not accessible"
         return 1
-    }
+    fi
 
     # ROOT one-liner to sum Generator_weight
-    root -l -b -q << EOF
-.x
-TFile *f = TFile::Open("$ROOT_FILE");
-TTree *t = (TTree*)f->Get("$TREE_NAME");
+    root -l -b -q << 'EOF'
+    {
+        TFile *f = TFile::Open("'"$ROOT_FILE"'");
+        TTree *t = (TTree*)f->Get("'"$TREE_NAME"'");
 Double_t sum = 0;
 Double_t weight;
 t->SetBranchAddress("Generator_weight", &weight);
@@ -198,6 +198,6 @@ for(Long64_t i=0; i<entries; i++) {
 }
 printf("\nSum of Generator_weight: %.6f\n", sum);
 f->Close();
-.q
+}
 EOF
 }
