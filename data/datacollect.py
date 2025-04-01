@@ -106,7 +106,8 @@ class QueryRunner:
             for year, year_data in self.mcstrings.items():
                 year_dir = pjoin(query_dir, year)
                 if FileSysHelper.checkpath(year_dir, createdir=False, raiseError=False):
-                    for dataset in year_data.keys():
+                    datasets_to_process = [self.dataset] if self.dataset else year_data.keys()
+                    for dataset in datasets_to_process:
                         if FileSysHelper.checkpath(pjoin(year_dir, dataset), createdir=False, raiseError=False):
                             self.query_from_dir(query_dir, dataset, year, self.outpath)
                         else:

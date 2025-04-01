@@ -1,5 +1,5 @@
 # synchronized selections
-# ! Not really
+# ! Not really tight
 default:
   name: "tauhtauh"
   triggerselections: 
