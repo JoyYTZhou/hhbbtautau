@@ -6,8 +6,11 @@ from rich.console import Console
 from rich.table import Table
 from coffea.dataset_tools.dataset_query import DataDiscoveryCLI
 from src.utils.filesysutil import FileSysHelper, pjoin
+from src.utils.displayutil import RichArgumentParser
 import warnings
+
 warnings.filterwarnings("ignore", module="coffea*")
+warnings.filterwarnings("ignore", module="numba.*")
 
 mc_dir = "availableMC"
 data_dir = "availableData"
@@ -139,39 +142,47 @@ class QueryRunner:
         for year, year_data in self.mcstrings.items():
             suffix = year
             
-            if dataset is not None:
+            if self.dataset is not None:
                 # If dataset is specified, only process that dataset
                 datasets_to_process = [self.dataset]
             else:
                 # Process all datasets in this year
                 datasets_to_process = year_data.keys()
             
-            # Process each dataset
-            for dataset in datasets_to_process:
-                self.ddc.load_dataset_definition(dataset_definition=self.mcstrings[dataset], query_results_strategy='all', replicas_strategy='manual')
-    
-            if not self._isMC:
-                out_name = f"Data_{suffix}"
-            else:
-                if len(self.dataset) > 1:
-                    out_name = f'{suffix}'
-                else:
-                    out_name = f'{self.dataset[0]}_{suffix}'
+                for dataset in datasets_to_process:
+                    # If dataset doesn't exist in this year, skip
+                    if dataset not in year_data:
+                        continue
 
-            self.ddc.do_preprocess(output_file=out_name,
-                step_size=80000,
-                align_to_clusters=False,
-                recalculate_steps=False,
-                files_per_batch=1,
-                file_exceptions=(OSError, IndexError),
-                save_form=False,
-                allow_empty_datasets=True,
-                scheduler_url=None)
-            
-            shutil.move(f"{out_name}_available.json.gz", f"preprocessed/{out_name}.json.gz")
-        
-            self.ddc = DataDiscoveryCLI()
-            self.ddc.do_regex_sites(r"T[123]_(US)_\w+")
+                    # Load dataset definition
+                    self.ddc.load_dataset_definition(
+                        dataset_definition=year_data[dataset],
+                        query_results_strategy='all',
+                        replicas_strategy='manual'
+                    )
+
+                    # Determine output name based on MC or Data
+                    out_name = f"{dataset}_{suffix}" if self._isMC else f"Data_{suffix}"
+
+                    # Preprocess the dataset
+                    self.ddc.do_preprocess(
+                        output_file=out_name,
+                        step_size=80000,
+                        align_to_clusters=False,
+                        recalculate_steps=False,
+                        files_per_batch=1,
+                            file_exceptions=(OSError, IndexError),
+                            save_form=False,
+                            allow_empty_datasets=True,
+                        scheduler_url=None
+                    )
+
+                    # Move the preprocessed file
+                    shutil.move(f"{out_name}_available.json.gz", f"preprocessed/{out_name}.json.gz")
+                    
+                    # Reset DataDiscoveryCLI for next iteration
+                    self.ddc = DataDiscoveryCLI()
+                    self.ddc.do_regex_sites(r"T[123]_(US)_\w+")
     
     def query_from_dir(self, query_dir, dataset, year, outpath) -> None:
         """Query the available files from the query_dir, e.g. a directory containing custom skim files. 
