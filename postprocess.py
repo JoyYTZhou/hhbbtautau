@@ -10,7 +10,7 @@ def silence_output(file_path):
         with contextlib.redirect_stdout(f), contextlib.redirect_stderr(f):
             yield
    
-luminosity = {"2022PostEE": 41.5 * 1000, "2023Summer": 32.7 * 1000}
+luminosity = {"2022PreEE": 41.5/2 * 1000, "2022PostEE": 41.5 * 1000/2, "2023Summer": 32.7 * 1000}
 
 DATA_DIR = os.environ.get('DATA_DIR', None)
 if DATA_DIR is None:
