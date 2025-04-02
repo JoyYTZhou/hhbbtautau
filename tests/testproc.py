@@ -68,10 +68,10 @@ def run_basic_test(selection_name, processor_name, transfer_files=True):
 
         # If files are not transferred, visualize the CSV files in output directory
         if not transfer_files:
-            output_dir = rtcfg['OUTPUTDIR_PATH']
+            output_dir = pjoin(rtcfg['OUTPUTDIR_PATH'], preprocessed['metadata']['shortname'])
             logging.info(f"Visualizing CSV files in {output_dir}")
             for file in os.listdir(output_dir):
-                if file.endswith('.csv'):
+                if file.endswith('cutflow.csv'):
                     csv_path = os.path.join(output_dir, file)
                     visualize_csv(csv_path, title=file, max_rows=10)
     finally:
