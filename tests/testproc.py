@@ -9,7 +9,7 @@ from config.customProc import switch_processors
 from src.utils.memoryutil import analyze_memory_status, force_release_memory
 from src.utils.ioutil import setup_logging, check_open_files
 from dask import config
-from src.utils.displayutil import RichArgumentParser
+from src.utils.displayutil import RichArgumentParser, visualize_csv
 
 pjoin = os.path.join
 
@@ -32,9 +32,16 @@ def load_test_input(processor_name, file_dir):
     
     with open(testinput, 'r') as f:
         return json.load(f)
-    
-def run_basic_test(selection_name, processor_name):
-    """Run basic test without profiling"""
+        
+def run_basic_test(selection_name, processor_name, transfer_files=True):
+    """Run basic test without profiling
+
+    Args:
+        selection_name (str): Name of the selection to run
+        processor_name (str): Name of the processor to run
+        transfer_files (bool): Whether to transfer output files to remote storage.
+                             If False, files remain local for visualization.
+    """
     file_dir = os.path.dirname(os.path.realpath(__file__))
     preprocessed = load_test_input(processor_name, file_dir)
     rtcfg = get_test_config()
@@ -45,16 +52,28 @@ def run_basic_test(selection_name, processor_name):
     eventselection = switch_selections(selection_name)
     processor_class = switch_processors(processor_name)
     
-    proc = processor_class(rtcfg, preprocessed, transferP="/store/user/joyzhou/temp", 
+    # Set transfer path to None if transfer_files is False
+    transfer_path = "/store/user/joyzhou/temp" if transfer_files else None
+    proc = processor_class(rtcfg, preprocessed, transferP=transfer_path,
                          evtselclass=eventselection)
     
     logging.info("Processor class: %s", processor_class)
     logging.info("Event selection class: %s", eventselection)
+    logging.info("File transfer mode: %s", "enabled" if transfer_files else "disabled")
     
     readkwargs = {'filter_name': ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "HLT*", "MET"]}
     try:
         rc = proc.run(readkwargs=readkwargs)
         logging.info("Basic test completed successfully")
+
+        # If files are not transferred, visualize the CSV files in output directory
+        if not transfer_files:
+            output_dir = rtcfg['OUTPUTDIR_PATH']
+            logging.info(f"Visualizing CSV files in {output_dir}")
+            for file in os.listdir(output_dir):
+                if file.endswith('.csv'):
+                    csv_path = os.path.join(output_dir, file)
+                    visualize_csv(csv_path, title=file, max_rows=10)
     finally:
         del proc
         gc.collect()
@@ -114,6 +133,8 @@ def main():
     parser.add_argument('processor_name', type=str, help='Name of the processor to run')
     parser.add_argument('--profile', choices=['memory', 'line', 'none'], default='none',
                         help='Type of profiling to perform (memory, line, or none)')
+    parser.add_argument('--transfer-files', action='store_true',
+                        help='Transfer output files to remote storage. If disabled, will visualize cutflow locally.')
 
     args = parser.parse_args()
    
@@ -136,7 +157,7 @@ def main():
         run_profiled_test(args.selection_name, args.processor_name, args.profile)
 
     else:  # args.profile == 'none'
-        run_basic_test(args.selection_name, args.processor_name)
+        run_basic_test(args.selection_name, args.processor_name, args.transfer_files)
 
 if __name__ == '__main__':
     main()
