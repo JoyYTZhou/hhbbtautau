@@ -130,7 +130,7 @@ def main():
     parser = RichArgumentParser(description="Test Processor on a single input json file")
 
     parser.add_argument('selection_name', type=str, help='Name of the selection to run')
-    parser.add_argument('processor_name', type=str, help='Name of the processor to run')
+    parser.add_argument('processor_name', type=str, help='Name of the processor to run (skim/preselect)')
     parser.add_argument('--profile', choices=['memory', 'line', 'none'], default='none',
                         help='Type of profiling to perform (memory, line, or none)')
     parser.add_argument('--transfer-files', action='store_true',
