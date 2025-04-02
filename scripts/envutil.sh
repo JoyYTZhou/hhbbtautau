@@ -178,10 +178,10 @@ function sum_genweight {
     TREE_NAME=${2:-Events}  # Default to 'Events' if not specified
 
     # Check if file exists and is accessible
-    if [ ! -f "$ROOT_FILE" ]; then
-        echo "Error: File $ROOT_FILE does not exist or is not accessible"
-        return 1
-    fi
+    # if [ ! -f "$ROOT_FILE" ]; then
+        # echo "Error: File $ROOT_FILE does not exist or is not accessible"
+        #return 1
+    # fi
 
     # Execute the Python script directly
     python -m src.utils.rootutil "$ROOT_FILE" "$TREE_NAME"
