@@ -187,7 +187,7 @@ class QueryRunner:
                     self.ddc.do_regex_sites(r"T[123]_(US)_\w+")
 
                     # Load dataset definition
-                    self.ddc.load_dataset_definition(dataset_definition=year_data[dataset], query_results_strategy='all', replicas_strategy='manual')
+                    self.ddc.load_dataset_definition(dataset_definition=year_data[dataset], query_results_strategy='all', replicas_strategy=strategy)
 
                     # Preprocess the dataset
                     out_name = f'{dataset}_{suffix}'
