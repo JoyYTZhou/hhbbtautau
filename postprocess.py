@@ -80,7 +80,6 @@ def __main__():
                         help='Year of files to process. If not provided, will process all years.')
    parser.add_argument('-q', '--quiet', action='store_true', help='Suppress all output')
    parser.add_argument('--debug', action='store_true', help='Set logging to debug level')
-   parser.add_argument('-s', '--skim', action='store_true', help='Postprocess skimmed files')
    parser.add_argument('-m', '--is_mc', action='store_true', help='Process MC files')
 
    args = parser.parse_args()
@@ -108,10 +107,20 @@ def __main__():
                file_level=file_level,
                log_to_file=True)
 
-   if args.skim:
-      pp = PostSkimProcessor(cleansetting, luminosity, groups=args.group, years=args.year)
+   if args.group.lower() == 'all':
+      groups = None
+   if args.year.lower() == 'all':
+      years = None
+   
+   if args.dirname.lower().contains('skim'):
+      is_skim = True
+   else: 
+      is_skim = False
+
+   if is_skim:
+      pp = PostSkimProcessor(cleansetting, luminosity, groups=groups, years=years)
    else:
-      pp = PostPreselProcessor(cleansetting, luminosity, groups=args.group, years=args.year)
+      pp = PostPreselProcessor(cleansetting, luminosity, groups=groups, years=years)
    
    if args.mode == 'check':
       pp.check_results()
