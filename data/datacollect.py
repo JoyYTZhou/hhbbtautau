@@ -18,7 +18,7 @@ data_dir = "availableData"
 class QueryRunner:
     """Class to run the query on dataset strings and preprocess the dataset.
     Currently only supports MC datasets. Dependent on DataDiscoveryCLI from coffea."""
-    def __init__(self, dataset, year, is_mc, out_path) -> None:
+    def __init__(self, dataset, year, is_mc, out_path, skip_choose) -> None:
         """Initialize the QueryRunner object.
         
         Parameters
@@ -59,6 +59,8 @@ class QueryRunner:
         self.dataset = dataset
 
         self.outpath = out_path
+
+        self.skip_choose = skip_choose
         
         FileSysHelper.checkpath(self.outpath, createdir=True)
 
@@ -140,6 +142,10 @@ class QueryRunner:
     def query_from_dasgo(self) -> None:
         """Query the available files from the DASGO. Produce a json.gz file with the query results (files, redirectors, uuids etc.)"""
         self.__add_MC_meta()
+        if self.skip_choose:
+            strategy = 'round-robin'
+        else:
+            strategy = 'manual'
         for year, year_data in self.mcstrings.items():
             suffix = year
             
@@ -157,7 +163,7 @@ class QueryRunner:
 
                 # Load all dataset definitions
                 for dataset in datasets_to_process:
-                    self.ddc.load_dataset_definition(dataset_definition=year_data[dataset], query_results_strategy='all', replicas_strategy='manual')
+                    self.ddc.load_dataset_definition(dataset_definition=year_data[dataset], query_results_strategy='all', replicas_strategy=strategy)
 
                 # Preprocess all data datasets together
                 out_name = f"Data_{suffix}"
@@ -231,8 +237,8 @@ if __name__ == "__main__":
     If the --skip flag is set, the program will only dump the query results to a json file.
     If the --query flag is set, the program will query the custom skims in the directory.
     """
+    parser = RichArgumentParser(description=program_description)
 
-    parser = argparse.ArgumentParser(description=program_description, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-d', '--dataset', type=str, required=False, default=None,
                         help='group name of the dataset to run program on, e.g. TTbar, DYJets, etc. Note that this must match the key in the json input file.')
     parser.add_argument('-y', '--year', type=str, required=False, default=None, help='year of the dataset to run program on, e.g. 2022PostEE, 2023, etc.')
@@ -240,9 +246,10 @@ if __name__ == "__main__":
     parser.add_argument('-q', '--query', type=str, required=False, default=None, help='directory containing custom skim.')
     parser.add_argument('--is_mc', action='store_true', help='specify if processing Monte Carlo samples (if set) or collision data (if not set)')
     parser.add_argument('-o', '--outpath', type=str, required=False, default='skimmed', help='output path for collecting skimmed data')
+    parser.add_argument('--skip_choose', action='store_true', help='skip the choose step in the preprocessor')
     args = parser.parse_args()
 
-    qr = QueryRunner(args.dataset, args.year, is_mc=args.is_mc, out_path=args.outpath)
+    qr = QueryRunner(args.dataset, args.year, is_mc=args.is_mc, out_path=args.outpath, skip_choose=args.skip_choose)
     if args.skip:
         qr.dump_query()
     else:
