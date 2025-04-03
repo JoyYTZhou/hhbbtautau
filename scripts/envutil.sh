@@ -186,3 +186,55 @@ function sum_genweight {
     # Execute the Python script directly
     python -m src.utils.rootutil "$ROOT_FILE" "$TREE_NAME"
 }
+
+function check_and_submit {
+    if [ $# -eq 0 ]; then
+        echo "Usage: check_and_submit <SEL_NAME> <PROCESS_NAME> <YEAR> <SAMPLE_SIZE>"
+        echo "Example: check_and_submit SKIM TTbar ALL 50"
+        return 1
+    fi
+
+    SEL_NAME=$1
+    PROCESS_NAME=$2
+    YEAR=$3
+    SAMPLE_SIZE=$4
+
+    echo -n "Which directory do you want to check? (e.g. vbfskim, tightskim, onelooseb, etc.): "
+    read DIRNAME
+
+    # Execute first Python program and wait for it to complete
+    if [ "$PROCESS" = "Data" ]; then
+        python postprocess.py --dirname $DIRNAME --process $PROCESS_NAME --year $YEAR --mode check
+        FIRST_EXIT_CODE=$?
+    else
+        python postprocess.py --dirname $DIRNAME --process $PROCESS_NAME --year $YEAR -m --mode check
+        FIRST_EXIT_CODE=$?
+    fi
+
+    # Check if first program executed successfully
+    if [ $FIRST_EXIT_CODE -eq 0 ]; then
+        echo "Checking corrupted files completed successfully. Starting second program..."
+    
+        # Execute second Python program
+        if [ "$PROCESS" = "Data" ]; then
+            python postprocess.py --dirname $DIRNAME --process $PROCESS_NAME --year $YEAR --mode clean
+        else
+            python postprocess.py --dirname $DIRNAME --process $PROCESS_NAME --year $YEAR -m --mode clean
+        fi
+
+        SECOND_EXIT_CODE=$?
+
+        if [ $SECOND_EXIT_CODE -eq 0 ]; then
+            echo "Both programs completed successfully."
+        else
+            echo "cleanning failed with exit code $SECOND_EXIT_CODE"
+            return $SECOND_EXIT_CODE
+        fi
+    else
+        echo "Checking corrupted files failed with exit code $FIRST_EXIT_CODE"
+        return $FIRST_EXIT_CODE
+    fi
+
+    cd exec
+    ./jobsub.sh $SEL_NAME $PROCESS_NAME $YEAR $SAMPLE_SIZE
+}
