@@ -106,13 +106,19 @@ def __main__():
    setup_logging(console_level=console_level, 
                file_level=file_level,
                log_to_file=True)
-
-   if args.group.lower() == 'all':
-      groups = None
-   if args.year.lower() == 'all':
-      years = None
    
-   if args.dirname.lower().contains('skim'):
+   groups = args.group
+   years = args.year
+   
+   if groups is not None:
+      if groups[0].lower() == 'all':
+         groups = None
+   
+   if years is not None:
+      if years[0].lower() == 'all':
+         years = None
+   
+   if 'skim' in args.dirname.lower():
       is_skim = True
    else: 
       is_skim = False

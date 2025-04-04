@@ -204,10 +204,10 @@ function check_and_submit {
 
     # Execute first Python program and wait for it to complete
     if [ "$PROCESS" = "Data" ]; then
-        python postprocess.py --dirname $DIRNAME --process $PROCESS_NAME --year $YEAR --mode check
+        python postprocess.py --dirname $DIRNAME --group $PROCESS_NAME --year $YEAR --mode check -q
         FIRST_EXIT_CODE=$?
     else
-        python postprocess.py --dirname $DIRNAME --process $PROCESS_NAME --year $YEAR -m --mode check
+        python postprocess.py --dirname $DIRNAME --group $PROCESS_NAME --year $YEAR -m --mode check -q
         FIRST_EXIT_CODE=$?
     fi
 
@@ -217,9 +217,9 @@ function check_and_submit {
     
         # Execute second Python program
         if [ "$PROCESS" = "Data" ]; then
-            python postprocess.py --dirname $DIRNAME --process $PROCESS_NAME --year $YEAR --mode clean
+            python postprocess.py --dirname $DIRNAME --group $PROCESS_NAME --year $YEAR --mode clean
         else
-            python postprocess.py --dirname $DIRNAME --process $PROCESS_NAME --year $YEAR -m --mode clean
+            python postprocess.py --dirname $DIRNAME --group $PROCESS_NAME --year $YEAR -m --mode clean
         fi
 
         SECOND_EXIT_CODE=$?
