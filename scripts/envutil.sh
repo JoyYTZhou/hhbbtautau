@@ -187,6 +187,59 @@ function sum_genweight {
     python -m src.utils.rootutil "$ROOT_FILE" "$TREE_NAME"
 }
 
+function hadd_and_collect {
+    if [ $# -eq 0 ]; then
+        echo "Usage: hadd_and_collect <SEL_NAME> <PROCESS_NAME> <YEAR>"
+        echo "Example: hadd_and_collect TIGHTSKIM TTbar ALL"
+        return 1
+    fi
+
+    SEL_NAME=$1
+    PROCESS_NAME=$2
+    YEAR=$3
+
+    echo -n "Which directory do you want to hadd? (e.g. vbfskim, tightskim, onelooseb, etc.): "
+    read DIRNAME
+
+    echo -n "Where do you want to put the job files? (e.g. tightskimmed, vbfskimmed, etc.): "
+    read JOB_DIRNAME
+
+    HADDED_DIRNAME=${DIRNAME}_hadded
+
+    if [ "$PROCESS" = "Data" ]; then
+        python postprocess.py --dirname $DIRNAME --process $PROCESS_NAME --year $YEAR --mode hadd
+        FIRST_EXIT_CODE=$?
+    else
+        python postprocess.py --dirname $DIRNAME --process $PROCESS_NAME --year $YEAR -m --mode hadd
+        FIRST_EXIT_CODE=$?
+    fi
+
+    # Check if first program executed successfully
+    if [ $FIRST_EXIT_CODE -eq 0 ]; then
+        echo "Checking corrupted files completed successfully. Starting data collecting..."
+
+        cd data
+        # Execute second Python program
+        if [ "$PROCESS" = "Data" ]; then
+            python datacollect.py -d $PROCESS_NAME -y $YEAR -q $HADDED_DIRNAME -o $JOB_DIRNAME
+        else
+            python datacollect.py -d $PROCESS_NAME -y $YEAR -q $HADDED_DIRNAME -o $JOB_DIRNAME --is_mc
+        fi
+    
+    SECOND_EXIT_CODE=$?
+
+        if [ $SECOND_EXIT_CODE -eq 0 ]; then
+            echo "Both programs completed successfully."
+        else
+            echo "collecting data failed with exit code $SECOND_EXIT_CODE"
+            return $SECOND_EXIT_CODE
+        fi
+    else
+        echo "hadding files failed with exit code $FIRST_EXIT_CODE"
+        return $FIRST_EXIT_CODE
+    fi
+}
+
 function check_and_submit {
     if [ $# -eq 0 ]; then
         echo "Usage: check_and_submit <SEL_NAME> <PROCESS_NAME> <YEAR> <SAMPLE_SIZE>"
