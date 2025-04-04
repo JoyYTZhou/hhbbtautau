@@ -25,7 +25,7 @@ FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*"]
 OUTENDPATTERN = ["output.csv", "cutflow.csv"]
 JOB_DIR = 'skimmed'
 
-[SKIM]
+[VBFSKIM]
 SEL_NAME = 'vbfskim'
 PROC_NAME = 'skim'
 TRANSFER_PATH = '/store/user/joyzhou/vbfskim'
