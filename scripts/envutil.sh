@@ -162,6 +162,11 @@ function dirview {
     python -m src.utils.filesysutil "$@"
 }
 
+function remove_old_files {
+    find . -type f -not -newermt "$(date -d 'today 00:00:00')" -not -newerct "$(date -d 'today 00:00:00')" -exec rm {} \;
+    echo "Removed all files not created or modified today"
+}
+
 function csvview {
     if [ $# -eq 0 ]; then
         echo "Usage: csvview <file.csv> [--title TITLE] [--max-rows N]"
