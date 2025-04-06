@@ -249,7 +249,18 @@ if __name__ == "__main__":
     parser.add_argument('--skip_choose', action='store_true', help='skip the choose step in the preprocessor')
     args = parser.parse_args()
 
-    qr = QueryRunner(args.dataset, args.year, is_mc=args.is_mc, out_path=args.outpath, skip_choose=args.skip_choose)
+    groups = args.dataset
+    years = args.year
+   
+    if groups is not None:
+        if groups[0].lower() == 'all':
+            groups = None
+    
+    if years is not None:
+        if years[0].lower() == 'all':
+            years = None
+
+    qr = QueryRunner(groups, years, is_mc=args.is_mc, out_path=args.outpath, skip_choose=args.skip_choose)
     if args.skip:
         qr.dump_query()
     else:
