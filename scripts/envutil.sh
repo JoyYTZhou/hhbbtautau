@@ -158,8 +158,8 @@ function dirview {
         echo "Purpose: view nested directories in a given directory"
         return 1
     fi
-
-    DIR_NAME=$1
+    
+    python -m src.utils.filesysutil "$@"
 }
 
 function csvview {
