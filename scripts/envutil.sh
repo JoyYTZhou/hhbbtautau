@@ -151,6 +151,16 @@ function cplocal {
     xrdcp -r root://cmseos.fnal.gov/${CONDOR_BASE}/${DIRNAME} ${OUTPUT_BASE}
 }
 
+function dirview {
+    if [ $# -eq 0 ]; then
+        echo "Usage: dirview <dir_name>"
+        echo "Example: dirview /store/user/username/dir_name"
+        echo "Purpose: view nested directories in a given directory"
+        return 1
+    fi
+
+    DIR_NAME=$1
+}
 
 function csvview {
     if [ $# -eq 0 ]; then
