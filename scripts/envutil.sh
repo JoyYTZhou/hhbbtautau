@@ -204,13 +204,13 @@ function hadd_and_collect {
     echo -n "Where do you want to put the job files? (e.g. tightskimmed, vbfskimmed, etc.): "
     read JOB_DIRNAME
 
-    HADDED_DIRNAME=${DIRNAME}_hadded
+    HADDED_DIRNAME=/store/user/joyzhou/${DIRNAME}_hadded
 
     if [ "$PROCESS" = "Data" ]; then
-        python postprocess.py --dirname $DIRNAME --process $PROCESS_NAME --year $YEAR --mode hadd
+        python postprocess.py --dirname $DIRNAME --group $PROCESS_NAME --year $YEAR --mode hadd
         FIRST_EXIT_CODE=$?
     else
-        python postprocess.py --dirname $DIRNAME --process $PROCESS_NAME --year $YEAR -m --mode hadd
+        python postprocess.py --dirname $DIRNAME --group $PROCESS_NAME --year $YEAR -m --mode hadd
         FIRST_EXIT_CODE=$?
     fi
 
