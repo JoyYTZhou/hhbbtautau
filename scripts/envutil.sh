@@ -151,6 +151,7 @@ function cplocal {
     xrdcp -r root://cmseos.fnal.gov/${CONDOR_BASE}/${DIRNAME} ${OUTPUT_BASE}
 }
 
+
 function csvview {
     if [ $# -eq 0 ]; then
         echo "Usage: csvview <file.csv> [--title TITLE] [--max-rows N]"
@@ -256,7 +257,7 @@ function check_and_submit {
     read DIRNAME
 
     # Execute first Python program and wait for it to complete
-    if [ "$PROCESS" = "Data" ]; then
+    if [ "$PROCESS_NAME" = "Data" ]; then
         python postprocess.py --dirname $DIRNAME --group $PROCESS_NAME --year $YEAR --mode check -q
         FIRST_EXIT_CODE=$?
     else
