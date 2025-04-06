@@ -249,6 +249,8 @@ function hadd_and_collect {
         echo "hadding files failed with exit code $FIRST_EXIT_CODE"
         return $FIRST_EXIT_CODE
     fi
+    
+    cd ..
 }
 
 function check_and_submit {
@@ -301,4 +303,6 @@ function check_and_submit {
 
     cd exec
     ./jobsub.sh $SEL_NAME $PROCESS_NAME $YEAR $SAMPLE_SIZE
+
+    cd ..
 }
