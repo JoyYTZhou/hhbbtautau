@@ -82,13 +82,19 @@ def __main__():
    parser.add_argument('--debug', action='store_true', help='Set logging to debug level')
    parser.add_argument('-m', '--is_mc', action='store_true', help='Process MC files')
    parser.add_argument('-s', '--is_skim', action='store_true', help='Process skim files')
+   parser.add_argument('-no_transfer', action='store_true', help='Do not transfer files after processing')
 
    args = parser.parse_args()
+   
+   if args.no_transfer:
+      transferpath = None
+   else:
+      transferpath = os.path.join(CONDOR_BASE, f"{args.dirname}_hadded")
 
    cleansetting = {"DIRNAME": args.dirname, "DATA_DIR": DATA_DIR, 
                    "INPUTDIR": os.path.join(CONDOR_BASE, args.dirname),
                    "LOCALOUTPUT": f"/uscms/home/{USER}/nobackup/hadded/{args.dirname}",
-                   "TRANSFERPATH": os.path.join(CONDOR_BASE, f"{args.dirname}_hadded"), 
+                   "TRANSFERPATH": transferpath, 
                    "IS_MC": args.is_mc}
    
    create_table(cleansetting, "PostProcessor Settings")
