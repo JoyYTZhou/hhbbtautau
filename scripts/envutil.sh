@@ -91,6 +91,40 @@ function LCG_sasetup {
     echo "Successfully sourced gdb software"
 }
 
+function clean_all {
+    rm -i *.pem
+    rm *.out
+    rm *.err
+    rm *error
+    rm *.log
+    rm *.txt
+}
+
+setup_jupyter_venv() {
+    env -i bash -c '
+        source scripts/envutil.sh
+        setup_LCG
+
+        cd ~/nobackup
+        export ENV_NAME=coffeajup_el9
+        python -m venv ${ENV_NAME}
+        echo "creating new venv..."
+        source ${ENV_NAME}/bin/activate
+
+        python3 -m pip install coffea --upgrade --no-cache-dir
+        echo "Installed Coffea"
+        python3 -m pip install dynaconf --no-cache-dir
+        echo "Installed dyanconf"
+        python3 -m pip install vector --upgrade --no-cache-dir
+        echo "Installed vector"
+        python3 -m pip install dask --upgrade --no-cache-dir
+        python3 -m pip install awkward --upgrade --no-cache-dir
+        python3 -m pip install dask_awkward --upgrade --no-cache-dir
+        python3 -m pip install hist --upgrade --no-cache-dir
+        deactivate
+    '
+}
+
 function set_python_path {
     DEFAULT_PYTHON_HOME=$(python -c "import sys; print(sys.base_prefix)")
     VENV_SITE_PACKAGES=$(python -c "import site; print(site.getsitepackages()[0])")
@@ -310,4 +344,28 @@ function check_and_submit {
     ./jobsub.sh $SEL_NAME $PROCESS_NAME $YEAR $SAMPLE_SIZE
 
     cd ..
+}
+
+function check_file {
+    FILENAME=$1
+    dasgoclient --query="site file=${FILENAME}"
+    xrdfs root://cmsxrootd.fnal.gov/ ls -l $FILENAME
+    xrdfs cms-xrd-global.cern.ch locate $FILENAME
+}
+
+function check_size {
+    REDIRECTOR=$1
+    FILENAME=$2
+    output=$(xrdfs $REDIRECTOR stat $FILENAME)
+    size=$(echo "$output" | grep -oP 'Size:\s+\K\d+')
+}
+
+function eosbackup {
+    echo "Enter the directory name to backup"
+    read DIRNAME
+    echo "===================================="
+    echo "The following directory will be copied"
+    echo /store/user/joyzhou/$DIRNAME
+    export EOS_MGM_URL=root://cmseos.fnal.gov
+    eos cp -r /eos/uscms/store/user/joyzhou/$DIRNAME/ /eos/uscms/store/user/joyzhou/backup/$DIRNAME/ >> eosbackup.log & 
 }
