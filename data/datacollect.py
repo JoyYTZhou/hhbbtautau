@@ -137,7 +137,6 @@ class QueryRunner:
                 # Add is_mc flag to each dataset name entry
                 for datasetname in year_data[dataset]:
                     year_data[dataset][datasetname]["is_mc"] = True
-
     
     def query_from_dasgo(self) -> None:
         """Query the available files from the DASGO. Produce a json.gz file with the query results (files, redirectors, uuids etc.)"""
@@ -253,11 +252,11 @@ if __name__ == "__main__":
     years = args.year
    
     if groups is not None:
-        if groups[0].lower() == 'all':
+        if groups.lower() == 'all':
             groups = None
     
     if years is not None:
-        if years[0].lower() == 'all':
+        if years.lower() == 'all':
             years = None
 
     qr = QueryRunner(groups, years, is_mc=args.is_mc, out_path=args.outpath, skip_choose=args.skip_choose)
