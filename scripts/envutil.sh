@@ -304,15 +304,15 @@ function check_and_submit {
     YEAR=$3
     SAMPLE_SIZE=$4
 
-    echo -n "Which directory do you want to check? (e.g. vbfskim, tightskim, onelooseb, etc.): "
+    echo -n "Which directory do you want to check? (e.g. vbfskim, tightskim): "
     read DIRNAME
 
     # Execute first Python program and wait for it to complete
     if [ "$PROCESS_NAME" = "Data" ]; then
-        python postprocess.py --dirname $DIRNAME --group $PROCESS_NAME --year $YEAR --mode check -q
+        python postprocess.py --dirname $DIRNAME --group $PROCESS_NAME --year $YEAR --mode check -q -s
         FIRST_EXIT_CODE=$?
     else
-        python postprocess.py --dirname $DIRNAME --group $PROCESS_NAME --year $YEAR -m --mode check -q
+        python postprocess.py --dirname $DIRNAME --group $PROCESS_NAME --year $YEAR -m --mode check -q -s
         FIRST_EXIT_CODE=$?
     fi
 
@@ -322,9 +322,9 @@ function check_and_submit {
     
         # Execute second Python program
         if [ "$PROCESS" = "Data" ]; then
-            python postprocess.py --dirname $DIRNAME --group $PROCESS_NAME --year $YEAR --mode clean
+            python postprocess.py --dirname $DIRNAME --group $PROCESS_NAME --year $YEAR --mode clean -s
         else
-            python postprocess.py --dirname $DIRNAME --group $PROCESS_NAME --year $YEAR -m --mode clean
+            python postprocess.py --dirname $DIRNAME --group $PROCESS_NAME --year $YEAR -m --mode clean -s
         fi
 
         SECOND_EXIT_CODE=$?
