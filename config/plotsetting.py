@@ -1,6 +1,13 @@
 if_stack = True
 hist_type = 'fill'
 
+HT = {
+    "HT": {
+        "hist": {'bins': 30, 'range': [0,1500]},
+        "plot": {'xlabel': r'$H_T$ (GeV)'}
+        }
+}
+
 tau_pt = {
     "LDTau_pt": {
         "hist": {'bins': 30, 'range': [0,300]},
