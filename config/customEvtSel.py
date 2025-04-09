@@ -13,6 +13,7 @@ def switch_selections(sel_name):
     selections = {
         'tightskim': tightSkim,
         'vbfskim': VBFSkim,
+        'jetskim': jetSkim,
         'onelooseb': OneLooseB,
         'twolooseb': TwoLooseB,
         'zerolooseb': ZeroLooseB

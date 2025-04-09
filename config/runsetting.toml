@@ -43,6 +43,14 @@ FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*"]
 OUTENDPATTERN = ["output.csv", "cutflow.csv"]
 JOB_DIR = 'skimmed'
 
+[JETSKIM]
+SEL_NAME = 'jetskim'
+PROC_NAME = 'skim'
+TRANSFER_PATH = '/store/user/joyzhou/jetskim'
+FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "HLT*", "MET"]
+OUTENDPATTERN = [".root", "cutflow.csv"]
+JOB_DIR = 'preprocessed'
+
 [VBFSKIM]
 SEL_NAME = 'vbfskim'
 PROC_NAME = 'skim'
