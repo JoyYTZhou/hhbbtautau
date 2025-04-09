@@ -4,7 +4,7 @@
 from src.analysis.evtselutil import SkimSelections, BaseEventSelections, PreselSelections
 from src.analysis.objutil import ObjectMasker, ObjectProcessor
 
-from config.projectconfg import mc_nm, data_nm, selection_sync, selection_loose, selection_vbf
+from config.projectconfg import mc_nm, data_nm, selection_sync, selection_loose, selection_vbf, new_trigger
 import operator as opr
 import awkward as ak
 import dask_awkward as dak
@@ -23,6 +23,7 @@ ditau_trigsel = selection_sync.triggerselections
 sync_objsel = selection_sync.objselections
 vbf_trigsel = selection_vbf.triggerselections
 loose_objsel = selection_loose.objselections
+new_trigsel = new_trigger.triggerselections
 
 class vetoSkim(SkimSelections):
     def _setevtsel(self, events):
@@ -63,6 +64,15 @@ class tightSkim(vetoSkim):
             mapcfg = data_nm
         super().__init__(trigcfg=ditau_trigsel, objselcfg=sync_objsel, mapcfg=mapcfg, sequential=False, is_mc=is_mc)
 
+class jetSkim(vetoSkim):
+    """New Ditau+Jet trigger"""
+    def __init__(self, is_mc):
+        if is_mc:
+            mapcfg = mc_nm
+        else:
+            mapcfg = data_nm
+        super().__init__(trigcfg=new_trigsel, objselcfg=sync_objsel, mapcfg=mapcfg, sequential=False, is_mc=is_mc)
+    
 class VBFSkim(vetoSkim):
     """VBF Trigger + Sync Vetos"""
     def __init__(self, is_mc):

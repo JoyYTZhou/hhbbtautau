@@ -27,5 +27,19 @@
             "shortname": "WtoLNu-2Jets_1J",
             "nwgt": 6746301776836.0
         }
+    },
+    "DYJets": {
+        "/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/Run3Summer22NanoAODv12-forPOG_130X_mcRun3_2022_realistic_v5-v2/NANOAODSIM": {
+            "xsection": 5558.0,
+            "shortname": "DYJetsToLL_M-50",
+            "nwgt": 27096229.0
+        }
+    },
+    "ggF": {
+        "/GluGlutoHHto2B2Tau_kl-1p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer22NanoAODv12-130X_mcRun3_2022_realistic_v5-v2/NANOAODSIM": {
+            "xsection": 0.002964,
+            "shortname": "GluGlutoHHto2B2Tau",
+            "nwgt": 2966.041
+        }
     }
 }

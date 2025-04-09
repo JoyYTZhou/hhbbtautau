@@ -37,6 +37,11 @@ selection_tight = Dynaconf(
     environments=True,
     settings_files=['config/object_selections/tight.yaml'])
 
+new_trigger = Dynaconf(
+    root_path = root_path,
+    environments = True,
+    settings_files=['config/object_selections/new.yaml']) 
+
 runsetting = Dynaconf(
     root_path = root_path,
     environments=True,
