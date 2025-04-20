@@ -221,13 +221,6 @@ class ResOneB(TwoTauMixin, PreselSelections):
         self.selbjets(events, 1, opr.eq)
 
 class ResTwoB(ResOneB):
-    def __init__(self, is_mc) -> None:
-        if is_mc:
-            mapcfg = mc_nm
-        else:
-            mapcfg = data_nm
-        super().__init__(trigcfg=ditau_trigsel, objselcfg=sync_objsel, mapcfg=mapcfg, sequential=True, is_mc=is_mc)
-    
     def _setevtsel(self, events):
         events = self.seltwotaus(events)
         self.selbjets(events, 2, opr.ge)
