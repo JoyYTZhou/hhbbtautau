@@ -9,6 +9,7 @@ from src.plotting.visutil import CSVPlotter
 from src.plotting.summary import PostPreselProcessor
 from src.utils.mathutil import MathUtil, ABCDUtil
 from src.utils.ioutil import setup_logging
+from src.utils.displayutil import RichArgumentParser
 
 luminosity = {"2022PreEE": 41.5/2 * 1000, "2022PostEE": 41.5 * 1000/2, "2023Summer": 32.7 * 1000}
 
@@ -17,36 +18,93 @@ pjoin = os.path.join
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 data_dir = os.path.join(root_dir, 'data')
 
-post_process_base = '/Users/yuntongzhou/Desktop/Dihiggszztt/output/postprocessed'
-local_cutflow_base = '/Users/yuntongzhou/Desktop/Dihiggszztt/output/ABCD_Cutflow'
+
 results_dir = "/Users/yuntongzhou/Desktop/Dihiggszztt/output"
 
 logging.info(f"Root directory: {root_dir}")
 
-cfg_1b = {"DIRNAME": None, "DATA_DIR": data_dir, 
-        "INPUTDIR": pjoin(post_process_base, 'oneb'),  
-        "LOCALOUTPUT": pjoin(local_cutflow_base, 'oneb'),
-        "TRANSFERPATH": None, 
-        "IS_MC": True}
+from config.plotsetting import dR, H_pt, HT, modified_H_mass
 
-cfg_2b = cfg_1b.copy()
-cfg_2b["INPUTDIR"] = pjoin(post_process_base, 'twob')
-cfg_2b["LOCALOUTPUT"] = pjoin(local_cutflow_base, 'twob')
+def plot_avg_results(src_df, tar_df, out_dir):
+    # Base configuration that's common for all plots
+    base_config = {
+        'list_of_evts': [tar_df, src_df],
+        'labels': ['OS', 'original SS', 'Reweighted SS'],
+        'ratio_ylabel': 'Pred/Actual',
+        'outdir': out_dir,
+        'save_suffix': 'rwgt'
+    }
+    
+    # List of attribute dictionaries to plot
+    attr_dicts = [
+        modified_H_mass,
+        dR,
+        H_pt,
+        HT
+    ]
+
+    # Plot each attribute dictionary
+    for attr_dict in attr_dicts:
+        plot_config = base_config.copy()
+        plot_config['attridict'] = attr_dict
+        CSVPlotter.plot_with_average(**plot_config)
+
+def plot_rwgt_results(src_df, tar_df, rwgt_df, out_dir):
+    # Base configuration that's common for all plots
+    base_config = {
+        'list_of_evts': [tar_df, src_df, rwgt_df],
+        'labels': ['OS', 'original SS', 'Reweighted SS'],
+        'ratio_ylabel': 'Pred/Actual',
+        'outdir': out_dir,
+        'save_suffix': 'rwgt'
+    }
+    
+    # List of attribute dictionaries to plot
+    attr_dicts = [
+        modified_H_mass,
+        dR,
+        H_pt,
+        HT
+    ]
+
+    # Plot each attribute dictionary
+    for attr_dict in attr_dicts:
+        plot_config = base_config.copy()
+        plot_config['attridict'] = attr_dict
+        CSVPlotter.plot_shape(**plot_config)
 
 def add_inv_mass_dR(df):
     """Prepare the invariant mass and dR for the given dataframe."""
-    MathUtil.add_system_4vec(df, 'LDTau', 'SDTau', 'DiTau')
-    MathUtil.add_system_4vec(df, 'LDBjet', 'SDBjet', 'DiJet')
-    MathUtil.add_dR(df, 'LDTau', 'SDTau', 'Tau_dR')
-    MathUtil.add_dR(df, 'LDBjet', 'SDBjet', 'Bjet_dR')
-    MathUtil.add_dR(df, 'DiTau', 'DiJet', 'RecoH_dR')
+    # List of particle pairs for system 4-vectors
+    system_pairs = [
+        ('LDTau', 'SDTau', 'DiTau'),
+        ('LDBjet', 'SDBjet', 'DiJet')
+    ]
+
+    # List of particle pairs for dR calculations
+    dr_pairs = [
+        ('LDTau', 'SDTau', 'Tau_dR'),
+        ('LDBjet', 'SDBjet', 'Bjet_dR'),
+        ('DiTau', 'DiJet', 'RecoH_dR')
+    ]
+
+    # Add system 4-vectors
+    for p1, p2, sys in system_pairs:
+        MathUtil.add_system_4vec(df, p1, p2, sys)
+
+    # Add dR values
+    for p1, p2, name in dr_pairs:
+        MathUtil.add_dR(df, p1, p2, name)
+
+    # Add HT
     MathUtil.add_HT(df, ['LDTau', 'SDTau', 'LDBjet', 'SDBjet'], 'HT')
-    MathUtil.add_f_momentum(df, 'LDTau')
-    MathUtil.add_f_momentum(df, 'SDTau')
-    MathUtil.add_f_momentum(df, 'LDBjet')
-    MathUtil.add_f_momentum(df, 'SDBjet')
-    MathUtil.add_f_momentum(df, 'DiTau')
-    MathUtil.add_f_momentum(df, 'DiJet')
+
+    # Add momentum for all particles
+    particles = ['LDTau', 'SDTau', 'LDBjet', 'SDBjet', 'DiTau', 'DiJet']
+    for particle in particles:
+        MathUtil.add_f_momentum(df, particle)
+
+    # Calculate OS
     df['OS'] = df['LDTau_charge']*df['SDTau_charge'] < 0
 
 def selOS(df):
@@ -64,49 +122,64 @@ def regroup(df, keywords, new_value):
     df.loc[mask, 'group'] = new_value
     return df
 
-def getABCDdf(oneb_data, twob_data):
+def getABCDdf(oneb_data, twob_data, output_dir, cutflow_dir='postprocessed'):
+    """Get the ABCD dataframes for one b and two b channels."""
     cp = CSVPlotter(outdir='/Users/yuntongzhou/Desktop/Dihiggszztt/output/plots')
-    wgt_name = 'Generator_weight_values'
-    meta_dir = '/Users/yuntongzhou/Desktop/Dihiggszztt/HHtobbtautau/data/weightedMC'
-    output_dir = '/Users/yuntongzhou/Desktop/Dihiggszztt/output/postprocessed'
-    dfDs = []
-    dfBs = []
-    pjoin = os.path.join
-    for year in os.listdir(oneb_data):
-        if not year.startswith('.'):
-            lumi = luminosity[year]
-            meta_path = pjoin(meta_dir, f'{year}.json')
-            df_src = pjoin(oneb_data, year)
-            postp = pjoin(output_dir, 'oneb', year)
-            args = {'metadata_path': meta_path, 'postp_output': postp, 'per_evt_wgt': wgt_name, 'luminosity': lumi}
-            dfB_year = cp.process_datasets(datasource=df_src, **args, extraprocess=selOS, selname='OS Tau')
-            dfBs.append(dfB_year)
-            dfD_year = cp.process_datasets(datasource=df_src, **args, extraprocess=selSS, selname='SS Tau')
-            dfDs.append(dfD_year)
-    dfD = pd.concat(dfDs)
-    dfB = pd.concat(dfBs)
+    base_config = {
+        'wgt_name': 'Generator_weight_values',
+        'meta_dir': '/Users/yuntongzhou/Desktop/Dihiggszztt/HHtobbtautau/data/weightedMC',
+        'output_base': f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/{cutflow_dir}',
+        'abcd_output': f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/ABCD/{output_dir}'
+    }
     
-    dfCs = []
-    dfAs = []
-    for year in os.listdir(twob_data):
-        if not year.startswith('.'):
+    if not os.path.exists(base_config['abcd_output']):
+        os.makedirs(base_config['abcd_output'])
+    if not os.path.exists(base_config['output_base']):
+        os.makedirs(base_config['output_base']) 
+
+    def process_channel(data_path, channel_name):
+        """Process a single channel (1b or 2b) and return OS and SS dataframes."""
+        os_dfs = []
+        ss_dfs = []
+        for year in os.listdir(data_path):
+            if year.startswith('.'):
+                continue
+
             lumi = luminosity[year]
-            meta_path = pjoin(meta_dir, f'{year}.json')
-            df_src = pjoin(twob_data, year)
-            postp = pjoin(output_dir, 'twob', year)
-            args = {'metadata_path': meta_path, 'postp_output': postp, 'per_evt_wgt': wgt_name, 'luminosity': lumi}
-            dfA_year = cp.process_datasets(datasource=df_src, **args, extraprocess=selOS, selname='OS Tau')
-            dfAs.append(dfA_year)
-            dfC_year = cp.process_datasets(datasource=df_src, **args, extraprocess=selSS, selname='SS Tau')
-            dfCs.append(dfC_year)
-    dfC = pd.concat(dfCs)
-    dfA = pd.concat(dfAs)
-    
-    dfC.to_csv("/Users/yuntongzhou/Desktop/Dihiggszztt/output/ABCD/SS2b.csv")
-    dfD.to_csv("/Users/yuntongzhou/Desktop/Dihiggszztt/output/ABCD/SS1b.csv")
-    dfA.to_csv("/Users/yuntongzhou/Desktop/Dihiggszztt/output/ABCD/OS2b.csv")
-    dfB.to_csv("/Users/yuntongzhou/Desktop/Dihiggszztt/output/ABCD/OS1b.csv")
-    return dfA, dfB, dfC, dfD
+            args = {
+                'metadata_path': pjoin(base_config['meta_dir'], f'{year}.json'),
+                'postp_output': pjoin(base_config['output_base'], channel_name, year),
+                'per_evt_wgt': base_config['wgt_name'],
+                'luminosity': lumi,
+                'datasource': pjoin(data_path, year)
+            }
+
+            # Process OS events
+            os_df = cp.process_datasets(**args, extraprocess=selOS, selname='OS Tau')
+            os_dfs.append(os_df)
+
+            # Process SS events
+            ss_df = cp.process_datasets(**args, extraprocess=selSS, selname='SS Tau')
+            ss_dfs.append(ss_df)
+
+        return pd.concat(os_dfs), pd.concat(ss_dfs)
+
+    # Process both channels
+    os_2b, ss_2b = process_channel(twob_data, 'twob')  # Region A and C
+    os_1b, ss_1b = process_channel(oneb_data, 'oneb')  # Region B and D
+
+    # Save results
+    output_pairs = [
+        (ss_2b, 'SS2b.csv'),  # Region C
+        (ss_1b, 'SS1b.csv'),  # Region D
+        (os_2b, 'OS2b.csv'),  # Region A
+        (os_1b, 'OS1b.csv')   # Region B
+    ]
+
+    for df, filename in output_pairs:
+        df.to_csv(pjoin(base_config['abcd_output'], filename))
+
+    return os_2b, os_1b, ss_2b, ss_1b
 
 def split_sign(df_ori):
     df = df_ori.copy()
@@ -149,8 +222,9 @@ def get_tauid_train_test(df_SS, df_OS):
     tau_id = lambda df: df['SDTau_idvsjet'] >= 5
     return get_train_test(df_SS, df_OS, tau_id)
 
-def get_mbb_train_test(df_SS, df_OS):
-    filter_mass = lambda df: df.copy()[df['DiJet_mass'] > 90]
+def get_mbb_train_test(df_SS, df_OS, mbb_cut=90):
+    """Obtain train and test sets based on the DiJet mass region division."""
+    filter_mass = lambda df: df.copy()[df['DiJet_mass'] > mbb_cut]
     df_SS = filter_mass(df_SS)
     df_OS = filter_mass(df_OS)
     return get_train_test(df_SS, df_OS, lambda df: df['DiJet_mass'] < 160)
@@ -219,37 +293,58 @@ def train_mlp_rwgt(train_ori, train_tar):
 
     return mlp_rwgter
 
-def read_two_channels_df():
+def read_two_channels_df(output_dir):
     # define data and results directory, load data
-    ABCD_dir = "/Users/yuntongzhou/Desktop/Dihiggszztt/output/ABCD"
-    plot_dir = "/Users/yuntongzhou/Desktop/Dihiggszztt/output/plots/ABCD_ttOnly"
+    ABCD_dir = f"/Users/yuntongzhou/Desktop/Dihiggszztt/output/ABCD/{output_dir}"
 
-    Res1b_SS = pd.read_csv(f'{ABCD_dir}/RegionD.csv', index_col=0)
-    Res2b_SS = pd.read_csv(f'{ABCD_dir}/RegionC.csv', index_col=0)
-    Res1b_OS = pd.read_csv(f'{ABCD_dir}/RegionB.csv', index_col=0)
-    Res2b_OS = pd.read_csv(f'{ABCD_dir}/RegionA.csv', index_col=0)
+    Res1b_SS = pd.read_csv(f'{ABCD_dir}/SS1b.csv', index_col=0)
+    Res2b_SS = pd.read_csv(f'{ABCD_dir}/SS2b.csv', index_col=0)
+    Res1b_OS = pd.read_csv(f'{ABCD_dir}/OS1b.csv', index_col=0)
+    Res2b_OS = pd.read_csv(f'{ABCD_dir}/OS2b.csv', index_col=0)
 
     return Res1b_SS, Res2b_SS, Res1b_OS, Res2b_OS
 
 if __name__ == "__main__":
-    setup_logging()
-    oneb_path = '/Users/yuntongzhou/Desktop/Dihiggszztt/output/tightskim_onelooseb_hadded'
-    twob_path = '/Users/yuntongzhou/Desktop/Dihiggszztt/output/tightskim_twolooseb_hadded'
-    OS_2b, OS_1b, SS_2b, SS_1b = getABCDdf(oneb_path, twob_path)
-
-    pp = PostPreselProcessor(cfg_1b, luminosity)
-    logging.info("Processing 1b, OS")
-    pp.get_yield('OS')
-    logging.info("Processing 1b, SS")
-    pp.get_yield('SS')
-
-    pp = PostPreselProcessor(cfg_2b, luminosity)
-    logging.info("Processing 2b, OS")
-    pp.get_yield('OS')
-    logging.info("Processing 2b, SS")
-    pp.get_yield('SS')
-
+    output_home = '/Users/yuntongzhou/Desktop/Dihiggszztt/output' 
     
+    parser = RichArgumentParser()
+    
+    parser.add_argument('-d', '--debug', action='store_true', help='Enable debug mode')
+    parser.add_argument('-i1', '--input1', required=True, type=str, default=None, help='Relative input file path 1 for one b')
+    parser.add_argument('-i2', '--input2', required=True, type=str, default=None, help='Relative input file path 2 for two b')
+    parser.add_argument('-o', '--output', required=True, type=str, default=None, help='Relative output file path')
+    parser.add_argument('-m', '--mode', type=str, default='hadd', help='Mode of operation: hadd, train, infer, plot')
+
+    args = parser.parse_args()
+
+    console_level = logging.INFO if not args.debug else logging.DEBUG
+    setup_logging(console_level=console_level)
+    logging.info(f"Starting ABCD analysis in {output_home} ...")
+
+    oneb_path = f'{output_home}/{args.input1}'
+    twob_path = f'{output_home}/{args.input2}'
+    
+    OS_2b, OS_1b, SS_2b, SS_1b = getABCDdf(oneb_path, twob_path, args.output, args.output)
+ 
+    post_process_base = f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/{args.output}'
+
+    local_cutflow_base = '/Users/yuntongzhou/Desktop/Dihiggszztt/output/ABCD_Cutflow'
+
+    cfg_1b = {"DIRNAME": None, "DATA_DIR": data_dir, 
+            "INPUTDIR": pjoin(post_process_base, 'oneb'),  
+            "LOCALOUTPUT": pjoin(local_cutflow_base, args.output, 'oneb'),
+            "TRANSFERPATH": None, 
+            "IS_MC": True}
+
+    cfg_2b = cfg_1b.copy()
+    cfg_2b["INPUTDIR"] = pjoin(post_process_base, 'twob')
+    cfg_2b["LOCALOUTPUT"] = pjoin(local_cutflow_base, args.output, 'twob')
+
+    for cfg in [cfg_1b, cfg_2b]:
+        logging.info(f"Processing {cfg['INPUTDIR']} ...")
+        pp = PostPreselProcessor(cfg, luminosity)
+        pp.get_yield('OS')
+        pp.get_yield('SS')
 
     # ABCDTable()
 

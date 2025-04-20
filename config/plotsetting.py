@@ -8,6 +8,15 @@ HT = {
         }
 }
 
+modified_H_mass = {
+    "DiTau_mass": {
+        "hist": {'bins': 30, 'range': [0,600]},
+        "plot": {'xlabel': r'Visible Mass (2$\tau$) (GeV)'}},
+    "DiJet_mass": {
+        "hist": {'bins': 40, 'range': [0,800]},
+        "plot": {'xlabel': r'Invariant Mass (2b) (GeV)'}}
+}
+
 tau_pt = {
     "LDTau_pt": {
         "hist": {'bins': 30, 'range': [0,300]},
@@ -70,7 +79,6 @@ H_pt = {
         "hist": {'bins': 20, 'range': [0,400]},
         "plot": {'xlabel': r'Invariant $P_t$ (2b) (GeV)'}}
     }
-
 
 bjetbytag_pt = {
     "LDBjetBYtag_pt": {
