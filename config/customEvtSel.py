@@ -15,7 +15,6 @@ def switch_selections(sel_name):
         'jetskim': jetSkim,
         'onelooseb': OneLooseB,
         'twolooseb': TwoLooseB,
-        'zerolooseb': ZeroLooseB,
         'resoneb': ResOneB,
         'restwob': ResTwoB
     }
@@ -83,16 +82,8 @@ class VBFSkim(vetoSkim):
         else:
             mapcfg = data_nm
         super().__init__(trigcfg=vbf_trigsel, objselcfg=sync_objsel, mapcfg=mapcfg, sequential=False, is_mc=is_mc)
-    
-class LoosetwoTau(PreselSelections):
-    """Implement Loose Tau Selections + b jet selections."""
-    def __init__(self, is_mc) -> None:
-        if is_mc:
-            mapcfg = mc_nm
-        else:
-            mapcfg = data_nm
-        super().__init__(trigcfg=ditau_trigsel, objselcfg=loose_objsel, mapcfg=mapcfg, sequential=True, is_mc=is_mc)
 
+class TwoTauMixin: 
     def seltwotaus(self, events) -> ak.Array:
         tau_masker = self.getObjMasker(events, "Tau")
 
@@ -189,36 +180,54 @@ class LoosetwoTau(PreselSelections):
         self.objcollect['SDBjet'] = sd_jet
         self.objcollect['nJets'] = ak.sum(jet_mask, axis=1)
         self.saveWeights(events)
-        
-class OneLooseB(LoosetwoTau):
+  
+class LoosetwoTau(PreselSelections):
+    """Implement Loose Tau Selections + b jet selections."""
+    def __init__(self, is_mc) -> None:
+        if is_mc:
+            mapcfg = mc_nm
+        else:
+            mapcfg = data_nm
+        super().__init__(trigcfg=ditau_trigsel, objselcfg=loose_objsel, mapcfg=mapcfg, sequential=True, is_mc=is_mc)
+
+class OneLooseB(TwoTauMixin, PreselSelections):
+    """Implement Loose Tau Selections + b jet selections."""
+    def __init__(self, is_mc) -> None:
+        if is_mc:
+            mapcfg = mc_nm
+        else:
+            mapcfg = data_nm
+        super().__init__(trigcfg=ditau_trigsel, objselcfg=loose_objsel, mapcfg=mapcfg, sequential=True, is_mc=is_mc)
+
     def _setevtsel(self, events):
         events = self.seltwotaus(events)
         self.selbjets(events, 1, opr.eq)
 
-class ResOneB(LoosetwoTau):
+class TwoLooseB(OneLooseB):
+    def _setevtsel(self, events):
+        events = self.seltwotaus(events)
+        self.selbjets(events, 2, opr.ge)
+
+class ResOneB(TwoTauMixin, PreselSelections):
     def __init__(self, is_mc) -> None:
-        mapcfg = mc_nm if is_mc else data_nm
+        if is_mc:
+            mapcfg = mc_nm
+        else:
+            mapcfg = data_nm
         super().__init__(trigcfg=ditau_trigsel, objselcfg=sync_objsel, mapcfg=mapcfg, sequential=True, is_mc=is_mc)
     
     def _setevtsel(self, events):
         events = self.seltwotaus(events)
         self.selbjets(events, 1, opr.eq)
 
-class ResTwoB(LoosetwoTau):
+class ResTwoB(ResOneB):
     def __init__(self, is_mc) -> None:
-        mapcfg = mc_nm if is_mc else data_nm
+        if is_mc:
+            mapcfg = mc_nm
+        else:
+            mapcfg = data_nm
         super().__init__(trigcfg=ditau_trigsel, objselcfg=sync_objsel, mapcfg=mapcfg, sequential=True, is_mc=is_mc)
     
     def _setevtsel(self, events):
         events = self.seltwotaus(events)
         self.selbjets(events, 2, opr.ge)
-
-class TwoLooseB(LoosetwoTau):
-    def _setevtsel(self, events):
-        events = self.seltwotaus(events)
-        self.selbjets(events, 2, opr.ge)
-
-class ZeroLooseB(LoosetwoTau):
-    def _setevtsel(self, events):
-        events = self.seltwotaus(events)
-        self.selbjets(events, 0, opr.eq)
