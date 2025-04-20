@@ -7,7 +7,6 @@ from src.analysis.objutil import ObjectMasker, ObjectProcessor
 from config.projectconfg import mc_nm, data_nm, selection_sync, selection_loose, selection_vbf, new_trigger
 import operator as opr
 import awkward as ak
-import dask_awkward as dak
 
 def switch_selections(sel_name):
     selections = {
@@ -16,7 +15,9 @@ def switch_selections(sel_name):
         'jetskim': jetSkim,
         'onelooseb': OneLooseB,
         'twolooseb': TwoLooseB,
-        'zerolooseb': ZeroLooseB
+        'zerolooseb': ZeroLooseB,
+        'resoneb': ResOneB,
+        'restwob': ResTwoB
     }
     return selections.get(sel_name, BaseEventSelections)
 
@@ -193,6 +194,24 @@ class OneLooseB(LoosetwoTau):
     def _setevtsel(self, events):
         events = self.seltwotaus(events)
         self.selbjets(events, 1, opr.eq)
+
+class ResOneB(LoosetwoTau):
+    def __init__(self, is_mc) -> None:
+        mapcfg = mc_nm if is_mc else data_nm
+        super().__init__(trigcfg=ditau_trigsel, objselcfg=sync_objsel, mapcfg=mapcfg, sequential=True, is_mc=is_mc)
+    
+    def _setevtsel(self, events):
+        events = self.seltwotaus(events)
+        self.selbjets(events, 1, opr.eq)
+
+class ResTwoB(LoosetwoTau):
+    def __init__(self, is_mc) -> None:
+        mapcfg = mc_nm if is_mc else data_nm
+        super().__init__(trigcfg=ditau_trigsel, objselcfg=sync_objsel, mapcfg=mapcfg, sequential=True, is_mc=is_mc)
+    
+    def _setevtsel(self, events):
+        events = self.seltwotaus(events)
+        self.selbjets(events, 2, opr.ge)
 
 class TwoLooseB(LoosetwoTau):
     def _setevtsel(self, events):

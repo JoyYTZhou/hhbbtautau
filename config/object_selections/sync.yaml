@@ -1,5 +1,4 @@
-# synchronized selections
-# Some of the ids might have longer names that are mapped to NANOAOD names by namemaps (yamls)
+# synchronized selections for SR
 default:
   name: "tauhtauh"
   triggerselections: 
