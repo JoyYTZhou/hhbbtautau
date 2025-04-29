@@ -23,31 +23,31 @@ results_dir = "/Users/yuntongzhou/Desktop/Dihiggszztt/output"
 
 logging.info(f"Root directory: {root_dir}")
 
-from config.plotsetting import dR, H_pt, HT, modified_H_mass
+from config.plotsetting import dR, H_pt, HT, infer_H_mass, train_H_mass
 
-def plot_avg_results(src_df, tar_df, out_dir):
-    # Base configuration that's common for all plots
-    base_config = {
-        'list_of_evts': [tar_df, src_df],
-        'labels': ['OS', 'original SS', 'Reweighted SS'],
+def get_ABCD_results(dfA, dfB, dfC, dfD, channel_name=''):
+    out_dir = f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/plots/{channel_name}'
+    ABCD_Helper = ABCDUtil(dfA, dfB, dfC, dfD, 'weight')
+    print(f"Calculating ABCD results for {channel_name}...")
+    ABCD_Helper.get_all_stats()
+
+    rwgt_df = pd.read_csv(f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/training/TopQuark/{channel_name}.csv')
+    
+    A_pred = ABCD_Helper.shape_reweight()
+    filter_func = lambda df: df.copy()[df['DiJet_mass'] < 160]
+    base_args = {
+        'list_of_evts': [filter_func(dfA), A_pred, filter_func(rwgt_df)],
+        'labels': ['Signal Region', 'Shape Average', 'MLP Reweighted'],
         'ratio_ylabel': 'Pred/Actual',
         'outdir': out_dir,
-        'save_suffix': 'rwgt'
+        'save_suffix': 'rwgt_comp'
     }
-    
-    # List of attribute dictionaries to plot
-    attr_dicts = [
-        modified_H_mass,
-        dR,
-        H_pt,
-        HT
-    ]
-
-    # Plot each attribute dictionary
+    attr_dicts = [infer_H_mass, dR, H_pt, HT]
+    if not os.path.exists(out_dir): os.makedirs(out_dir)
     for attr_dict in attr_dicts:
-        plot_config = base_config.copy()
+        plot_config = base_args.copy()
         plot_config['attridict'] = attr_dict
-        CSVPlotter.plot_with_average(**plot_config)
+        CSVPlotter.plot_shape(**plot_config)
 
 def plot_rwgt_results(src_df, tar_df, rwgt_df, out_dir):
     # Base configuration that's common for all plots
@@ -61,11 +61,13 @@ def plot_rwgt_results(src_df, tar_df, rwgt_df, out_dir):
     
     # List of attribute dictionaries to plot
     attr_dicts = [
-        modified_H_mass,
         dR,
         H_pt,
         HT
     ]
+    
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
 
     # Plot each attribute dictionary
     for attr_dict in attr_dicts:
@@ -276,10 +278,10 @@ def ABCDTable(inputpath1, inputpath2):
         ABCD_tab = ABCD_tab.dropna(axis=1, how='any')
         ABCD_tab.to_csv(f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/ABCD_{year}.csv')
 
-def train_mlp_rwgt(train_ori, train_tar):
+def train_mlp_rwgt(train_ori, train_tar, session_name, name='TopQuark'):
     """Train a MLP reweighter from one region to another."""
     drop_kwds = ['Gen', 'weight_values', 'Weight_values', 'OS', 'group', 'gen', 'dataset', 'label', 'id', 'year', 'Tau_charge', 'X_num']
-    mlp_rwgter = SingleMLPRwgter(train_ori, train_tar, 'weight', f"{results_dir}/training/TopQuark")
+    mlp_rwgter = SingleMLPRwgter(train_ori, train_tar, 'weight', f"{results_dir}/training/{name}")
     mlp_rwgter.prep_data(drop_kwds)
     shallow_args= {
         'num_epochs': 100,
@@ -287,20 +289,43 @@ def train_mlp_rwgt(train_ori, train_tar):
         'batch_size': 256,
         'lr': 0.001,
         'save': True,
-        'savename': 'basic_model.pth',
-        'save_interval': 30}
+        'savename': f'{session_name}.pth',
+        'save_interval': 50}
     mlp_rwgter.train(**shallow_args)
 
     return mlp_rwgter
 
-def read_two_channels_df(output_dir):
-    # define data and results directory, load data
+def train_and_reweight(ori, tar, reweight_name):
+    """Train and load the MLP reweighter."""
+    train_ori, val_ori, train_tar, val_tar = get_mbb_train_test(ori, tar, mbb_cut=0)
+    mlp_rwgter = train_mlp_rwgt(train_ori, train_tar, reweight_name)
+    drop_kwds = ['Gen', 'weight_values', 'Weight_values', 'OS', 'group', 'gen', 'dataset', 'label', 'id', 'year', 'Tau_charge', 'X_num']
+    rwgt = mlp_rwgter.reweight(ori, tar.weight.sum(), drop_kwds, True, save_name=reweight_name)
+    plot_dir_name = f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/plots/{reweight_name}'
+    show_infer = lambda df: df.copy()[df['DiJet_mass'] < 160]
+    plot_rwgt_results(val_ori, val_tar, show_infer(rwgt), plot_dir_name)
+    return mlp_rwgter, rwgt
+
+def load_and_plot(ori, tar, reweight_name):
+    show_infer = lambda df: df.copy()[df['DiJet_mass'] < 160]
+    show_training = lambda df: df.copy()[df['DiJet_mass'] > 160]
+    rwgt = pd.read_csv(f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/training/TopQuark/{reweight_name}.csv')
+    plot_rwgt_results(show_infer(ori), show_infer(tar), show_infer(rwgt), f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/plots/{reweight_name}')
+    plot_rwgt_results(show_training(ori), show_training(tar), show_training(rwgt), f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/plots/{reweight_name}_train')
+
+def read_two_channels_df(output_dir, filter_func=None):
     ABCD_dir = f"/Users/yuntongzhou/Desktop/Dihiggszztt/output/ABCD/{output_dir}"
 
     Res1b_SS = pd.read_csv(f'{ABCD_dir}/SS1b.csv', index_col=0)
     Res2b_SS = pd.read_csv(f'{ABCD_dir}/SS2b.csv', index_col=0)
     Res1b_OS = pd.read_csv(f'{ABCD_dir}/OS1b.csv', index_col=0)
     Res2b_OS = pd.read_csv(f'{ABCD_dir}/OS2b.csv', index_col=0)
+    
+    if filter_func:
+        Res1b_SS = filter_func(Res1b_SS)
+        Res2b_SS = filter_func(Res2b_SS)
+        Res1b_OS = filter_func(Res1b_OS)
+        Res2b_OS = filter_func(Res2b_OS)
 
     return Res1b_SS, Res2b_SS, Res1b_OS, Res2b_OS
 

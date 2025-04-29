@@ -8,14 +8,25 @@ HT = {
         }
 }
 
-modified_H_mass = {
+# Show mbb in infer+validation region
+infer_H_mass = {
     "DiTau_mass": {
         "hist": {'bins': 30, 'range': [0,600]},
         "plot": {'xlabel': r'Visible Mass (2$\tau$) (GeV)'}},
     "DiJet_mass": {
-        "hist": {'bins': 40, 'range': [0,800]},
+        "hist": {'bins': 4, 'range': [0,160]},
         "plot": {'xlabel': r'Invariant Mass (2b) (GeV)'}}
 }
+
+train_H_mass = {
+    "DiJet_mass": {
+        "hist": {'bins': 15, 'range': [160,760]},
+        "plot": {'xlabel': r'Invariant Mass (2b) (GeV)'}},
+     "DiTau_mass": {
+        "hist": {'bins': 30, 'range': [0,600]},
+        "plot": {'xlabel': r'Visible Mass (2$\tau$) (GeV)'}}
+} 
+
 
 tau_pt = {
     "LDTau_pt": {
@@ -62,14 +73,6 @@ dR = {
         "plot": {'xlabel': r'|dR(Reco H)|'}}
 }
 
-H_mass = {
-    "DiTau_mass": {
-        "hist": {'bins': 30, 'range': [0,300]},
-        "plot": {'xlabel': r'Visible Mass (2$\tau$) (GeV)'}},
-    "DiJet_mass": {
-        "hist": {'bins': 40, 'range': [0,400]},
-        "plot": {'xlabel': r'Invariant Mass (2b) (GeV)'}},
-}
 
 H_pt = {
     "DiTau_pt": {
@@ -167,4 +170,3 @@ bjetbytag_eta = {
 }
 
 object_dict = tau_pt | tau_eta | bjetbypt_btag | bjetbypt_mass | bjetbytag_eta | tau_gen | dR
-object_dict = object_dict | H_mass
