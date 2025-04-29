@@ -65,7 +65,7 @@ class QueryRunner:
         FileSysHelper.checkpath(self.outpath, createdir=True)
 
     def display_mcstrings(self):
-        """Display mcstrings data in a formatted rich table."""
+        """Display mcstrings data in a formatted rich table and save it as a CSV file."""
         console = Console()
 
         # Create table
@@ -78,20 +78,33 @@ class QueryRunner:
         table.add_column("Short Name", style="magenta")
         table.add_column("Sample Type", style="blue")
 
+        # Prepare CSV data
+        csv_data = [["Year", "Dataset", "Sample Name", "Short Name", "Sample Type"]]
+
         # Add rows
         for year, year_data in self.mcstrings.items():
             for dataset, samples in year_data.items():
                 for sample_name, details in samples.items():
-                    table.add_row(
+                    row = [
                         str(year),
                         str(dataset),
                         str(sample_name),
                         str(details.get('shortname', 'N/A')),
                         'MC' if self._isMC else 'Data'
-                    )
+                    ]
+                    table.add_row(*row)
+                    csv_data.append(row)
 
         # Print table
         console.print(table)
+
+        # Save CSV file
+        csv_file_path = "dataset_information.csv"
+        with open(csv_file_path, "w") as csv_file:
+            for row in csv_data:
+                csv_file.write(",".join(row) + "\n")
+
+        console.print(f"[bold green]CSV file saved to {csv_file_path}[/bold green]")
         
     @staticmethod
     def _load_json(filepath):
