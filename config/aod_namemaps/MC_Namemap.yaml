@@ -19,8 +19,8 @@ default:
     isoid: Muon_pfIsoId
   Jet:
     btag: Jet_btagDeepFlavB
-    pnetbtag: Jet_btagPNetB
-    pnettau: Jet_btagPNetTauVJet
+    # pnetbtag: Jet_btagPNetB
+    # pnettau: Jet_btagPNetTauVJet
     jetid: Jet_jetId
     nconstituents: Jet_nConstituents
   GenPart:

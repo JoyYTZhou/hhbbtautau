@@ -2,7 +2,8 @@
 # The classes are inherited from the BaseEventSelections class
 # TECHNICALLY THIS SHOULD BE THE ONLY FILE THAT NEEDS TO BE MODIFIED FOR CUSTOM EVENT SELECTIONS
 from src.analysis.evtselutil import SkimSelections, BaseEventSelections, PreselSelections
-from src.analysis.objutil import ObjectMasker, ObjectProcessor
+from src.analysis.objutil import ObjectProcessor
+import logging
 
 from config.projectconfg import mc_nm, data_nm, selection_sync, selection_loose, selection_vbf, new_trigger
 import operator as opr
@@ -16,7 +17,8 @@ def switch_selections(sel_name):
         'onelooseb': OneLooseB,
         'twolooseb': TwoLooseB,
         'resoneb': ResOneB,
-        'restwob': ResTwoB
+        'restwob': ResTwoB,
+        'vbfpresel': VBFPresel
     }
     return selections.get(sel_name, BaseEventSelections)
 
@@ -179,8 +181,23 @@ class TwoTauMixin:
         self.objcollect['LDBjet'] = ld_jet
         self.objcollect['SDBjet'] = sd_jet
         self.objcollect['nJets'] = ak.sum(jet_mask, axis=1)
-        self.saveWeights(events)
-  
+        if self._with_wgt: self.saveWeights(events)
+        
+        return events, jet_zipped
+
+    def selvbfjets(self, events, jet_zipped) -> ak.Array:
+        vbf_base = ak.num(jet_zipped['pt'], axis=1) >= 4
+        self.handle_selection_masks(">=2 VBF Jets", vbf_base)
+        events = events[vbf_base]
+        logging.debug(f"Selection VBF mask passed {len(events)} events!")
+        vbfjet_zipped = jet_zipped[vbf_base][:,2:]
+        vbf_mask = (vbfjet_zipped['pt'] >= 30) & (abs(vbfjet_zipped['eta']) <= 4.7)
+        print(vbf_mask)
+        vbf_sum = ak.sum(vbf_mask, axis=1) >= 2
+        logging.debug(f"Selection VBF mask passed {len(events)} events!")
+        self.handle_selection_masks("VBF pt >= 30", vbf_sum)
+        if self._with_wgt: self.saveWeights(events)
+        
 class LoosetwoTau(PreselSelections):
     """Implement Loose Tau Selections + b jet selections."""
     def __init__(self, is_mc) -> None:
@@ -224,3 +241,9 @@ class ResTwoB(ResOneB):
     def _setevtsel(self, events):
         events = self.seltwotaus(events)
         self.selbjets(events, 2, opr.ge)
+
+class VBFPresel(ResOneB):
+    def _setevtsel(self, events):
+        events = self.seltwotaus(events)
+        events, jets = self.selbjets(events, 1, opr.ge)
+        self.selvbfjets(events, jets)

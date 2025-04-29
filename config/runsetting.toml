@@ -34,14 +34,14 @@ FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*"]
 OUTENDPATTERN = ["output.csv", "cutflow.csv"]
 JOB_DIR = 'tightskimmed'
 
-[NOB]
-SEL_NAME = 'zerolooseb'
+[VBFPRESEL]
+SEL_NAME = 'vbfpresel'
 PROC_NAME = 'preselect'
 DELAYED_OPEN = false
-TRANSFER_PATH = '/store/user/joyzhou/zerolooseb'
+TRANSFER_PATH = '/store/user/joyzhou/vbfpresel'
 FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*"]
-OUTENDPATTERN = ["output.csv", "cutflow.csv"]
-JOB_DIR = 'skimmed'
+OUTENDPATTERN = ["output*.csv", "cutflow.csv"]
+JOB_DIR = 'vbfskimmed'
 
 [JETSKIM]
 SEL_NAME = 'jetskim'

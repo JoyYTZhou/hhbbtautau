@@ -23,14 +23,13 @@ default:
       isoid04: 0.3
       count: 0
     Tau:
-      pt: 40
-      eta: 2.3
+      pt: 25
+      eta: 2.5
       idvsjet: 5 # Medium
       idvsmu: 1 # V loose
       idvse: 2 # VV loose
       dz: 0.2
       count: 2
-      OS: true
     Jet:
       pt: 20
       eta: 2.5
