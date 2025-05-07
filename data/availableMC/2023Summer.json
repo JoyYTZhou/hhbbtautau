@@ -50,5 +50,27 @@
             "xsection": 4.809808,
             "shortname": "ZZto2Nu2Q"
         }
+    },
+    "SingleH": {
+        "/ttHto2B_M-125_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23NanoAODv12-130X_mcRun3_2023_realistic_v14-v2/NANOAODSIM": {
+            "xsection": 0.1279,
+            "shortname": "ttHto2B"
+        },
+        "/VBFHto2B_M-125_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23NanoAODv12-130X_mcRun3_2023_realistic_v14-v3/NANOAODSIM": {
+            "xsection": 2.353006,
+            "shortname": "VBFHto2B"
+        },
+        "/GluGluHToTauTau_M-125_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v2/NANOAODSIM": {
+            "xsection": 3.300936,
+            "shortname": "GluGluHToTauTau"
+        },
+        "/GluGluHto2B_M-125_TuneCP5_13p6TeV_powheg-minlo-pythia8/Run3Summer23NanoAODv12-130X_mcRun3_2023_realistic_v14-v2/NANOAODSIM": {
+            "xsection": 30.136709999999997,
+            "shortname": "GluGluHto2B"
+        },
+        "/VBFHToTauTau_M125_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23NanoAODv12-130X_mcRun3_2023_realistic_v15-v2/NANOAODSIM": {
+            "xsection": 0.25772960000000006,
+            "shortname": "VBFHToTauTau"
+        }
     }
 }

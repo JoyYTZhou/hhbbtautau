@@ -14,8 +14,9 @@ def switch_selections(sel_name):
         'tightskim': tightSkim,
         'vbfskim': VBFSkim,
         'jetskim': jetSkim,
-        'onelooseb': OneLooseB,
-        'twolooseb': TwoLooseB,
+        'onelooseb': LooseTauOneB,
+        'twolooseb': LooseTauTwoB,
+        # 'zerolooseb': ZeroLooseB,
         'resoneb': ResOneB,
         'restwob': ResTwoB,
         'vbfpresel': VBFPresel
@@ -86,7 +87,7 @@ class VBFSkim(vetoSkim):
         super().__init__(trigcfg=vbf_trigsel, objselcfg=sync_objsel, mapcfg=mapcfg, sequential=False, is_mc=is_mc)
 
 class TwoTauMixin: 
-    def seltwotaus(self, events) -> ak.Array:
+    def seltwotaus(self, events, tau_level='Medium') -> ak.Array:
         tau_masker = self.getObjMasker(events, "Tau")
 
         base_conditions = {
@@ -99,7 +100,7 @@ class TwoTauMixin:
             }
         tau_mask = tau_masker.create_combined_mask(base_conditions)
         tau_nummask = tau_masker.numselmask(tau_mask, opr.ge)
-        tau_masker, events = self.selobjhelper(events, '>= 2 Medium hadronic Taus', tau_masker, tau_nummask)
+        tau_masker, events = self.selobjhelper(events, f'>= 2 {tau_level} hadronic Taus', tau_masker, tau_nummask)
 
         tau_mask = tau_masker.create_combined_mask(base_conditions)
 
@@ -205,24 +206,18 @@ class LoosetwoTau(PreselSelections):
             mapcfg = mc_nm
         else:
             mapcfg = data_nm
-        super().__init__(trigcfg=ditau_trigsel, objselcfg=loose_objsel, mapcfg=mapcfg, sequential=True, is_mc=is_mc)
+        super().__init__(trigcfg=None, objselcfg=loose_objsel, mapcfg=mapcfg, sequential=True, is_mc=is_mc)
 
-class OneLooseB(TwoTauMixin, PreselSelections):
+class LooseTauOneB(TwoTauMixin, LoosetwoTau):
     """Implement Loose Tau Selections + b jet selections."""
-    def __init__(self, is_mc) -> None:
-        if is_mc:
-            mapcfg = mc_nm
-        else:
-            mapcfg = data_nm
-        super().__init__(trigcfg=ditau_trigsel, objselcfg=loose_objsel, mapcfg=mapcfg, sequential=True, is_mc=is_mc)
-
     def _setevtsel(self, events):
-        events = self.seltwotaus(events)
+        events = self.seltwotaus(events, "Loose")
         self.selbjets(events, 1, opr.eq)
 
-class TwoLooseB(OneLooseB):
+class LooseTauTwoB(TwoTauMixin, LoosetwoTau):
+    """Implement Loose Tau Selections + b jet selections."""
     def _setevtsel(self, events):
-        events = self.seltwotaus(events)
+        events = self.seltwotaus(events, "Loose")
         self.selbjets(events, 2, opr.ge)
 
 class ResOneB(TwoTauMixin, PreselSelections):

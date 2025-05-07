@@ -2,7 +2,7 @@
 SEL_NAME = 'onelooseb'
 PROC_NAME = 'preselect'
 DELAYED_OPEN = false
-TRANSFER_PATH = '/store/user/joyzhou/tightskim_onelooseb'
+TRANSFER_PATH = '/store/user/joyzhou/tightskim_loosetauoneb'
 FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*"]
 OUTENDPATTERN = ["output.csv", "cutflow.csv"]
 JOB_DIR = 'tightskimmed'
@@ -11,7 +11,7 @@ JOB_DIR = 'tightskimmed'
 SEL_NAME = 'twolooseb'
 PROC_NAME = 'preselect'
 DELAYED_OPEN = false
-TRANSFER_PATH = '/store/user/joyzhou/tightskim_twolooseb'
+TRANSFER_PATH = '/store/user/joyzhou/tightskim_loosetautwob'
 FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*"]
 OUTENDPATTERN = ["output.csv", "cutflow.csv"]
 JOB_DIR = 'tightskimmed'

@@ -1,4 +1,4 @@
-# loose selections (of Tau) for training of NN in datasets
+# loose selections (of Tau)
 default:
   name: "tauhtauh"
   triggerselections: 
@@ -22,16 +22,15 @@ default:
     Tau:
       pt: 40
       eta: 2.5
-      idvsjet: 1 # VVVLoose
-      idvsmu: 1 # VLoose
-      idvse: 1 # VVVLoose 
+      idvsjet: 2 # VVLoose
+      idvsmu: 1 # V loose
+      idvse: 2 # VV loose
       dz: 0.2
       count: 2
     Jet:
       pt: 20
       eta: 2.5
-      btag: 0.0614 # loose WP
-      # btag: 0.3196 # medium WP
+      btag: 0.0499 # pnet loose WP
       # pnetbtag: 0.0499 # loose WP
       count: 2
       jetid: 6

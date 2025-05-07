@@ -1,27 +1,21 @@
 {
-    "2022C": {
+    "Data": {
         "/Tau/Run2022C-22Sep2023-v1/NANOAOD":{
             "shortname": "TauC"
-        }
-    },
-    "2022D": {
+        },
         "/Tau/Run2022D-22Sep2023-v1/NANOAOD":{
             "shortname": "TauD"
-        }
-    },
-    "2022E": {
+        },
         "/Tau/Run2022E-22Sep2023-v1/NANOAOD": {
             "shortname": "TauE"
-        }
-    },
-    "2022F": {
+        },
         "/Tau/Run2022F-22Sep2023-v1/NANOAOD": {
             "shortname": "TauF"
-        }
-    },
-    "2022G": {
+        },
         "/Tau/Run2022G-22Sep2023-v1/NANOAOD": {
             "shortname": "TauG"
         }
     }
 }
+
+    

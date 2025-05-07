@@ -54,12 +54,12 @@
         "/WWto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6-v2/NANOAODSIM": {
             "xsection": 11.79,
             "shortname": "WWto2L2Nu",
-            "nwgt": 266219283.737
+            "nwgt": 20072193.5
         },
         "/WWto4Q-1Jets-4FS_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6-v2/NANOAODSIM": {
             "xsection": 54.82,
             "shortname": "WWto4Q",
-            "nwgt": 3438354356.777
+            "nwgt": 3433365898.775
         }
     },
     "WWZ": {
@@ -157,12 +157,12 @@
         "/WtoLNu-2Jets_1J_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6-v2/NANOAODSIM": {
             "xsection": 0.009622,
             "shortname": "WtoLNu-2Jets_1J",
-            "nwgt": 6409579836800.0
+            "nwgt": 6501961297340.0
         },
         "/WtoLNu-2Jets_0J_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6-v3/NANOAODSIM": {
             "xsection": 3.485,
             "shortname": "WtoLNu-2Jets_0J",
-            "nwgt": 3207341291470.0
+            "nwgt": 3341803617470.0
         }
     }
 }

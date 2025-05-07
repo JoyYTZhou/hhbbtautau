@@ -95,6 +95,7 @@ def __main__():
                    "INPUTDIR": os.path.join(CONDOR_BASE, args.dirname),
                    "LOCALOUTPUT": f"/uscms/home/{USER}/nobackup/hadded/{args.dirname}",
                    "TRANSFERPATH": transferpath, 
+                   "IS_SKIM": args.is_skim,
                    "IS_MC": args.is_mc}
    
    create_table(cleansetting, "PostProcessor Settings")
@@ -110,9 +111,7 @@ def __main__():
       console_level = logging.DEBUG
       file_level = logging.DEBUG
 
-   setup_logging(console_level=console_level, 
-               file_level=file_level,
-               log_to_file=True)
+   setup_logging(console_level=console_level, file_level=file_level, log_to_file=True)
    
    groups = args.group
    years = args.year
