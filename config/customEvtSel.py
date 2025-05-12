@@ -16,7 +16,7 @@ def switch_selections(sel_name):
         'jetskim': jetSkim,
         'onelooseb': LooseTauOneB,
         'twolooseb': LooseTauTwoB,
-        # 'zerolooseb': ZeroLooseB,
+        'zerolooseb': LooseTauZeroB,
         'resoneb': ResOneB,
         'restwob': ResTwoB,
         'vbfpresel': VBFPresel
@@ -219,6 +219,11 @@ class LooseTauTwoB(TwoTauMixin, LoosetwoTau):
     def _setevtsel(self, events):
         events = self.seltwotaus(events, "Loose")
         self.selbjets(events, 2, opr.ge)
+
+class LooseTauZeroB(TwoTauMixin, LoosetwoTau):
+    def _setevtsel(self, events):
+        events = self.seltwotaus(events, "Loose")
+        self.selbjets(events, 0, opr.eq)
 
 class ResOneB(TwoTauMixin, PreselSelections):
     def __init__(self, is_mc) -> None:

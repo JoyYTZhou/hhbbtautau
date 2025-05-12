@@ -16,6 +16,15 @@ FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*"]
 OUTENDPATTERN = ["output.csv", "cutflow.csv"]
 JOB_DIR = 'tightskimmed'
 
+[NOB]
+SEL_NAME = 'zerolooseb'
+PROC_NAME = 'preselect'
+DELAYED_OPEN = false
+TRANSFER_PATH = '/store/user/joyzhou/tightskim_loosetauzerob'
+FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*"]
+OUTENDPATTERN = ["output.csv", "cutflow.csv"]
+JOB_DIR = 'tightskimmed'
+
 [RESTWOB]
 SEL_NAME = 'restwob'
 PROC_NAME = 'preselect'

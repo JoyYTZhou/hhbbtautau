@@ -1,0 +1,24 @@
+{
+    "Data": {
+        "/Tau/Run2022C-22Sep2023-v1/NANOAOD": {
+            "shortname": "TauC",
+            "nwgt": 23424781
+        },
+        "/Tau/Run2022D-22Sep2023-v1/NANOAOD": {
+            "shortname": "TauD",
+            "nwgt": 16686692
+        },
+        "/Tau/Run2022E-22Sep2023-v1/NANOAOD": {
+            "shortname": "TauE",
+            "nwgt": 29757995
+        },
+        "/Tau/Run2022F-22Sep2023-v1/NANOAOD": {
+            "shortname": "TauF",
+            "nwgt": 115472800
+        },
+        "/Tau/Run2022G-22Sep2023-v1/NANOAOD": {
+            "shortname": "TauG",
+            "nwgt": 17838713
+        }
+    }
+}

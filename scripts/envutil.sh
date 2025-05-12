@@ -254,7 +254,7 @@ function hadd_and_collect {
     echo -n "Where do you want to put the job files? (e.g. tightskimmed, vbfskimmed, etc.): "
     read JOB_DIRNAME
 
-    HADDED_DIRNAME=/store/user/joyzhou/${DIRNAME}_hadded
+    HADDED_DIRNAME=/store/user/${USER}/${DIRNAME}_hadded
 
     if [ "$PROCESS" = "Data" ]; then
         python postprocess.py --dirname $DIRNAME --group $PROCESS_NAME --year $YEAR --mode hadd -s
@@ -365,7 +365,7 @@ function eosbackup {
     read DIRNAME
     echo "===================================="
     echo "The following directory will be copied"
-    echo /store/user/joyzhou/$DIRNAME
+    echo /store/user/${USER}/$DIRNAME
     export EOS_MGM_URL=root://cmseos.fnal.gov
-    eos cp -r /eos/uscms/store/user/joyzhou/$DIRNAME/ /eos/uscms/store/user/joyzhou/backup/$DIRNAME/ >> eosbackup.log & 
+    eos cp -r /eos/uscms/store/user/${USER}/$DIRNAME/ /eos/uscms/store/user/${USER}/backup/$DIRNAME/ >> eosbackup.log & 
 }
