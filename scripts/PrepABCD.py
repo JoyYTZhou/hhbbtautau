@@ -23,7 +23,7 @@ results_dir = "/Users/yuntongzhou/Desktop/Dihiggszztt/output"
 
 logging.info(f"Root directory: {root_dir}")
 
-from config.plotsetting import dR, H_pt, HT, infer_H_mass, train_H_mass
+from config.plotsetting import dR, H_pt, HT, infer_H_mass, train_H_mass, H_mass
 
 def get_ABCD_results(dfA, dfB, dfC, dfD, channel_name=''):
     out_dir = f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/plots/{channel_name}'
@@ -40,7 +40,8 @@ def get_ABCD_results(dfA, dfB, dfC, dfD, channel_name=''):
         'labels': ['Signal Region', 'Shape Average', 'MLP Reweighted'],
         'ratio_ylabel': 'Pred/Actual',
         'outdir': out_dir,
-        'save_suffix': 'rwgt_comp'
+        'save_suffix': 'rwgt_comp',
+        'title': channel_name
     }
     attr_dicts = [infer_H_mass, dR, H_pt, HT]
     if not os.path.exists(out_dir): os.makedirs(out_dir)
@@ -63,7 +64,8 @@ def plot_rwgt_results(src_df, tar_df, rwgt_df, out_dir):
     attr_dicts = [
         dR,
         H_pt,
-        HT
+        HT,
+        H_mass
     ]
     
     if not os.path.exists(out_dir):
@@ -307,11 +309,13 @@ def train_and_reweight(ori, tar, reweight_name):
     return mlp_rwgter, rwgt
 
 def load_and_plot(ori, tar, reweight_name):
-    show_infer = lambda df: df.copy()[df['DiJet_mass'] < 160]
+    show_infer = lambda df: df.copy()[(df['DiJet_mass'] < 160) & (df['DiJet_mass'] > 90)]
+    show_val = lambda df: df.copy()[df['DiJet_mass'] < 90]
     show_training = lambda df: df.copy()[df['DiJet_mass'] > 160]
     rwgt = pd.read_csv(f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/training/TopQuark/{reweight_name}.csv')
     plot_rwgt_results(show_infer(ori), show_infer(tar), show_infer(rwgt), f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/plots/{reweight_name}')
     plot_rwgt_results(show_training(ori), show_training(tar), show_training(rwgt), f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/plots/{reweight_name}_train')
+    plot_rwgt_results(show_val(ori), show_val(tar), show_val(rwgt), f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/plots/{reweight_name}_val')
 
 def read_two_channels_df(output_dir, filter_func=None):
     ABCD_dir = f"/Users/yuntongzhou/Desktop/Dihiggszztt/output/ABCD/{output_dir}"
