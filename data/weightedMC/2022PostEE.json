@@ -35,17 +35,14 @@
     },
     "TTbar": {
         "/TTtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6-v2/NANOAODSIM": {
-            "equivalent_lumi": 1.292,
             "shortname": "TTtoLNu2Q",
             "nwgt": 89331284402.05
         },
         "/TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6-v2/NANOAODSIM": {
-            "equivalent_lumi": 1.293,
             "shortname": "TTto2L2N",
             "nwgt": 6809285632.159
         },
         "/TTto4Q_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6-v2/NANOAODSIM": {
-            "equivalent_lumi": 1.292,
             "shortname": "TTto4Q",
             "nwgt": 62472850629.19
         }

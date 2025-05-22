@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # adapted from: https://github.com/bu-cms/bucoffea/blob/83daf25146d883df5131d0b50a51c0a6512d7c5f/bucoffea/helpers/dasgowrapper.py
 
-import json, shutil, argparse, re, gzip, logging
+import json, shutil, re, gzip, logging, subprocess
 from rich.console import Console
 from rich.table import Table
 from coffea.dataset_tools.dataset_query import DataDiscoveryCLI
@@ -54,7 +54,7 @@ class QueryRunner:
             for year, filename in json_files.items()
         }
 
-        self.display_mcstrings()
+        # self.display_mcstrings()
 
         self.dataset = dataset
 
@@ -105,6 +105,31 @@ class QueryRunner:
                 csv_file.write(",".join(row) + "\n")
 
         console.print(f"[bold green]CSV file saved to {csv_file_path}[/bold green]")
+   
+    @staticmethod 
+    def get_mini_files(txt_file):
+        console = Console()
+        with open(txt_file, 'r') as f:
+            mini_datasets = f.readlines()
+        sample_files = []
+        for dataset in mini_datasets:
+            dataset = dataset.strip()
+            run_com = f'dasgoclient -query "dataset={dataset}"'
+            dataset_fullname = subprocess.run(run_com, shell=True, capture_output=True, text=True)
+            if dataset_fullname.returncode == 0:
+                dataset_fullname = dataset_fullname.stdout.splitlines()[0]
+                console.print(f"Sample dataset for {dataset}: {dataset_fullname}")
+                run_com = f'dasgoclient -query "file dataset={dataset_fullname}"'
+                result = subprocess.run(run_com, shell=True, capture_output=True, text=True)
+                if result.returncode == 0:
+                    filename = result.stdout.splitlines()[0]
+                    sample_files.append(filename)
+                    console.print(f"Sample file for {dataset}: {filename}")
+        
+        with open('sample_files.txt', 'w') as f:
+            for sample_file in sample_files:
+                f.write(sample_file + '\n')
+        console.print(f"[bold green]Sample files saved to sample_files.txt[/bold green]")
         
     @staticmethod
     def _load_json(filepath):
@@ -250,7 +275,8 @@ if __name__ == "__main__":
     If the --query flag is set, the program will query the custom skims in the directory.
     """
     parser = RichArgumentParser(description=program_description)
-
+    
+    parser.add_argument('-m', '--mode', type=str, required=False, default='preprocess', choices=['query', 'preprocess'])
     parser.add_argument('-d', '--dataset', type=str, required=False, default=None,
                         help='group name of the dataset to run program on, e.g. TTbar, DYJets, etc. Note that this must match the key in the json input file.')
     parser.add_argument('-y', '--year', type=str, required=False, default=None, help='year of the dataset to run program on, e.g. 2022PostEE, 2023, etc.')
@@ -259,6 +285,7 @@ if __name__ == "__main__":
     parser.add_argument('--is_mc', action='store_true', help='specify if processing Monte Carlo samples (if set) or collision data (if not set)')
     parser.add_argument('-o', '--outpath', type=str, required=False, default='skimmed', help='output path for collecting skimmed data')
     parser.add_argument('--skip_choose', action='store_true', help='skip the choose step in the preprocessor')
+    parser.add_argument('-i', '--input', type=str, required=False, default=None, help='input file of MINIAOD sample names to run the program on')
     args = parser.parse_args()
 
     groups = args.dataset
@@ -273,7 +300,11 @@ if __name__ == "__main__":
             years = None
 
     qr = QueryRunner(groups, years, is_mc=args.is_mc, out_path=args.outpath, skip_choose=args.skip_choose)
-    if args.skip:
-        qr.dump_query()
+    
+    if args.mode == 'preprocess':
+        if args.skip:
+            qr.dump_query()
+        else:
+            qr(args.query)
     else:
-        qr(args.query)
+        qr.get_mini_files(args.input)
