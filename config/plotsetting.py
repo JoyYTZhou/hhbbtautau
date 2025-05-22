@@ -27,6 +27,15 @@ train_H_mass = {
         "plot": {'xlabel': r'Visible Mass (2$\tau$) (GeV)'}}
 } 
 
+H_mass = {
+    "DiJet_mass": {
+        "hist": {'bins': 40, 'range': [0,800]},
+        "plot": {'xlabel': r'Invariant Mass (2b) (GeV)'}},
+     "DiTau_mass": {
+        "hist": {'bins': 30, 'range': [0,600]},
+        "plot": {'xlabel': r'Visible Mass (2$\tau$) (GeV)'}}
+} 
+
 
 tau_pt = {
     "LDTau_pt": {
