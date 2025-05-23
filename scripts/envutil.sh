@@ -369,3 +369,49 @@ function eosbackup {
     export EOS_MGM_URL=root://cmseos.fnal.gov
     eos cp -r /eos/uscms/store/user/${USER}/$DIRNAME/ /eos/uscms/store/user/${USER}/backup/$DIRNAME/ >> eosbackup.log & 
 }
+
+extract_xsec() {
+    local input_file="$1"
+    local output_yaml="cross_sections.yaml"
+    > "$output_yaml"  # clear previous output
+
+    # before running this script, make sure to set up the environment and copy the sample_files.txt
+    cp ~/work/hhbbtautau/data/sample_files.txt ~/nobackup/CMSSW_13_3_2/src
+    cd ~/nobackup/CMSSW_13_3_2/src
+    cmsenv
+
+    while IFS= read -r full_path; do
+        [[ -z "$full_path" ]] && continue  # skip empty lines
+
+        # Extract file name only
+        local filename=$(basename "$full_path")
+
+        # Download the file via CMS Global Redirector
+        echo "Downloading $filename..."
+        xrdcp "root://cms-xrd-global.cern.ch/$full_path" "$filename"
+
+        # Run cmsRun and capture output
+        echo "Running cmsRun on $filename..."
+        local output=$(cmsRun ana.py inputFiles="file:$filename" maxEvents=-1 2>&1)
+
+        # Extract final cross section line
+        local xsec_line=$(echo "$output" | grep "After filter: final cross section")
+
+        if [[ -n "$xsec_line" ]]; then
+            # Use dataset name as key (extracted from path, e.g. DYJetsToLL_M-50_TuneCP5_13p6TeV-...)
+            local dataset=$(echo "$full_path" | cut -d'/' -f5)
+
+            # Append to YAML
+            echo "$dataset: \"$xsec_line\"" >> "$output_yaml"
+            echo "✅ $dataset → cross section extracted."
+        else
+            echo "⚠️ No cross section found for $filename"
+        fi
+
+        # Optional: cleanup
+        rm -f "$filename"
+
+    done < "$input_file"
+
+    echo "Results saved to $output_yaml"
+}
