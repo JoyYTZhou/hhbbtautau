@@ -36,7 +36,6 @@ H_mass = {
         "plot": {'xlabel': r'Visible Mass (2$\tau$) (GeV)'}}
 } 
 
-
 tau_pt = {
     "LDTau_pt": {
         "hist": {'bins': 30, 'range': [0,300]},
