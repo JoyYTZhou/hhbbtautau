@@ -2,7 +2,8 @@
 "TTto2L2N": 98.07
 "TTto4Q": 419.87
 "DYJetsToLL_M-50": 5655
-"GluGlutoHHto2B2Tau_kl-1p00_kt-1p00_c2-0p00": 0.02964
+"GluGlutoHHto2B2Tau_kl-1p00_kt-1p00_c2-0p00": 0.00249 # 34.13 fb (ggF NNLO) * 0.06272 (BR(H->tau tau)) * 0.5824 (BR(H->bb)) * 2
+# https://twiki.cern.ch/twiki/bin/view/LHCPhysics/LHCHWGHH?redirectedfrom=LHCPhysics.LHCHXSWGHH#Latest_recommendations_for_gluon
 "WtoLNu-2Jets_0J": 55570
 "WtoLNu-2Jets_1J": 9542
 "VBFHToTauTau_M125": 0.262 # 4.18 * 0.06272 (BR(H->tau tau))
@@ -13,9 +14,10 @@
 # https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageBR
 # https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageAt13TeV#N3LO
 # https://twiki.cern.ch/twiki/pub/CMSPublic/PhysicsResultsCombined/CMSCrossSectionXJetsSummaryBarChart.pdf
-"ZHto2TauUncorrelatedDecays_M-125": 0.846
-"ZH_Hto2B_Zto2Q_M-125": 0.5958
-"ZH_Hto2B_Zto2L_M-125": 0.08545
+"ZHto2TauUncorrelatedDecays_M-125": 0.0554 # 0.8839 (pp->ZH) * 0.06272 (BR(H->tau tau))
+"ZH_Hto2B_Zto2Q_M-125": 0.360 # 0.8839 (pp->ZH) * 0.5824 (BR(H->bb)) * 0.6991 (BR(Z->qq))
+# https://pdg.lbl.gov/2018/listings/rpp2018-list-z-boson.pdf
+"ZH_Hto2B_Zto2L_M-125": 0.0520
 "ZZto2L2Q": 6.788
 "ZZto4L": 1.39
 "ZZto2L2Nu": 1.031
