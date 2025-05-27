@@ -26,7 +26,7 @@ def switch_selections(sel_name):
 ditau_trigsel = selection_sync.triggerselections
 sync_objsel = selection_sync.objselections
 vbf_trigsel = selection_vbf.triggerselections
-loose_objsel = selection_loose.objselections
+loose_objsel = selection_loose.objselections # loosetau.yaml
 new_trigsel = new_trigger.triggerselections
 
 class vetoSkim(SkimSelections):
@@ -87,22 +87,16 @@ class TwoTauMixin:
         tau_nummask = tau_proc.numselmask(tau_mask, opr.ge)
         tau_proc, events = self.apply_selection_mask(events, f'>= 2 {tau_level} hadronic Taus', tau_proc, tau_nummask)
 
-        tau_mask = tau_proc.create_combined_mask(base_conditions)
+        tau_proc, events, ld_tau, sd_tau = self.apply_dr_selections(events, "Tau", 0.5, base_conditions, selection_name=f'{tau_level} Tau dR < 0.5', sortname='pt')
 
-        dR_mask, events = tau_proc.apply_event_level_dr(events, tau_mask, 0.5)
-        tau_proc, events = self.apply_selection_mask(events, "Tau dR >= 0.5", tau_proc, dR_mask)
-
-        tau_mask = tau_proc.create_combined_mask(base_conditions)
-        ld_tau, sd_tau = tau_proc.apply_obj_level_dr(events, tau_mask, 0.5)
-
-        ld_tau_trigger_check = tau_proc.match_trigger(ld_tau, 15)
-        sd_tau_trigger_check = tau_proc.match_trigger(sd_tau, 15)
-        tau_proc, events = self.apply_selection_mask(events, f"LD Tau Trigger Match", tau_proc, ld_tau_trigger_check)
-        tau_proc, events = self.apply_selection_mask(events, f"SD Tau Trigger Match", tau_proc, sd_tau_trigger_check)
-        
         self.objcollect['LDTau'] = ld_tau
         self.objcollect['SDTau'] = sd_tau
         self.objcollect['nTau'] = ak.sum(tau_mask, axis=1)
+
+        ld_tau_trigger_check = tau_proc.match_trigger(ld_tau, 15)
+        sd_tau_trigger_check = tau_proc.match_trigger(sd_tau, 15)
+        trigger_check = (ld_tau_trigger_check & sd_tau_trigger_check)
+        tau_proc, events = self.apply_selection_mask(events, "Tau Trigger Match", tau_proc, trigger_check)
 
         return events
     
@@ -112,7 +106,6 @@ class TwoTauMixin:
         j_mask = jet_proc.create_combined_mask(base_conditions)
         ld_tau, _ = ObjectProcessor.fourvector(self.objcollect['LDTau'], None, sort=False)
         sd_tau, _ = ObjectProcessor.fourvector(self.objcollect['SDTau'], None, sort=False)
-        jet_proc = self.getObjProc('Jet') 
         jetdR_mask = jet_proc.dRwOther(events, ld_tau, 0.4)[0] & jet_proc.dRwOther(events, sd_tau, 0.4)[0]
             
         return j_mask & jetdR_mask, jet_proc
@@ -121,22 +114,22 @@ class TwoTauMixin:
         # Step 1: Get basic jet mask and masker
         # - Creates a mask for jets based on pt, eta, and dR requirements (via _jobjmask)
         # - Returns both the mask and the jet masker object
-        jet_mask, jet_masker = self._jobjmask(events)
+        jet_mask, jet_proc = self._jobjmask(events)
 
         # Step 2: Create mask for minimum jet requirement
         # - Creates a mask requiring at least 2 jets that pass basic requirements
-        jet_nummask = jet_masker.numselmask(jet_mask, opr.ge)
+        jet_nummask = jet_proc.numselmask(jet_mask, opr.ge)
 
         # Step 3: Apply minimum jet selection
         # - Applies the >=2 jets requirement and updates events accordingly
-        jet_masker, events = self.selobjhelper(events, '>=2 ak4 jets', jet_masker, jet_nummask)
+        jet_proc, events = self.apply_selection_mask(events, '>=2 ak4 jets', jet_proc, jet_nummask)
 
         # Step 4: Create b-jet count mask
         # - Creates a new mask for b-tagged jets with specified count requirement
         # - Combines basic jet requirements with b-tagging requirement
         # - operator can be 'equal to' or 'greater than or equal to'
-        jet_nummask = jet_masker.maskredmask(
-            (self._jobjmask(events)[0] & jet_masker.custommask('btag', opr.ge)),
+        jet_nummask = jet_proc.maskredmask(
+            (self._jobjmask(events)[0] & jet_proc.custommask('btag', opr.ge)),
             operator,
             count=bjet_count
         )
@@ -149,7 +142,7 @@ class TwoTauMixin:
 
         # Step 6: Apply b-jet selection
         # - Applies the b-jet count requirement and updates events
-        jet_masker, events = self.selobjhelper(events, sel_name, jet_masker, jet_nummask)
+        jet_proc, events = self.apply_selection_mask(events, sel_name, jet_proc, jet_nummask)
 
         # Step 7: Get final jet mask
         # - Gets updated mask with all requirements
@@ -159,7 +152,7 @@ class TwoTauMixin:
         # - Gets jet processor object
         # - Creates zipped array of jets sorted by b-tagging score
         # - Separates into leading and sub-leading jets
-        jet_proc = self.getObjProc('Jet')
+        jet_proc = self.getObjProc(events, 'Jet')
         jet_zipped = jet_proc.getzipped(events, jet_mask, sort_by='btag')
         ld_jet, sd_jet = jet_zipped[:,0], jet_zipped[:,1]
 
@@ -186,10 +179,7 @@ class TwoTauMixin:
 class LoosetwoTau(PreselSelections):
     """Implement Loose Tau Selections + b jet selections."""
     def __init__(self, is_mc) -> None:
-        if is_mc:
-            mapcfg = mc_nm
-        else:
-            mapcfg = data_nm
+        mapcfg = mc_nm if is_mc else data_nm
         super().__init__(trigcfg=None, objselcfg=loose_objsel, mapcfg=mapcfg, sequential=True, is_mc=is_mc)
 
 class LooseTauOneB(TwoTauMixin, LoosetwoTau):

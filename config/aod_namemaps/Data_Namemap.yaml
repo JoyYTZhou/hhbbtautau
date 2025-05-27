@@ -14,8 +14,8 @@ default:
     isoid: Muon_pfIsoId
     tightid: Muon_tightId
   Jet:
-    btag: Jet_btagDeepFlavB
-    # pnetbtag: Jet_btagPNetB
+    btag: Jet_btagPNetB
+    # btag: Jet_btagDeepFlavB
     jetid: Jet_jetId
 
 

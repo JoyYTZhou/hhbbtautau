@@ -31,6 +31,7 @@ default:
     Jet:
       pt: 20
       eta: 2.5
-      btag: 0.0499 # loose WP
+      btag: 0.0499 # pnet loose WP
+      # btag: 0.0614 # Jet_btagDeepFlavB loose WP
       count: 2
       jetid: 6 # tight ID + tight Lepton Veto ID

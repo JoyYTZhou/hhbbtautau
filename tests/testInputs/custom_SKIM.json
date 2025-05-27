@@ -1,13 +1,13 @@
 {
     "files": {
-        "root://cmseos.fnal.gov//store/user/joyzhou/tightskim_hadded/2022PostEE/TTbar/TTto4Q_2.root": {
-            "uuid": "2",
+        "root://cmseos.fnal.gov//store/user/joyzhou/tightskim_hadded/2022PostEE/ggF/GluGlutoHHto2B2Tau_1.root": {
+            "uuid": "1",
             "object_path": "Events"
         }
     },
     "metadata": {
         "xsection": 0.05500221399699999,
-        "shortname": "TTto4Q",
+        "shortname": "ggF",
         "is_mc": true
     }
 }
