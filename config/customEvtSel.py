@@ -31,8 +31,8 @@ new_trigsel = new_trigger.triggerselections
 
 class vetoSkim(SkimSelections):
     def _setevtsel(self, events):
-        electron = self.getObjMasker(events, "Electron")
-        muon = self.getObjMasker(events, "Muon")
+        electron = self.getObjProc(events, "Electron")
+        muon = self.getObjProc(events, "Muon")
 
         e_base_conditions = {
             'pt': (opr.ge,),
@@ -44,15 +44,7 @@ class vetoSkim(SkimSelections):
         e_mask = electron.create_combined_mask(e_base_conditions)
         elec_nummask = electron.vetomask(e_mask)
 
-        m_base_conditions = {
-            'pt': (opr.ge,),
-            'dxy': (opr.le, abs),
-            'eta': (opr.le, abs),
-            'dz': (opr.le, abs),
-            'mediumid': (opr.eq,),
-            'tightid': (opr.eq,),
-            'isoid04': (opr.le,)
-        }
+        m_base_conditions = {'pt': (opr.ge,), 'dxy': (opr.le, abs), 'eta': (opr.le, abs), 'dz': (opr.le, abs), 'mediumid': (opr.eq,), 'tightid': (opr.eq,), 'isoid04': (opr.le,)}
         m_mask = muon.create_combined_mask(m_base_conditions)
         muon_nummask = muon.vetomask(m_mask)
 
@@ -88,30 +80,25 @@ class VBFSkim(vetoSkim):
 
 class TwoTauMixin: 
     def seltwotaus(self, events, tau_level='Medium') -> ak.Array:
-        tau_masker = self.getObjMasker(events, "Tau")
+        tau_proc = self.getObjProc(events, "Tau")
 
-        base_conditions = {
-            'pt': (opr.ge,),
-            'eta': (opr.le, abs),
-            'dz': (opr.lt, abs),
-            'idvsjet': (opr.ge,),
-            'idvsmu': (opr.ge,),
-            'idvse': (opr.ge,)
-            }
-        tau_mask = tau_masker.create_combined_mask(base_conditions)
-        tau_nummask = tau_masker.numselmask(tau_mask, opr.ge)
-        tau_masker, events = self.selobjhelper(events, f'>= 2 {tau_level} hadronic Taus', tau_masker, tau_nummask)
+        base_conditions = {'pt': (opr.ge,), 'eta': (opr.le, abs), 'dz': (opr.lt, abs), 'idvsjet': (opr.ge,), 'idvsmu': (opr.ge,), 'idvse': (opr.ge,)}
+        tau_mask = tau_proc.create_combined_mask(base_conditions)
+        tau_nummask = tau_proc.numselmask(tau_mask, opr.ge)
+        tau_proc, events = self.apply_selection_mask(events, f'>= 2 {tau_level} hadronic Taus', tau_proc, tau_nummask)
 
-        tau_mask = tau_masker.create_combined_mask(base_conditions)
-
-        tau_proc = self.getObjProc('Tau')
+        tau_mask = tau_proc.create_combined_mask(base_conditions)
 
         dR_mask, events = tau_proc.apply_event_level_dr(events, tau_mask, 0.5)
-        self.handle_selection_masks("Tau dR >= 0.5", dR_mask)
+        tau_proc, events = self.apply_selection_mask(events, "Tau dR >= 0.5", tau_proc, dR_mask)
 
-        tau_masker.events = events
-        tau_mask = tau_masker.create_combined_mask(base_conditions)
+        tau_mask = tau_proc.create_combined_mask(base_conditions)
         ld_tau, sd_tau = tau_proc.apply_obj_level_dr(events, tau_mask, 0.5)
+
+        ld_tau_trigger_check = tau_proc.match_trigger(ld_tau, 15)
+        sd_tau_trigger_check = tau_proc.match_trigger(sd_tau, 15)
+        tau_proc, events = self.apply_selection_mask(events, f"LD Tau Trigger Match", tau_proc, ld_tau_trigger_check)
+        tau_proc, events = self.apply_selection_mask(events, f"SD Tau Trigger Match", tau_proc, sd_tau_trigger_check)
         
         self.objcollect['LDTau'] = ld_tau
         self.objcollect['SDTau'] = sd_tau
@@ -120,18 +107,15 @@ class TwoTauMixin:
         return events
     
     def _jobjmask(self, events):
-        base_conditions = {
-            'pt': (opr.ge,),
-            'eta': (opr.le, abs),
-        }
-        jet_masker = self.getObjMasker(events, "Jet")
-        j_mask = jet_masker.create_combined_mask(base_conditions)
+        base_conditions = {'pt': (opr.ge,), 'eta': (opr.le, abs)}
+        jet_proc = self.getObjProc(events, "Jet")
+        j_mask = jet_proc.create_combined_mask(base_conditions)
         ld_tau, _ = ObjectProcessor.fourvector(self.objcollect['LDTau'], None, sort=False)
         sd_tau, _ = ObjectProcessor.fourvector(self.objcollect['SDTau'], None, sort=False)
         jet_proc = self.getObjProc('Jet') 
         jetdR_mask = jet_proc.dRwOther(events, ld_tau, 0.4)[0] & jet_proc.dRwOther(events, sd_tau, 0.4)[0]
             
-        return j_mask & jetdR_mask, jet_masker
+        return j_mask & jetdR_mask, jet_proc
 
     def selbjets(self, events, bjet_count, operator) -> ak.Array:
         # Step 1: Get basic jet mask and masker

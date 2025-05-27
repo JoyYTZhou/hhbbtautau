@@ -3,7 +3,7 @@ SEL_NAME = 'onelooseb'
 PROC_NAME = 'preselect'
 DELAYED_OPEN = false
 TRANSFER_PATH = '/store/user/joyzhou/tightskim_loosetauoneb'
-FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*"]
+FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "TrigObj*"]
 OUTENDPATTERN = ["output.csv", "cutflow.csv"]
 JOB_DIR = 'tightskimmed'
 
@@ -12,7 +12,7 @@ SEL_NAME = 'twolooseb'
 PROC_NAME = 'preselect'
 DELAYED_OPEN = false
 TRANSFER_PATH = '/store/user/joyzhou/tightskim_loosetautwob'
-FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*"]
+FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "TrigObj*"]
 OUTENDPATTERN = ["output.csv", "cutflow.csv"]
 JOB_DIR = 'tightskimmed'
 
@@ -21,7 +21,7 @@ SEL_NAME = 'zerolooseb'
 PROC_NAME = 'preselect'
 DELAYED_OPEN = false
 TRANSFER_PATH = '/store/user/joyzhou/tightskim_loosetauzerob'
-FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*"]
+FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "TrigObj*"]
 OUTENDPATTERN = ["output.csv", "cutflow.csv"]
 JOB_DIR = 'tightskimmed'
 
@@ -30,7 +30,7 @@ SEL_NAME = 'restwob'
 PROC_NAME = 'preselect'
 DELAYED_OPEN = false
 TRANSFER_PATH = '/store/user/joyzhou/restwob'
-FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*"]
+FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "TrigObj*"]
 OUTENDPATTERN = ["output.csv", "cutflow.csv"]
 JOB_DIR = 'tightskimmed'
 
@@ -39,7 +39,7 @@ SEL_NAME = 'resoneb'
 PROC_NAME = 'preselect'
 DELAYED_OPEN = false
 TRANSFER_PATH = '/store/user/joyzhou/resoneb'
-FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*"]
+FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "TrigObj*"]
 OUTENDPATTERN = ["output.csv", "cutflow.csv"]
 JOB_DIR = 'tightskimmed'
 
