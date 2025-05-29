@@ -79,6 +79,18 @@ class VBFSkim(vetoSkim):
         super().__init__(trigcfg=vbf_trigsel, objselcfg=sync_objsel, mapcfg=mapcfg, sequential=False, is_mc=is_mc)
 
 class TwoTauMixin: 
+    def seltwotriggertaus(self, events, tau_level='Medium') -> ak.Array:
+        base_conditions = {'pt': (opr.ge,), 'eta': (opr.le, abs), 'dz': (opr.lt, abs), 'idvsjet': (opr.ge,), 'idvsmu': (opr.ge,), 'idvse': (opr.ge,)}
+        num_selname= f'>= 2 {tau_level} hadronic Taus'
+        _, events, tau_mask = self.apply_objsel_trigger_match(events, 'Tau', 15, base_conditions, num_selname)
+        _, events, ld_tau, sd_tau, n_tau = self.apply_dr_selections(events, "Tau", 0.5, tau_mask, selection_name=f'{tau_level} Tau dR < 0.5', sortname='pt')
+
+        self.objcollect['LDTau'] = ld_tau
+        self.objcollect['SDTau'] = sd_tau
+        self.objcollect['nTau'] = n_tau
+
+        return events
+
     def seltwotaus(self, events, tau_level='Medium') -> ak.Array:
         tau_proc = self.getObjProc(events, "Tau")
 
@@ -101,12 +113,12 @@ class TwoTauMixin:
         return events
     
     def _jobjmask(self, events):
-        base_conditions = {'pt': (opr.ge,), 'eta': (opr.le, abs)}
+        base_conditions = {'pt': (opr.ge,), 'eta': (opr.le, abs), 'jetid': (opr.ge,)}
         jet_proc = self.getObjProc(events, "Jet")
         j_mask = jet_proc.create_combined_mask(base_conditions)
         ld_tau, _ = ObjectProcessor.fourvector(self.objcollect['LDTau'], None, sort=False)
         sd_tau, _ = ObjectProcessor.fourvector(self.objcollect['SDTau'], None, sort=False)
-        jetdR_mask = jet_proc.dRwOther(events, ld_tau, 0.4)[0] & jet_proc.dRwOther(events, sd_tau, 0.4)[0]
+        jetdR_mask = jet_proc.dRwOther(events, ld_tau, 0.5)[0] & jet_proc.dRwOther(events, sd_tau, 0.5)[0]
             
         return j_mask & jetdR_mask, jet_proc
 
@@ -152,8 +164,8 @@ class TwoTauMixin:
         # - Gets jet processor object
         # - Creates zipped array of jets sorted by b-tagging score
         # - Separates into leading and sub-leading jets
-        jet_proc = self.getObjProc(events, 'Jet')
-        jet_zipped = jet_proc.getzipped(events, jet_mask, sort_by='btag')
+        jet_proc = self.getObjProc(events, 'Jet', sortname='btag')
+        jet_zipped = jet_proc.getzipped(events, jet_mask)
         ld_jet, sd_jet = jet_zipped[:,0], jet_zipped[:,1]
 
         self.objcollect['LDBjet'] = ld_jet
@@ -185,18 +197,18 @@ class LoosetwoTau(PreselSelections):
 class LooseTauOneB(TwoTauMixin, LoosetwoTau):
     """Implement Loose Tau Selections + b jet selections."""
     def _setevtsel(self, events):
-        events = self.seltwotaus(events, "Loose")
+        events = self.seltwotriggertaus(events, "Loose")
         self.selbjets(events, 1, opr.eq)
 
 class LooseTauTwoB(TwoTauMixin, LoosetwoTau):
     """Implement Loose Tau Selections + b jet selections."""
     def _setevtsel(self, events):
-        events = self.seltwotaus(events, "Loose")
+        events= self.seltwotriggertaus(events, "Loose")
         self.selbjets(events, 2, opr.ge)
 
 class LooseTauZeroB(TwoTauMixin, LoosetwoTau):
     def _setevtsel(self, events):
-        events = self.seltwotaus(events, "Loose")
+        events = self.seltwotriggertaus(events, "Loose")
         self.selbjets(events, 0, opr.eq)
 
 class ResOneB(TwoTauMixin, PreselSelections):

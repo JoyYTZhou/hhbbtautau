@@ -18,4 +18,4 @@ default:
       btag: 0.0499 # pnet loose WP
       # btag: 0.0614 # Jet_btagDeepFlavB loose WP
       count: 2
-      jetid: 6
+      jetid: 6 # bit 1: tight ID, bit 2: tight Lep Veto
