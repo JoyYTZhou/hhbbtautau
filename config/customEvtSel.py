@@ -5,7 +5,7 @@ from src.analysis.evtselutil import SkimSelections, BaseEventSelections, PreselS
 from src.analysis.objutil import ObjectProcessor
 import logging
 
-from config.projectconfg import mc_nm, data_nm, selection_sync, selection_loose, selection_vbf, new_trigger
+from config.projectconfg import mc_nm, data_nm, selection_sync, selection_loose, selection_vbf, dijet_trigger
 import operator as opr
 import awkward as ak
 
@@ -24,10 +24,10 @@ def switch_selections(sel_name):
     return selections.get(sel_name, BaseEventSelections)
 
 ditau_trigsel = selection_sync.triggerselections
+dijet_trigger = dijet_trigger.triggerselections
 sync_objsel = selection_sync.objselections
 vbf_trigsel = selection_vbf.triggerselections
 loose_objsel = selection_loose.objselections # loosetau.yaml
-new_trigsel = new_trigger.triggerselections
 
 class vetoSkim(SkimSelections):
     def _setevtsel(self, events):
@@ -67,7 +67,7 @@ class jetSkim(vetoSkim):
             mapcfg = mc_nm
         else:
             mapcfg = data_nm
-        super().__init__(trigcfg=new_trigsel, objselcfg=sync_objsel, mapcfg=mapcfg, sequential=False, is_mc=is_mc)
+        super().__init__(trigcfg=dijet_trigger, objselcfg=sync_objsel, mapcfg=mapcfg, sequential=False, is_mc=is_mc)
     
 class VBFSkim(vetoSkim):
     """VBF Trigger + Sync Vetos"""

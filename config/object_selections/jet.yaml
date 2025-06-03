@@ -1,0 +1,6 @@
+# Ditau + Jet trigger
+default:
+  name: "tauhtauh"
+  triggerselections: 
+    HLT_DoubleMediumDeepTauPFTauHPS35_L2NN_eta2p1: false
+    HLT_DoubleMediumDeepTauPFTauHPS30_L2NN_eta2p1_PFJet60: true

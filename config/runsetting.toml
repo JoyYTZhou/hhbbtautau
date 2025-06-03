@@ -22,7 +22,7 @@ PROC_NAME = 'preselect'
 DELAYED_OPEN = false
 TRANSFER_PATH = '/store/user/joyzhou/tightskim_loosetauzerob'
 FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "TrigObj*"]
-OUTENDPATTERN = ["output.csv", "cutflow.csv"]
+OUTENDPATTERN = ["output*.csv", "cutflow.csv"]
 JOB_DIR = 'tightskimmed'
 
 [RESTWOB]

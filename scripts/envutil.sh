@@ -217,6 +217,7 @@ function csvview {
     python -m src.utils.displayutil "$@"
 }
 
+
 function sum_genweight {
     if [ $# -eq 0 ]; then
         echo "Usage: sum_genweight <root_file> [tree_name]"
