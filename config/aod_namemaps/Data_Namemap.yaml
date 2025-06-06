@@ -4,6 +4,9 @@ default:
     idvsjet: Tau_idDeepTau2017v2p1VSjet
     idvsmu: Tau_idDeepTau2017v2p1VSmu
     idvse: Tau_idDeepTau2017v2p1VSe
+    charge: Tau_charge
+    dxy: Tau_dxy
+    dz: Tau_dz
   Electron:
     cbtightid: Electron_cutBased
     mvaisoid: Electron_mvaIso_WP90
@@ -17,6 +20,7 @@ default:
     btag: Jet_btagPNetB
     # btag: Jet_btagDeepFlavB
     jetid: Jet_jetId
+    nconstituents: Jet_nConstituents
 
 
 

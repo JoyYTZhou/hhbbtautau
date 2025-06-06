@@ -11,6 +11,7 @@ default:
     genflav: Tau_genPartFlav
   Electron:
     cbtightid: Electron_cutBased
+    mvaisoid: Electron_mvaIso_WP90
   Muon:
     looseid: Muon_looseId
     mediumid: Muon_mediumId
