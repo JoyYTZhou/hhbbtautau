@@ -1,6 +1,6 @@
 {
     "files": {
-        "root://cmseos.fnal.gov//store/user/joyzhou/tightskim_hadded/2022/Data/TauE_6.root": {
+        "root://cmseos.fnal.gov//store/user/joyzhou/tightskim_hadded/2022/Data/TauE_1.root": {
             "uuid": "1",
             "object_path": "Events"
         }
