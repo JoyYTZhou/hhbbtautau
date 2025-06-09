@@ -1,29 +1,28 @@
-import sys, os, logging
+import os, logging
 import pandas as pd
 
-from hep_rewgt_tk.reweight_app import SingleXGBReweighter
 from hep_rewgt_tk.reweight_nn import SingleMLPRwgter
-from hep_rewgt_tk.reweight_adversarial import AdversarialReweighter
 
 from src.plotting.visutil import CSVPlotter
 from src.plotting.summary import PostPreselProcessor
 from src.utils.mathutil import MathUtil, ABCDUtil
 from src.utils.ioutil import setup_logging
+from src.utils.datautil import CutflowProcessor
 from src.utils.displayutil import RichArgumentParser
 
-luminosity = {"2022PreEE": 41.5/2 * 1000, "2022PostEE": 41.5 * 1000/2, "2023Summer": 32.7 * 1000}
+luminosity = {"2022PreEE": (5.0104+2.9700) * 1000, "2022PostEE": (5.8070+17.7819+3.0828) * 1000, "2023Summer": 32.7 * 1000, "2022": 1}
+regroup_dict = {"Others": ['WJets', 'WZ', 'WW', 'WWW', 'ZZZ', 'WZZ', 'WWZ'], 'HH': ['ggF']}
 
 pjoin = os.path.join
 
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-data_dir = os.path.join(root_dir, 'data')
 
+df_base_dir = "/Users/yuntongzhou/Desktop/Dihiggszztt/output"
+plt_base_dir = "/Users/yuntongzhou/Desktop/Dihiggszztt/plots"
+raw_base_dir = "/Users/yuntongzhou/Desktop/Dihiggszztt/preprocessed"
+meta_data_dir = "/Users/yuntongzhou/Desktop/Dihiggszztt/HHtobbtautau/data"
 
-results_dir = "/Users/yuntongzhou/Desktop/Dihiggszztt/output"
-
-logging.info(f"Root directory: {root_dir}")
-
-from config.plotsetting import dR, H_pt, HT, infer_H_mass, train_H_mass, H_mass
+from config.plotsetting import dR, H_pt, HT, infer_H_mass, train_H_mass, H_mass, tau_pt
 
 def get_ABCD_results(dfA, dfB, dfC, dfD, channel_name=''):
     out_dir = f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/plots/{channel_name}'
@@ -111,43 +110,42 @@ def add_inv_mass_dR(df):
     # Calculate OS
     df['OS'] = df['LDTau_charge']*df['SDTau_charge'] < 0
 
-def selOS(df):
-    add_inv_mass_dR(df)
-    OS_df = df[df['OS']]
-    return OS_df
-
-def selSS(df):
-    add_inv_mass_dR(df)
-    SS_df = df[~df['OS']]
-    return SS_df
 
 def regroup(df, keywords, new_value):
     mask = df['dataset'].apply(lambda x: any(keyword in x for keyword in keywords))
     df.loc[mask, 'group'] = new_value
     return df
 
-def getABCDdf(oneb_data, twob_data, output_dir, cutflow_dir='postprocessed'):
-    """Get the ABCD dataframes for one b and two b channels."""
-    cp = CSVPlotter(outdir='/Users/yuntongzhou/Desktop/Dihiggszztt/output/plots')
-    base_config = {
-        'wgt_name': 'Generator_weight_values',
-        'meta_dir': '/Users/yuntongzhou/Desktop/Dihiggszztt/HHtobbtautau/data/weightedMC',
-        'output_base': f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/{cutflow_dir}',
-        'abcd_output': f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/ABCD/{output_dir}'
-    }
-    
-    if not os.path.exists(base_config['abcd_output']):
-        os.makedirs(base_config['abcd_output'])
-    if not os.path.exists(base_config['output_base']):
-        os.makedirs(base_config['output_base']) 
+class OSSSUtil:
+    @staticmethod
+    def get_os_ss(data_path, channel_name):
+        """Process return OS and SS dataframes."""
+        def selOS(df):
+            add_inv_mass_dR(df)
+            OS_df = df[df['OS']]
+            return OS_df
 
-    def process_channel(data_path, channel_name):
-        """Process a single channel (1b or 2b) and return OS and SS dataframes."""
+        def selSS(df):
+            add_inv_mass_dR(df)
+            SS_df = df[~df['OS']]
+            return SS_df
+
+        base_config = {
+            'wgt_name': 'Generator_weight_values',
+            'meta_dir': '/Users/yuntongzhou/Desktop/Dihiggszztt/HHtobbtautau/data/weightedMC',
+            'output_base': pjoin(df_base_dir, 'add_cutflow')
+        }
+        if not os.path.exists(base_config['output_base']):
+            os.makedirs(base_config['output_base'])
+            
         os_dfs = []
         ss_dfs = []
+        cp = CSVPlotter(outdir=plt_base_dir)
         for year in os.listdir(data_path):
             if year.startswith('.'):
                 continue
+
+            print(f"Processing year: {year}")
 
             lumi = luminosity[year]
             args = {
@@ -157,6 +155,9 @@ def getABCDdf(oneb_data, twob_data, output_dir, cutflow_dir='postprocessed'):
                 'luminosity': lumi,
                 'datasource': pjoin(data_path, year)
             }
+            
+            if not os.path.exists(args['postp_output']):
+                os.makedirs(args['postp_output'])
 
             # Process OS events
             os_df = cp.process_datasets(**args, extraprocess=selOS, selname='OS Tau')
@@ -167,24 +168,96 @@ def getABCDdf(oneb_data, twob_data, output_dir, cutflow_dir='postprocessed'):
             ss_dfs.append(ss_df)
 
         return pd.concat(os_dfs), pd.concat(ss_dfs)
+    
+    @staticmethod
+    def get_total_df(data_relPath, output_relPath):
+        """Get the total dataframe (OS/SS) by combining all preprocessed data of all MC groups and actual data."""
+        data_path = pjoin(raw_base_dir, data_relPath)
+        output_path = pjoin(df_base_dir, output_relPath)
 
-    # Process both channels
-    os_2b, ss_2b = process_channel(twob_data, 'twob')  # Region A and C
-    os_1b, ss_1b = process_channel(oneb_data, 'oneb')  # Region B and D
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
+        
+        os_df, ss_df = OSSSUtil.get_os_ss(data_path, output_relPath)
 
-    # Save results
-    output_pairs = [
-        (ss_2b, 'SS2b.csv'),  # Region C
-        (ss_1b, 'SS1b.csv'),  # Region D
-        (os_2b, 'OS2b.csv'),  # Region A
-        (os_1b, 'OS1b.csv')   # Region B
-    ]
+        os_df.to_csv(pjoin(output_path, 'OS.csv'), index=False)
+        ss_df.to_csv(pjoin(output_path, 'SS.csv'), index=False)
 
-    for df, filename in output_pairs:
-        df.to_csv(pjoin(base_config['abcd_output'], filename))
+        oscf_df = CutflowProcessor.cutflow_by_sum(os_df, 'zerob_os', None)
+        sscf_df = CutflowProcessor.cutflow_by_sum(ss_df, 'zerob_ss', None)
 
-    return os_2b, os_1b, ss_2b, ss_1b
+        oscf_df = CutflowProcessor.categorize_processes(oscf_df, regroup_dict)
+        sscf_df = CutflowProcessor.categorize_processes(sscf_df, regroup_dict)
+        oscf_df.to_csv(pjoin(output_path, 'OS_cutflow.csv'))
+        sscf_df.to_csv(pjoin(output_path, 'SS_cutflow.csv'))
+        logging.info(f"Processed OS and SS dataframes saved to {output_path}")
+        
+        return os_df, ss_df
 
+    @staticmethod
+    def plot_key_comparisons(channel_name, df_filter_func=None, title='0b OS/SS'):
+        data_dir = pjoin(df_base_dir, channel_name)
+        os_df = pd.read_csv(pjoin(data_dir, 'OS.csv'))
+        ss_df = pd.read_csv(pjoin(data_dir, 'SS.csv'))
+        if df_filter_func:
+            os_df = df_filter_func(os_df)
+            ss_df = df_filter_func(ss_df)
+       
+        plt_out_dir = pjoin(plt_base_dir, channel_name) 
+        if not os.path.exists(plt_out_dir):
+            os.makedirs(plt_out_dir)
+        
+        base_args = {'ratio_ylabel': 'OS/SS',
+            'outdir': plt_out_dir,
+            'save_suffix': '_ss_os', 'title': title}
+        
+        for attr_dict in [dR, H_pt, HT, H_mass, tau_pt]:
+            plot_config = base_args.copy()
+            plot_config['list_of_evts'] = [ss_df, os_df]
+            plot_config['labels'] = ['SS', 'OS']
+            plot_config['attridict'] = attr_dict
+            CSVPlotter.plot_shape(**plot_config)
+        
+class FakeUtil:
+    @staticmethod
+    def keep_real_ttbar(df):
+        """Return a dataframe with real tau events in TTbar and all other events."""
+        # Split into TTbar and non-TTbar
+        ttbar_df = df[df['group'] == 'TTbar']
+        other_df = df[df['group'] != 'TTbar']
+
+        # Apply the condition only to TTbar group
+        cond_1 = ttbar_df['LDTau_genflav'] >= 5
+        cond_2 = ttbar_df['SDTau_genflav'] >= 5
+        filtered_ttbar = ttbar_df[cond_1 | cond_2]
+
+        # Combine filtered TTbar with unfiltered others
+        return pd.concat([filtered_ttbar, other_df], ignore_index=True)
+    
+    @staticmethod
+    def keep_fake_ttbar(df) -> pd.DataFrame:
+        """Return a dataframe with only TTbar fake tau events."""
+        ttbar_df = df[df['group'] == 'TTbar']
+        # Apply the condition only to TTbar group
+        cond_1 = ttbar_df['LDTau_genflav'] < 5
+        cond_2 = ttbar_df['SDTau_genflav'] < 5
+        filtered_ttbar = ttbar_df[cond_1 & cond_2]
+        # Combine filtered TTbar with unfiltered others
+        return filtered_ttbar
+    
+    @staticmethod
+    def count_real_taus(df):
+        """Return the number of events with real taus."""
+        copy = df.copy()
+        copy = copy[copy['group'] != 'Data']  # Exclude data
+        df = FakeUtil.keep_real_ttbar(copy)
+        fake_ttbar = FakeUtil.keep_fake_ttbar(copy)
+        # Count the number of events with real taus
+        print(f"Total Number of events with real taus: {df['weight'].sum()}")
+        print(f"Total number of events with real taus in TTbar: {df[df['group'] == 'TTbar']['weight'].sum()}")
+        # Count the number of events with fake taus
+        print(f"Total Number of events with fake taus: {fake_ttbar['weight'].sum()}")
+    
 def split_sign(df_ori):
     df = df_ori.copy()
     condition = df['OS'] == False
@@ -239,17 +312,9 @@ def apply_all(dfs, func):
         filtered[i] = func(df.copy())
     return filtered
 
-def keep_fake_ttbar(df):
-    df = df.copy()[df.group=='TTbar']
-    cond_1 = df['LDTau_genflav'] < 5
-    cond_2 = df['SDTau_genflav'] < 5 
-    return df[((cond_1) | (cond_2))]
 
-def keep_real_ttbar(df):
-    df = df[df.group=='TTbar']
-    cond_1 = df['LDTau_genflav'] >= 5
-    cond_2 = df['SDTau_genflav'] >= 5 
-    return df[((cond_1) | (cond_2))]
+
+
 
 def signal_id_level(df):
     mask_1 = df['LDTau_idvsjet'] >= 1 # VVV loose WP
@@ -334,8 +399,6 @@ def read_two_channels_df(output_dir, filter_func=None):
     return Res1b_SS, Res2b_SS, Res1b_OS, Res2b_OS
 
 if __name__ == "__main__":
-    output_home = '/Users/yuntongzhou/Desktop/Dihiggszztt/output' 
-    
     parser = RichArgumentParser()
     
     parser.add_argument('-d', '--debug', action='store_true', help='Enable debug mode')
