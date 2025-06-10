@@ -31,7 +31,7 @@ default:
     Jet:
       pt: 20
       eta: 2.5
-      btag: 0.0614 # loose WP
+      btag: 0.0499 # loose WP
       # btag: 0.3196 # medium WP
       # pnetbtag: 0.0499 # loose WP
       count: 2

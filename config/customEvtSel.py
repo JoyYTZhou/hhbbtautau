@@ -17,6 +17,7 @@ def switch_selections(sel_name):
         'onelooseb': LooseTauOneB,
         'twolooseb': LooseTauTwoB,
         'zerolooseb': LooseTauZeroB,
+        'zeromediumb': MediumTauZeroB,
         'resoneb': ResOneB,
         'restwob': ResTwoB,
         'vbfpresel': VBFPresel
@@ -193,6 +194,17 @@ class LoosetwoTau(PreselSelections):
     def __init__(self, is_mc) -> None:
         mapcfg = mc_nm if is_mc else data_nm
         super().__init__(trigcfg=None, objselcfg=loose_objsel, mapcfg=mapcfg, sequential=True, is_mc=is_mc)
+
+class MediumtwoTau(PreselSelections):
+    """Implement Medium Tau Selections + b jet selections."""
+    def __init__(self, is_mc) -> None:
+        mapcfg = mc_nm if is_mc else data_nm
+        super().__init__(trigcfg=None, objselcfg=sync_objsel, mapcfg=mapcfg, sequential=True, is_mc=is_mc)
+
+class MediumTauZeroB(TwoTauMixin, MediumtwoTau):
+    def _setevtsel(self, events):
+        events = self.seltwotriggertaus(events, "Medium")
+        self.selbjets(events, 0, opr.eq) 
 
 class LooseTauOneB(TwoTauMixin, LoosetwoTau):
     """Implement Loose Tau Selections + b jet selections."""
