@@ -47,6 +47,7 @@ python -m pip install pympler --upgrade --no-cache-dir
 python -m pip install memory-profiler --upgrade --no-cache-dir
 python -m pip install line-profiler --upgrade --no-cache-dir
 python -m pip install "dask[distributed]" --upgrade --no-cache-dir
+python -m pip install msgpack --upgrade --no-cache-dir
 
 deactivate
 

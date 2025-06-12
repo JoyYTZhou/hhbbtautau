@@ -4,6 +4,11 @@
             "xsection": 5655,
             "shortname": "DYJetsToLL_M-50",
             "nwgt": 94947242.0
+        },
+        "/DYto2L-4Jets_MLL-50_TuneCP5_13p6TeV_madgraphMLM-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6_ext1-v2/NANOAODSIM": {
+            "xsection": 5467,
+            "shortname": "DYto2L-4Jets_MLL-50",
+            "nwgt": 3356010450712.0
         }
     },
     "SingleH": {
