@@ -79,17 +79,13 @@ def plot_rwgt_results(src_df, tar_df, rwgt_df, out_dir):
 def add_inv_mass_dR(df):
     """Prepare the invariant mass and dR for the given dataframe."""
     # List of particle pairs for system 4-vectors
-    system_pairs = [
-        ('LDTau', 'SDTau', 'DiTau'),
-        ('LDBjet', 'SDBjet', 'DiJet')
-    ]
+    system_pairs = [('LDTau', 'SDTau', 'DiTau'),
+        ('LDBjet', 'SDBjet', 'DiJet')]
 
     # List of particle pairs for dR calculations
-    dr_pairs = [
-        ('LDTau', 'SDTau', 'Tau_dR'),
+    dr_pairs = [('LDTau', 'SDTau', 'Tau_dR'),
         ('LDBjet', 'SDBjet', 'Bjet_dR'),
-        ('DiTau', 'DiJet', 'RecoH_dR')
-    ]
+        ('DiTau', 'DiJet', 'RecoH_dR')]
 
     # Add system 4-vectors
     for p1, p2, sys in system_pairs:
@@ -116,25 +112,42 @@ def regroup(df, keywords, new_value):
     df.loc[mask, 'group'] = new_value
     return df
 
+class ARUtil:
+    @staticmethod
+    def get_ss(data_path='oneb_dfs', channel_name='oneb'):
+        data_path = pjoin(raw_base_dir, data_path)
+        output_path = pjoin(df_base_dir, channel_name)
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
+        _, ss_df = OSSSUtil.get_os_ss(data_path, channel_name)
+        ss_df.to_csv(pjoin(df_base_dir, channel_name, 'SS.csv'), index=False)
+        ss_cfdf = CutflowProcessor.cutflow_by_sum(ss_df, f'{channel_name}_ss', None)
+        ss_cfdf= CutflowProcessor.categorize_processes(ss_cfdf, regroup_dict)
+        ss_cfdf.to_csv(pjoin(df_base_dir, channel_name, f'SS_cutflow.csv'))
+        logging.info(f"Processed SS dataframe saved to {pjoin(df_base_dir, channel_name, 'SS.csv')}")
+
+        return ss_df
+
 class OSSSUtil:
     @staticmethod
-    def get_os_ss(data_path, channel_name):
+    def get_os_ss(data_path, channel_name) -> tuple[pd.DataFrame, pd.DataFrame]:
         """Process return OS and SS dataframes."""
-        def selOS(df):
+        def select_sign(df, sign='OS'):
             add_inv_mass_dR(df)
-            OS_df = df[df['OS']]
-            return OS_df
+            if sign == 'OS':
+                return df[df['OS']]
+            elif sign == 'SS':
+                return df[~df['OS']]
+            else:
+                raise ValueError("sign must be 'OS' or 'SS'")
 
-        def selSS(df):
-            add_inv_mass_dR(df)
-            SS_df = df[~df['OS']]
-            return SS_df
+        selOS = lambda df: select_sign(df, 'OS')
+        selSS = lambda df: select_sign(df, 'SS')
 
-        base_config = {
-            'wgt_name': 'Generator_weight_values',
+        base_config = {'wgt_name': 'Generator_weight_values',
             'meta_dir': '/Users/yuntongzhou/Desktop/Dihiggszztt/HHtobbtautau/data/weightedMC',
-            'output_base': pjoin(df_base_dir, 'add_cutflow')
-        }
+            'output_base': pjoin(df_base_dir, 'add_cutflow')}
+
         if not os.path.exists(base_config['output_base']):
             os.makedirs(base_config['output_base'])
             
@@ -148,13 +161,8 @@ class OSSSUtil:
             print(f"Processing year: {year}")
 
             lumi = luminosity[year]
-            args = {
-                'metadata_path': pjoin(base_config['meta_dir'], f'{year}.json'),
-                'postp_output': pjoin(base_config['output_base'], channel_name, year),
-                'per_evt_wgt': base_config['wgt_name'],
-                'luminosity': lumi,
-                'datasource': pjoin(data_path, year)
-            }
+            args = {'metadata_path': pjoin(base_config['meta_dir'], f'{year}.json'), 'postp_output': pjoin(base_config['output_base'], channel_name, year),
+                'per_evt_wgt': base_config['wgt_name'], 'luminosity': lumi, 'datasource': pjoin(data_path, year)}
             
             if not os.path.exists(args['postp_output']):
                 os.makedirs(args['postp_output'])
@@ -221,42 +229,47 @@ class OSSSUtil:
 class FakeUtil:
     @staticmethod
     def keep_real_ttbar(df):
-        """Return a dataframe with real tau events in TTbar and all other events."""
+        """Return a dataframe with real tau events in TTbar + DYJets and all other events."""
         # Split into TTbar and non-TTbar
         ttbar_df = df[df['group'] == 'TTbar']
-        other_df = df[df['group'] != 'TTbar']
+        dyjets_df = df[df['group'] == 'DYJets']
+        other_df = df[(df['group'] != 'TTbar') & (df['group'] != 'DYJets')]
 
         # Apply the condition only to TTbar group
         cond_1 = ttbar_df['LDTau_genflav'] >= 5
         cond_2 = ttbar_df['SDTau_genflav'] >= 5
         filtered_ttbar = ttbar_df[cond_1 | cond_2]
+        filtered_dyjets = dyjets_df[(dyjets_df['LDTau_genflav'] >= 5) | (dyjets_df['SDTau_genflav'] >= 5)]
+        print(f"Total number of MC TTbar events with real taus: {filtered_ttbar['weight'].sum()}")
+        print(f"Total number of MC DYJets events with real taus: {filtered_dyjets['weight'].sum()}")
 
-        # Combine filtered TTbar with unfiltered others
-        return pd.concat([filtered_ttbar, other_df], ignore_index=True)
+        # Combine filtered TTbar, DYJets with unfiltered others
+        return pd.concat([filtered_ttbar, filtered_dyjets, other_df], ignore_index=True)
     
     @staticmethod
-    def keep_fake_ttbar(df) -> pd.DataFrame:
-        """Return a dataframe with only TTbar fake tau events."""
+    def keep_fakes(df) -> pd.DataFrame:
+        """Return a dataframe with only TTbar + DYJets fake tau events."""
         ttbar_df = df[df['group'] == 'TTbar']
         # Apply the condition only to TTbar group
         cond_1 = ttbar_df['LDTau_genflav'] < 5
         cond_2 = ttbar_df['SDTau_genflav'] < 5
         filtered_ttbar = ttbar_df[cond_1 & cond_2]
-        # Combine filtered TTbar with unfiltered others
-        return filtered_ttbar
+        dyjets_df = df[df['group'] == 'DYJets']
+        filtered_dyjets = dyjets_df[(dyjets_df['LDTau_genflav'] < 5) & (dyjets_df['SDTau_genflav'] < 5)]
+        print(f"Total number of MC TTbar events with fake taus: {filtered_ttbar['weight'].sum()}")
+        print(f"Total number of MC DYJets events with fake taus: {filtered_dyjets['weight'].sum()}")
+        return pd.concat([filtered_ttbar, filtered_dyjets], ignore_index=True)
     
     @staticmethod
     def count_real_taus(df):
-        """Return the number of events with real taus."""
+        """Return the number of MC events with real taus."""
         copy = df.copy()
         copy = copy[copy['group'] != 'Data']  # Exclude data
         df = FakeUtil.keep_real_ttbar(copy)
-        fake_ttbar = FakeUtil.keep_fake_ttbar(copy)
+        fakes = FakeUtil.keep_fakes(copy)
         # Count the number of events with real taus
-        print(f"Total Number of events with real taus: {df['weight'].sum()}")
-        print(f"Total number of events with real taus in TTbar: {df[df['group'] == 'TTbar']['weight'].sum()}")
+        print(f"Total Number of MC events with real taus: {df['weight'].sum()}")
         # Count the number of events with fake taus
-        print(f"Total Number of events with fake taus: {fake_ttbar['weight'].sum()}")
     
 def split_sign(df_ori):
     df = df_ori.copy()
