@@ -32,7 +32,7 @@ H_mass = {
         "hist": {'bins': 40, 'range': [0,800]},
         "plot": {'xlabel': r'Invariant Mass (2b) (GeV)'}},
      "DiTau_mass": {
-        "hist": {'bins': 30, 'range': [0,600]},
+        "hist": {'bins': 30, 'range': [0,200]},
         "plot": {'xlabel': r'Visible Mass (2$\tau$) (GeV)'}}
 } 
 

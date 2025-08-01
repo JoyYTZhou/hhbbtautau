@@ -13,6 +13,8 @@ from src.utils.displayutil import RichArgumentParser
 luminosity = {"2022PreEE": (5.0104+2.9700) * 1000, "2022PostEE": (5.8070+17.7819+3.0828) * 1000, "2023Summer": 32.7 * 1000, "2022": 1}
 regroup_dict = {"Others": ['WJets', 'WZ', 'WW', 'WWW', 'ZZZ', 'WZZ', 'WWZ'], 'HH': ['ggF']}
 
+drop_kwds = ['Gen', 'weight_values', 'Weight_values', 'OS', 'group', 'gen', 'dataset', 'label', 'id', 'year', 'Tau_charge', 'X_num'] 
+
 pjoin = os.path.join
 
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -60,12 +62,7 @@ def plot_rwgt_results(src_df, tar_df, rwgt_df, out_dir):
     }
     
     # List of attribute dictionaries to plot
-    attr_dicts = [
-        dR,
-        H_pt,
-        HT,
-        H_mass
-    ]
+    attr_dicts = [dR, H_pt, HT, H_mass]
     
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -75,6 +72,8 @@ def plot_rwgt_results(src_df, tar_df, rwgt_df, out_dir):
         plot_config = base_config.copy()
         plot_config['attridict'] = attr_dict
         CSVPlotter.plot_shape(**plot_config)
+
+
 
 def add_inv_mass_dR(df):
     """Prepare the invariant mass and dR for the given dataframe."""
@@ -106,6 +105,12 @@ def add_inv_mass_dR(df):
     # Calculate OS
     df['OS'] = df['LDTau_charge']*df['SDTau_charge'] < 0
 
+def neg_wgt(df) -> pd.DataFrame:
+    """Return a copy of the dataframe with negative weights for non-data groups."""
+    df_copy = df.copy()
+    mask = df_copy['group'] != 'Data'
+    df_copy.loc[mask, 'weight'] = -df_copy.loc[mask, 'weight']
+    return df_copy
 
 def regroup(df, keywords, new_value):
     mask = df['dataset'].apply(lambda x: any(keyword in x for keyword in keywords))
@@ -127,10 +132,24 @@ class ARUtil:
         logging.info(f"Processed SS dataframe saved to {pjoin(df_base_dir, channel_name, 'SS.csv')}")
 
         return ss_df
+    
+    @staticmethod
+    def get_os_CR(data_path='oneb_dfs', channel_name='oneb', 
+                  filter_func=lambda df: df.copy()[df['DiJet_mass'] >= 200]):
+        """Get the OS control region dataframe."""
+        data_path = pjoin(raw_base_dir, data_path)
+        output_path = pjoin(df_base_dir, channel_name)
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
+        os_df, _ = OSSSUtil.get_os_ss(data_path, channel_name)
+        os_df = filter_func(os_df)
+        os_df.to_csv(pjoin(df_base_dir, channel_name, 'OS_CR.csv'), index=False)
+        
+        return os_df
 
 class OSSSUtil:
     @staticmethod
-    def get_os_ss(data_path, channel_name) -> tuple[pd.DataFrame, pd.DataFrame]:
+    def get_os_ss(data_path, channel_name, output_dir) -> tuple[pd.DataFrame, pd.DataFrame]:
         """Process return OS and SS dataframes."""
         def select_sign(df, sign='OS'):
             add_inv_mass_dR(df)
@@ -144,9 +163,12 @@ class OSSSUtil:
         selOS = lambda df: select_sign(df, 'OS')
         selSS = lambda df: select_sign(df, 'SS')
 
+        cwd = os.getcwd()
+        meta_dir = pjoin(cwd, 'data/weightedMC')
+
         base_config = {'wgt_name': 'Generator_weight_values',
-            'meta_dir': '/Users/yuntongzhou/Desktop/Dihiggszztt/HHtobbtautau/data/weightedMC',
-            'output_base': pjoin(df_base_dir, 'add_cutflow')}
+            'meta_dir': meta_dir,
+            'output_base': output_dir}
 
         if not os.path.exists(base_config['output_base']):
             os.makedirs(base_config['output_base'])
@@ -203,7 +225,7 @@ class OSSSUtil:
         return os_df, ss_df
 
     @staticmethod
-    def plot_key_comparisons(channel_name, df_filter_func=None, title='0b OS/SS'):
+    def plot_key_comparisons(channel_name, df_filter_func=neg_wgt, title='0b OS/SS'):
         data_dir = pjoin(df_base_dir, channel_name)
         os_df = pd.read_csv(pjoin(data_dir, 'OS.csv'))
         ss_df = pd.read_csv(pjoin(data_dir, 'SS.csv'))
@@ -228,23 +250,24 @@ class OSSSUtil:
         
 class FakeUtil:
     @staticmethod
-    def keep_real_ttbar(df):
-        """Return a dataframe with real tau events in TTbar + DYJets and all other events."""
-        # Split into TTbar and non-TTbar
-        ttbar_df = df[df['group'] == 'TTbar']
-        dyjets_df = df[df['group'] == 'DYJets']
-        other_df = df[(df['group'] != 'TTbar') & (df['group'] != 'DYJets')]
-
-        # Apply the condition only to TTbar group
-        cond_1 = ttbar_df['LDTau_genflav'] >= 5
-        cond_2 = ttbar_df['SDTau_genflav'] >= 5
-        filtered_ttbar = ttbar_df[cond_1 | cond_2]
-        filtered_dyjets = dyjets_df[(dyjets_df['LDTau_genflav'] >= 5) | (dyjets_df['SDTau_genflav'] >= 5)]
-        print(f"Total number of MC TTbar events with real taus: {filtered_ttbar['weight'].sum()}")
-        print(f"Total number of MC DYJets events with real taus: {filtered_dyjets['weight'].sum()}")
-
-        # Combine filtered TTbar, DYJets with unfiltered others
-        return pd.concat([filtered_ttbar, filtered_dyjets, other_df], ignore_index=True)
+    def keep_real_taus(df, groups=['TTbar', 'DYJets']):
+        """Return a dataframe with real tau events in specified groups and all other events unfiltered.
+        
+        Args:
+            df (pd.DataFrame): Input dataframe.
+            groups (list): List of group names to filter for real taus.
+        """
+        filtered = []
+        other_df = df[~df['group'].isin(groups)]
+        for group in groups:
+            group_df = df[df['group'] == group]
+            cond_1 = group_df['LDTau_genflav'] >= 5
+            cond_2 = group_df['SDTau_genflav'] >= 5
+            filtered_group = group_df[cond_1 | cond_2]
+            print(f"Total number of MC {group} events with real taus: {filtered_group['weight'].sum()}")
+            filtered.append(filtered_group)
+        # Combine filtered groups with unfiltered others
+        return pd.concat(filtered + [other_df], ignore_index=True)
     
     @staticmethod
     def keep_fakes(df) -> pd.DataFrame:
@@ -261,15 +284,15 @@ class FakeUtil:
         return pd.concat([filtered_ttbar, filtered_dyjets], ignore_index=True)
     
     @staticmethod
-    def count_real_taus(df):
+    def count_real_taus(df, groups=['TTbar']):
         """Return the number of MC events with real taus."""
         copy = df.copy()
+        print(f"Total number of events in data: {copy[copy['group'] == 'Data']['weight'].sum()}")
         copy = copy[copy['group'] != 'Data']  # Exclude data
-        df = FakeUtil.keep_real_ttbar(copy)
-        fakes = FakeUtil.keep_fakes(copy)
-        # Count the number of events with real taus
-        print(f"Total Number of MC events with real taus: {df['weight'].sum()}")
-        # Count the number of events with fake taus
+        MCdf = FakeUtil.keep_real_taus(copy, groups)
+        _ = FakeUtil.keep_fakes(copy)
+        print(f"Total Number of MC events with real taus: {MCdf['weight'].sum()}")
+        return MCdf
     
 def split_sign(df_ori):
     df = df_ori.copy()
@@ -326,9 +349,6 @@ def apply_all(dfs, func):
     return filtered
 
 
-
-
-
 def signal_id_level(df):
     mask_1 = df['LDTau_idvsjet'] >= 1 # VVV loose WP
     mask_2 = df['SDTau_idvsjet'] >= 1 # VVV loose WP
@@ -360,9 +380,8 @@ def ABCDTable(inputpath1, inputpath2):
 
 def train_mlp_rwgt(train_ori, train_tar, session_name, name='TopQuark'):
     """Train a MLP reweighter from one region to another."""
-    drop_kwds = ['Gen', 'weight_values', 'Weight_values', 'OS', 'group', 'gen', 'dataset', 'label', 'id', 'year', 'Tau_charge', 'X_num']
-    mlp_rwgter = SingleMLPRwgter(train_ori, train_tar, 'weight', f"{results_dir}/training/{name}")
-    mlp_rwgter.prep_data(drop_kwds)
+    mlp_rwgter = SingleMLPRwgter(train_ori, train_tar, 'weight', f"{df_base_dir}/training/{name}", drop_kwd=drop_kwds)
+    mlp_rwgter.prep_data()
     shallow_args= {
         'num_epochs': 100,
         'hidden_arch': 'high_dim',
