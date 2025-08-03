@@ -172,6 +172,11 @@ class TwoTauMixin:
         self.objcollect['LDBjet'] = ld_jet
         self.objcollect['SDBjet'] = sd_jet
         self.objcollect['nJets'] = ak.sum(jet_mask, axis=1)
+
+        self.objcollect['MET_phi'] = events['MET_phi']
+        self.objcollect['MET_pt'] = events['MET_pt']
+        self.objcollect['MET_sumEt'] = events['MET_sumEt']
+        
         if self._with_wgt: self.saveWeights(events)
         
         return events, jet_zipped
