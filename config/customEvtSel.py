@@ -17,7 +17,7 @@ def switch_selections(sel_name):
         'onelooseb': LooseTauOneB,
         'twolooseb': LooseTauTwoB,
         'zerolooseb': LooseTauZeroB,
-        'zeromediumb': MediumTauZeroB,
+        'mediumzerob': MediumTauZeroB,  # Alias for backward compatibility
         'mediumoneb': MediumTauOneB,
         'mediumtwob': MediumTauTwoB,
         'resoneb': ResOneB,

@@ -166,7 +166,7 @@ class OSSSUtil:
         cwd = os.getcwd()
         meta_dir = pjoin(cwd, 'data/weightedMC')
 
-        base_config = {'wgt_name': 'Generator_weight_values',
+        base_config = {'wgt_name': 'Generator_weight',
             'meta_dir': meta_dir,
             'output_base': output_dir}
 

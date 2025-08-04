@@ -8,7 +8,8 @@ from src.utils.displayutil import RichArgumentParser
 
 pjoin = os.path.join
 PARENT_DIR = os.path.dirname(os.path.realpath(__file__))
-META_DIR = os.path.join(PARENT_DIR, 'data')
+SRC_DIR = os.path.dirname(PARENT_DIR)
+META_DIR = os.path.join(SRC_DIR, 'data')
 
 luminosity = {"2022PreEE": (5.0104+2.9700) * 1000, "2022PostEE": (5.8070+17.7819+3.0828) * 1000, "2023Summer": 32.7 * 1000, "2022": 1}
 
@@ -27,12 +28,14 @@ def load_dfs(data_dir, output_dir):
     for year in os.listdir(data_dir):
         if year.startswith('.') or not os.path.isdir(pjoin(data_dir, year)):
             continue
+        elif year not in luminosity:
+            continue
         
         logging.info(f"Processing year: {year}")
         lumi_yr = luminosity.get(year, 1)
         args = {'metadata_path': pjoin(meta_data_dir, f'{year}.json'), 
                 'postp_output': pjoin(output_dir, year),
-                'per_evt_wgt': 'Generator_weight_values', 'luminosity': lumi_yr, 
+                'per_evt_wgt': 'Generator_weight', 'luminosity': lumi_yr, 
                 'datasource': pjoin(data_dir, year)}
         FileSysHelper.checkpath(args['postp_output'], createdir=True)
 
@@ -54,9 +57,11 @@ def prep_infer_input(df):
         MathUtil.add_rel_E_pt(df, name)
         MathUtil.add_rel_M_pt(df, name)
         df[f'{name}_htt_dEta'] = abs(df[f'{name}_eta'] - df['DiTau_eta'])
-        df[f'{name}_htt_dPhi'] = MathUtil.wrap_angle(df[f'{name}_phi'] - df['DiTau_phi'])
+        df[f'{name}_htt_dPhi'] = abs(df[f'{name}_phi'] - df['DiTau_phi'])
     
     df['DiTau_scalar_pt'] = df['LDTau_pt'] + df['SDTau_pt']
+    df['DiTau_MET_dPhi'] = abs(df['DiTau_phi'] - df['MET_phi'])
+    df['MET_DiTau_rel_pt'] = df['MET_pt'] / df['DiTau_pt']
 
 if __name__ == "__main__":
     setup_logging()
