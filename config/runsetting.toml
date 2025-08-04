@@ -3,7 +3,7 @@ SEL_NAME = 'mediumoneb'
 PROC_NAME = 'preselect'
 DELAYED_OPEN = false
 TRANSFER_PATH = '/store/user/joyzhou/tightskim_Mtauoneb'
-FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "TrigObj*"]
+FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "TrigObj*", "MET*"]
 OUTENDPATTERN = ["output*.csv", "cutflow.csv"]
 JOB_DIR = 'tightskimmed'
 
@@ -12,7 +12,7 @@ SEL_NAME = 'mediumtwob'
 PROC_NAME = 'preselect'
 DELAYED_OPEN = false
 TRANSFER_PATH = '/store/user/joyzhou/tightskim_Mtautwob'
-FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "TrigObj*"]
+FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "TrigObj*", "MET*"]
 OUTENDPATTERN = ["output*.csv", "cutflow.csv"]
 JOB_DIR = 'tightskimmed'
 
@@ -21,7 +21,7 @@ SEL_NAME = 'mediumzerob'
 PROC_NAME = 'preselect'
 DELAYED_OPEN = false
 TRANSFER_PATH = '/store/user/joyzhou/tightskim_loosetauzerob'
-FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "TrigObj*"]
+FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "TrigObj*", "MET*"]
 OUTENDPATTERN = ["output*.csv", "cutflow.csv"]
 JOB_DIR = 'tightskimmed'
 
