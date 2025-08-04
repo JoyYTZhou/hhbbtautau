@@ -32,6 +32,11 @@ selection_loose = Dynaconf(
     settings_files=['config/object_selections/loosetau.yaml']
 )
 
+selection_vloose = Dynaconf(
+    root_path = root_path,
+    environments=True,
+    settings_files=['config/object_selections/vloosetau.yaml'])
+
 selection_tight = Dynaconf(
     root_path = root_path,
     environments=True,

@@ -18,6 +18,8 @@ def switch_selections(sel_name):
         'twolooseb': LooseTauTwoB,
         'zerolooseb': LooseTauZeroB,
         'zeromediumb': MediumTauZeroB,
+        'mediumoneb': MediumTauOneB,
+        'mediumtwob': MediumTauTwoB,
         'resoneb': ResOneB,
         'restwob': ResTwoB,
         'vbfpresel': VBFPresel
@@ -28,7 +30,8 @@ ditau_trigsel = selection_sync.triggerselections
 dijet_trigger = dijet_trigger.triggerselections
 sync_objsel = selection_sync.objselections
 vbf_trigsel = selection_vbf.triggerselections
-loose_objsel = selection_loose.objselections # loosetau.yaml
+vvloosetau_sel = selection_loose.objselections # loosetau.yaml
+vloosetau_sel = selection_loose.objselections # vloosetau.yaml
 
 class vetoSkim(SkimSelections):
     def _setevtsel(self, events):
@@ -167,10 +170,15 @@ class TwoTauMixin:
         # - Separates into leading and sub-leading jets
         jet_proc = self.getObjProc(events, 'Jet', sortname='btag')
         jet_zipped = jet_proc.getzipped(events, jet_mask)
-        ld_jet, sd_jet = jet_zipped[:,0], jet_zipped[:,1]
+        ld_jet, sd_jets = jet_zipped[:,0], jet_zipped[:,1:]
+        
+        sd_jets = ak.pad_none(sd_jets, 9, clip=True)
 
         self.objcollect['LDBjet'] = ld_jet
-        self.objcollect['SDBjet'] = sd_jet
+
+        for i in range(9):
+            self.objcollect[f'SDBjet{i+1}'] = sd_jets[:,i]
+
         self.objcollect['nJets'] = ak.sum(jet_mask, axis=1)
         if self._with_wgt: self.saveWeights(events)
         
@@ -193,7 +201,7 @@ class LoosetwoTau(PreselSelections):
     """Implement Loose Tau Selections + b jet selections."""
     def __init__(self, is_mc) -> None:
         mapcfg = mc_nm if is_mc else data_nm
-        super().__init__(trigcfg=None, objselcfg=loose_objsel, mapcfg=mapcfg, sequential=True, is_mc=is_mc)
+        super().__init__(trigcfg=None, objselcfg=vloosetau_sel, mapcfg=mapcfg, sequential=True, is_mc=is_mc)
 
 class MediumtwoTau(PreselSelections):
     """Implement Medium Tau Selections + b jet selections."""
@@ -205,6 +213,16 @@ class MediumTauZeroB(TwoTauMixin, MediumtwoTau):
     def _setevtsel(self, events):
         events = self.seltwotriggertaus(events, "Medium")
         self.selbjets(events, 0, opr.eq) 
+
+class MediumTauOneB(TwoTauMixin, MediumtwoTau):
+    def _setevtsel(self, events):
+        events = self.seltwotriggertaus(events, "Medium")
+        self.selbjets(events, 1, opr.eq)
+
+class MediumTauTwoB(TwoTauMixin, MediumtwoTau):
+    def _setevtsel(self, events):
+        events = self.seltwotriggertaus(events, "Medium")
+        self.selbjets(events, 2, opr.ge)
 
 class LooseTauOneB(TwoTauMixin, LoosetwoTau):
     """Implement Loose Tau Selections + b jet selections."""

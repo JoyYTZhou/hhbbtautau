@@ -1,13 +1,13 @@
 {
     "files": {
-        "root://cmseos.fnal.gov//store/user/joyzhou/tightskim_hadded/2022/Data/TauE_1.root": {
+        "root://cmseos.fnal.gov//store/user/joyzhou/tightskim_hadded/2022PreEE/DYJets/DYJetsToLL_M-50_1.root": {
             "uuid": "1",
             "object_path": "Events"
         }
     },
     "metadata": {
         "xsection": 0.05500221399699999,
-        "shortname": "TauE",
-        "is_mc": false
+        "shortname": "DYJets",
+        "is_mc": true
     }
 }

@@ -61,7 +61,7 @@ def run_basic_test(selection_name, processor_name, transfer_files=True):
     logging.info("Event selection class: %s", eventselection)
     logging.info("File transfer mode: %s", "enabled" if transfer_files else "disabled")
 
-    readkwargs = {'filter_name':["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "BoostedTau*", "FatJet*", "TrigObj*", "HLT*", "gen*", "lumi*", "run*"]} 
+    readkwargs = {'filter_name':["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "BoostedTau*", "FatJet*", "TrigObj*", "HLT*", "gen*", "lumi*", "run*", "MET*"]} 
     
     try:
         rc = proc.run(readkwargs=readkwargs)

@@ -36,3 +36,5 @@ src/test.py
 *.dat
 # Ignore all hidden files
 .*
+# Ignore certain keys
+scripts/.*

@@ -24,6 +24,11 @@ function human_readable() {
     echo "$size${units[$i]}"
 }
 
+function reana_setup {
+    export REANA_SERVER_URL=https://reana.cern.ch
+    export REANA_ACCESS_TOKEN=$(cat scripts/.reana_token)
+}
+
 function LCG_setup {
     if [ -f /etc/os-release ]; then
         . /etc/os-release

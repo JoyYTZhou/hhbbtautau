@@ -1,0 +1,21 @@
+# loose selections (of Tau)
+default:
+  name: "tauhtauh"
+  triggerselections: 
+    HLT_DoubleMediumDeepTauPFTauHPS35_L2NN_eta2p1: true
+  objselections:
+    Tau:
+      pt: 40
+      eta: 2.5
+      idvsjet: 3 # VLoose
+      idvsmu: 1 # V loose
+      idvse: 2 # VV loose
+      dz: 0.2
+      count: 2
+    Jet:
+      pt: 20
+      eta: 2.5
+      btag: 0.0499 # pnet loose WP
+      # btag: 0.0614 # Jet_btagDeepFlavB loose WP
+      count: 2
+      jetid: 6 # bit 1: tight ID, bit 2: tight Lep Veto
