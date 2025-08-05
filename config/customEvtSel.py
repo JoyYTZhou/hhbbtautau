@@ -174,10 +174,10 @@ class TwoTauMixin:
         
         sd_jets = ak.pad_none(sd_jets, 9, clip=True)
 
-        self.objcollect['LDBjet'] = ld_jet
+        self.objcollect['Bjet1'] = ld_jet
 
         for i in range(9):
-            self.objcollect[f'SDBjet{i+1}'] = sd_jets[:,i]
+            self.objcollect[f'Bjet{i+2}'] = sd_jets[:,i]
 
         self.objcollect['nJets'] = ak.sum(jet_mask, axis=1)
 

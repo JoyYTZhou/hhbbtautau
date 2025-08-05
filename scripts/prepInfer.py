@@ -47,8 +47,8 @@ def load_dfs(data_dir, output_dir):
 
 def prep_infer_input(df):
     """Prepare the input dataframe for HH-btag inference by adding necessary columns."""
-    SDBjet_names = [f'SDBjet{i}' for i in range(1, 10)]
-    LDBjet_names = ['LDBjet']
+    SDBjet_names = [f'Bjet{i}' for i in range(2, 11)]
+    LDBjet_names = ['Bjet1']
     total_names = SDBjet_names + LDBjet_names
     
     MathUtil.add_system_4vec(df, 'LDTau', 'SDTau', 'DiTau')
