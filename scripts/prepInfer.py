@@ -56,11 +56,11 @@ def prep_infer_input(df):
     for name in total_names:
         MathUtil.add_rel_E_pt(df, name)
         MathUtil.add_rel_M_pt(df, name)
-        df[f'{name}_htt_dEta'] = abs(df[f'{name}_eta'] - df['DiTau_eta'])
-        df[f'{name}_htt_dPhi'] = abs(df[f'{name}_phi'] - df['DiTau_phi'])
+        df[f'{name}_htt_dEta'] = df[f'{name}_eta'] - df['DiTau_eta']
+        df[f'{name}_htt_dPhi'] = df[f'{name}_phi'] - df['DiTau_phi']
     
     df['DiTau_scalar_pt'] = df['LDTau_pt'] + df['SDTau_pt']
-    df['DiTau_MET_dPhi'] = abs(df['DiTau_phi'] - df['MET_phi'])
+    df['DiTau_MET_dPhi'] = df['DiTau_phi'] - df['MET_phi']
     df['MET_DiTau_rel_pt'] = df['MET_pt'] / df['DiTau_pt']
 
 if __name__ == "__main__":
