@@ -39,7 +39,7 @@ def load_dfs(data_dir, output_dir):
                 'datasource': pjoin(data_dir, year)}
         FileSysHelper.checkpath(args['postp_output'], createdir=True)
 
-        df = cp.process_datasets(**args, extraprocess=False, sig_factor=1)
+        df = cp.process_datasets(**args, extraprocess=lambda df: df)
         df['year'] = year
         dfs.append(df)
     
