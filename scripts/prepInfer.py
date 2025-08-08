@@ -65,7 +65,9 @@ def prep_infer_input(df):
 
 if __name__ == "__main__":
     setup_logging()
-    parser = RichArgumentParser(description="Prepare data for HH-btag inference")
+    descriptions = """Load all output csv files from all eras, all groups dataframes from the specified directory and return a concatenated dataframe,
+    for the purpose of preparing the input for HH-btag inference."""
+    parser = RichArgumentParser(description=descriptions)
     parser.add_argument('data_dir', type=str, help='Directory containing the csv output files')
     parser.add_argument('output_dir', type=str, help='Directory to save the processed data')
     args = parser.parse_args()

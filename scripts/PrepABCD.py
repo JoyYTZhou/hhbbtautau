@@ -1,30 +1,29 @@
 import os, logging
 import pandas as pd
-
+import numpy as np
+import re
 from hep_rewgt_tk.reweight_nn import SingleMLPRwgter
-
 from src.plotting.visutil import CSVPlotter
-from src.plotting.summary import PostPreselProcessor
 from src.utils.mathutil import MathUtil, ABCDUtil
+from src.utils.filesysutil import FileSysHelper
 from src.utils.ioutil import setup_logging
 from src.utils.datautil import CutflowProcessor
-from src.utils.displayutil import RichArgumentParser
+from src.utils.displayutil import RichArgumentParser, print_dataframe_rich
+pjoin = os.path.join
+
+PARENT_DIR = os.path.dirname(os.path.realpath(__file__))
+SRC_DIR = os.path.dirname(PARENT_DIR)
+META_DIR = os.path.join(SRC_DIR, 'data')
 
 luminosity = {"2022PreEE": (5.0104+2.9700) * 1000, "2022PostEE": (5.8070+17.7819+3.0828) * 1000, "2023Summer": 32.7 * 1000, "2022": 1}
 regroup_dict = {"Others": ['WJets', 'WZ', 'WW', 'WWW', 'ZZZ', 'WZZ', 'WWZ'], 'HH': ['ggF']}
 
 drop_kwds = ['Gen', 'weight_values', 'Weight_values', 'OS', 'group', 'gen', 'dataset', 'label', 'id', 'year', 'Tau_charge', 'X_num'] 
 
-pjoin = os.path.join
-
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-df_base_dir = "/Users/yuntongzhou/Desktop/Dihiggszztt/output"
-plt_base_dir = "/Users/yuntongzhou/Desktop/Dihiggszztt/plots"
-raw_base_dir = "/Users/yuntongzhou/Desktop/Dihiggszztt/preprocessed"
-meta_data_dir = "/Users/yuntongzhou/Desktop/Dihiggszztt/HHtobbtautau/data"
-
 from config.plotsetting import dR, H_pt, HT, infer_H_mass, train_H_mass, H_mass, tau_pt
+
 
 def get_ABCD_results(dfA, dfB, dfC, dfD, channel_name=''):
     out_dir = f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/plots/{channel_name}'
@@ -73,37 +72,48 @@ def plot_rwgt_results(src_df, tar_df, rwgt_df, out_dir):
         plot_config['attridict'] = attr_dict
         CSVPlotter.plot_shape(**plot_config)
 
+def get_top_bjets(df):
+    """Compute and extract the top two b-jets based on their HHbtag scores."""
+    pattern = re.compile(r'Bjet(\d+)_.+')
+    matching_columns = [col for col in df.columns if pattern.match(col)]
+    bjet_columns_df = df[matching_columns]
+    
+    missing_columns = [f'Bjet{i}_HHbtag' for i in range(1, 11) if f'Bjet{i}_HHbtag' not in bjet_columns_df.columns]
+    if missing_columns:
+        raise ValueError(f"Missing expected columns: {', '.join(missing_columns)}")
+    
+    hhbtags = bjet_columns_df[[f'Bjet{i}_HHbtag' for i in range(1, 11)]].to_numpy()
+    hhbtags = np.nan_to_num(hhbtags, nan=-np.inf)  # Replace NaN with -inf to treat them as the lowest scores
+    
+    top_two_indices = np.argsort(hhbtags, axis=1)[:, -2:]  # Indices of the two largest values
+    top_two_indices = np.sort(top_two_indices, axis=1)[:, ::-1]  # Sort in descending order of scores
+    
+    top_two_jet_indices = top_two_indices + 1  # Increment by 1 to match 'Bjet{i}' indexing
+    
+    top_bjets_data = {
+        f'TopBjet{j+1}_{col.split("_", 1)[1]}': bjet_columns_df.iloc[:, top_two_jet_indices[:, j] - 1].to_numpy()
+        for j in range(2) for col in matching_columns
+    }
+    
+    top_bjets_df = pd.DataFrame(top_bjets_data, index=df.index)
+    return top_bjets_df
 
-
-def add_inv_mass_dR(df):
-    """Prepare the invariant mass and dR for the given dataframe."""
-    # List of particle pairs for system 4-vectors
-    system_pairs = [('LDTau', 'SDTau', 'DiTau'),
-        ('LDBjet', 'SDBjet', 'DiJet')]
-
-    # List of particle pairs for dR calculations
-    dr_pairs = [('LDTau', 'SDTau', 'Tau_dR'),
-        ('LDBjet', 'SDBjet', 'Bjet_dR'),
-        ('DiTau', 'DiJet', 'RecoH_dR')]
-
-    # Add system 4-vectors
-    for p1, p2, sys in system_pairs:
-        MathUtil.add_system_4vec(df, p1, p2, sys)
-
-    # Add dR values
-    for p1, p2, name in dr_pairs:
-        MathUtil.add_dR(df, p1, p2, name)
-
-    # Add HT
-    MathUtil.add_HT(df, ['LDTau', 'SDTau', 'LDBjet', 'SDBjet'], 'HT')
-
-    # Add momentum for all particles
-    particles = ['LDTau', 'SDTau', 'LDBjet', 'SDBjet', 'DiTau', 'DiJet']
-    for particle in particles:
-        MathUtil.add_f_momentum(df, particle)
-
-    # Calculate OS
-    df['OS'] = df['LDTau_charge']*df['SDTau_charge'] < 0
+def add_extra_features(df):
+    """Add extra features to the dataframe for further analysis."""
+    pattern = re.compile(r'Bjet(\d+)_.+')
+    bjet_columns = [col for col in df.columns if pattern.match(col)]
+    other_columns = [col for col in df.columns if col not in bjet_columns]
+    
+    bjet_df = df[bjet_columns].copy()
+    other_df = df[other_columns].copy()
+    
+    bjet_df = get_top_bjets(bjet_df)
+    df = pd.concat([other_df, bjet_df], axis=1)
+    MathUtil.add_system_4vec(df, 'Bjet1', 'Bjet2', 'DiJet')
+    MathUtil.add_system_4vec(df, 'DiTau', 'DiJet', 'DiHiggs')
+    df['OS'] = ((df['LDTau_charge'] * df['SDTau_charge']) < 0)
+    df['HT'] = df['Bjet1_pt'] + df['Bjet2_pt'] + df['LDTau_pt'] + df['SDTau_pt'] + df['MET_pt'] # Total transverse energy
+    return df
 
 def neg_wgt(df) -> pd.DataFrame:
     """Return a copy of the dataframe with negative weights for non-data groups."""
@@ -116,6 +126,7 @@ def regroup(df, keywords, new_value):
     mask = df['dataset'].apply(lambda x: any(keyword in x for keyword in keywords))
     df.loc[mask, 'group'] = new_value
     return df
+
 
 class ARUtil:
     @staticmethod
@@ -148,82 +159,6 @@ class ARUtil:
         return os_df
 
 class OSSSUtil:
-    @staticmethod
-    def get_os_ss(data_path, channel_name, output_dir) -> tuple[pd.DataFrame, pd.DataFrame]:
-        """Process return OS and SS dataframes."""
-        def select_sign(df, sign='OS'):
-            add_inv_mass_dR(df)
-            if sign == 'OS':
-                return df[df['OS']]
-            elif sign == 'SS':
-                return df[~df['OS']]
-            else:
-                raise ValueError("sign must be 'OS' or 'SS'")
-
-        selOS = lambda df: select_sign(df, 'OS')
-        selSS = lambda df: select_sign(df, 'SS')
-
-        cwd = os.getcwd()
-        meta_dir = pjoin(cwd, 'data/weightedMC')
-
-        base_config = {'wgt_name': 'Generator_weight',
-            'meta_dir': meta_dir,
-            'output_base': output_dir}
-
-        if not os.path.exists(base_config['output_base']):
-            os.makedirs(base_config['output_base'])
-            
-        os_dfs = []
-        ss_dfs = []
-        cp = CSVPlotter(outdir=plt_base_dir)
-        for year in os.listdir(data_path):
-            if year.startswith('.'):
-                continue
-
-            print(f"Processing year: {year}")
-
-            lumi = luminosity[year]
-            args = {'metadata_path': pjoin(base_config['meta_dir'], f'{year}.json'), 'postp_output': pjoin(base_config['output_base'], channel_name, year),
-                'per_evt_wgt': base_config['wgt_name'], 'luminosity': lumi, 'datasource': pjoin(data_path, year)}
-            
-            if not os.path.exists(args['postp_output']):
-                os.makedirs(args['postp_output'])
-
-            # Process OS events
-            os_df = cp.process_datasets(**args, extraprocess=selOS, selname='OS Tau')
-            os_dfs.append(os_df)
-
-            # Process SS events
-            ss_df = cp.process_datasets(**args, extraprocess=selSS, selname='SS Tau')
-            ss_dfs.append(ss_df)
-
-        return pd.concat(os_dfs), pd.concat(ss_dfs)
-    
-    @staticmethod
-    def get_total_df(data_relPath, output_relPath):
-        """Get the total dataframe (OS/SS) by combining all preprocessed data of all MC groups and actual data."""
-        data_path = pjoin(raw_base_dir, data_relPath)
-        output_path = pjoin(df_base_dir, output_relPath)
-
-        if not os.path.exists(output_path):
-            os.makedirs(output_path)
-        
-        os_df, ss_df = OSSSUtil.get_os_ss(data_path, output_relPath)
-
-        os_df.to_csv(pjoin(output_path, 'OS.csv'), index=False)
-        ss_df.to_csv(pjoin(output_path, 'SS.csv'), index=False)
-
-        oscf_df = CutflowProcessor.cutflow_by_sum(os_df, 'zerob_os', None)
-        sscf_df = CutflowProcessor.cutflow_by_sum(ss_df, 'zerob_ss', None)
-
-        oscf_df = CutflowProcessor.categorize_processes(oscf_df, regroup_dict)
-        sscf_df = CutflowProcessor.categorize_processes(sscf_df, regroup_dict)
-        oscf_df.to_csv(pjoin(output_path, 'OS_cutflow.csv'))
-        sscf_df.to_csv(pjoin(output_path, 'SS_cutflow.csv'))
-        logging.info(f"Processed OS and SS dataframes saved to {output_path}")
-        
-        return os_df, ss_df
-
     @staticmethod
     def plot_key_comparisons(channel_name, df_filter_func=neg_wgt, title='0b OS/SS'):
         data_dir = pjoin(df_base_dir, channel_name)
@@ -294,12 +229,6 @@ class FakeUtil:
         print(f"Total Number of MC events with real taus: {MCdf['weight'].sum()}")
         return MCdf
     
-def split_sign(df_ori):
-    df = df_ori.copy()
-    condition = df['OS'] == False
-    ss = df[condition]
-    os = df[~condition]
-    return ss, os
 
 # further split the data into training and testing based on mass
 def split_mass(df_ori):
@@ -347,7 +276,6 @@ def apply_all(dfs, func):
     for i, df in enumerate(dfs):
         filtered[i] = func(df.copy())
     return filtered
-
 
 def signal_id_level(df):
     mask_1 = df['LDTau_idvsjet'] >= 1 # VVV loose WP
@@ -414,65 +342,41 @@ def load_and_plot(ori, tar, reweight_name):
     plot_rwgt_results(show_training(ori), show_training(tar), show_training(rwgt), f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/plots/{reweight_name}_train')
     plot_rwgt_results(show_val(ori), show_val(tar), show_val(rwgt), f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/plots/{reweight_name}_val')
 
-def read_two_channels_df(output_dir, filter_func=None):
-    ABCD_dir = f"/Users/yuntongzhou/Desktop/Dihiggszztt/output/ABCD/{output_dir}"
 
-    Res1b_SS = pd.read_csv(f'{ABCD_dir}/SS1b.csv', index_col=0)
-    Res2b_SS = pd.read_csv(f'{ABCD_dir}/SS2b.csv', index_col=0)
-    Res1b_OS = pd.read_csv(f'{ABCD_dir}/OS1b.csv', index_col=0)
-    Res2b_OS = pd.read_csv(f'{ABCD_dir}/OS2b.csv', index_col=0)
-    
-    if filter_func:
-        Res1b_SS = filter_func(Res1b_SS)
-        Res2b_SS = filter_func(Res2b_SS)
-        Res1b_OS = filter_func(Res1b_OS)
-        Res2b_OS = filter_func(Res2b_OS)
-
-    return Res1b_SS, Res2b_SS, Res1b_OS, Res2b_OS
+def load_and_select(input_name, mode, out_dir, **extra_kwargs):
+    input_df = pd.read_csv(input_name)
+    input_df = add_extra_features(input_df)
+    input_prefix = input_name.split('/')[-1].replace('.csv', '')
+    if mode == 'OSSS':
+        os_df, ss_df = ABCDUtil.split_dataframe(input_df, lambda df: df['OS'] == True)
+        os_df.to_csv(pjoin(out_dir, f'{input_prefix}_OS.csv'), index=False)
+        ss_df.to_csv(pjoin(out_dir, f'{input_prefix}_SS.csv'), index=False)
+        logging.info(f"OS dataframe saved to {pjoin(out_dir, f'{input_prefix}_OS.csv')}")
+        logging.info(f"SS dataframe saved to {pjoin(out_dir, f'{input_prefix}_SS.csv')}")
+    elif mode == 'MBB':
+        mbb_cut = extra_kwargs.get('mbb_cut', 90)
+        filter_func = lambda df: df.copy()[df['DiJet_mass'] > mbb_cut]
+        high_mbb, low_mbb = ABCDUtil.split_dataframe(input_df, filter_func)
+        high_mbb.to_csv(pjoin(out_dir, f'{input_prefix}_highMbb.csv'), index=False)
+        low_mbb.to_csv(pjoin(out_dir, f'{input_prefix}_lowMbb.csv'), index=False)
+        logging.info(f"High Mbb dataframe saved to {pjoin(out_dir, f'{input_prefix}_highMbb.csv')}")
+        logging.info(f"Low Mbb dataframe saved to {pjoin(out_dir, f'{input_prefix}_lowMbb.csv')}")
+    else:
+        raise ValueError(f"Unsupported mode: {mode}. Choose either 'OSSS' or 'MBB'.")
 
 if __name__ == "__main__":
+    setup_logging()
+    
     parser = RichArgumentParser()
-    
-    parser.add_argument('-d', '--debug', action='store_true', help='Enable debug mode')
-    parser.add_argument('-i1', '--input1', required=True, type=str, default=None, help='Relative input file path 1 for one b')
-    parser.add_argument('-i2', '--input2', required=True, type=str, default=None, help='Relative input file path 2 for two b')
-    parser.add_argument('-o', '--output', required=True, type=str, default=None, help='Relative output file path')
-    parser.add_argument('-m', '--mode', type=str, default='hadd', help='Mode of operation: hadd, train, infer, plot')
-
+    parser.add_argument('-i', '--input', required=True, help="Input filename containing data after HH-btag inference.")
+    parser.add_argument('-o', '--output', required=True, help="Output directory to save the processed data.")
+    parser.add_argument('mode', choices=['OSSS', 'MBB'], help="Mode of operation: OSSS for OS/SS analysis, MBB for DiJet-mass-based analysis.")
+    parser.add_argument('--mbb_cut', type=float, default=120, help="Mbb cut value for MBB mode. Default is 120 GeV.")
     args = parser.parse_args()
-
-    console_level = logging.INFO if not args.debug else logging.DEBUG
-    setup_logging(console_level=console_level)
-    logging.info(f"Starting ABCD analysis in {output_home} ...")
-
-    oneb_path = f'{output_home}/{args.input1}'
-    twob_path = f'{output_home}/{args.input2}'
     
-    OS_2b, OS_1b, SS_2b, SS_1b = getABCDdf(oneb_path, twob_path, args.output, args.output)
- 
-    post_process_base = f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/{args.output}'
-
-    local_cutflow_base = '/Users/yuntongzhou/Desktop/Dihiggszztt/output/ABCD_Cutflow'
-
-    cfg_1b = {"DIRNAME": None, "DATA_DIR": data_dir, 
-            "INPUTDIR": pjoin(post_process_base, 'oneb'),  
-            "LOCALOUTPUT": pjoin(local_cutflow_base, args.output, 'oneb'),
-            "TRANSFERPATH": None, 
-            "IS_MC": True}
-
-    cfg_2b = cfg_1b.copy()
-    cfg_2b["INPUTDIR"] = pjoin(post_process_base, 'twob')
-    cfg_2b["LOCALOUTPUT"] = pjoin(local_cutflow_base, args.output, 'twob')
-
-    for cfg in [cfg_1b, cfg_2b]:
-        logging.info(f"Processing {cfg['INPUTDIR']} ...")
-        pp = PostPreselProcessor(cfg, luminosity)
-        pp.get_yield('OS')
-        pp.get_yield('SS')
-
-    # ABCDTable()
-
-    # prep_training(dfA, 'Res2b_OS.csv')
-    # prep_training(dfB, 'Res1b_OS.csv')
-    # prep_training(dfC, 'Res2b_SS.csv')
-    # prep_training(dfD, 'Res1b_SS.csv')
+    FileSysHelper.checkpath(args.output, createdir=True)
+    if not os.path.isfile(args.input):
+        raise FileNotFoundError(f"Input file {args.input} does not exist.")
+    
+    load_and_select(args.input, args.mode, args.output, mbb_cut=args.mbb_cut)
+    
