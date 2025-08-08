@@ -1,7 +1,8 @@
-import os, logging
+import os, logging, re
 import pandas as pd
 import numpy as np
-import re
+from rich.table import Table
+from rich.console import Console
 from hep_rewgt_tk.reweight_nn import SingleMLPRwgter
 from src.plotting.visutil import CSVPlotter
 from src.utils.mathutil import MathUtil, ABCDUtil
@@ -49,6 +50,9 @@ def get_ABCD_results(dfA, dfB, dfC, dfD, channel_name=''):
         plot_config = base_args.copy()
         plot_config['attridict'] = attr_dict
         CSVPlotter.plot_shape(**plot_config)
+
+def plot_histograms(df, plot_dir):
+    pass
 
 def plot_rwgt_results(src_df, tar_df, rwgt_df, out_dir):
     # Base configuration that's common for all plots
@@ -185,7 +189,7 @@ class OSSSUtil:
         
 class FakeUtil:
     @staticmethod
-    def keep_real_taus(df, groups=['TTbar', 'DYJets']):
+    def keep_real_taus(df, groups=['TTbar']):
         """Return a dataframe with real tau events in specified groups and all other events unfiltered.
         
         Args:
@@ -222,11 +226,28 @@ class FakeUtil:
     def count_real_taus(df, groups=['TTbar']):
         """Return the number of MC events with real taus."""
         copy = df.copy()
-        print(f"Total number of events in data: {copy[copy['group'] == 'Data']['weight'].sum()}")
+        data_events = copy[copy['group'] == 'Data']['weight'].sum()
+        logging.info(f"Total number of events in data: {data_events}")
+        
         copy = copy[copy['group'] != 'Data']  # Exclude data
         MCdf = FakeUtil.keep_real_taus(copy, groups)
-        _ = FakeUtil.keep_fakes(copy)
-        print(f"Total Number of MC events with real taus: {MCdf['weight'].sum()}")
+        fake_df = FakeUtil.keep_fakes(copy)
+        
+        real_tau_events = MCdf['weight'].sum()
+        logging.info(f"Total Number of MC events with real taus: {real_tau_events}")
+        
+        # Display results in a table format
+        
+        table = Table(title="Real Tau Event Counts")
+        table.add_column("Category", justify="left", style="cyan", no_wrap=True)
+        table.add_column("Event Count", justify="right", style="magenta")
+        
+        table.add_row("Data Events", f"{data_events:.2f}")
+        table.add_row("MC Events with Real Taus", f"{real_tau_events:.2f}")
+        
+        console = Console()
+        console.print(table)
+        
         return MCdf
     
 
@@ -370,6 +391,7 @@ if __name__ == "__main__":
     parser = RichArgumentParser()
     parser.add_argument('-i', '--input', required=True, help="Input filename containing data after HH-btag inference.")
     parser.add_argument('-o', '--output', required=True, help="Output directory to save the processed data.")
+    parser.add_argument('-p', '--plot_dir', default=None, help="Directory to save plots. If not provided, no plots will be saved.")
     parser.add_argument('mode', choices=['OSSS', 'MBB'], help="Mode of operation: OSSS for OS/SS analysis, MBB for DiJet-mass-based analysis.")
     parser.add_argument('--mbb_cut', type=float, default=120, help="Mbb cut value for MBB mode. Default is 120 GeV.")
     args = parser.parse_args()
