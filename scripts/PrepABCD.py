@@ -10,7 +10,10 @@ from src.utils.filesysutil import FileSysHelper
 from src.utils.ioutil import setup_logging
 from src.utils.datautil import CutflowProcessor
 from src.utils.displayutil import RichArgumentParser, print_dataframe_rich
+import matplotlib
+
 pjoin = os.path.join
+matplotlib.use('Agg')  # Use a non-interactive backend for plotting
 
 PARENT_DIR = os.path.dirname(os.path.realpath(__file__))
 SRC_DIR = os.path.dirname(PARENT_DIR)
@@ -23,7 +26,6 @@ drop_kwds = ['Gen', 'weight_values', 'Weight_values', 'OS', 'group', 'gen', 'dat
 
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-from config.plotsetting import dR, H_pt, HT, infer_H_mass, train_H_mass, H_mass, tau_pt
 
 def get_ABCD_results(dfA, dfB, dfC, dfD, channel_name=''):
     out_dir = f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/plots/{channel_name}'
@@ -50,8 +52,17 @@ def get_ABCD_results(dfA, dfB, dfC, dfD, channel_name=''):
         plot_config['attridict'] = attr_dict
         CSVPlotter.plot_shape(**plot_config)
 
-def plot_histograms(df, plot_dir):
-    pass
+def plot_histograms(df, plot_dir, region_name=''):
+    """Plot histograms for the given dataframe and save them to the specified directory."""
+    cp = CSVPlotter(outdir=plot_dir)
+    from config.plotsetting import H_mass, tau_pt, tau_eta, bjet_pt, bjet_mass, dR
+
+    att_dicts = H_mass | tau_pt | tau_eta | bjet_pt | bjet_mass | dR
+    if not os.path.exists(plot_dir):
+        os.makedirs(plot_dir)
+    
+    cp.plot_SvB(df, att_dicts, title=region_name, save_name=f'{region_name}_SvB', lumi=34.65)
+    logging.warning(f"Histograms for {region_name} saved to {plot_dir}")
 
 def plot_rwgt_results(src_df, tar_df, rwgt_df, out_dir):
     # Base configuration that's common for all plots
@@ -116,6 +127,9 @@ def add_extra_features(df):
     MathUtil.add_system_4vec(df, 'DiTau', 'DiJet', 'DiHiggs')
     df['OS'] = ((df['LDTau_charge'] * df['SDTau_charge']) < 0)
     df['HT'] = df['Bjet1_pt'] + df['Bjet2_pt'] + df['LDTau_pt'] + df['SDTau_pt'] + df['MET_pt'] # Total transverse energy
+    df['DiTau_dR'] = MathUtil.add_dR(df, 'LDTau', 'SDTau')
+    df['DiJet_dR'] = MathUtil.add_dR(df, 'Bjet1', 'Bjet2')
+    df['DiHiggs_dR'] = MathUtil.add_dR(df, 'DiTau', 'DiJet')
     return df
 
 def neg_wgt(df) -> pd.DataFrame:
@@ -129,7 +143,6 @@ def regroup(df, keywords, new_value):
     mask = df['dataset'].apply(lambda x: any(keyword in x for keyword in keywords))
     df.loc[mask, 'group'] = new_value
     return df
-
 
 class ARUtil:
     @staticmethod
@@ -362,15 +375,18 @@ def load_and_plot(ori, tar, reweight_name):
     plot_rwgt_results(show_training(ori), show_training(tar), show_training(rwgt), f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/plots/{reweight_name}_train')
     plot_rwgt_results(show_val(ori), show_val(tar), show_val(rwgt), f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/plots/{reweight_name}_val')
 
-
-def load_and_select(input_name, mode, out_dir, **extra_kwargs):
+def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
     input_df = pd.read_csv(input_name)
     input_df = add_extra_features(input_df)
     input_prefix = input_name.split('/')[-1].replace('.csv', '')
     if mode == 'OSSS':
         os_df, ss_df = ABCDUtil.split_dataframe(input_df, lambda df: df['OS'] == True)
         os_df.to_csv(pjoin(out_dir, f'{input_prefix}_OS.csv'), index=False)
+        os.mkdir(pjoin(root_plt_dir, 'OS'), exist_ok=True)
+        plot_histograms(os_df, pjoin(root_plt_dir, 'OS'), region_name='OS Region')
         ss_df.to_csv(pjoin(out_dir, f'{input_prefix}_SS.csv'), index=False)
+        os.mkdir(pjoin(root_plt_dir, 'SS'), exist_ok=True)
+        plot_histograms(ss_df, pjoin(root_plt_dir, 'SS'), region_name='SS Region')
         logging.info(f"OS dataframe saved to {pjoin(out_dir, f'{input_prefix}_OS.csv')}")
         logging.info(f"SS dataframe saved to {pjoin(out_dir, f'{input_prefix}_SS.csv')}")
     elif mode == 'MBB':
@@ -378,7 +394,11 @@ def load_and_select(input_name, mode, out_dir, **extra_kwargs):
         filter_func = lambda df: df.copy()[df['DiJet_mass'] > mbb_cut]
         high_mbb, low_mbb = ABCDUtil.split_dataframe(input_df, filter_func)
         high_mbb.to_csv(pjoin(out_dir, f'{input_prefix}_highMbb.csv'), index=False)
+        os.mkdir(pjoin(root_plt_dir, 'HIGH_MBB'), exist_ok=True)
+        plot_histograms(high_mbb, pjoin(root_plt_dir, 'HIGH_MBB'), region_name='High Mbb Region')
         low_mbb.to_csv(pjoin(out_dir, f'{input_prefix}_lowMbb.csv'), index=False)
+        os.mkdir(pjoin(root_plt_dir, 'LOW_MBB'), exist_ok=True)
+        plot_histograms(low_mbb, pjoin(root_plt_dir, 'LOW_MBB'), region_name='Low Mbb Region')
         logging.info(f"High Mbb dataframe saved to {pjoin(out_dir, f'{input_prefix}_highMbb.csv')}")
         logging.info(f"Low Mbb dataframe saved to {pjoin(out_dir, f'{input_prefix}_lowMbb.csv')}")
     else:
