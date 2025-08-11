@@ -61,7 +61,7 @@ def plot_histograms(df, plot_dir, region_name=''):
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
     
-    cp.plot_SvB(df, att_dicts, title=region_name, save_name=f'{region_name}_SvB', lumi=34.65)
+    cp.plot_SvB(df, att_dicts, title=region_name, save_name=f'{region_name}_SvB', lumi=34.65, rescale=1)
     logging.warning(f"Histograms for {region_name} saved to {plot_dir}")
 
 def plot_rwgt_results(src_df, tar_df, rwgt_df, out_dir):
@@ -94,31 +94,25 @@ def get_top_bjets(df):
     
     # Find indices of top 2 bjets for each row
     top_indices = hhbtags.values.argsort(axis=1)[:, -2:][:, ::-1]  # Descending order
-    
+    print(f"Top indices for bjets first five rows: {top_indices[:5]}")
+
     result_data = {}
     
-    # Get all bjet feature columns (excluding HHbtag since we already used it)
-    bjet_features = [col for col in df.columns if col.startswith('Bjet') and '_HHbtag' not in col]
+    # Get all bjet feature columns
+    bjet_features = [col for col in df.columns if col.startswith('Bjet')]
+    logging.info(f"Extracting features for top bjets: {bjet_features}")
     
     # Extract features for top 2 bjets
-    for i in range(2):
-        for feature_col in bjet_features:
-            # Extract bjet number from column name (e.g., 'Bjet3_pt' -> 3)
-            bjet_num = int(feature_col.split('_')[0].replace('Bjet', ''))
-            feature_name = feature_col.split('_', 1)[1]  # Everything after 'BjetX_'
-            
-            # Create a mapping from feature values to top bjet indices
-            feature_values = df[feature_col].values
-            
-            # Use advanced indexing to select values based on top_indices
-            # top_indices[:, i] gives us the bjet index for position i for each row
-            mask = top_indices[:, i] == (bjet_num - 1)  # Check if this bjet is selected
-            
-            # Initialize with NaN and fill where mask is True
-            selected_values = np.full(len(df), np.nan)
-            selected_values[mask] = feature_values[mask]
-            
-            result_data[f'Bjet{i+1}_{feature_name}'] = selected_values
+    for feature_base in set(col.split('_', 1)[1] for col in bjet_features):
+        # Get all columns for this feature (e.g., all 'pt' columns: Bjet1_pt, Bjet2_pt, etc.)
+        feature_cols = [col for col in bjet_features if col.endswith(f'_{feature_base}')]
+        feature_values = df[feature_cols].values  # Shape: (n_events, n_bjets)
+        
+        # Extract values for top 2 bjets using advanced indexing
+        for i in range(2):
+            bjet_indices = top_indices[:, i]  # Indices of i-th best bjet for each event
+            selected_values = feature_values[np.arange(len(df)), bjet_indices]
+            result_data[f'Bjet{i+1}_{feature_base}'] = selected_values
 
     return pd.DataFrame(result_data, index=df.index).fillna(method='bfill', axis=1)
 
@@ -379,10 +373,10 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
     if mode == 'OSSS':
         os_df, ss_df = ABCDUtil.split_dataframe(input_df, lambda df: df[df['OS'] == True])
         os_df.to_csv(pjoin(out_dir, f'{input_prefix}_OS.csv'), index=False)
-        os.mkdir(pjoin(root_plt_dir, 'OS'))
+        FileSysHelper.checkpath(pjoin(root_plt_dir, 'OS'))
         plot_histograms(os_df, pjoin(root_plt_dir, 'OS'), region_name='OS Region')
         ss_df.to_csv(pjoin(out_dir, f'{input_prefix}_SS.csv'), index=False)
-        os.mkdir(pjoin(root_plt_dir, 'SS'))
+        FileSysHelper.checkpath(pjoin(root_plt_dir, 'SS'))
         plot_histograms(ss_df, pjoin(root_plt_dir, 'SS'), region_name='SS Region')
         logging.info(f"OS dataframe saved to {pjoin(out_dir, f'{input_prefix}_OS.csv')}")
         logging.info(f"SS dataframe saved to {pjoin(out_dir, f'{input_prefix}_SS.csv')}")
@@ -391,10 +385,10 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
         filter_func = lambda df: df.copy()[df['DiJet_mass'] > mbb_cut]
         high_mbb, low_mbb = ABCDUtil.split_dataframe(input_df, filter_func)
         high_mbb.to_csv(pjoin(out_dir, f'{input_prefix}_highMbb.csv'), index=False)
-        os.mkdir(pjoin(root_plt_dir, 'HIGH_MBB'), exist_ok=True)
+        FileSysHelper.checkpath(pjoin(root_plt_dir, 'HIGH_MBB'))
         plot_histograms(high_mbb, pjoin(root_plt_dir, 'HIGH_MBB'), region_name='High Mbb Region')
         low_mbb.to_csv(pjoin(out_dir, f'{input_prefix}_lowMbb.csv'), index=False)
-        os.mkdir(pjoin(root_plt_dir, 'LOW_MBB'), exist_ok=True)
+        FileSysHelper.checkpath(pjoin(root_plt_dir, 'LOW_MBB'))
         plot_histograms(low_mbb, pjoin(root_plt_dir, 'LOW_MBB'), region_name='Low Mbb Region')
         logging.info(f"High Mbb dataframe saved to {pjoin(out_dir, f'{input_prefix}_highMbb.csv')}")
         logging.info(f"Low Mbb dataframe saved to {pjoin(out_dir, f'{input_prefix}_lowMbb.csv')}")
