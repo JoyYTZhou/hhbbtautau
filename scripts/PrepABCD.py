@@ -61,7 +61,7 @@ def plot_histograms(df, plot_dir, region_name=''):
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
     
-    cp.plot_SvB(df, att_dicts, title=region_name, save_name=f'{region_name}_SvB', lumi=34.65, rescale=1)
+    cp.plot_SvB(df, att_dicts, title=region_name, save_name=f'SvB', lumi=34.65, rescale_sig=1)
     logging.warning(f"Histograms for {region_name} saved to {plot_dir}")
 
 def plot_rwgt_results(src_df, tar_df, rwgt_df, out_dir):
