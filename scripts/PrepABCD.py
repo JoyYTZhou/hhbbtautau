@@ -93,13 +93,11 @@ def get_top_bjets(df):
     
     # Find indices of top 2 bjets for each row
     top_indices = hhbtags.values.argsort(axis=1)[:, -2:][:, ::-1]  # Descending order
-    print(f"Top indices for bjets first five rows: {top_indices[:5]}")
 
     result_data = {}
     
     # Get all bjet feature columns
     bjet_features = [col for col in df.columns if col.startswith('Bjet')]
-    logging.info(f"Extracting features for top bjets: {bjet_features}")
     
     # Extract features for top 2 bjets
     for feature_base in set(col.split('_', 1)[1] for col in bjet_features):
@@ -124,16 +122,17 @@ def add_extra_features(df):
     other_df = df[other_columns].copy()
     
     bjet_df = get_top_bjets(df[bjet_columns])
-    df = pd.concat([other_df, bjet_df], axis=1)
+    df_copy = pd.concat([other_df, bjet_df], axis=1)
     logging.info("Adding extra features to the dataframe.")
-    MathUtil.add_system_4vec(df, 'Bjet1', 'Bjet2', 'DiJet')
-    MathUtil.add_system_4vec(df, 'DiTau', 'DiJet', 'DiHiggs')
-    df['OS'] = ((df['LDTau_charge'] * df['SDTau_charge']) < 0)
-    df['HT'] = df['Bjet1_pt'] + df['Bjet2_pt'] + df['LDTau_pt'] + df['SDTau_pt'] + df['MET_pt'] # Total transverse energy
-    MathUtil.add_dR(df, 'LDTau', 'SDTau', 'DiTau_dR')
-    MathUtil.add_dR(df, 'Bjet1', 'Bjet2', 'DiJet_dR')
-    MathUtil.add_dR(df, 'DiTau', 'DiJet', 'DiHiggs_dR')
-    return df
+    MathUtil.add_system_4vec(df_copy, 'Bjet1', 'Bjet2', 'DiJet')
+    MathUtil.add_system_4vec(df_copy, 'DiTau', 'DiJet', 'DiHiggs')
+    df_copy['OS'] = ((df_copy['LDTau_charge'] * df_copy['SDTau_charge']) < 0)
+    df_copy['HT'] = df_copy['Bjet1_pt'] + df_copy['Bjet2_pt'] + df_copy['LDTau_pt'] + df_copy['SDTau_pt'] + df_copy['MET_pt'] # Total transverse energy
+    MathUtil.add_dR(df_copy, 'LDTau', 'SDTau', 'DiTau_dR')
+    MathUtil.add_dR(df_copy, 'Bjet1', 'Bjet2', 'DiJet_dR')
+    MathUtil.add_dR(df_copy, 'DiTau', 'DiJet', 'DiHiggs_dR')
+    logging.info(f"features: {df_copy.columns}")
+    return df_copy
 
 def neg_wgt(df) -> pd.DataFrame:
     """Return a copy of the dataframe with negative weights for non-data groups."""
