@@ -9,7 +9,10 @@ from src.utils.filesysutil import FileSysHelper
 from src.utils.ioutil import setup_logging
 from src.utils.datautil import CutflowProcessor
 from src.utils.displayutil import RichArgumentParser, print_dataframe_rich
+import matplotlib
+
 pjoin = os.path.join
+matplotlib.use('Agg')  # Use a non-interactive backend for plotting
 
 PARENT_DIR = os.path.dirname(os.path.realpath(__file__))
 SRC_DIR = os.path.dirname(PARENT_DIR)
@@ -21,8 +24,6 @@ regroup_dict = {"Others": ['WJets', 'WZ', 'WW', 'WWW', 'ZZZ', 'WZZ', 'WWZ'], 'HH
 drop_kwds = ['Gen', 'weight_values', 'Weight_values', 'OS', 'group', 'gen', 'dataset', 'label', 'id', 'year', 'Tau_charge', 'X_num'] 
 
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-from config.plotsetting import dR, H_pt, HT, infer_H_mass, train_H_mass, H_mass, tau_pt
 
 
 def get_ABCD_results(dfA, dfB, dfC, dfD, channel_name=''):
@@ -50,8 +51,17 @@ def get_ABCD_results(dfA, dfB, dfC, dfD, channel_name=''):
         plot_config['attridict'] = attr_dict
         CSVPlotter.plot_shape(**plot_config)
 
-def plot_histograms(df, plot_dir):
-    pass
+def plot_histograms(df, plot_dir, region_name=''):
+    """Plot histograms for the given dataframe and save them to the specified directory."""
+    cp = CSVPlotter(outdir=plot_dir)
+    from config.plotsetting import H_mass, tau_pt, tau_eta, bjet_pt, bjet_mass, dR
+
+    att_dicts = H_mass | tau_pt | tau_eta | bjet_pt | bjet_mass | dR
+    if not os.path.exists(plot_dir):
+        os.makedirs(plot_dir)
+    
+    cp.plot_SvB(df, att_dicts, title=region_name, save_name=f'SvB', lumi=34.65, rescale_sig=1)
+    logging.warning(f"Histograms for {region_name} saved to {plot_dir}")
 
 def plot_rwgt_results(src_df, tar_df, rwgt_df, out_dir):
     # Base configuration that's common for all plots
@@ -76,30 +86,34 @@ def plot_rwgt_results(src_df, tar_df, rwgt_df, out_dir):
         CSVPlotter.plot_shape(**plot_config)
 
 def get_top_bjets(df):
-    """Compute and extract the top two b-jets based on their HHbtag scores."""
-    pattern = re.compile(r'Bjet(\d+)_.+')
-    matching_columns = [col for col in df.columns if pattern.match(col)]
-    bjet_columns_df = df[matching_columns]
+    """Get features for the two bjets with highest HHbtag scores."""
+    # Get HHbtag scores and find top 2 indices
+    hhbtag_cols = [f'Bjet{i}_HHbtag' for i in range(1, 11)]
+    hhbtags = df[hhbtag_cols].fillna(-np.inf)
     
-    missing_columns = [f'Bjet{i}_HHbtag' for i in range(1, 11) if f'Bjet{i}_HHbtag' not in bjet_columns_df.columns]
-    if missing_columns:
-        raise ValueError(f"Missing expected columns: {', '.join(missing_columns)}")
+    # Find indices of top 2 bjets for each row
+    top_indices = hhbtags.values.argsort(axis=1)[:, -2:][:, ::-1]  # Descending order
+    print(f"Top indices for bjets first five rows: {top_indices[:5]}")
+
+    result_data = {}
     
-    hhbtags = bjet_columns_df[[f'Bjet{i}_HHbtag' for i in range(1, 11)]].to_numpy()
-    hhbtags = np.nan_to_num(hhbtags, nan=-np.inf)  # Replace NaN with -inf to treat them as the lowest scores
+    # Get all bjet feature columns
+    bjet_features = [col for col in df.columns if col.startswith('Bjet')]
+    logging.info(f"Extracting features for top bjets: {bjet_features}")
     
-    top_two_indices = np.argsort(hhbtags, axis=1)[:, -2:]  # Indices of the two largest values
-    top_two_indices = np.sort(top_two_indices, axis=1)[:, ::-1]  # Sort in descending order of scores
-    
-    top_two_jet_indices = top_two_indices + 1  # Increment by 1 to match 'Bjet{i}' indexing
-    
-    top_bjets_data = {
-        f'TopBjet{j+1}_{col.split("_", 1)[1]}': bjet_columns_df.iloc[:, top_two_jet_indices[:, j] - 1].to_numpy()
-        for j in range(2) for col in matching_columns
-    }
-    
-    top_bjets_df = pd.DataFrame(top_bjets_data, index=df.index)
-    return top_bjets_df
+    # Extract features for top 2 bjets
+    for feature_base in set(col.split('_', 1)[1] for col in bjet_features):
+        # Get all columns for this feature (e.g., all 'pt' columns: Bjet1_pt, Bjet2_pt, etc.)
+        feature_cols = [col for col in bjet_features if col.endswith(f'_{feature_base}')]
+        feature_values = df[feature_cols].values  # Shape: (n_events, n_bjets)
+        
+        # Extract values for top 2 bjets using advanced indexing
+        for i in range(2):
+            bjet_indices = top_indices[:, i]  # Indices of i-th best bjet for each event
+            selected_values = feature_values[np.arange(len(df)), bjet_indices]
+            result_data[f'Bjet{i+1}_{feature_base}'] = selected_values
+
+    return pd.DataFrame(result_data, index=df.index).fillna(method='bfill', axis=1)
 
 def add_extra_features(df):
     """Add extra features to the dataframe for further analysis."""
@@ -107,15 +121,18 @@ def add_extra_features(df):
     bjet_columns = [col for col in df.columns if pattern.match(col)]
     other_columns = [col for col in df.columns if col not in bjet_columns]
     
-    bjet_df = df[bjet_columns].copy()
     other_df = df[other_columns].copy()
     
-    bjet_df = get_top_bjets(bjet_df)
+    bjet_df = get_top_bjets(df[bjet_columns])
     df = pd.concat([other_df, bjet_df], axis=1)
+    logging.info("Adding extra features to the dataframe.")
     MathUtil.add_system_4vec(df, 'Bjet1', 'Bjet2', 'DiJet')
     MathUtil.add_system_4vec(df, 'DiTau', 'DiJet', 'DiHiggs')
     df['OS'] = ((df['LDTau_charge'] * df['SDTau_charge']) < 0)
     df['HT'] = df['Bjet1_pt'] + df['Bjet2_pt'] + df['LDTau_pt'] + df['SDTau_pt'] + df['MET_pt'] # Total transverse energy
+    MathUtil.add_dR(df, 'LDTau', 'SDTau', 'DiTau_dR')
+    MathUtil.add_dR(df, 'Bjet1', 'Bjet2', 'DiJet_dR')
+    MathUtil.add_dR(df, 'DiTau', 'DiJet', 'DiHiggs_dR')
     return df
 
 def neg_wgt(df) -> pd.DataFrame:
@@ -129,7 +146,6 @@ def regroup(df, keywords, new_value):
     mask = df['dataset'].apply(lambda x: any(keyword in x for keyword in keywords))
     df.loc[mask, 'group'] = new_value
     return df
-
 
 class ARUtil:
     @staticmethod
@@ -269,14 +285,6 @@ def analyze_taus(df, groups=['TTbar']):
         return MCdf
     
 
-# further split the data into training and testing based on mass
-def split_mass(df_ori):
-    df = df_ori.copy()[(df_ori['DiJet_mass'] > 90)]
-    condition = df['DiJet_mass'] > 160
-    train = df[condition]
-    target = df[~condition]
-    return train, target
-
 def get_train_test(df_SS, df_OS, split_func):
     """Create train and test sets for the given dataframes.
     
@@ -303,12 +311,6 @@ def get_tauid_train_test(df_SS, df_OS):
     tau_id = lambda df: df['SDTau_idvsjet'] >= 5
     return get_train_test(df_SS, df_OS, tau_id)
 
-def get_mbb_train_test(df_SS, df_OS, mbb_cut=90):
-    """Obtain train and test sets based on the DiJet mass region division."""
-    filter_mass = lambda df: df.copy()[df['DiJet_mass'] > mbb_cut]
-    df_SS = filter_mass(df_SS)
-    df_OS = filter_mass(df_OS)
-    return get_train_test(df_SS, df_OS, lambda df: df['DiJet_mass'] < 160)
 
 def apply_all(dfs, func):
     filtered = [None] * len(dfs)
@@ -381,15 +383,20 @@ def load_and_plot(ori, tar, reweight_name):
     plot_rwgt_results(show_training(ori), show_training(tar), show_training(rwgt), f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/plots/{reweight_name}_train')
     plot_rwgt_results(show_val(ori), show_val(tar), show_val(rwgt), f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/plots/{reweight_name}_val')
 
-def load_and_select(input_name, mode, out_dir, **extra_kwargs):
-    input_df = pd.read_csv(input_name)
+def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
+    """Load the input dataframe, add extra features, split based on mode, and save the results."""
+    input_df = pd.read_csv(input_name, low_memory=False)
     input_df = add_extra_features(input_df)
     input_prefix = input_name.split('/')[-1].replace('.csv', '')
     if mode == 'OSSS':
         os_df, ss_df, os_cutflow = ABCDUtil.split_dataframe(input_df, lambda df: df['OS'] == True)
         os_df.to_csv(pjoin(out_dir, f'{input_prefix}_OS.csv'), index=False)
+        FileSysHelper.checkpath(pjoin(root_plt_dir, 'OS'))
+        plot_histograms(os_df, pjoin(root_plt_dir, 'OS'), region_name='OS Region')
         ss_df.to_csv(pjoin(out_dir, f'{input_prefix}_SS.csv'), index=False)
         os_cutflow.to_csv(pjoin(out_dir, f'{input_prefix}_OS_cutflow.csv'), index=False)
+        FileSysHelper.checkpath(pjoin(root_plt_dir, 'SS'))
+        plot_histograms(ss_df, pjoin(root_plt_dir, 'SS'), region_name='SS Region')
         logging.info(f"OS dataframe saved to {pjoin(out_dir, f'{input_prefix}_OS.csv')}")
         logging.info(f"SS dataframe saved to {pjoin(out_dir, f'{input_prefix}_SS.csv')}")
     elif mode == 'MBB':
@@ -397,8 +404,12 @@ def load_and_select(input_name, mode, out_dir, **extra_kwargs):
         filter_func = lambda df: df.copy()[df['DiJet_mass'] > mbb_cut]
         high_mbb, low_mbb, high_cutflow = ABCDUtil.split_dataframe(input_df, filter_func)
         high_mbb.to_csv(pjoin(out_dir, f'{input_prefix}_highMbb.csv'), index=False)
+        FileSysHelper.checkpath(pjoin(root_plt_dir, 'HIGH_MBB'))
+        plot_histograms(high_mbb, pjoin(root_plt_dir, 'HIGH_MBB'), region_name='High Mbb Region')
         low_mbb.to_csv(pjoin(out_dir, f'{input_prefix}_lowMbb.csv'), index=False)
         high_cutflow.to_csv(pjoin(out_dir, f'{input_prefix}_highMbb_cutflow.csv'), index=False)
+        FileSysHelper.checkpath(pjoin(root_plt_dir, 'LOW_MBB'))
+        plot_histograms(low_mbb, pjoin(root_plt_dir, 'LOW_MBB'), region_name='Low Mbb Region')
         logging.info(f"High Mbb dataframe saved to {pjoin(out_dir, f'{input_prefix}_highMbb.csv')}")
         logging.info(f"Low Mbb dataframe saved to {pjoin(out_dir, f'{input_prefix}_lowMbb.csv')}")
     elif mode == 'REALTAUS':
@@ -410,19 +421,24 @@ def load_and_select(input_name, mode, out_dir, **extra_kwargs):
         raise ValueError(f"Unsupported mode: {mode}. Choose either 'OSSS' or 'MBB'.")
 
 if __name__ == "__main__":
-    setup_logging()
-    
     parser = RichArgumentParser()
+    parser.add_argument('mode', choices=['OSSS', 'MBB'], help="Mode of operation: OSSS for OS/SS analysis, MBB for DiJet-mass-based analysis.")
     parser.add_argument('-i', '--input', required=True, help="Input filename containing data after HH-btag inference.")
     parser.add_argument('-o', '--output', required=True, help="Output directory to save the processed data.")
     parser.add_argument('-p', '--plot_dir', default=None, help="Directory to save plots. If not provided, no plots will be saved.")
     parser.add_argument('mode', choices=['OSSS', 'MBB', 'REALTAUS'], help="Mode of operation: OSSS for OS/SS analysis, MBB for DiJet-mass-based analysis.")
     parser.add_argument('--mbb_cut', type=float, default=120, help="Mbb cut value for MBB mode. Default is 120 GeV.")
+    parser.add_argument('--quiet', action='store_true', help="Run in quiet mode without logging output to console.")
     args = parser.parse_args()
+
+    if args.quiet:
+        setup_logging(console_level=logging.WARNING, file_level=logging.INFO)
+    else:
+        setup_logging(console_level=logging.INFO, file_level=logging.DEBUG)
     
     FileSysHelper.checkpath(args.output, createdir=True)
     if not os.path.isfile(args.input):
         raise FileNotFoundError(f"Input file {args.input} does not exist.")
     
-    load_and_select(args.input, args.mode, args.output, mbb_cut=args.mbb_cut)
+    load_and_select(args.input, args.mode, args.output, args.plot_dir, mbb_cut=args.mbb_cut)
     
