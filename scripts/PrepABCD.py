@@ -256,35 +256,6 @@ def analyze_taus(df, groups=['TTbar']):
     return real_tau_df, fake_tau_df
 
 
-    @staticmethod
-    def count_real_taus(df, groups=['TTbar']):
-        """Return the number of MC events with real taus."""
-        copy = df.copy()
-        data_events = copy[copy['group'] == 'Data']['weight'].sum()
-        logging.info(f"Total number of events in data: {data_events}")
-        
-        copy = copy[copy['group'] != 'Data']  # Exclude data
-        MCdf = FakeUtil.keep_real_taus(copy, groups)
-        fake_df = FakeUtil.keep_fakes(copy)
-        
-        real_tau_events = MCdf['weight'].sum()
-        logging.info(f"Total Number of MC events with real taus: {real_tau_events}")
-        
-        # Display results in a table format
-        
-        table = Table(title="Real Tau Event Counts")
-        table.add_column("Category", justify="left", style="cyan", no_wrap=True)
-        table.add_column("Event Count", justify="right", style="magenta")
-        
-        table.add_row("Data Events", f"{data_events:.2f}")
-        table.add_row("MC Events with Real Taus", f"{real_tau_events:.2f}")
-        
-        console = Console()
-        console.print(table)
-        
-        return MCdf
-    
-
 def get_train_test(df_SS, df_OS, split_func):
     """Create train and test sets for the given dataframes.
     
@@ -416,7 +387,8 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
         real_taus, fake_taus = analyze_taus(input_df)
         real_taus.to_csv(pjoin(out_dir, f'{input_prefix}_realTaus.csv'), index=False)
         fake_taus.to_csv(pjoin(out_dir, f'{input_prefix}_fakeTaus.csv'), index=False)
-
+        plot_histograms(real_taus, pjoin(root_plt_dir, 'REAL_TAUS'), region_name='Real Taus Region')
+        plot_histograms(fake_taus, pjoin(root_plt_dir, 'FAKE_TAUS'), region_name='Fake Taus Region')
     else:
         raise ValueError(f"Unsupported mode: {mode}. Choose either 'OSSS' or 'MBB'.")
 
