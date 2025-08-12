@@ -359,7 +359,7 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
     input_df = add_extra_features(input_df)
     input_prefix = input_name.split('/')[-1].replace('.csv', '')
     if mode == 'OSSS':
-        os_df, ss_df, os_cutflow = ABCDUtil.split_dataframe(input_df, lambda df: df['OS'] == True)
+        os_df, ss_df, os_cutflow = ABCDUtil.split_dataframe(input_df, lambda df: df[df['OS'] == True])
         os_df.to_csv(pjoin(out_dir, f'{input_prefix}_OS.csv'), index=False)
         FileSysHelper.checkpath(pjoin(root_plt_dir, 'OS'))
         plot_histograms(os_df, pjoin(root_plt_dir, 'OS'), region_name='OS Region')
