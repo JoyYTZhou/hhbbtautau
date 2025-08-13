@@ -254,7 +254,6 @@ def analyze_taus(df, groups=['TTbar']):
     
     return real_tau_df, fake_tau_df
 
-
 def get_train_test(df_SS, df_OS, split_func):
     """Create train and test sets for the given dataframes.
     
@@ -317,21 +316,6 @@ def ABCDTable(inputpath1, inputpath2):
         ABCD_tab = ABCD_tab.dropna(axis=1, how='any')
         ABCD_tab.to_csv(f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/ABCD_{year}.csv')
 
-def train_mlp_rwgt(train_ori, train_tar, session_name, name='TopQuark'):
-    """Train a MLP reweighter from one region to another."""
-    mlp_rwgter = SingleMLPRwgter(train_ori, train_tar, 'weight', f"{df_base_dir}/training/{name}", drop_kwd=drop_kwds)
-    mlp_rwgter.prep_data()
-    shallow_args= {
-        'num_epochs': 100,
-        'hidden_arch': 'high_dim',
-        'batch_size': 256,
-        'lr': 0.001,
-        'save': True,
-        'savename': f'{session_name}.pth',
-        'save_interval': 50}
-    mlp_rwgter.train(**shallow_args)
-
-    return mlp_rwgter
 
 def train_and_reweight(ori, tar, reweight_name):
     """Train and load the MLP reweighter."""
@@ -369,6 +353,7 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
         plot_histograms(ss_df, pjoin(root_plt_dir, 'SS'), region_name='SS Region')
         logging.info(f"OS dataframe saved to {pjoin(out_dir, f'{input_prefix}_OS.csv')}")
         logging.info(f"SS dataframe saved to {pjoin(out_dir, f'{input_prefix}_SS.csv')}")
+        logging.info(f"OS cutflow saved to {pjoin(out_dir, f'{input_prefix}_OS_cutflow.csv')}")
     elif mode == 'MBB':
         mbb_cut = extra_kwargs.get('mbb_cut', 90)
         filter_func = lambda df: df.copy()[df['DiJet_mass'] > mbb_cut]
@@ -382,6 +367,7 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
         plot_histograms(low_mbb, pjoin(root_plt_dir, 'LOW_MBB'), region_name='Low Mbb Region')
         logging.info(f"High Mbb dataframe saved to {pjoin(out_dir, f'{input_prefix}_highMbb.csv')}")
         logging.info(f"Low Mbb dataframe saved to {pjoin(out_dir, f'{input_prefix}_lowMbb.csv')}")
+        logging.info(f"High Mbb cutflow saved to {pjoin(out_dir, f'{input_prefix}_highMbb_cutflow.csv')}")
     elif mode == 'REALTAUS':
         real_taus, fake_taus = analyze_taus(input_df)
         real_taus.to_csv(pjoin(out_dir, f'{input_prefix}_realTaus.csv'), index=False)
