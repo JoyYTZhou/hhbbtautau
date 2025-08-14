@@ -63,28 +63,6 @@ def plot_histograms(df, plot_dir, region_name=''):
     cp.plot_SvB(df, att_dicts, title=region_name, save_name=f'SvB', lumi=34.65, rescale_sig=1)
     logging.warning(f"Histograms for {region_name} saved to {plot_dir}")
 
-def plot_rwgt_results(src_df, tar_df, rwgt_df, out_dir):
-    # Base configuration that's common for all plots
-    base_config = {
-        'list_of_evts': [tar_df, src_df, rwgt_df],
-        'labels': ['OS', 'original SS', 'Reweighted SS'],
-        'ratio_ylabel': 'Pred/Actual',
-        'outdir': out_dir,
-        'save_suffix': 'rwgt'
-    }
-    
-    # List of attribute dictionaries to plot
-    attr_dicts = [dR, H_pt, HT, H_mass]
-    
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
-
-    # Plot each attribute dictionary
-    for attr_dict in attr_dicts:
-        plot_config = base_config.copy()
-        plot_config['attridict'] = attr_dict
-        CSVPlotter.plot_shape(**plot_config)
-
 def get_top_bjets(df):
     """Get features for the two bjets with highest HHbtag scores."""
     # Get HHbtag scores and find top 2 indices
@@ -344,6 +322,7 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
     input_prefix = input_name.split('/')[-1].replace('.csv', '')
     if mode == 'OSSS':
         os_df, ss_df, os_cutflow = ABCDUtil.split_dataframe(input_df, lambda df: df[df['OS'] == True])
+        logging.info(f"OS events: {os_df['weight'].sum()}, SS events: {ss_df['weight'].sum()}")
         os_df.to_csv(pjoin(out_dir, f'{input_prefix}_OS.csv'), index=False)
         FileSysHelper.checkpath(pjoin(root_plt_dir, 'OS'))
         plot_histograms(os_df, pjoin(root_plt_dir, 'OS'), region_name='OS Region')
