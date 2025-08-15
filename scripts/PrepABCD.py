@@ -54,9 +54,9 @@ def get_ABCD_results(dfA, dfB, dfC, dfD, channel_name=''):
 def plot_histograms(df, plot_dir, region_name=''):
     """Plot histograms for the given dataframe and save them to the specified directory."""
     cp = CSVPlotter(outdir=plot_dir)
-    from config.plotsetting import H_mass, tau_pt, tau_eta, bjet_pt, bjet_mass, dR
+    from config.plotsetting import H_mass, tau_pt, tau_eta, bjet_pt, bjet_mass, dR, HT
 
-    att_dicts = H_mass | tau_pt | tau_eta | bjet_pt | bjet_mass | dR
+    att_dicts = H_mass | tau_pt | tau_eta | bjet_pt | bjet_mass | dR | HT
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
     
