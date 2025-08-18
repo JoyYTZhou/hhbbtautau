@@ -8,7 +8,7 @@ from src.utils.displayutil import RichArgumentParser
 from hep_rewgt_tk.reweight_nn import SingleMLPRwgter
 
 
-drop_kwds = ['Gen', 'weight_values', 'Weight_values', 'OS', 'group', 'gen', 'dataset', 'label', 'id', 'year', 'Tau_charge', 'X_num', 'weight', 'Tau', 'Btag'] 
+drop_kwds = ['Gen', 'weight_values', 'Weight_values', 'OS', 'group', 'gen', 'dataset', 'label', 'id', 'year', 'Tau_charge', 'X_num', 'weight', 'Tau', 'btag'] 
 
 def dataMinusMC(data_df, mc_df, out_dir, num_epochs=100, session_name=''):
     rwgter = SingleMLPRwgter(data_df, mc_df, w_col='weight', out_dir=f'{out_dir}/DataMinusMC/{session_name}', drop_kwd=drop_kwds)
