@@ -7,16 +7,16 @@ import pandas as pd
 from src.utils.displayutil import RichArgumentParser
 from hep_rewgt_tk.reweight_nn import SingleMLPRwgter
 
-
 drop_kwds = ['Gen', 'weight_values', 'Weight_values', 'OS', 'group', 'gen', 'dataset', 'label', 'id', 'year', 'Tau_charge', 'X_num', 'weight', 'Tau', 'btag'] 
+features_bjet = ['Bjet1_pt', 'Bjet2_pt', 'Bjet1_eta', 'Bjet2_eta', 'Bjet1_phi', 'Bjet2_phi', 'Bjet1_mass', 'Bjet2_mass']
 
 def dataMinusMC(data_df, mc_df, out_dir, num_epochs=100, session_name=''):
-    rwgter = SingleMLPRwgter(data_df, mc_df, w_col='weight', out_dir=f'{out_dir}/DataMinusMC/{session_name}', drop_kwd=drop_kwds)
+    rwgter = SingleMLPRwgter(data_df, mc_df, w_col='weight', out_dir=f'{out_dir}/DataMinusMC/{session_name}', features=features_bjet, drop_kwd=None)
     rwgter.prep_data(drop_neg_wgts=True)
     shallow_args= {
         'num_epochs': num_epochs,
         'hidden_arch': 'high_dim',
-        'batch_size': 256,
+        'batch_size': 1024,
         'lr': 0.001,
         'save': True,
         'savename': f'{session_name}.pth',
@@ -29,14 +29,13 @@ def dataMinusMC(data_df, mc_df, out_dir, num_epochs=100, session_name=''):
 if __name__ == "__main__":
     setup_logging()
     parser = RichArgumentParser()
-    parser.add_argument("input_csv", help="Path to input CSV file")
-    parser.add_argument("output_dir", help="Path to output directory")
-    parser.add_argument("mode", choices=["dataMinusMC"], help="Reweighting mode")
-    parser.add_argument("--session_name", default='', help="Session name for training")
-    parser.add_argument("--num_epochs", default=100, type=int, help="Number of training epochs")
+    parser.add_argument("--config", help="Path to JSON config file. See an example training_example.json", default=None)
 
-    args = parser.parse_args()
+    json_args = parser.parse_args()
 
+    with open(json_args.config, 'r') as f:
+        args = parser.parse_json(f)
+    
     if args.mode == 'dataMinusMC':
         total_df = pd.read_csv(args.input_csv)
         data_df = total_df[total_df['group'] == 'Data'].copy()
