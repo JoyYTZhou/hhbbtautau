@@ -117,15 +117,15 @@ class QueryRunner:
             run_com = f'dasgoclient -query "dataset={dataset}"'
             dataset_fullname = subprocess.run(run_com, shell=True, capture_output=True, text=True)
             if dataset_fullname.returncode == 0:
-                dataset_fullname = dataset_fullname.stdout.splitlines()[0]
-                console.print(f"Sample dataset for {dataset}: {dataset_fullname}")
-                run_com = f'dasgoclient -query "file dataset={dataset_fullname}"'
-                result = subprocess.run(run_com, shell=True, capture_output=True, text=True)
-                if result.returncode == 0:
-                    filename = result.stdout.splitlines()[0]
-                    sample_files.append(filename)
-                    console.print(f"Sample file for {dataset}: {filename}")
-        
+                for dataset_fullname in dataset_fullname.stdout.splitlines():
+                    console.print(f"Sample dataset for {dataset}: {dataset_fullname}")
+                    run_com = f'dasgoclient -query "file dataset={dataset_fullname}"'
+                    result = subprocess.run(run_com, shell=True, capture_output=True, text=True)
+                    if result.returncode == 0:
+                        filename = result.stdout.splitlines()[0]
+                        sample_files.append(filename)
+                        console.print(f"Sample file for {dataset}: {filename}")
+            
         with open('sample_files.txt', 'w') as f:
             for sample_file in sample_files:
                 f.write(sample_file + '\n')

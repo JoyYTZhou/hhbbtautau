@@ -54,9 +54,9 @@ def get_ABCD_results(dfA, dfB, dfC, dfD, channel_name=''):
 def plot_histograms(df, plot_dir, region_name=''):
     """Plot histograms for the given dataframe and save them to the specified directory."""
     cp = CSVPlotter(outdir=plot_dir)
-    from config.plotsetting import H_mass, tau_pt, tau_eta, bjet_pt, bjet_mass, dR
+    from config.plotsetting import H_mass, tau_pt, tau_eta, bjet_pt, bjet_mass, dR, HT
 
-    att_dicts = H_mass | tau_pt | tau_eta | bjet_pt | bjet_mass | dR
+    att_dicts = H_mass | tau_pt | tau_eta | bjet_pt | bjet_mass | dR | HT 
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
     
@@ -422,11 +422,10 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
 
 if __name__ == "__main__":
     parser = RichArgumentParser()
-    parser.add_argument('mode', choices=['OSSS', 'MBB'], help="Mode of operation: OSSS for OS/SS analysis, MBB for DiJet-mass-based analysis.")
+    parser.add_argument('mode', choices=['OSSS', 'MBB, REALTAUS'], help="Mode of operation: OSSS for OS/SS analysis, MBB for DiJet-mass-based analysis")
     parser.add_argument('-i', '--input', required=True, help="Input filename containing data after HH-btag inference.")
     parser.add_argument('-o', '--output', required=True, help="Output directory to save the processed data.")
     parser.add_argument('-p', '--plot_dir', default=None, help="Directory to save plots. If not provided, no plots will be saved.")
-    parser.add_argument('mode', choices=['OSSS', 'MBB', 'REALTAUS'], help="Mode of operation: OSSS for OS/SS analysis, MBB for DiJet-mass-based analysis.")
     parser.add_argument('--mbb_cut', type=float, default=120, help="Mbb cut value for MBB mode. Default is 120 GeV.")
     parser.add_argument('--quiet', action='store_true', help="Run in quiet mode without logging output to console.")
     args = parser.parse_args()

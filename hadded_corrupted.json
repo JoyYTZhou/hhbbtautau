@@ -1,17 +1,5 @@
 {
     "2022PostEE": {
-        "DYJets": {},
-        "SingleH": {},
-        "TTbar": {},
-        "WJets": {},
-        "WW": {},
-        "WWW": {},
-        "WWZ": {},
-        "WZ": {},
-        "WZZ": {},
-        "ZH": {},
-        "ZZ": {},
-        "ZZZ": {},
-        "ggF": {}
+        "DYJets": {}
     }
 }

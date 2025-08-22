@@ -1,14 +1,19 @@
 {
     "DYJets": {
-        "/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/Run3Summer22NanoAODv12-forPOG_130X_mcRun3_2022_realistic_v5-v2/NANOAODSIM": {
-            "xsection": 5655,
-            "shortname": "DYJetsToLL_M-50",
-            "nwgt": 27096229.0
+        "/DYto2Tau-2Jets_MLL-50_0J_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer22NanoAODv13-133X_mcRun3_2022_realistic_ForNanov13_v1-v2/NANOAODSIM": {
+            "xsection": 5376,
+            "shortname": "DYto2Tau-2Jets_M-50_0J",
+            "nwgt": 243241825195.0
         },
-        "/DYto2L-4Jets_MLL-50_TuneCP5_13p6TeV_madgraphMLM-pythia8/Run3Summer22NanoAODv12-130X_mcRun3_2022_realistic_v5_ext1-v2/NANOAODSIM": {
-            "xsection": 5467,
-            "shortname": "DYto2L-4Jets_MLL-50",
-            "nwgt": 943445790444.0
+        "/DYto2Tau-2Jets_MLL-50_1J_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer22NanoAODv13-133X_mcRun3_2022_realistic_ForNanov13_v1-v2/NANOAODSIM": {
+            "xsection": 1015,
+            "shortname": "DYto2Tau-2Jets_M-50_1J",
+            "nwgt": 265509610970.0
+        },
+        "/DYto2Tau-2Jets_MLL-50_2J_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer22NanoAODv13-133X_mcRun3_2022_realistic_ForNanov13_v1-v2/NANOAODSIM": {
+            "xsection": 383.6,
+            "shortname": "DYto2Tau-2Jets_M-50_2J",
+            "nwgt": 263435293761.0
         }
     },
     "SingleH": {
