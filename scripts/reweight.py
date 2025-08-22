@@ -1,0 +1,48 @@
+from src.utils.mathutil import MathUtil
+from src.utils.ioutil import setup_logging
+from src.plotting.visutil import CSVPlotter
+from src.utils.filesysutil import FileSysHelper
+import logging, os
+import pandas as pd
+from src.utils.displayutil import RichArgumentParser
+from hep_rewgt_tk.reweight_nn import SingleMLPRwgter
+
+drop_kwds = ['Gen', 'weight_values', 'Weight_values', 'OS', 'group', 'gen', 'dataset', 'label', 'id', 'year', 'Tau_charge', 'X_num', 'weight', 'Tau', 'btag'] 
+features_bjet = ['Bjet1_pt', 'Bjet2_pt', 'Bjet1_eta', 'Bjet2_eta', 'Bjet1_phi', 'Bjet2_phi', 'Bjet1_mass', 'Bjet2_mass']
+
+def dataMinusMC(data_df, mc_df, out_dir, num_epochs=100, session_name=''):
+    rwgter = SingleMLPRwgter(data_df, mc_df, w_col='weight', out_dir=f'{out_dir}/DataMinusMC/{session_name}', features=features_bjet, drop_kwd=None)
+    rwgter.prep_data(drop_neg_wgts=True)
+    shallow_args= {
+        'num_epochs': num_epochs,
+        'hidden_arch': 'high_dim',
+        'batch_size': 1024,
+        'lr': 0.001,
+        'save': True,
+        'savename': f'{session_name}.pth',
+        'save_interval': 50}
+    rwgter.train(**shallow_args)
+    norm_fac = data_df['weight'].sum() - mc_df['weight'].sum()
+    rwgter.reweight(data_df, norm_factor=norm_fac, save=True, filename='QCD_by_Rwgt', method='subtraction')
+    
+
+if __name__ == "__main__":
+    setup_logging()
+    parser = RichArgumentParser()
+    parser.add_argument("--config", help="Path to JSON config file. See an example training_example.json", default=None)
+
+    json_args = parser.parse_args()
+
+    with open(json_args.config, 'r') as f:
+        args = parser.parse_json(f)
+    
+    if args.mode == 'dataMinusMC':
+        total_df = pd.read_csv(args.input_csv)
+        data_df = total_df[total_df['group'] == 'Data'].copy()
+        logging.info(f"Number of total events: {len(data_df)}")
+        mc_df = total_df[total_df['group'] != 'Data'].copy()
+        logging.info(f"Number of MC modelled events: {len(mc_df)}")
+        dataMinusMC(data_df, mc_df, args.output_dir, num_epochs=args.num_epochs, session_name=args.session_name)
+
+    
+

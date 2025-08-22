@@ -56,34 +56,12 @@ def plot_histograms(df, plot_dir, region_name=''):
     cp = CSVPlotter(outdir=plot_dir)
     from config.plotsetting import H_mass, tau_pt, tau_eta, bjet_pt, bjet_mass, dR, HT
 
-    att_dicts = H_mass | tau_pt | tau_eta | bjet_pt | bjet_mass | dR | HT 
+    att_dicts = H_mass | tau_pt | tau_eta | bjet_pt | bjet_mass | dR | HT
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
     
     cp.plot_SvB(df, att_dicts, title=region_name, save_name=f'SvB', lumi=34.65, rescale_sig=1)
     logging.warning(f"Histograms for {region_name} saved to {plot_dir}")
-
-def plot_rwgt_results(src_df, tar_df, rwgt_df, out_dir):
-    # Base configuration that's common for all plots
-    base_config = {
-        'list_of_evts': [tar_df, src_df, rwgt_df],
-        'labels': ['OS', 'original SS', 'Reweighted SS'],
-        'ratio_ylabel': 'Pred/Actual',
-        'outdir': out_dir,
-        'save_suffix': 'rwgt'
-    }
-    
-    # List of attribute dictionaries to plot
-    attr_dicts = [dR, H_pt, HT, H_mass]
-    
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
-
-    # Plot each attribute dictionary
-    for attr_dict in attr_dicts:
-        plot_config = base_config.copy()
-        plot_config['attridict'] = attr_dict
-        CSVPlotter.plot_shape(**plot_config)
 
 def get_top_bjets(df):
     """Get features for the two bjets with highest HHbtag scores."""
@@ -93,13 +71,11 @@ def get_top_bjets(df):
     
     # Find indices of top 2 bjets for each row
     top_indices = hhbtags.values.argsort(axis=1)[:, -2:][:, ::-1]  # Descending order
-    print(f"Top indices for bjets first five rows: {top_indices[:5]}")
 
     result_data = {}
     
     # Get all bjet feature columns
     bjet_features = [col for col in df.columns if col.startswith('Bjet')]
-    logging.info(f"Extracting features for top bjets: {bjet_features}")
     
     # Extract features for top 2 bjets
     for feature_base in set(col.split('_', 1)[1] for col in bjet_features):
@@ -124,16 +100,17 @@ def add_extra_features(df):
     other_df = df[other_columns].copy()
     
     bjet_df = get_top_bjets(df[bjet_columns])
-    df = pd.concat([other_df, bjet_df], axis=1)
+    df_copy = pd.concat([other_df, bjet_df], axis=1)
     logging.info("Adding extra features to the dataframe.")
-    MathUtil.add_system_4vec(df, 'Bjet1', 'Bjet2', 'DiJet')
-    MathUtil.add_system_4vec(df, 'DiTau', 'DiJet', 'DiHiggs')
-    df['OS'] = ((df['LDTau_charge'] * df['SDTau_charge']) < 0)
-    df['HT'] = df['Bjet1_pt'] + df['Bjet2_pt'] + df['LDTau_pt'] + df['SDTau_pt'] + df['MET_pt'] # Total transverse energy
-    MathUtil.add_dR(df, 'LDTau', 'SDTau', 'DiTau_dR')
-    MathUtil.add_dR(df, 'Bjet1', 'Bjet2', 'DiJet_dR')
-    MathUtil.add_dR(df, 'DiTau', 'DiJet', 'DiHiggs_dR')
-    return df
+    MathUtil.add_system_4vec(df_copy, 'Bjet1', 'Bjet2', 'DiJet')
+    MathUtil.add_system_4vec(df_copy, 'DiTau', 'DiJet', 'DiHiggs')
+    df_copy['OS'] = ((df_copy['LDTau_charge'] * df_copy['SDTau_charge']) < 0)
+    df_copy['HT'] = df_copy['Bjet1_pt'] + df_copy['Bjet2_pt'] + df_copy['LDTau_pt'] + df_copy['SDTau_pt'] + df_copy['MET_pt'] # Total transverse energy
+    MathUtil.add_dR(df_copy, 'LDTau', 'SDTau', 'DiTau_dR')
+    MathUtil.add_dR(df_copy, 'Bjet1', 'Bjet2', 'DiJet_dR')
+    MathUtil.add_dR(df_copy, 'DiTau', 'DiJet', 'DiHiggs_dR')
+    logging.info(f"features: {df_copy.columns}")
+    return df_copy
 
 def neg_wgt(df) -> pd.DataFrame:
     """Return a copy of the dataframe with negative weights for non-data groups."""
@@ -255,36 +232,6 @@ def analyze_taus(df, groups=['TTbar']):
     
     return real_tau_df, fake_tau_df
 
-
-    @staticmethod
-    def count_real_taus(df, groups=['TTbar']):
-        """Return the number of MC events with real taus."""
-        copy = df.copy()
-        data_events = copy[copy['group'] == 'Data']['weight'].sum()
-        logging.info(f"Total number of events in data: {data_events}")
-        
-        copy = copy[copy['group'] != 'Data']  # Exclude data
-        MCdf = FakeUtil.keep_real_taus(copy, groups)
-        fake_df = FakeUtil.keep_fakes(copy)
-        
-        real_tau_events = MCdf['weight'].sum()
-        logging.info(f"Total Number of MC events with real taus: {real_tau_events}")
-        
-        # Display results in a table format
-        
-        table = Table(title="Real Tau Event Counts")
-        table.add_column("Category", justify="left", style="cyan", no_wrap=True)
-        table.add_column("Event Count", justify="right", style="magenta")
-        
-        table.add_row("Data Events", f"{data_events:.2f}")
-        table.add_row("MC Events with Real Taus", f"{real_tau_events:.2f}")
-        
-        console = Console()
-        console.print(table)
-        
-        return MCdf
-    
-
 def get_train_test(df_SS, df_OS, split_func):
     """Create train and test sets for the given dataframes.
     
@@ -347,21 +294,6 @@ def ABCDTable(inputpath1, inputpath2):
         ABCD_tab = ABCD_tab.dropna(axis=1, how='any')
         ABCD_tab.to_csv(f'/Users/yuntongzhou/Desktop/Dihiggszztt/output/ABCD_{year}.csv')
 
-def train_mlp_rwgt(train_ori, train_tar, session_name, name='TopQuark'):
-    """Train a MLP reweighter from one region to another."""
-    mlp_rwgter = SingleMLPRwgter(train_ori, train_tar, 'weight', f"{df_base_dir}/training/{name}", drop_kwd=drop_kwds)
-    mlp_rwgter.prep_data()
-    shallow_args= {
-        'num_epochs': 100,
-        'hidden_arch': 'high_dim',
-        'batch_size': 256,
-        'lr': 0.001,
-        'save': True,
-        'savename': f'{session_name}.pth',
-        'save_interval': 50}
-    mlp_rwgter.train(**shallow_args)
-
-    return mlp_rwgter
 
 def train_and_reweight(ori, tar, reweight_name):
     """Train and load the MLP reweighter."""
@@ -389,7 +321,8 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
     input_df = add_extra_features(input_df)
     input_prefix = input_name.split('/')[-1].replace('.csv', '')
     if mode == 'OSSS':
-        os_df, ss_df, os_cutflow = ABCDUtil.split_dataframe(input_df, lambda df: df['OS'] == True)
+        os_df, ss_df, os_cutflow = ABCDUtil.split_dataframe(input_df, lambda df: df[df['OS'] == True])
+        logging.info(f"OS events: {os_df['weight'].sum()}, SS events: {ss_df['weight'].sum()}")
         os_df.to_csv(pjoin(out_dir, f'{input_prefix}_OS.csv'), index=False)
         FileSysHelper.checkpath(pjoin(root_plt_dir, 'OS'))
         plot_histograms(os_df, pjoin(root_plt_dir, 'OS'), region_name='OS Region')
@@ -399,6 +332,7 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
         plot_histograms(ss_df, pjoin(root_plt_dir, 'SS'), region_name='SS Region')
         logging.info(f"OS dataframe saved to {pjoin(out_dir, f'{input_prefix}_OS.csv')}")
         logging.info(f"SS dataframe saved to {pjoin(out_dir, f'{input_prefix}_SS.csv')}")
+        logging.info(f"OS cutflow saved to {pjoin(out_dir, f'{input_prefix}_OS_cutflow.csv')}")
     elif mode == 'MBB':
         mbb_cut = extra_kwargs.get('mbb_cut', 90)
         filter_func = lambda df: df.copy()[df['DiJet_mass'] > mbb_cut]
@@ -412,17 +346,19 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
         plot_histograms(low_mbb, pjoin(root_plt_dir, 'LOW_MBB'), region_name='Low Mbb Region')
         logging.info(f"High Mbb dataframe saved to {pjoin(out_dir, f'{input_prefix}_highMbb.csv')}")
         logging.info(f"Low Mbb dataframe saved to {pjoin(out_dir, f'{input_prefix}_lowMbb.csv')}")
+        logging.info(f"High Mbb cutflow saved to {pjoin(out_dir, f'{input_prefix}_highMbb_cutflow.csv')}")
     elif mode == 'REALTAUS':
         real_taus, fake_taus = analyze_taus(input_df)
         real_taus.to_csv(pjoin(out_dir, f'{input_prefix}_realTaus.csv'), index=False)
         fake_taus.to_csv(pjoin(out_dir, f'{input_prefix}_fakeTaus.csv'), index=False)
-
+        plot_histograms(real_taus, pjoin(root_plt_dir, 'REAL_TAUS'), region_name='Real Taus Region')
+        plot_histograms(fake_taus, pjoin(root_plt_dir, 'FAKE_TAUS'), region_name='Fake Taus Region')
     else:
         raise ValueError(f"Unsupported mode: {mode}. Choose either 'OSSS' or 'MBB'.")
 
 if __name__ == "__main__":
     parser = RichArgumentParser()
-    parser.add_argument('mode', choices=['OSSS', 'MBB, REALTAUS'], help="Mode of operation: OSSS for OS/SS analysis, MBB for DiJet-mass-based analysis")
+    parser.add_argument('mode', choices=['OSSS', 'MBB', 'REALTAUS'], help="Mode of operation: OSSS for OS/SS analysis, MBB for DiJet-mass-based analysis, REALTAUS for real/fake tau analysis.")
     parser.add_argument('-i', '--input', required=True, help="Input filename containing data after HH-btag inference.")
     parser.add_argument('-o', '--output', required=True, help="Output directory to save the processed data.")
     parser.add_argument('-p', '--plot_dir', default=None, help="Directory to save plots. If not provided, no plots will be saved.")
