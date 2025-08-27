@@ -3,5 +3,5 @@
     "output_dir": "/path/to/output",
     "mode": "dataMinusMC",
     "session_name": "session_1",
-    "num_epochs": 100
+    "num_epochs": 30
 }
