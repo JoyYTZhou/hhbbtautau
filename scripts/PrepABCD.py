@@ -109,7 +109,6 @@ def add_extra_features(df):
     MathUtil.add_dR(df_copy, 'LDTau', 'SDTau', 'DiTau_dR')
     MathUtil.add_dR(df_copy, 'Bjet1', 'Bjet2', 'DiJet_dR')
     MathUtil.add_dR(df_copy, 'DiTau', 'DiJet', 'DiHiggs_dR')
-    logging.info(f"features: {df_copy.columns}")
     return df_copy
 
 def neg_wgt(df) -> pd.DataFrame:
@@ -179,7 +178,69 @@ class OSSSUtil:
             plot_config['attridict'] = attr_dict
             CSVPlotter.plot_shape(**plot_config)
         
-
+class FakeUtil:
+    @staticmethod
+    def keep_real_taus(df, groups=['TTbar', 'DYJets']):
+        """Return a dataframe with real tau events in specified groups and all other events unfiltered.
+        
+        Args:
+            df (pd.DataFrame): Input dataframe.
+            groups (list): List of group names to filter for real taus.
+        """
+        filtered = []
+        other_df = df[~df['group'].isin(groups)]
+        for group in groups:
+            group_df = df[df['group'] == group]
+            cond_1 = group_df['LDTau_genflav'] >= 5
+            cond_2 = group_df['SDTau_genflav'] >= 5
+            filtered_group = group_df[cond_1 | cond_2]
+            print(f"Total number of MC {group} events with real taus: {filtered_group['weight'].sum()}")
+            filtered.append(filtered_group)
+        # Combine filtered groups with unfiltered others
+        return pd.concat(filtered + [other_df], ignore_index=True)
+    
+    @staticmethod
+    def keep_fakes(df) -> pd.DataFrame:
+        """Return a dataframe with only TTbar + DYJets fake tau events."""
+        ttbar_df = df[df['group'] == 'TTbar']
+        # Apply the condition only to TTbar group
+        cond_1 = ttbar_df['LDTau_genflav'] < 5
+        cond_2 = ttbar_df['SDTau_genflav'] < 5
+        filtered_ttbar = ttbar_df[cond_1 & cond_2]
+        dyjets_df = df[df['group'] == 'DYJets']
+        filtered_dyjets = dyjets_df[(dyjets_df['LDTau_genflav'] < 5) & (dyjets_df['SDTau_genflav'] < 5)]
+        print(f"Total number of MC TTbar events with fake taus: {filtered_ttbar['weight'].sum()}")
+        print(f"Total number of MC DYJets events with fake taus: {filtered_dyjets['weight'].sum()}")
+        return pd.concat([filtered_ttbar, filtered_dyjets], ignore_index=True)
+    
+    @staticmethod
+    def count_real_taus(df, groups=['TTbar', 'DYJets']):
+        """Return the number of MC events with real taus."""
+        copy = df.copy()
+        data_events = copy[copy['group'] == 'Data']['weight'].sum()
+        logging.info(f"Total number of events in data: {data_events}")
+        
+        copy = copy[copy['group'] != 'Data']  # Exclude data
+        MCdf = FakeUtil.keep_real_taus(copy, groups)
+        fake_df = FakeUtil.keep_fakes(copy)
+        
+        real_tau_events = MCdf['weight'].sum()
+        logging.info(f"Total Number of MC events with real taus: {real_tau_events}")
+        
+        # Display results in a table format
+        
+        table = Table(title="Real Tau Event Counts")
+        table.add_column("Category", justify="left", style="cyan", no_wrap=True)
+        table.add_column("Event Count", justify="right", style="magenta")
+        
+        table.add_row("Data Events", f"{data_events:.2f}")
+        table.add_row("MC Events with Real Taus", f"{real_tau_events:.2f}")
+        
+        console = Console()
+        console.print(table)
+        
+        return MCdf
+        
 def analyze_taus(df, groups=['TTbar']):
     """Combined method that provides tau analysis with counts table and separated dataframes.
     
@@ -322,7 +383,10 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
     input_prefix = input_name.split('/')[-1].replace('.csv', '')
     if mode == 'OSSS':
         os_df, ss_df, os_cutflow = ABCDUtil.split_dataframe(input_df, lambda df: df[df['OS'] == True])
-        logging.info(f"OS events: {os_df['weight'].sum()}, SS events: {ss_df['weight'].sum()}")
+        logging.info(f"Total events in OS: {os_df[os_df['group'] == 'Data']['weight'].sum()}")
+        logging.info(f"Total events in SS: {ss_df[ss_df['group'] == 'Data']['weight'].sum()}")
+        logging.info(f"Total events in OS (MC): {os_df[os_df['group'] != 'Data']['weight'].sum()}")
+        logging.info(f"Total events in SS (MC): {ss_df[ss_df['group'] != 'Data']['weight'].sum()}")
         os_df.to_csv(pjoin(out_dir, f'{input_prefix}_OS.csv'), index=False)
         FileSysHelper.checkpath(pjoin(root_plt_dir, 'OS'))
         plot_histograms(os_df, pjoin(root_plt_dir, 'OS'), region_name='OS Region')
