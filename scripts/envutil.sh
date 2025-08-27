@@ -397,7 +397,8 @@ extract_xsec() {
         xrdcp "root://cms-xrd-global.cern.ch/$full_path" "$filename"
 
         echo "Running cmsRun on $filename..."
-        local output=$(cmsRun ana.py inputFiles="file:$filename" maxEvents=-1 2>&1)
+        local log_file="${filename%.root}.log"
+        local output=$(cmsRun ana.py inputFiles="file:$filename" maxEvents=-1 2>&1 | tee "$log_file")
 
         local xsec_line=$(echo "$output" | grep "After filter: final cross section")
 
