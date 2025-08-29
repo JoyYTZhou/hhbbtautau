@@ -1,15 +1,15 @@
 {
     "DYJets": {
         "/DYto2Tau-2Jets_MLL-50_0J_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer22EENanoAODv13-133X_mcRun3_2022_realistic_postEE_ForNanov13_v1-v2/NANOAODSIM": {
-            "xsection": 1660.98,
+            "xsection": 1787.75,
             "shortname": "DYto2Tau-2Jets_MLL-50_0J"
         },
         "/DYto2Tau-2Jets_MLL-50_1J_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer22EENanoAODv13-133X_mcRun3_2022_realistic_postEE_ForNanov13_v1-v2/NANOAODSIM": {
-            "xsection": 70.63,
+            "xsection": 336.66,
             "shortname": "DYto2Tau-2Jets_MLL-50_1J"
         },
         "/DYto2Tau-2Jets_MLL-50_2J_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer22EENanoAODv13-133X_mcRun3_2022_realistic_postEE_ForNanov13_v1-v2/NANOAODSIM": {
-            "xsection": 23.052,
+            "xsection": 128.2,
             "shortname": "DYto2Tau-2Jets_MLL-50_2J"
         }
     },

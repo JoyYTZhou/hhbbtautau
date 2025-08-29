@@ -4,8 +4,8 @@
 "DYJetsToLL_M-50": 5655
 "GluGlutoHHto2B2Tau_kl-1p00_kt-1p00_c2-0p00": 0.00249 # 34.13 fb (ggF NNLO) * 0.06272 (BR(H->tau tau)) * 0.5824 (BR(H->bb)) * 2
 # https://twiki.cern.ch/twiki/bin/view/LHCPhysics/LHCHWGHH?redirectedfrom=LHCPhysics.LHCHXSWGHH#Latest_recommendations_for_gluon
-"WtoLNu-2Jets_0J": 55570
-"WtoLNu-2Jets_1J": 9542
+"WtoLNu-2Jets_0J": 55570 # Taken directly from after-filter xsec
+"WtoLNu-2Jets_1J": 9542 
 "VBFHToTauTau_M125": 0.262 # 4.18 * 0.06272 (BR(H->tau tau))
 "VBFHto2B_M-125": 2.43 # 4.18 * 0.5824 (BR(H->bb))
 "GluGluHToTauTau_M-125": 3.045 # 48.58 (ggF N3LO) * 0.06272 (BR(H->tau tau))
