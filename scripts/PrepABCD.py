@@ -54,9 +54,9 @@ def get_ABCD_results(dfA, dfB, dfC, dfD, channel_name=''):
 def plot_histograms(df, plot_dir, region_name=''):
     """Plot histograms for the given dataframe and save them to the specified directory."""
     cp = CSVPlotter(outdir=plot_dir)
-    from config.plotsetting import H_mass, tau_pt, tau_eta, bjet_pt, bjet_mass, dR, HT
+    from config.plotsetting import H_mass, tau_pt, tau_eta, bjet_pt, bjet_mass, dR, HT, H_pt
 
-    att_dicts = H_mass | tau_pt | tau_eta | bjet_pt | bjet_mass | dR | HT
+    att_dicts = H_mass | tau_pt | tau_eta | bjet_pt | bjet_mass | dR | HT | H_pt
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
     
@@ -193,26 +193,29 @@ class FakeUtil:
             group_df = df[df['group'] == group]
             cond_1 = group_df['LDTau_genflav'] >= 5
             cond_2 = group_df['SDTau_genflav'] >= 5
-            filtered_group = group_df[cond_1 | cond_2]
-            print(f"Total number of MC {group} events with real taus: {filtered_group['weight'].sum()}")
+            filtered_group = group_df[cond_1 & cond_2]
             filtered.append(filtered_group)
         # Combine filtered groups with unfiltered others
         return pd.concat(filtered + [other_df], ignore_index=True)
     
     @staticmethod
-    def keep_fakes(df) -> pd.DataFrame:
-        """Return a dataframe with only TTbar + DYJets fake tau events."""
-        ttbar_df = df[df['group'] == 'TTbar']
-        # Apply the condition only to TTbar group
-        cond_1 = ttbar_df['LDTau_genflav'] < 5
-        cond_2 = ttbar_df['SDTau_genflav'] < 5
-        filtered_ttbar = ttbar_df[cond_1 & cond_2]
-        dyjets_df = df[df['group'] == 'DYJets']
-        filtered_dyjets = dyjets_df[(dyjets_df['LDTau_genflav'] < 5) & (dyjets_df['SDTau_genflav'] < 5)]
-        print(f"Total number of MC TTbar events with fake taus: {filtered_ttbar['weight'].sum()}")
-        print(f"Total number of MC DYJets events with fake taus: {filtered_dyjets['weight'].sum()}")
-        return pd.concat([filtered_ttbar, filtered_dyjets], ignore_index=True)
-    
+    def keep_fakes(df, groups=['TTbar', 'DYJets']):
+        """Return a dataframe with fake tau events in specified groups and all other events unfiltered.
+        
+        Args:
+            df (pd.DataFrame): Input dataframe.
+            groups (list): List of group names to filter for fake taus.
+        """
+        filtered = []
+        for group in groups:
+            group_df = df[df['group'] == group]
+            cond_1 = group_df['LDTau_genflav'] < 5
+            cond_2 = group_df['SDTau_genflav'] < 5
+            filtered_group = group_df[cond_1 | cond_2]
+            filtered.append(filtered_group)
+        # Combine filtered groups with unfiltered others
+        return pd.concat(filtered, ignore_index=True)
+
     @staticmethod
     def count_real_taus(df, groups=['TTbar', 'DYJets']):
         """Return the number of MC events with real taus."""
@@ -257,6 +260,8 @@ def analyze_taus(df, groups=['TTbar']):
     
     # Exclude data for MC analysis
     mc_copy = copy[copy['group'] != 'Data']
+    mc_events = mc_copy['weight'].sum()
+    logging.info(f"Total number of MC events: {mc_events}")
     
     # Get real tau events
     real_tau_df = FakeUtil.keep_real_taus(mc_copy, groups)
@@ -277,20 +282,19 @@ def analyze_taus(df, groups=['TTbar']):
     table.add_column("Event Count", justify="right", style="magenta")
     table.add_column("Percentage", justify="right", style="green")
     
-    total_mc = real_tau_events + fake_tau_events
-    real_percentage = (real_tau_events / total_mc * 100) if total_mc > 0 else 0
-    fake_percentage = (fake_tau_events / total_mc * 100) if total_mc > 0 else 0
+    real_percentage = (real_tau_events / data_events * 100) if data_events > 0 else 0
+    fake_percentage = (fake_tau_events / data_events * 100) if data_events > 0 else 0
     
     table.add_row("Data Events", f"{data_events:.2f}", "N/A")
     table.add_row("MC Events with Real Taus", f"{real_tau_events:.2f}", f"{real_percentage:.1f}%")
     table.add_row("MC Events with Fake Taus", f"{fake_tau_events:.2f}", f"{fake_percentage:.1f}%")
-    table.add_row("Total MC Events", f"{total_mc:.2f}", "100.0%")
     
     console = Console()
     console.print(table)
 
-    real_tau_df = pd.concat(real_tau_df, copy[copy['group'] == 'Data'], axis=0)
-    
+    real_tau_df = pd.concat([real_tau_df, copy[copy['group'] == 'Data']], axis=0)
+    logging.info(f"Groups in real tau dataframe: {real_tau_df['group'].unique()}")
+
     return real_tau_df, fake_tau_df
 
 def get_train_test(df_SS, df_OS, split_func):
@@ -379,9 +383,9 @@ def load_and_plot(ori, tar, reweight_name):
 def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
     """Load the input dataframe, add extra features, split based on mode, and save the results."""
     input_df = pd.read_csv(input_name, low_memory=False)
-    input_df = add_extra_features(input_df)
     input_prefix = input_name.split('/')[-1].replace('.csv', '')
     if mode == 'OSSS':
+        input_df = add_extra_features(input_df)
         os_df, ss_df, os_cutflow = ABCDUtil.split_dataframe(input_df, lambda df: df[df['OS'] == True])
         logging.info(f"Total events in OS: {os_df[os_df['group'] == 'Data']['weight'].sum()}")
         logging.info(f"Total events in SS: {ss_df[ss_df['group'] == 'Data']['weight'].sum()}")
@@ -398,7 +402,7 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
         logging.info(f"SS dataframe saved to {pjoin(out_dir, f'{input_prefix}_SS.csv')}")
         logging.info(f"OS cutflow saved to {pjoin(out_dir, f'{input_prefix}_OS_cutflow.csv')}")
     elif mode == 'MBB':
-        mbb_cut = extra_kwargs.get('mbb_cut', 90)
+        mbb_cut = extra_kwargs.get('mbb_cut', 120)
         filter_func = lambda df: df.copy()[df['DiJet_mass'] > mbb_cut]
         high_mbb, low_mbb, high_cutflow = ABCDUtil.split_dataframe(input_df, filter_func)
         high_mbb.to_csv(pjoin(out_dir, f'{input_prefix}_highMbb.csv'), index=False)
@@ -415,8 +419,7 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
         real_taus, fake_taus = analyze_taus(input_df)
         real_taus.to_csv(pjoin(out_dir, f'{input_prefix}_realTaus.csv'), index=False)
         fake_taus.to_csv(pjoin(out_dir, f'{input_prefix}_fakeTaus.csv'), index=False)
-        plot_histograms(real_taus, pjoin(root_plt_dir, 'REAL_TAUS'), region_name='Real Taus Region')
-        plot_histograms(fake_taus, pjoin(root_plt_dir, 'FAKE_TAUS'), region_name='Fake Taus Region')
+        plot_histograms(real_taus, pjoin(root_plt_dir, 'REAL_TAUS'), region_name='Data vs. MC (Real Taus Only)')
     else:
         raise ValueError(f"Unsupported mode: {mode}. Choose either 'OSSS' or 'MBB'.")
 

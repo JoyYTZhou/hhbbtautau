@@ -29,7 +29,7 @@ train_H_mass = {
 
 H_mass = {
     "DiJet_mass": {
-        "hist": {'bins': 40, 'range': [0,250]},
+        "hist": {'bins': 30, 'range': [0,200]},
         "plot": {'xlabel': r'Invariant Mass (2b) (GeV)'}},
      "DiTau_mass": {
         "hist": {'bins': 30, 'range': [0,200]},
@@ -84,10 +84,10 @@ dR = {
 
 H_pt = {
     "DiTau_pt": {
-        "hist": {'bins': 25, 'range': [0,500]},
+        "hist": {'bins': 20, 'range': [0,300]},
         "plot": {'xlabel': r'Visible $P_t$ (2$\tau$) (GeV)'}},
     "DiJet_pt": {
-        "hist": {'bins': 20, 'range': [0,400]},
+        "hist": {'bins': 20, 'range': [0,300]},
         "plot": {'xlabel': r'Invariant $P_t$ (2b) (GeV)'}}
     }
 
