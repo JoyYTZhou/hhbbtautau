@@ -400,7 +400,6 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
     if mode == 'OSSS':
         input_df = add_extra_features(input_df)
         os_df, ss_df, os_cutflow = ABCDUtil.split_dataframe(input_df, lambda df: df[df['OS'] == True])
-        logging.info(f"Total events in OS: {os_df[os_df['group'] == 'Data']['weight'].sum()}")
         logging.info(f"Total events in SS: {ss_df[ss_df['group'] == 'Data']['weight'].sum()}")
         logging.info(f"Total events in OS (MC): {os_df[os_df['group'] != 'Data']['weight'].sum()}")
         logging.info(f"Total events in SS (MC): {ss_df[ss_df['group'] != 'Data']['weight'].sum()}")
