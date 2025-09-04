@@ -339,6 +339,19 @@ def signal_id_level(df):
     mask_6 = df['SDTau_idvsmu'] >= 4 # Tight
     return df[(mask_1) & (mask_2) & (mask_3) & (mask_4) & (mask_5) & (mask_6)]
 
+def select_ML_taus(df):
+    """Select events where one tau passes Medium WP and the other passes VLoose WP."""
+    mask_1 = df['LDTau_idvsjet'] >= 5 # Medium WP
+    mask_2 = df['SDTau_idvsjet'] >= 5 # Medium WP
+    mask_3 = df['LDTau_idvsjet'] >= 3 # VLoose 
+    mask_4 = df['SDTau_idvsjet'] >= 3 # VLoose
+    logging.info("Selecting events with one tau passing Medium WP and the other passing at least VLoose WP.")
+    data_events = len(df[df['group'] == 'Data'])
+    logging.info(f"Total number of events in data before selection: {data_events}")
+    mc_events = df[df['group'] != 'Data']['weight'].sum()
+    logging.info(f"Total number of MC events before selection: {mc_events}")
+    return df[(mask_1 | mask_2) & (mask_3 | mask_4)]
+
 prep_sign_rwgt = lambda df: keep_fake_ttbar(signal_id_level(df))
 
 def ABCDTable(inputpath1, inputpath2):
@@ -402,19 +415,24 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
         logging.info(f"SS dataframe saved to {pjoin(out_dir, f'{input_prefix}_SS.csv')}")
         logging.info(f"OS cutflow saved to {pjoin(out_dir, f'{input_prefix}_OS_cutflow.csv')}")
     elif mode == 'MBB':
-        mbb_cut = extra_kwargs.get('mbb_cut', 120)
+        mbb_cut = extra_kwargs.get('mbb_cut', 160)
         filter_func = lambda df: df.copy()[df['DiJet_mass'] > mbb_cut]
-        high_mbb, low_mbb, high_cutflow = ABCDUtil.split_dataframe(input_df, filter_func)
+        high_mbb, _, high_cutflow = ABCDUtil.split_dataframe(input_df, filter_func)
         high_mbb.to_csv(pjoin(out_dir, f'{input_prefix}_highMbb.csv'), index=False)
         FileSysHelper.checkpath(pjoin(root_plt_dir, 'HIGH_MBB'))
         plot_histograms(high_mbb, pjoin(root_plt_dir, 'HIGH_MBB'), region_name='High Mbb Region')
-        low_mbb.to_csv(pjoin(out_dir, f'{input_prefix}_lowMbb.csv'), index=False)
         high_cutflow.to_csv(pjoin(out_dir, f'{input_prefix}_highMbb_cutflow.csv'), index=False)
-        FileSysHelper.checkpath(pjoin(root_plt_dir, 'LOW_MBB'))
-        plot_histograms(low_mbb, pjoin(root_plt_dir, 'LOW_MBB'), region_name='Low Mbb Region')
         logging.info(f"High Mbb dataframe saved to {pjoin(out_dir, f'{input_prefix}_highMbb.csv')}")
-        logging.info(f"Low Mbb dataframe saved to {pjoin(out_dir, f'{input_prefix}_lowMbb.csv')}")
         logging.info(f"High Mbb cutflow saved to {pjoin(out_dir, f'{input_prefix}_highMbb_cutflow.csv')}")
+    elif mode == "MLTAU":
+        ml_df = select_ML_taus(input_df)
+        data_evts = len(ml_df[ml_df['group'] == 'Data'])
+        mc_evts = ml_df[ml_df['group'] != 'Data']['weight'].sum()
+        logging.info(f"Total number of events in data after ML tau selection: {data_evts}")
+        logging.info(f"Total number of MC events after ML tau selection: {mc_evts}")
+        ml_df.to_csv(pjoin(out_dir, f'{input_prefix}_MLTaus.csv'), index=False)
+        FileSysHelper.checkpath(pjoin(root_plt_dir, 'ML_TAUS'))
+        logging.info(f"ML Tau dataframe saved to {pjoin(out_dir, f'{input_prefix}_MLTaus.csv')}")
     elif mode == 'REALTAUS':
         real_taus, fake_taus = analyze_taus(input_df)
         real_taus.to_csv(pjoin(out_dir, f'{input_prefix}_realTaus.csv'), index=False)
@@ -432,11 +450,11 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
 
 if __name__ == "__main__":
     parser = RichArgumentParser()
-    parser.add_argument('mode', choices=['OSSS', 'MBB', 'REALTAUS'], help="Mode of operation: OSSS for OS/SS analysis, MBB for DiJet-mass-based analysis, REALTAUS for real/fake tau analysis.")
+    parser.add_argument('mode', choices=['OSSS', 'MBB', 'REALTAUS', 'MLTAU'], help="Mode of operation: OSSS for OS/SS analysis, MBB for DiJet-mass-based analysis, REALTAUS for real/fake tau analysis.")
     parser.add_argument('-i', '--input', required=True, help="Input filename containing data after HH-btag inference.")
     parser.add_argument('-o', '--output', required=True, help="Output directory to save the processed data.")
     parser.add_argument('-p', '--plot_dir', default=None, help="Directory to save plots. If not provided, no plots will be saved.")
-    parser.add_argument('--mbb_cut', type=float, default=120, help="Mbb cut value for MBB mode. Default is 120 GeV.")
+    parser.add_argument('--mbb_cut', type=float, default=160, help="Mbb cut value for MBB mode. Default is 120 GeV.")
     parser.add_argument('--quiet', action='store_true', help="Run in quiet mode without logging output to console.")
     args = parser.parse_args()
 
