@@ -420,6 +420,13 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
         real_taus.to_csv(pjoin(out_dir, f'{input_prefix}_realTaus.csv'), index=False)
         fake_taus.to_csv(pjoin(out_dir, f'{input_prefix}_fakeTaus.csv'), index=False)
         plot_histograms(real_taus, pjoin(root_plt_dir, 'REAL_TAUS'), region_name='Data vs. MC (Real Taus Only)')
+    elif mode == 'VALIDATION':
+        filter_func = lambda df: df.copy()[df['DiJet_mass'] < 80]
+        low_bb, _, cutflow = ABCDUtil.split_dataframe(input_df, filter_func)
+        low_bb.to_csv(pjoin(out_dir, f'{input_prefix}_lowbb.csv'), index=False)
+        plot_histograms(low_bb, pjoin(root_plt_dir, 'LOW_BB'), region_name='Low bb Region')
+        logging.info(f"Low bb dataframe saved to {pjoin(out_dir, f'{input_prefix}_lowbb.csv')}")
+        logging.info(f"Low bb cutflow saved to {pjoin(out_dir, f'{input_prefix}_lowbb_cutflow.csv')}")
     else:
         raise ValueError(f"Unsupported mode: {mode}. Choose either 'OSSS' or 'MBB'.")
 

@@ -13,7 +13,9 @@ import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 
 drop_kwds = ['Gen', 'weight_values', 'Weight_values', 'OS', 'group', 'gen', 'dataset', 'label', 'id', 'year', 'Tau_charge', 'X_num', 'weight', 'Tau', 'btag'] 
-features_bjet = ['Bjet1_pt', 'Bjet2_pt', 'Bjet1_eta', 'Bjet2_eta', 'Bjet1_phi', 'Bjet2_phi', 'Bjet1_mass', 'Bjet2_mass']
+features_train = ['Bjet1_pt', 'Bjet2_pt', 'Bjet1_eta', 'Bjet2_eta', 'Bjet1_phi', 'Bjet2_phi', 'Bjet1_mass', 'Bjet2_mass',
+                 'LDTau_pt', 'LDTau_mass', 'LDTau_eta', 'LDTau_phi', 'SDTau_pt', 'SDTau_eta', 'SDTau_phi', 'SDTau_mass', 
+                 'MET_pt', 'MET_phi']
 
 def train_and_reweight(data_df, mc_df, features, n_epochs=80, batch_size=1024, lr=1e-3):
     """
@@ -133,6 +135,13 @@ def train_and_reweight(data_df, mc_df, features, n_epochs=80, batch_size=1024, l
     eps = 1e-6
     r_data = s_data / (1.0 - s_data + eps)   # local ratio p2/p1
 
+    logging.info(f"Max probability for belonging to MC only: {s_data.max():.4f}")
+    logging.info(f"Min probability for belonging to MC only: {s_data.min():.4f}")
+    
+    logging.info(f"Max ratio of QCD/Data: {r_data.max():.4f}")
+    logging.info(f"Min ratio of QCD/Data: {r_data.min():.4f}")
+    
+    
     # Base weights from data
     w_data_base = data_df["weight"].to_numpy() if "weight" in data_df.columns else np.ones(len(p1), dtype=np.float32)
     w_data_reco_p3 = (1.0 - r_data) * w_data_base
@@ -155,7 +164,7 @@ def train_and_reweight(data_df, mc_df, features, n_epochs=80, batch_size=1024, l
     }
 
 def dataMinusMC(data_df, mc_df, out_dir, training_args, session_name=''):
-    results_dict = train_and_reweight(data_df, mc_df, features_bjet, **training_args)
+    results_dict = train_and_reweight(data_df, mc_df, features_train, **training_args)
     w_data_reco_p3 = results_dict['w_data_reco_p3']
     w_data_reco_p2 = results_dict['w_data_reco_p2']
     model = results_dict['model']

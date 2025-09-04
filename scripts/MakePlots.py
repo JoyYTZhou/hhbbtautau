@@ -25,7 +25,7 @@ def plot_Rwgt_DataMinusMC(src_df, rwgt_df, out_dir):
     oneD_df = src_df.copy()
     compare_df = src_df[src_df['group'] == 'Data'].copy()
     oneD_df.loc[oneD_df['group'] != 'Data', 'weight'] *= -1
-    rwgt_df = rwgt_df[rwgt_df['group'] == 'Data'].copy()
+    rwgt_df['weight'] = rwgt_df['weight_reco_p3'].copy()
     compare_df = compare_df[compare_df['group'] == 'Data'].copy()
     renorm_fac = oneD_df['weight'].sum() / compare_df['weight'].sum()
     compare_df['weight'] *= renorm_fac
