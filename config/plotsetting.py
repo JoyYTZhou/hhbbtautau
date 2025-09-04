@@ -29,12 +29,19 @@ train_H_mass = {
 
 H_mass = {
     "DiJet_mass": {
-        "hist": {'bins': 30, 'range': [0,200]},
+        "hist": {'bins': 40, 'range': [0,200]},
         "plot": {'xlabel': r'Invariant Mass (2b) (GeV)'}},
      "DiTau_mass": {
-        "hist": {'bins': 30, 'range': [0,200]},
+        "hist": {'bins': 40, 'range': [0,200]},
         "plot": {'xlabel': r'Visible Mass (2$\tau$) (GeV)'}}
 } 
+
+High_Mbb_H_mass = {
+    "DiJet_mass_clipped": {
+        "hist": {'bins': 40, 'range': [160,310]},
+        "plot": {'xlabel': r'Invariant Mass (2b) (GeV)'}
+    } 
+}
 
 tau_pt = {
     "LDTau_pt": {

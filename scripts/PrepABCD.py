@@ -51,12 +51,14 @@ def get_ABCD_results(dfA, dfB, dfC, dfD, channel_name=''):
         plot_config['attridict'] = attr_dict
         CSVPlotter.plot_shape(**plot_config)
 
-def plot_histograms(df, plot_dir, region_name=''):
+def plot_histograms(df, plot_dir, region_name='', high_mbb=False):
     """Plot histograms for the given dataframe and save them to the specified directory."""
     cp = CSVPlotter(outdir=plot_dir)
-    from config.plotsetting import H_mass, tau_pt, tau_eta, bjet_pt, bjet_mass, dR, HT, H_pt
+    from config.plotsetting import H_mass, tau_pt, tau_eta, bjet_pt, bjet_mass, dR, HT, H_pt, High_Mbb_H_mass
 
     att_dicts = H_mass | tau_pt | tau_eta | bjet_pt | bjet_mass | dR | HT | H_pt
+    if high_mbb:
+        att_dicts = att_dicts | High_Mbb_H_mass
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
     
