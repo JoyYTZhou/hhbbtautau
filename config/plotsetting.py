@@ -29,15 +29,15 @@ train_H_mass = {
 
 H_mass = {
     "DiJet_mass": {
-        "hist": {'bins': 40, 'range': [0,200]},
+        "hist": {'bins': 40, 'range': [0,300]},
         "plot": {'xlabel': r'Invariant Mass (2b) (GeV)'}},
      "DiTau_mass": {
-        "hist": {'bins': 40, 'range': [0,200]},
+        "hist": {'bins': 40, 'range': [0,300]},
         "plot": {'xlabel': r'Visible Mass (2$\tau$) (GeV)'}}
 } 
 
 High_Mbb_H_mass = {
-    "DiJet_mass_clipped": {
+    "DiJet_mass": {
         "hist": {'bins': 40, 'range': [160,310]},
         "plot": {'xlabel': r'Invariant Mass (2b) (GeV)'}
     } 
@@ -84,7 +84,7 @@ dR = {
         "hist": {'bins': 20, 'range': [0, 5]},
         "plot": {'xlabel': r'|dR(b Jets)|'}},
     "DiHiggs_dR": {
-        "hist": {'bins': 20, 'range': [0, 5]},
+        "hist": {'bins': 20, 'range': [0, 10]},
         "plot": {'xlabel': r'|dR(Reco H)|'}}
 }
 
@@ -114,12 +114,12 @@ bjet_pt = {
 
 bjet_mass = {
     "Bjet1_mass": {
-        "hist": {'bins': 30, 'range': [0,300]},
+        "hist": {'bins': 20, 'range': [0,100]},
         "plot": {'xlabel': r'Leading Jet Mass (GeV)',
                  'stack': if_stack,
                  'histtype': hist_type}},
     "Bjet2_mass": {
-        "hist": {'bins': 30, 'range': [0,300]},
+        "hist": {'bins': 20, 'range': [0,100]},
         "plot": {'xlabel': r'Subleading Jet Mass (GeV)',
                  'histtype': hist_type,
                  'stack': if_stack}}

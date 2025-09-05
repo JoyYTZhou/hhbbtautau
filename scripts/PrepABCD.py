@@ -56,9 +56,11 @@ def plot_histograms(df, plot_dir, region_name='', high_mbb=False):
     cp = CSVPlotter(outdir=plot_dir)
     from config.plotsetting import H_mass, tau_pt, tau_eta, bjet_pt, bjet_mass, dR, HT, H_pt, High_Mbb_H_mass
 
-    att_dicts = H_mass | tau_pt | tau_eta | bjet_pt | bjet_mass | dR | HT | H_pt
+    att_dicts = tau_pt | tau_eta | bjet_pt | bjet_mass | dR | HT | H_pt
     if high_mbb:
         att_dicts = att_dicts | High_Mbb_H_mass
+    else:
+        att_dicts = att_dicts | H_mass
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
     
@@ -230,8 +232,6 @@ class FakeUtil:
         fake_df = FakeUtil.keep_fakes(copy)
         
         real_tau_events = MCdf['weight'].sum()
-        logging.info(f"Total Number of MC events with real taus: {real_tau_events}")
-        
         # Display results in a table format
         
         table = Table(title="Real Tau Event Counts")
@@ -275,9 +275,6 @@ def analyze_taus(df, groups=['TTbar']):
     real_tau_events = real_tau_df['weight'].sum()
     fake_tau_events = fake_tau_df['weight'].sum()
     
-    logging.info(f"Total Number of MC events with real taus: {real_tau_events}")
-    logging.info(f"Total Number of MC events with fake taus: {fake_tau_events}")
-    
     # Display results in a comprehensive table
     table = Table(title="Tau Analysis Summary")
     table.add_column("Category", justify="left", style="cyan", no_wrap=True)
@@ -290,6 +287,8 @@ def analyze_taus(df, groups=['TTbar']):
     table.add_row("Data Events", f"{data_events:.2f}", "N/A")
     table.add_row("MC Events with Real Taus", f"{real_tau_events:.2f}", f"{real_percentage:.1f}%")
     table.add_row("MC Events with Fake Taus", f"{fake_tau_events:.2f}", f"{fake_percentage:.1f}%")
+    table.add_row("Total MC Events", f"{mc_events:.2f}", "100%")
+
     
     console = Console()
     console.print(table)
@@ -400,7 +399,8 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
     input_df = pd.read_csv(input_name, low_memory=False)
     input_prefix = input_name.split('/')[-1].replace('.csv', '')
     if mode == 'OSSS':
-        input_df = add_extra_features(input_df)
+        if 'DiJet_mass' not in input_df.columns:
+            input_df = add_extra_features(input_df)
         os_df, ss_df, os_cutflow = ABCDUtil.split_dataframe(input_df, lambda df: df[df['OS'] == True])
         logging.info(f"Total events in SS: {ss_df[ss_df['group'] == 'Data']['weight'].sum()}")
         logging.info(f"Total events in OS (MC): {os_df[os_df['group'] != 'Data']['weight'].sum()}")
@@ -416,12 +416,14 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
         logging.info(f"SS dataframe saved to {pjoin(out_dir, f'{input_prefix}_SS.csv')}")
         logging.info(f"OS cutflow saved to {pjoin(out_dir, f'{input_prefix}_OS_cutflow.csv')}")
     elif mode == 'MBB':
+        if 'DiJet_mass' not in input_df.columns:
+            input_df = add_extra_features(input_df)
         mbb_cut = extra_kwargs.get('mbb_cut', 160)
         filter_func = lambda df: df.copy()[df['DiJet_mass'] > mbb_cut]
         high_mbb, _, high_cutflow = ABCDUtil.split_dataframe(input_df, filter_func)
         high_mbb.to_csv(pjoin(out_dir, f'{input_prefix}_highMbb.csv'), index=False)
         FileSysHelper.checkpath(pjoin(root_plt_dir, 'HIGH_MBB'))
-        plot_histograms(high_mbb, pjoin(root_plt_dir, 'HIGH_MBB'), region_name='High Mbb Region')
+        plot_histograms(high_mbb, pjoin(root_plt_dir, 'HIGH_MBB'), region_name='High Mbb Region', high_mbb=True)
         high_cutflow.to_csv(pjoin(out_dir, f'{input_prefix}_highMbb_cutflow.csv'), index=False)
         logging.info(f"High Mbb dataframe saved to {pjoin(out_dir, f'{input_prefix}_highMbb.csv')}")
         logging.info(f"High Mbb cutflow saved to {pjoin(out_dir, f'{input_prefix}_highMbb_cutflow.csv')}")

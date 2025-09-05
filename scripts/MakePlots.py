@@ -37,6 +37,22 @@ def plot_Rwgt_DataMinusMC(src_df, rwgt_df, out_dir):
                   attridict=att_dicts, ratio_ylabel='Pred/Actual', outdir=out_dir,
                   normalize=False, title='Multijet Background', save_suffix='QCD')
     
+def plot_Rwgt_SSvsOS(ss_df, os_df, out_dir):
+    from config.plotsetting import H_mass, tau_pt, tau_eta, bjet_pt, bjet_mass, dR, HT
+    att_dicts = H_mass | tau_pt | tau_eta | bjet_pt | bjet_mass | dR | HT 
+
+    cp = CSVPlotter(outdir=out_dir)
+    ss_df = ss_df[ss_df['group'] == 'Data']
+    reco_os_df = ss_df.copy()
+    reco_os_df['weight'] = ss_df['weight_reco_os'].copy()
+    os_df = os_df[os_df['group'] == 'Data']
+    renorm_fac = os_df['weight'].sum() / ss_df['weight'].sum()
+    ss_df['weight'] *= renorm_fac
+    logging.info("Plotting SS reweighted to OS vs actual OS distributions.")
+    cp.plot_shape([os_df, ss_df, reco_os_df], labels=['OS data', 'SS data', 'SS reweighted to OS'], 
+                  attridict=att_dicts, ratio_ylabel='Pred/Actual', outdir=out_dir,
+                  normalize=False, title='Total Background', save_suffix='SSvsOS')
+    
     
 if __name__ == "__main__":
     setup_logging()
@@ -62,9 +78,9 @@ if __name__ == "__main__":
 
     elif args.mode == "OriVSRwgt":
         if len(args.input) == 2:
-            src_df = pd.read_csv(args.input[0])
-            rwgt_df = pd.read_csv(args.input[1])
-            plot_rwgt_results(src_df, rwgt_df, args.output)
+            ss_df = pd.read_csv(args.input[0])
+            os_df = pd.read_csv(args.input[1])
+            plot_Rwgt_SSvsOS(ss_df, os_df, args.output)
         else:
             logging.error("OriVSRwgt mode requires exactly 2 input CSV files.")
             exit(1)
