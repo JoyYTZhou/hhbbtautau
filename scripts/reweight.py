@@ -11,6 +11,8 @@ from torch.utils.data import TensorDataset, DataLoader
 drop_kwds = ['Gen', 'weight_values', 'Weight_values', 'OS', 'group', 'gen', 'dataset', 'label', 'id', 'year', 'Tau_charge', 'X_num', 'weight', 'Tau', 'btag'] 
 features_train = ['Bjet1_pt', 'Bjet2_pt', 'Bjet1_eta', 'Bjet2_eta', 'Bjet1_phi', 'Bjet2_phi', 'Bjet1_mass', 'Bjet2_mass',
                  'LDTau_pt', 'LDTau_mass', 'LDTau_eta', 'LDTau_phi', 'SDTau_pt', 'SDTau_eta', 'SDTau_phi', 'SDTau_mass', 
+                 'DiTau_pt', 'DiTau_eta', 'DiTau_phi', 'DiTau_mass', 'DiTau_dR', 
+                 'DiJet_dR', 'DiJet_mass', 'DiJet_pt', 'DiJet_eta', 'DiJet_phi',
                  'MET_pt', 'MET_phi']
 
 # -----------------------
@@ -36,7 +38,9 @@ class SimpleNN(nn.Module):
 # -----------------------
 def train_model(model, dataset, n_epochs=80, batch_size=1024, lr=1e-3):
     """Train a given PyTorch model with BCEWithLogitsLoss and weights"""
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
+
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5, verbose=True)
     criterion = nn.BCEWithLogitsLoss(reduction="none")
 
     # Split into train/validation
@@ -70,10 +74,12 @@ def train_model(model, dataset, n_epochs=80, batch_size=1024, lr=1e-3):
                 loss = (loss * batch_w).mean()
                 total_val_loss += loss.item() * batch_X.size(0)
 
+        avg_train_loss = total_train_loss / len(train_dataset)
+        avg_val_loss   = total_val_loss / len(val_dataset)
+        scheduler.step(avg_val_loss)
+        
         if epoch % 10 == 0:
-            avg_train_loss = total_train_loss / len(train_dataset)
-            avg_val_loss   = total_val_loss / len(val_dataset)
-            logging.info(f"Epoch {epoch+1}/{n_epochs}, Train Loss = {avg_train_loss:.4f}, Val Loss = {avg_val_loss:.4f}")
+            logging.info(f"Epoch {epoch+1}/{n_epochs}, Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}, LR: {optimizer.param_groups[0]['lr']:.6f}")
 
     return model
 
