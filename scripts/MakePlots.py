@@ -17,8 +17,8 @@ matplotlib.use('Agg')
 from scripts.PrepABCD import plot_histograms
 
 def plot_Rwgt_DataMinusMC(src_df, rwgt_df, out_dir):
-    from config.plotsetting import H_mass, tau_pt, tau_eta, bjet_pt, bjet_mass, dR, HT
-    att_dicts = H_mass | tau_pt | tau_eta | bjet_pt | bjet_mass | dR | HT 
+    from config.plotsetting import H_mass, tau_pt, tau_eta, bjet_pt, bjet_mass, dR, HT, H_pt
+    att_dicts = H_mass | tau_pt |bjet_pt | bjet_mass | dR | HT | H_pt
 
     cp = CSVPlotter(outdir=out_dir)
     
@@ -38,8 +38,8 @@ def plot_Rwgt_DataMinusMC(src_df, rwgt_df, out_dir):
                   normalize=False, title='Multijet Background', save_suffix='QCD')
     
 def plot_Rwgt_SSvsOS(ss_df, os_df, out_dir):
-    from config.plotsetting import H_mass, tau_pt, tau_eta, bjet_pt, bjet_mass, dR, HT
-    att_dicts = H_mass | tau_pt | tau_eta | bjet_pt | bjet_mass | dR | HT 
+    from config.plotsetting import H_mass, tau_pt, tau_eta, bjet_pt, bjet_mass, dR, HT, H_pt
+    att_dicts = H_mass | tau_pt | tau_eta | bjet_pt | bjet_mass | dR | HT | H_pt
 
     cp = CSVPlotter(outdir=out_dir)
     ss_df = ss_df[ss_df['group'] == 'Data']

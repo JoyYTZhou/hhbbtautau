@@ -9,11 +9,15 @@ import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 
 drop_kwds = ['Gen', 'weight_values', 'Weight_values', 'OS', 'group', 'gen', 'dataset', 'label', 'id', 'year', 'Tau_charge', 'X_num', 'weight', 'Tau', 'btag'] 
-features_train = ['Bjet1_pt', 'Bjet2_pt', 'Bjet1_eta', 'Bjet2_eta', 'Bjet1_phi', 'Bjet2_phi', 'Bjet1_mass', 'Bjet2_mass',
-                 'LDTau_pt', 'LDTau_mass', 'LDTau_eta', 'LDTau_phi', 'SDTau_pt', 'SDTau_eta', 'SDTau_phi', 'SDTau_mass', 
+features_train = ['Bjet1_pt', 'Bjet2_pt', 'Bjet1_mass', 'Bjet2_mass',
+                 'LDTau_pt', 'LDTau_mass', 'SDTau_pt', 'SDTau_mass', 
                  'DiTau_pt', 'DiTau_eta', 'DiTau_phi', 'DiTau_mass', 'DiTau_dR', 
                  'DiJet_dR', 'DiJet_mass', 'DiJet_pt', 'DiJet_eta', 'DiJet_phi',
                  'MET_pt', 'MET_phi']
+
+def smooth_labels(y, eps=0.05):
+    """Smoothing of binary labels. eps belonging to [0.01, 0.1] is typical."""
+    return y * (1 - eps) + 0.5 * eps
 
 # -----------------------
 # Define NN classifier
@@ -58,7 +62,8 @@ def train_model(model, dataset, n_epochs=80, batch_size=1024, lr=1e-3):
         for batch_X, batch_y, batch_w in train_loader:
             optimizer.zero_grad()
             logits = model(batch_X)
-            loss = criterion(logits, batch_y)
+            batch_y_smooth = smooth_labels(batch_y)
+            loss = criterion(logits, batch_y_smooth)
             loss = (loss * batch_w).mean()
             loss.backward()
             optimizer.step()
