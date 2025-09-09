@@ -23,15 +23,18 @@ def smooth_labels(y, eps=0.05):
 # Define NN classifier
 # -----------------------
 class SimpleNN(nn.Module):
-    def __init__(self, d):
+    def __init__(self, d, p_dropout=0.3):
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(d, 64),
             nn.ReLU(),
+            nn.Dropout(p_dropout),
             nn.Linear(64, 32),
             nn.ReLU(),
+            nn.Dropout(p_dropout),
             nn.Linear(32, 16),
             nn.ReLU(),
+            nn.Dropout(p_dropout),
             nn.Linear(16, 1)   # no Sigmoid
         )
     def forward(self, x): 
