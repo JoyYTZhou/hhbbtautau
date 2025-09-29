@@ -1,0 +1,13 @@
+{
+    "ss_input_csv": "/Users/yuntongzhou/Desktop/Dihiggszztt/output/Mtauzerob_infer_SS.csv",
+    "os_input_csv": "/Users/yuntongzhou/Desktop/Dihiggszztt/output/Mtauzerob_infer_OS_realTaus.csv",
+    "output_dir": "/Users/yuntongzhou/Desktop/Dihiggszztt/training",
+    "mode": "SStoFakes",
+    "session_name": "trial",
+    "inference_only": true,
+    "training_args": {
+        "n_epochs": 100,
+        "batch_size": 1024,
+        "lr": 0.001
+    }
+}

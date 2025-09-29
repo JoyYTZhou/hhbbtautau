@@ -7,6 +7,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
+from src.utils.inferutil import infer_ss_to_os, infer_data_to_mc, infer_multiclass
+from src.utils.statsutil import normalize_mc
+
+pjoin = os.path.join
 
 drop_kwds = ['Gen', 'weight_values', 'Weight_values', 'OS', 'group', 'gen', 'dataset', 'label', 'id', 'year', 'Tau_charge', 'X_num', 'weight', 'Tau', 'btag'] 
 features_train = ['Bjet1_pt', 'Bjet2_pt', 'Bjet1_mass', 'Bjet2_mass',
@@ -18,13 +22,6 @@ features_train = ['Bjet1_pt', 'Bjet2_pt', 'Bjet1_mass', 'Bjet2_mass',
 def smooth_labels(y, eps=0.05):
     """Smoothing of binary labels. eps belonging to [0.01, 0.1] is typical."""
     return y * (1 - eps) + 0.5 * eps
-
-def normalize_mc(data_df, mc_df, feature='DiTau_mass'):
-    from src.utils.plotutil import HistogramHelper
-
-    renorm_fac = HistogramHelper.get_normalization_factor(data_df[feature], mc_df[feature], bins=30, range=(0, 300), 
-                                weights_a=data_df['weight'], weights_b=mc_df['weight'])
-    return renorm_fac
 
 # -----------------------
 # Define NN classifier
@@ -217,34 +214,10 @@ def train_and_reweight_multiclass(data_df_0, mc_df, data_df_1, features, n_epoch
     num_classes = 3
     model = SimpleNN(len(features), num_classes=num_classes)  # Updated constructor
     model = train_multiclass_model(model, dataset, n_epochs=n_epochs, batch_size=batch_size, lr=lr)
+    # 2) Prediction on DATA only
+    results_dict = infer_multiclass(model, data_df_0, features)
+    results_dict["model"] = model
 
-    # 2) Prediction on DATA From SS only
-    X_data = data_df_0[features].to_numpy().astype(np.float32)
-    X_data_tensor = torch.from_numpy(X_data)
-    with torch.no_grad():
-        logits = model(X_data_tensor)
-        probs = torch.softmax(logits, dim=1).numpy()
-    
-    s_data_0 = probs[:, 0]  # Probability for class 0
-    s_mc = probs[:, 1]  # Probability for class 1
-    s_data_1 = probs[:, 2]  # Probability for class 2
-    
-    logging.info(f"Max probability for class 0 (Data in original region): {s_data_0.max():.4f}")
-    logging.info(f"Min probability for class 0 (Data in original region): {s_data_0.min():.4f}")
-    logging.info(f"Max probability for class 1 (MC): {s_mc.max():.4f}")
-    logging.info(f"Min probability for class 1 (MC): {s_mc.min():.4f}")
-    logging.info(f"Max probability for class 2 (Data in new region): {s_data_1.max():.4f}")
-    logging.info(f"Min probability for class 2 (Data in new region): {s_data_1.min():.4f}")
-    
-    w_reco_qcd = (s_data_1 - s_mc) / (s_data_0 + 1e-7) * data_df_0["weight"].to_numpy() if "weight" in data_df_0.columns else 1.0
-
-    results_dict = {
-        "model": model,
-        "w_reco_qcd": w_reco_qcd,
-        "s_data_0": s_data_0,
-        "s_mc": s_mc,
-        "s_data_1": s_data_1}
-    
     return results_dict
 
 def train_and_reweight(data_df, mc_df, features, n_epochs=80, batch_size=1024, lr=1e-3):
@@ -283,38 +256,10 @@ def train_and_reweight(data_df, mc_df, features, n_epochs=80, batch_size=1024, l
     model = train_model(model, dataset, n_epochs=n_epochs, batch_size=batch_size, lr=lr)
 
     # 2) Prediction on DATA only
-    X_data_tensor = torch.from_numpy(p1)
-    with torch.no_grad():
-        s_data = torch.sigmoid(model(X_data_tensor)).numpy().ravel()
-
-    eps = 1e-6
-    r_data = s_data / (1.0 - s_data + eps)   # local ratio p2/p1
-
-    logging.info(f"Max probability for belonging to MC only: {s_data.max():.4f}")
-    logging.info(f"Min probability for belonging to MC only: {s_data.min():.4f}")
-    logging.info(f"Max ratio of QCD/Data: {r_data.max():.4f}")
-    logging.info(f"Min ratio of QCD/Data: {r_data.min():.4f}")
-
-    # Base weights from data
-    w_data_base = data_df["weight"].to_numpy() if "weight" in data_df.columns else np.ones(len(p1), dtype=np.float32)
-    w_data_reco_p3 = (1.0 - r_data) * w_data_base
-    w_data_reco_p2 = r_data * w_data_base
-
-    # -----------------------
-    # 4) Normalization
-    # -----------------------
-    target_sum = data_df["weight"].sum() - mc_df['weight'].sum()
-    norm_factor_p3 = target_sum / (w_data_reco_p3.sum() + 1e-12)
-    norm_factor_p2 = target_sum / (w_data_reco_p2.sum() + 1e-12)
-
-    w_data_reco_p3 *= norm_factor_p3
-    w_data_reco_p2 *= norm_factor_p2
-
-    return {
-        "model": model,
-        "w_data_reco_p3": w_data_reco_p3,
-        "w_data_reco_p2": w_data_reco_p2
-    }
+    results_dict = infer_data_to_mc(model, data_df, mc_df, features)
+    results_dict["model"] = model
+    
+    return results_dict
     
 def dataMinusMC(data_df, mc_df, out_dir, training_args, session_name=''):
     results_dict = train_and_reweight(data_df, mc_df, features_train, **training_args)
@@ -331,10 +276,6 @@ def train_and_reweight_ss_os(ss_df, os_df, features, n_epochs=80, batch_size=102
     """
     Train a NN classifier to separate SS vs OS events,
     then compute reweighted OS weights for the SS sample.
-    
-    Args:
-        ss_df (pd.DataFrame): Same-sign events (label 0)
-        os_df (pd.DataFrame): Opposite-sign events (label 1)
     
     Returns:
         dict with:
@@ -375,38 +316,11 @@ def train_and_reweight_ss_os(ss_df, os_df, features, n_epochs=80, batch_size=102
     # -----------------------
     model = SimpleNN(len(features))
     model = train_model(model, dataset, n_epochs=n_epochs, batch_size=batch_size, lr=lr)
-
     # -----------------------
-    # 2) Prediction on SS only
-    # -----------------------
-    X_ss_tensor = torch.from_numpy(p1)
-    with torch.no_grad():
-        s_data = torch.sigmoid(model(X_ss_tensor)).numpy().ravel()
+    results_dict = infer_ss_to_os(model, ss_df, os_df, features)
+    results_dict["model"] = model
 
-    eps = 1e-6
-    r_data = s_data / (1.0 - s_data + eps)   # local ratio OS/SS
-
-    logging.info(f"Max probability for OS: {s_data.max():.4f}")
-    logging.info(f"Min probability for OS: {s_data.min():.4f}")
-    logging.info(f"Max ratio of OS/SS: {r_data.max():.4f}")
-    logging.info(f"Min ratio of OS/SS: {r_data.min():.4f}")
-
-    # -----------------------
-    # 3) Compute OS weights for SS events
-    # -----------------------
-    w_data_base = ss_df["weight"].to_numpy() if "weight" in ss_df.columns else np.ones(len(p1), dtype=np.float32)
-    w_data_reco_OS = r_data * w_data_base
-
-    # Normalize to match OS total weight
-    target_sum = os_df["weight"].sum()
-    norm_factor = target_sum / (w_data_reco_OS.sum() + 1e-12)
-    w_data_reco_OS *= norm_factor
-
-    return {
-        "model": model,
-        "r_data": r_data,
-        "w_data_reco_os": w_data_reco_OS
-    }
+    return results_dict
 
 def SSToOS(ss_df, os_df, out_dir, training_args, session_name=''):
     ss_df = ss_df[ss_df['group'] == 'Data'].copy()
@@ -423,7 +337,10 @@ def SSDataToOSQCD(ss_df, os_df, out_dir, training_args, session_name=''):
     ss_data = ss_df[ss_df['group'] == 'Data'].copy()
     os_data = os_df[os_df['group'] == 'Data'].copy()
     os_mc = os_df[os_df['group'] != 'Data'].copy()
-    os_mc = normalize_mc(os_data, os_mc, feature='DiTau_mass')
+    logging.info(f"Number of SS Data events: {len(ss_data)}")
+    logging.info(f"Number of OS MC events: {os_mc['weight'].sum()}")
+    logging.info(f"Number of OS Data events: {len(os_data)}")
+    os_mc, renorm_fac = normalize_mc(os_data, os_mc, feature='DiTau_mass')
 
     results_dict = train_and_reweight_multiclass(ss_data, os_mc, os_data, features_train, **training_args)
 
@@ -431,9 +348,15 @@ def SSDataToOSQCD(ss_df, os_df, out_dir, training_args, session_name=''):
     w_reco_qcd = results_dict['w_reco_qcd']
 
     torch.save(model.state_dict(), os.path.join(out_dir, f"{session_name}_ss_to_os_qcd_model.pth"))
-    ss_df['weight_reco_os_qcd'] = w_reco_qcd
-    ss_df.to_csv(os.path.join(out_dir, f"{session_name}_ss_data_qcd.csv"), index=False)
-    logging.info(f"SS Data with new OS QCD weights saved to {os.path.join(out_dir, f'{session_name}_ss_data_qcd.csv')}")
+    ss_data['weight_reco_os_fakes'] = w_reco_qcd
+    ss_data.to_csv(os.path.join(out_dir, f"{session_name}_ss_data_qcd.csv"), index=False)
+    logging.info(f"SS Data with new OS Fake weights saved to {os.path.join(out_dir, f'{session_name}_ss_data_qcd.csv')}")
+
+def load_model(model_path, input_dim, num_classes=1):
+    model = SimpleNN(input_dim, num_classes=num_classes)
+    model.load_state_dict(torch.load(model_path))
+    model.eval()
+    return model
 
 if __name__ == "__main__":
     setup_logging()
@@ -456,8 +379,22 @@ if __name__ == "__main__":
         ss_df = pd.read_csv(args['ss_input_csv'])
         os_df = pd.read_csv(args['os_input_csv'])
         SSToOS(ss_df, os_df, args['output_dir'], training_args=args['training_args'], session_name=args['session_name'])
+    elif args['mode'] == 'SStoFakes':
+        ss_df = pd.read_csv(args['ss_input_csv'])
+        os_df = pd.read_csv(args['os_input_csv'])
+        if args['inference_only']:
+            model_path = pjoin(args['output_dir'], f"{args['session_name']}_ss_to_os_qcd_model.pth")
+            model = load_model(model_path, input_dim=len(features_train), num_classes=3)
+            results_dict = infer_multiclass(model, ss_df[ss_df['group'] == 'Data'], features_train)
+            w_reco_qcd = results_dict['w_reco_qcd']
+            ss_df.loc[ss_df['group'] == 'Data', 'weight_reco_os_fakes'] = w_reco_qcd
+            new_ss_name = f"{args['session_name']}_ss_data_qcd.csv"
+            ss_df.to_csv(pjoin(args['output_dir'], new_ss_name), index=False)
+            logging.info(f"SS Data with new OS Fake weights saved to {pjoin(args['output_dir'], new_ss_name)}")
+        else:
+            SSDataToOSQCD(ss_df, os_df, args['output_dir'], training_args=args['training_args'], session_name=args['session_name'])
     else:
-        raise ValueError(f"Unknown mode {args['mode']}. Supported modes: dataMinusMC, SStoOS")
+        raise ValueError(f"Unknown mode {args['mode']}. Supported modes: dataMinusMC, SStoOS, SStoFakes")
 
     
 
