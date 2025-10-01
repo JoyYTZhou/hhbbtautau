@@ -442,6 +442,8 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
         fake_taus.to_csv(pjoin(out_dir, f'{input_prefix}_fakeTaus.csv'), index=False)
         plot_histograms(real_taus, pjoin(root_plt_dir, 'REAL_TAUS'), region_name='Data vs. MC (Real Taus Only)')
     elif mode == 'VALIDATION':
+        if 'DiJet_mass' not in input_df.columns:
+            input_df = add_extra_features(input_df)
         filter_func = lambda df: df.copy()[df['DiJet_mass'] < 80]
         low_bb, _, cutflow = ABCDUtil.split_dataframe(input_df, filter_func)
         low_bb.to_csv(pjoin(out_dir, f'{input_prefix}_lowbb.csv'), index=False)
@@ -453,7 +455,7 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
 
 if __name__ == "__main__":
     parser = RichArgumentParser()
-    parser.add_argument('mode', choices=['OSSS', 'MBB', 'REALTAUS', 'MLTAU'], help="Mode of operation: OSSS for OS/SS analysis, MBB for DiJet-mass-based analysis, REALTAUS for real/fake tau analysis.")
+    parser.add_argument('mode', choices=['OSSS', 'MBB', 'REALTAUS', 'MLTAU', 'VALIDATION'], help="Mode of operation: OSSS for OS/SS analysis, MBB for DiJet-mass-based analysis, REALTAUS for real/fake tau analysis.")
     parser.add_argument('-i', '--input', required=True, help="Input filename containing data after HH-btag inference.")
     parser.add_argument('-o', '--output', required=True, help="Output directory to save the processed data.")
     parser.add_argument('-p', '--plot_dir', default=None, help="Directory to save plots. If not provided, no plots will be saved.")

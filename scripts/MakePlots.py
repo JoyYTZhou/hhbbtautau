@@ -7,7 +7,7 @@ from src.plotting.visutil import CSVPlotter
 from src.utils.ioutil import setup_logging
 from src.utils.displayutil import RichArgumentParser
 import matplotlib
-from scripts.reweight import normalize_mc
+from src.utils.statsutil import normalize_mc
 
 pjoin = os.path.join
 matplotlib.use('Agg')
@@ -47,7 +47,7 @@ def plot_Rwgt_SSvsOS(ss_df, os_df, out_dir):
     os_data = os_df[os_df['group'] == 'Data'].copy()
     os_mc = os_df[os_df['group'] != 'Data'].copy()
     
-    os_mc, renorm_fac = normalize_mc(os_df, os_mc, feature='DiTau_mass')
+    os_mc, renorm_fac = normalize_mc(os_data, os_mc, feature='DiTau_mass')
     
     os_df = data_subtract_mc(pd.concat([os_data, os_mc], ignore_index=True))
     logging.info(f"Number of events in OS QCD from subtraction: {os_df['weight'].sum()}")

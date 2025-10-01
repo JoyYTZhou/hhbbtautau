@@ -31,13 +31,15 @@ class SimpleNN(nn.Module):
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(d, 64),
-            nn.ReLU(),
+            nn.LeakyReLU(),
+            nn.BatchNorm1d(64),
             nn.Dropout(p_dropout),
             nn.Linear(64, 32),
-            nn.ReLU(),
+            nn.LeakyReLU(),
+            nn.BatchNorm1d(32),
             nn.Dropout(p_dropout),
             nn.Linear(32, 16),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Dropout(p_dropout),
             nn.Linear(16, num_classes)   # no Sigmoid
         )
