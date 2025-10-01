@@ -383,7 +383,6 @@ if __name__ == "__main__":
         SSToOS(ss_df, os_df, args['output_dir'], training_args=args['training_args'], session_name=args['session_name'])
     elif args['mode'] == 'SStoFakes':
         ss_df = pd.read_csv(args['ss_input_csv'])
-        os_df = pd.read_csv(args['os_input_csv'])
         if args['inference_only']:
             model_path = pjoin(args['output_dir'], f"{args['session_name']}_ss_to_os_qcd_model.pth")
             model = load_model(model_path, input_dim=len(features_train), num_classes=3)
@@ -394,6 +393,7 @@ if __name__ == "__main__":
             ss_df.to_csv(pjoin(args['output_dir'], new_ss_name), index=False)
             logging.info(f"SS Data with new OS Fake weights saved to {pjoin(args['output_dir'], new_ss_name)}")
         else:
+            os_df = pd.read_csv(args['os_input_csv'])
             SSDataToOSQCD(ss_df, os_df, args['output_dir'], training_args=args['training_args'], session_name=args['session_name'])
     else:
         raise ValueError(f"Unknown mode {args['mode']}. Supported modes: dataMinusMC, SStoOS, SStoFakes")
