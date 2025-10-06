@@ -14,9 +14,9 @@ def switch_selections(sel_name):
         'tightskim': tightSkim,
         'vbfskim': VBFSkim,
         'jetskim': jetSkim,
-        'onelooseb': LooseTauOneB,
-        'twolooseb': LooseTauTwoB,
-        'zerolooseb': LooseTauZeroB,
+        'looseoneb': LooseTauOneB,
+        'loosetwob': LooseTauTwoB,
+        'loosezeroB': LooseTauZeroB,
         'mediumzerob': MediumTauZeroB,  # Alias for backward compatibility
         'mediumoneb': MediumTauOneB,
         'mediumtwob': MediumTauTwoB,

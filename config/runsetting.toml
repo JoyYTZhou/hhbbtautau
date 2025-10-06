@@ -1,8 +1,8 @@
 [ONEB]
-SEL_NAME = 'mediumoneb'
+SEL_NAME = 'looseoneb'
 PROC_NAME = 'preselect'
 DELAYED_OPEN = false
-TRANSFER_PATH = '/store/user/joyzhou/tightskim_Mtauoneb'
+TRANSFER_PATH = '/store/user/joyzhou/tightskim_Ltauoneb'
 FILTER_NAME = ["Tau*", "Jet*", "Electron*", "Muon*", "Gen*", "LHE*", "TrigObj*", "MET*"]
 OUTENDPATTERN = ["output*.csv", "cutflow.csv"]
 JOB_DIR = 'tightskimmed'
