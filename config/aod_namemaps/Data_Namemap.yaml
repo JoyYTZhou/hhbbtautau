@@ -1,9 +1,9 @@
 default:
   Tau:
     jetidx: Tau_jetIdx
-    idvsjet: Tau_idDeepTau2017v2p1VSjet
-    idvsmu: Tau_idDeepTau2017v2p1VSmu
-    idvse: Tau_idDeepTau2017v2p1VSe
+    idvsjet: Tau_idDeepTau2018v2p5VSjet
+    idvsmu: Tau_idDeepTau2018v2p5VSmu
+    idvse: Tau_idDeepTau2018v2p5VSe
     charge: Tau_charge
     dxy: Tau_dxy
     dz: Tau_dz
