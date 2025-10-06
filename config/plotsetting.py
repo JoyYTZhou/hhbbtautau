@@ -29,12 +29,19 @@ train_H_mass = {
 
 H_mass = {
     "DiJet_mass": {
-        "hist": {'bins': 40, 'range': [0,250]},
+        "hist": {'bins': 30, 'range': [0,300]},
         "plot": {'xlabel': r'Invariant Mass (2b) (GeV)'}},
      "DiTau_mass": {
-        "hist": {'bins': 30, 'range': [0,200]},
+        "hist": {'bins': 30, 'range': [0,300]},
         "plot": {'xlabel': r'Visible Mass (2$\tau$) (GeV)'}}
 } 
+
+High_Mbb_H_mass = {
+    "DiJet_mass": {
+        "hist": {'bins': 40, 'range': [160,310]},
+        "plot": {'xlabel': r'Invariant Mass (2b) (GeV)'}
+    } 
+}
 
 tau_pt = {
     "LDTau_pt": {
@@ -77,17 +84,17 @@ dR = {
         "hist": {'bins': 20, 'range': [0, 5]},
         "plot": {'xlabel': r'|dR(b Jets)|'}},
     "DiHiggs_dR": {
-        "hist": {'bins': 20, 'range': [0, 5]},
+        "hist": {'bins': 20, 'range': [0, 10]},
         "plot": {'xlabel': r'|dR(Reco H)|'}}
 }
 
 
 H_pt = {
     "DiTau_pt": {
-        "hist": {'bins': 25, 'range': [0,500]},
+        "hist": {'bins': 20, 'range': [0,300]},
         "plot": {'xlabel': r'Visible $P_t$ (2$\tau$) (GeV)'}},
     "DiJet_pt": {
-        "hist": {'bins': 20, 'range': [0,400]},
+        "hist": {'bins': 20, 'range': [0,300]},
         "plot": {'xlabel': r'Invariant $P_t$ (2b) (GeV)'}}
     }
 
@@ -107,12 +114,12 @@ bjet_pt = {
 
 bjet_mass = {
     "Bjet1_mass": {
-        "hist": {'bins': 30, 'range': [0,300]},
+        "hist": {'bins': 20, 'range': [0,100]},
         "plot": {'xlabel': r'Leading Jet Mass (GeV)',
                  'stack': if_stack,
                  'histtype': hist_type}},
     "Bjet2_mass": {
-        "hist": {'bins': 30, 'range': [0,300]},
+        "hist": {'bins': 20, 'range': [0,100]},
         "plot": {'xlabel': r'Subleading Jet Mass (GeV)',
                  'histtype': hist_type,
                  'stack': if_stack}}

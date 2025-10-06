@@ -51,12 +51,16 @@ def get_ABCD_results(dfA, dfB, dfC, dfD, channel_name=''):
         plot_config['attridict'] = attr_dict
         CSVPlotter.plot_shape(**plot_config)
 
-def plot_histograms(df, plot_dir, region_name=''):
+def plot_histograms(df, plot_dir, region_name='', high_mbb=False):
     """Plot histograms for the given dataframe and save them to the specified directory."""
     cp = CSVPlotter(outdir=plot_dir)
-    from config.plotsetting import H_mass, tau_pt, tau_eta, bjet_pt, bjet_mass, dR, HT
+    from config.plotsetting import H_mass, tau_pt, tau_eta, bjet_pt, bjet_mass, dR, HT, H_pt, High_Mbb_H_mass
 
-    att_dicts = H_mass | tau_pt | tau_eta | bjet_pt | bjet_mass | dR | HT
+    att_dicts = tau_pt | tau_eta | bjet_pt | bjet_mass | dR | HT | H_pt
+    if high_mbb:
+        att_dicts = att_dicts | High_Mbb_H_mass
+    else:
+        att_dicts = att_dicts | H_mass
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
     
@@ -193,26 +197,29 @@ class FakeUtil:
             group_df = df[df['group'] == group]
             cond_1 = group_df['LDTau_genflav'] >= 5
             cond_2 = group_df['SDTau_genflav'] >= 5
-            filtered_group = group_df[cond_1 | cond_2]
-            print(f"Total number of MC {group} events with real taus: {filtered_group['weight'].sum()}")
+            filtered_group = group_df[cond_1 & cond_2]
             filtered.append(filtered_group)
         # Combine filtered groups with unfiltered others
         return pd.concat(filtered + [other_df], ignore_index=True)
     
     @staticmethod
-    def keep_fakes(df) -> pd.DataFrame:
-        """Return a dataframe with only TTbar + DYJets fake tau events."""
-        ttbar_df = df[df['group'] == 'TTbar']
-        # Apply the condition only to TTbar group
-        cond_1 = ttbar_df['LDTau_genflav'] < 5
-        cond_2 = ttbar_df['SDTau_genflav'] < 5
-        filtered_ttbar = ttbar_df[cond_1 & cond_2]
-        dyjets_df = df[df['group'] == 'DYJets']
-        filtered_dyjets = dyjets_df[(dyjets_df['LDTau_genflav'] < 5) & (dyjets_df['SDTau_genflav'] < 5)]
-        print(f"Total number of MC TTbar events with fake taus: {filtered_ttbar['weight'].sum()}")
-        print(f"Total number of MC DYJets events with fake taus: {filtered_dyjets['weight'].sum()}")
-        return pd.concat([filtered_ttbar, filtered_dyjets], ignore_index=True)
-    
+    def keep_fakes(df, groups=['TTbar', 'DYJets']):
+        """Return a dataframe with fake tau events in specified groups and all other events unfiltered.
+        
+        Args:
+            df (pd.DataFrame): Input dataframe.
+            groups (list): List of group names to filter for fake taus.
+        """
+        filtered = []
+        for group in groups:
+            group_df = df[df['group'] == group]
+            cond_1 = group_df['LDTau_genflav'] < 5
+            cond_2 = group_df['SDTau_genflav'] < 5
+            filtered_group = group_df[cond_1 | cond_2]
+            filtered.append(filtered_group)
+        # Combine filtered groups with unfiltered others
+        return pd.concat(filtered, ignore_index=True)
+
     @staticmethod
     def count_real_taus(df, groups=['TTbar', 'DYJets']):
         """Return the number of MC events with real taus."""
@@ -225,8 +232,6 @@ class FakeUtil:
         fake_df = FakeUtil.keep_fakes(copy)
         
         real_tau_events = MCdf['weight'].sum()
-        logging.info(f"Total Number of MC events with real taus: {real_tau_events}")
-        
         # Display results in a table format
         
         table = Table(title="Real Tau Event Counts")
@@ -257,6 +262,8 @@ def analyze_taus(df, groups=['TTbar']):
     
     # Exclude data for MC analysis
     mc_copy = copy[copy['group'] != 'Data']
+    mc_events = mc_copy['weight'].sum()
+    logging.info(f"Total number of MC events: {mc_events}")
     
     # Get real tau events
     real_tau_df = FakeUtil.keep_real_taus(mc_copy, groups)
@@ -268,29 +275,27 @@ def analyze_taus(df, groups=['TTbar']):
     real_tau_events = real_tau_df['weight'].sum()
     fake_tau_events = fake_tau_df['weight'].sum()
     
-    logging.info(f"Total Number of MC events with real taus: {real_tau_events}")
-    logging.info(f"Total Number of MC events with fake taus: {fake_tau_events}")
-    
     # Display results in a comprehensive table
     table = Table(title="Tau Analysis Summary")
     table.add_column("Category", justify="left", style="cyan", no_wrap=True)
     table.add_column("Event Count", justify="right", style="magenta")
     table.add_column("Percentage", justify="right", style="green")
     
-    total_mc = real_tau_events + fake_tau_events
-    real_percentage = (real_tau_events / total_mc * 100) if total_mc > 0 else 0
-    fake_percentage = (fake_tau_events / total_mc * 100) if total_mc > 0 else 0
+    real_percentage = (real_tau_events / data_events * 100) if data_events > 0 else 0
+    fake_percentage = (fake_tau_events / data_events * 100) if data_events > 0 else 0
     
     table.add_row("Data Events", f"{data_events:.2f}", "N/A")
     table.add_row("MC Events with Real Taus", f"{real_tau_events:.2f}", f"{real_percentage:.1f}%")
     table.add_row("MC Events with Fake Taus", f"{fake_tau_events:.2f}", f"{fake_percentage:.1f}%")
-    table.add_row("Total MC Events", f"{total_mc:.2f}", "100.0%")
+    table.add_row("Total MC Events", f"{mc_events:.2f}", "100%")
+
     
     console = Console()
     console.print(table)
 
-    real_tau_df = pd.concat(real_tau_df, copy[copy['group'] == 'Data'], axis=0)
-    
+    real_tau_df = pd.concat([real_tau_df, copy[copy['group'] == 'Data']], axis=0)
+    logging.info(f"Groups in real tau dataframe: {real_tau_df['group'].unique()}")
+
     return real_tau_df, fake_tau_df
 
 def get_train_test(df_SS, df_OS, split_func):
@@ -334,6 +339,19 @@ def signal_id_level(df):
     mask_5 = df['LDTau_idvsmu'] >= 4 # Tight
     mask_6 = df['SDTau_idvsmu'] >= 4 # Tight
     return df[(mask_1) & (mask_2) & (mask_3) & (mask_4) & (mask_5) & (mask_6)]
+
+def select_ML_taus(df):
+    """Select events where one tau passes Medium WP and the other passes VLoose WP."""
+    mask_1 = df['LDTau_idvsjet'] >= 5 # Medium WP
+    mask_2 = df['SDTau_idvsjet'] >= 5 # Medium WP
+    mask_3 = df['LDTau_idvsjet'] >= 3 # VLoose 
+    mask_4 = df['SDTau_idvsjet'] >= 3 # VLoose
+    logging.info("Selecting events with one tau passing Medium WP and the other passing at least VLoose WP.")
+    data_events = len(df[df['group'] == 'Data'])
+    logging.info(f"Total number of events in data before selection: {data_events}")
+    mc_events = df[df['group'] != 'Data']['weight'].sum()
+    logging.info(f"Total number of MC events before selection: {mc_events}")
+    return df[(mask_1 | mask_2) & (mask_3 | mask_4)]
 
 prep_sign_rwgt = lambda df: keep_fake_ttbar(signal_id_level(df))
 
@@ -379,11 +397,11 @@ def load_and_plot(ori, tar, reweight_name):
 def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
     """Load the input dataframe, add extra features, split based on mode, and save the results."""
     input_df = pd.read_csv(input_name, low_memory=False)
-    input_df = add_extra_features(input_df)
     input_prefix = input_name.split('/')[-1].replace('.csv', '')
     if mode == 'OSSS':
+        if 'DiJet_mass' not in input_df.columns:
+            input_df = add_extra_features(input_df)
         os_df, ss_df, os_cutflow = ABCDUtil.split_dataframe(input_df, lambda df: df[df['OS'] == True])
-        logging.info(f"Total events in OS: {os_df[os_df['group'] == 'Data']['weight'].sum()}")
         logging.info(f"Total events in SS: {ss_df[ss_df['group'] == 'Data']['weight'].sum()}")
         logging.info(f"Total events in OS (MC): {os_df[os_df['group'] != 'Data']['weight'].sum()}")
         logging.info(f"Total events in SS (MC): {ss_df[ss_df['group'] != 'Data']['weight'].sum()}")
@@ -398,35 +416,50 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
         logging.info(f"SS dataframe saved to {pjoin(out_dir, f'{input_prefix}_SS.csv')}")
         logging.info(f"OS cutflow saved to {pjoin(out_dir, f'{input_prefix}_OS_cutflow.csv')}")
     elif mode == 'MBB':
-        mbb_cut = extra_kwargs.get('mbb_cut', 90)
+        if 'DiJet_mass' not in input_df.columns:
+            input_df = add_extra_features(input_df)
+        mbb_cut = extra_kwargs.get('mbb_cut', 160)
         filter_func = lambda df: df.copy()[df['DiJet_mass'] > mbb_cut]
-        high_mbb, low_mbb, high_cutflow = ABCDUtil.split_dataframe(input_df, filter_func)
+        high_mbb, _, high_cutflow = ABCDUtil.split_dataframe(input_df, filter_func)
         high_mbb.to_csv(pjoin(out_dir, f'{input_prefix}_highMbb.csv'), index=False)
         FileSysHelper.checkpath(pjoin(root_plt_dir, 'HIGH_MBB'))
-        plot_histograms(high_mbb, pjoin(root_plt_dir, 'HIGH_MBB'), region_name='High Mbb Region')
-        low_mbb.to_csv(pjoin(out_dir, f'{input_prefix}_lowMbb.csv'), index=False)
+        plot_histograms(high_mbb, pjoin(root_plt_dir, 'HIGH_MBB'), region_name='High Mbb Region', high_mbb=True)
         high_cutflow.to_csv(pjoin(out_dir, f'{input_prefix}_highMbb_cutflow.csv'), index=False)
-        FileSysHelper.checkpath(pjoin(root_plt_dir, 'LOW_MBB'))
-        plot_histograms(low_mbb, pjoin(root_plt_dir, 'LOW_MBB'), region_name='Low Mbb Region')
         logging.info(f"High Mbb dataframe saved to {pjoin(out_dir, f'{input_prefix}_highMbb.csv')}")
-        logging.info(f"Low Mbb dataframe saved to {pjoin(out_dir, f'{input_prefix}_lowMbb.csv')}")
         logging.info(f"High Mbb cutflow saved to {pjoin(out_dir, f'{input_prefix}_highMbb_cutflow.csv')}")
+    elif mode == "MLTAU":
+        ml_df = select_ML_taus(input_df)
+        data_evts = len(ml_df[ml_df['group'] == 'Data'])
+        mc_evts = ml_df[ml_df['group'] != 'Data']['weight'].sum()
+        logging.info(f"Total number of events in data after ML tau selection: {data_evts}")
+        logging.info(f"Total number of MC events after ML tau selection: {mc_evts}")
+        ml_df.to_csv(pjoin(out_dir, f'{input_prefix}_MLTaus.csv'), index=False)
+        FileSysHelper.checkpath(pjoin(root_plt_dir, 'ML_TAUS'))
+        logging.info(f"ML Tau dataframe saved to {pjoin(out_dir, f'{input_prefix}_MLTaus.csv')}")
     elif mode == 'REALTAUS':
         real_taus, fake_taus = analyze_taus(input_df)
         real_taus.to_csv(pjoin(out_dir, f'{input_prefix}_realTaus.csv'), index=False)
         fake_taus.to_csv(pjoin(out_dir, f'{input_prefix}_fakeTaus.csv'), index=False)
-        plot_histograms(real_taus, pjoin(root_plt_dir, 'REAL_TAUS'), region_name='Real Taus Region')
-        plot_histograms(fake_taus, pjoin(root_plt_dir, 'FAKE_TAUS'), region_name='Fake Taus Region')
+        plot_histograms(real_taus, pjoin(root_plt_dir, 'REAL_TAUS'), region_name='Data vs. MC (Real Taus Only)')
+    elif mode == 'VALIDATION':
+        if 'DiJet_mass' not in input_df.columns:
+            input_df = add_extra_features(input_df)
+        filter_func = lambda df: df.copy()[df['DiJet_mass'] < 80]
+        low_bb, _, cutflow = ABCDUtil.split_dataframe(input_df, filter_func)
+        low_bb.to_csv(pjoin(out_dir, f'{input_prefix}_lowbb.csv'), index=False)
+        plot_histograms(low_bb, pjoin(root_plt_dir, 'LOW_BB'), region_name='Low bb Region')
+        logging.info(f"Low bb dataframe saved to {pjoin(out_dir, f'{input_prefix}_lowbb.csv')}")
+        logging.info(f"Low bb cutflow saved to {pjoin(out_dir, f'{input_prefix}_lowbb_cutflow.csv')}")
     else:
         raise ValueError(f"Unsupported mode: {mode}. Choose either 'OSSS' or 'MBB'.")
 
 if __name__ == "__main__":
     parser = RichArgumentParser()
-    parser.add_argument('mode', choices=['OSSS', 'MBB', 'REALTAUS'], help="Mode of operation: OSSS for OS/SS analysis, MBB for DiJet-mass-based analysis, REALTAUS for real/fake tau analysis.")
+    parser.add_argument('mode', choices=['OSSS', 'MBB', 'REALTAUS', 'MLTAU', 'VALIDATION'], help="Mode of operation: OSSS for OS/SS analysis, MBB for DiJet-mass-based analysis, REALTAUS for real/fake tau analysis.")
     parser.add_argument('-i', '--input', required=True, help="Input filename containing data after HH-btag inference.")
     parser.add_argument('-o', '--output', required=True, help="Output directory to save the processed data.")
     parser.add_argument('-p', '--plot_dir', default=None, help="Directory to save plots. If not provided, no plots will be saved.")
-    parser.add_argument('--mbb_cut', type=float, default=120, help="Mbb cut value for MBB mode. Default is 120 GeV.")
+    parser.add_argument('--mbb_cut', type=float, default=160, help="Mbb cut value for MBB mode. Default is 120 GeV.")
     parser.add_argument('--quiet', action='store_true', help="Run in quiet mode without logging output to console.")
     args = parser.parse_args()
 
