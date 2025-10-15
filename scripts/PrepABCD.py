@@ -207,7 +207,7 @@ class FakeUtil:
             table.add_column("Count", style="magenta", justify="right")
             
             table.add_row("Total events in group", f"{total_events:.2f}")
-            table.add_row("Events with real taus", f"{real_tau_events:.2f}")
+            table.add_row("Events with real hadronic taus", f"{real_tau_events:.2f}")
             
             console = Console()
             console.print(table)
@@ -227,12 +227,21 @@ class FakeUtil:
         filtered = []
         for group in groups:
             group_df = df[df['group'] == group]
-            logging.info("Filtering for fake taus in group: {}".format(group))
-            logging.info("Total number of events in group {}: {}".format(group, group_df['weight'].sum()))
+            total_events = group_df['weight'].sum()
             cond_1 = group_df['LDTau_genflav'] < 5
             cond_2 = group_df['SDTau_genflav'] < 5
             filtered_group = group_df[cond_1 | cond_2]
-            logging.info("Number of events with fake taus in group {}: {}".format(group, filtered_group['weight'].sum()))
+            fake_tau_events = filtered_group['weight'].sum()
+            
+            table = Table(title=f"Fake Tau Filtering - {group}")
+            table.add_column("Metric", style="cyan")
+            table.add_column("Count", style="magenta", justify="right")
+            
+            table.add_row("Total events in group", f"{total_events:.2f}")
+            table.add_row("Events with fake hadronic taus", f"{fake_tau_events:.2f}")
+            
+            console = Console()
+            console.print(table)
             filtered.append(filtered_group)
         return pd.concat(filtered, ignore_index=True)
 
