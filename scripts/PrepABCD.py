@@ -213,11 +213,12 @@ class FakeUtil:
         filtered = []
         for group in groups:
             group_df = df[df['group'] == group]
+            logging.info("Filtering for fake taus in group: {}".format(group))
+            logging.info("Total number of events in group {}: {}".format(group, group_df['weight'].sum()))
             cond_1 = group_df['LDTau_genflav'] < 5
             cond_2 = group_df['SDTau_genflav'] < 5
             filtered_group = group_df[cond_1 | cond_2]
             filtered.append(filtered_group)
-        # Combine filtered groups with unfiltered others
         return pd.concat(filtered, ignore_index=True)
 
 def analyze_taus(df, groups=['TTbar']):
