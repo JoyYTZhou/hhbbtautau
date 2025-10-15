@@ -195,10 +195,13 @@ class FakeUtil:
         other_df = df[~df['group'].isin(groups)]
         for group in groups:
             group_df = df[df['group'] == group]
+            logging.info("Filtering for real taus in group: {}".format(group))
+            logging.info("Total number of events in group {}: {}".format(group, group_df['weight'].sum()))
             cond_1 = group_df['LDTau_genflav'] >= 5
             cond_2 = group_df['SDTau_genflav'] >= 5
             filtered_group = group_df[cond_1 & cond_2]
             filtered.append(filtered_group)
+            logging.info("Number of events with real taus in group {}: {}".format(group, filtered_group['weight'].sum()))
         # Combine filtered groups with unfiltered others
         return pd.concat(filtered + [other_df], ignore_index=True)
     
@@ -218,6 +221,7 @@ class FakeUtil:
             cond_1 = group_df['LDTau_genflav'] < 5
             cond_2 = group_df['SDTau_genflav'] < 5
             filtered_group = group_df[cond_1 | cond_2]
+            logging.info("Number of events with fake taus in group {}: {}".format(group, filtered_group['weight'].sum()))
             filtered.append(filtered_group)
         return pd.concat(filtered, ignore_index=True)
 
