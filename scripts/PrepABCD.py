@@ -56,6 +56,7 @@ def plot_histograms(df, plot_dir, region_name='', high_mbb=False):
     cp = CSVPlotter(outdir=plot_dir)
     from config.plotsetting import H_mass, tau_pt, tau_eta, bjet_pt, bjet_mass, dR, HT, H_pt, High_Mbb_H_mass
 
+
     att_dicts = tau_pt | tau_eta | bjet_pt | bjet_mass | dR | HT | H_pt
     if high_mbb:
         att_dicts = att_dicts | High_Mbb_H_mass
@@ -195,13 +196,23 @@ class FakeUtil:
         other_df = df[~df['group'].isin(groups)]
         for group in groups:
             group_df = df[df['group'] == group]
-            logging.info("Filtering for real taus in group: {}".format(group))
-            logging.info("Total number of events in group {}: {}".format(group, group_df['weight'].sum()))
+            total_events = group_df['weight'].sum()
             cond_1 = group_df['LDTau_genflav'] >= 5
             cond_2 = group_df['SDTau_genflav'] >= 5
             filtered_group = group_df[cond_1 & cond_2]
+            real_tau_events = filtered_group['weight'].sum()
+            
+            table = Table(title=f"Real Tau Filtering - {group}")
+            table.add_column("Metric", style="cyan")
+            table.add_column("Count", style="magenta", justify="right")
+            
+            table.add_row("Total events in group", f"{total_events:.2f}")
+            table.add_row("Events with real taus", f"{real_tau_events:.2f}")
+            
+            console = Console()
+            console.print(table)
+            
             filtered.append(filtered_group)
-            logging.info("Number of events with real taus in group {}: {}".format(group, filtered_group['weight'].sum()))
         # Combine filtered groups with unfiltered others
         return pd.concat(filtered + [other_df], ignore_index=True)
     
@@ -225,7 +236,7 @@ class FakeUtil:
             filtered.append(filtered_group)
         return pd.concat(filtered, ignore_index=True)
 
-def analyze_taus(df, groups=['TTbar']):
+def analyze_taus(df, groups=['TTbar', 'DYJets']):
     """Combined method that provides tau analysis with counts table and separated dataframes.
     
     Args:
