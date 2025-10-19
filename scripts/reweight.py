@@ -182,6 +182,12 @@ def train_and_reweight_multiclass(data_df_0, mc_df, data_df_1, features, n_epoch
     """
     Train a NN classifier for multi-class classification (Data vs MC1 vs MC2), 
     then compute reweighted event weights.
+    
+    
+    Return:
+        dict with:
+            "model"       : trained NN model
+            "w_reco_qcd"  : np.array of reweighted event weights for Data in region 0 to match Data in region 1
     """
     # 0) Prepare inputs for 3-class problem
     p0 = data_df_0[features].to_numpy().astype(np.float32)  
@@ -342,7 +348,7 @@ def SSDataToOSQCD(ss_df, os_df, out_dir, training_args, session_name=''):
     logging.info(f"Number of SS Data events: {len(ss_data)}")
     logging.info(f"Number of OS MC events: {os_mc['weight'].sum()}")
     logging.info(f"Number of OS Data events: {len(os_data)}")
-    os_mc, renorm_fac = normalize_mc(os_data, os_mc, feature='DiTau_mass')
+    os_mc, renorm_fac = normalize_mc(os_data, os_mc, feature='DiJet_pt')
 
     results_dict = train_and_reweight_multiclass(ss_data, os_mc, os_data, features_train, **training_args)
 
