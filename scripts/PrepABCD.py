@@ -56,6 +56,7 @@ def plot_histograms(df, plot_dir, region_name='', high_mbb=False):
     cp = CSVPlotter(outdir=plot_dir)
     from config.plotsetting import H_mass, tau_pt, tau_eta, bjet_pt, bjet_mass, dR, HT, H_pt, High_Mbb_H_mass
 
+
     att_dicts = tau_pt | tau_eta | bjet_pt | bjet_mass | dR | HT | H_pt
     if high_mbb:
         att_dicts = att_dicts | High_Mbb_H_mass
@@ -195,16 +196,29 @@ class FakeUtil:
         other_df = df[~df['group'].isin(groups)]
         for group in groups:
             group_df = df[df['group'] == group]
+            total_events = group_df['weight'].sum()
             cond_1 = group_df['LDTau_genflav'] >= 5
             cond_2 = group_df['SDTau_genflav'] >= 5
             filtered_group = group_df[cond_1 & cond_2]
+            real_tau_events = filtered_group['weight'].sum()
+            
+            table = Table(title=f"Real Tau Filtering - {group}")
+            table.add_column("Metric", style="cyan")
+            table.add_column("Count", style="magenta", justify="right")
+            
+            table.add_row("Total events in group", f"{total_events:.2f}")
+            table.add_row("Events with real hadronic taus", f"{real_tau_events:.2f}")
+            
+            console = Console()
+            console.print(table)
+            
             filtered.append(filtered_group)
         # Combine filtered groups with unfiltered others
         return pd.concat(filtered + [other_df], ignore_index=True)
     
     @staticmethod
     def keep_fakes(df, groups=['TTbar', 'DYJets']):
-        """Return a dataframe with fake tau events in specified groups and all other events unfiltered.
+        """Return a dataframe with only fake tau events in specified groups.
         
         Args:
             df (pd.DataFrame): Input dataframe.
@@ -213,40 +227,25 @@ class FakeUtil:
         filtered = []
         for group in groups:
             group_df = df[df['group'] == group]
+            total_events = group_df['weight'].sum()
             cond_1 = group_df['LDTau_genflav'] < 5
             cond_2 = group_df['SDTau_genflav'] < 5
             filtered_group = group_df[cond_1 | cond_2]
+            fake_tau_events = filtered_group['weight'].sum()
+            
+            table = Table(title=f"Fake Tau Filtering - {group}")
+            table.add_column("Metric", style="cyan")
+            table.add_column("Count", style="magenta", justify="right")
+            
+            table.add_row("Total events in group", f"{total_events:.2f}")
+            table.add_row("Events with fake hadronic taus", f"{fake_tau_events:.2f}")
+            
+            console = Console()
+            console.print(table)
             filtered.append(filtered_group)
-        # Combine filtered groups with unfiltered others
         return pd.concat(filtered, ignore_index=True)
 
-    @staticmethod
-    def count_real_taus(df, groups=['TTbar', 'DYJets']):
-        """Return the number of MC events with real taus."""
-        copy = df.copy()
-        data_events = copy[copy['group'] == 'Data']['weight'].sum()
-        logging.info(f"Total number of events in data: {data_events}")
-        
-        copy = copy[copy['group'] != 'Data']  # Exclude data
-        MCdf = FakeUtil.keep_real_taus(copy, groups)
-        fake_df = FakeUtil.keep_fakes(copy)
-        
-        real_tau_events = MCdf['weight'].sum()
-        # Display results in a table format
-        
-        table = Table(title="Real Tau Event Counts")
-        table.add_column("Category", justify="left", style="cyan", no_wrap=True)
-        table.add_column("Event Count", justify="right", style="magenta")
-        
-        table.add_row("Data Events", f"{data_events:.2f}")
-        table.add_row("MC Events with Real Taus", f"{real_tau_events:.2f}")
-        
-        console = Console()
-        console.print(table)
-        
-        return MCdf
-        
-def analyze_taus(df, groups=['TTbar']):
+def analyze_taus(df, groups=['TTbar', 'DYJets']):
     """Combined method that provides tau analysis with counts table and separated dataframes.
     
     Args:
@@ -454,7 +453,17 @@ def load_and_select(input_name, mode, out_dir, root_plt_dir, **extra_kwargs):
         raise ValueError(f"Unsupported mode: {mode}. Choose either 'OSSS' or 'MBB'.")
 
 if __name__ == "__main__":
-    parser = RichArgumentParser()
+    program_description = """
+    PrepABCD.py
+    Prepare data for ABCD method analysis by splitting into OS/SS or Mbb-based regions.
+    Usage examples:
+    python PrepABCD.py OSSS -i /path/to/input.csv -o /path
+    python PrepABCD.py MBB -i /path/to/input.csv -o /path --mbb_cut 160
+    python PrepABCD.py REALTAUS -i /path/to/input.csv -o /
+    python PrepABCD.py MLTAU -i /path/to/input.csv -o /
+    python PrepABCD.py VALIDATION -i /path/to/input.csv -o /
+    """
+    parser = RichArgumentParser(description=program_description)
     parser.add_argument('mode', choices=['OSSS', 'MBB', 'REALTAUS', 'MLTAU', 'VALIDATION'], help="Mode of operation: OSSS for OS/SS analysis, MBB for DiJet-mass-based analysis, REALTAUS for real/fake tau analysis.")
     parser.add_argument('-i', '--input', required=True, help="Input filename containing data after HH-btag inference.")
     parser.add_argument('-o', '--output', required=True, help="Output directory to save the processed data.")
