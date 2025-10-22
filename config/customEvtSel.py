@@ -16,6 +16,7 @@ def switch_selections(sel_name):
         'jetskim': jetSkim,
         'loosezerob': LooseTauZeroB,
         'looseoneb': LooseTauOneB,
+        'loosetwob': LooseTauTwoB,
         'mediumzerob': MediumTauZeroB,  # Alias for backward compatibility
         'mediumoneb': MediumTauOneB,
         'mediumtwob': MediumTauTwoB,
