@@ -1,6 +1,6 @@
 {
-    "ss_df": "/Users/yuntongzhou/Desktop/Dihiggszztt/training/trial_ss_data_qcd.csv",
-    "os_df": "/Users/yuntongzhou/Desktop/Dihiggszztt/output/Mtauzerob_infer_OS_realTaus.csv",
-    "output_dir": "/Users/yuntongzhou/Desktop/Dihiggszztt/plots/trialMultiClass",
+    "ss_df": "/Users/yuntongzhou/Desktop/Dihiggszztt/training/Adam_ss_data_qcd_1b.csv",
+    "os_df": "/Users/yuntongzhou/Desktop/Dihiggszztt/output/Mtauoneb_infer_lowbb_OS_realTaus.csv",
+    "output_dir": "/Users/yuntongzhou/Desktop/Dihiggszztt/plots/AdamMultiClass",
     "mode": "OriVSRwgt"
 }

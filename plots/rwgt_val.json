@@ -1,6 +1,0 @@
-{
-    "ss_df": "/Users/yuntongzhou/Desktop/Dihiggszztt/training/val_ss_data_qcd.csv",
-    "os_df": "/Users/yuntongzhou/Desktop/Dihiggszztt/output/Ltauoneb_infer_lowbb_MLTaus_OS_realTaus.csv",
-    "output_dir": "/Users/yuntongzhou/Desktop/Dihiggszztt/plots/valMultiClass",
-    "mode": "OriVSRwgt"
-}
