@@ -44,17 +44,17 @@ def plot_Rwgt_SSvsOS(ss_df, os_df, out_dir):
     reco_os_df = ss_df.copy()
     reco_os_df['weight'] = ss_df['weight_reco_os_fakes'].copy()
     logging.info(f"reco_os_df['weight'].sum(): {reco_os_df['weight'].sum()}")
-    
-    # Find events with weights less than -10
-    negative_events = reco_os_df[reco_os_df['weight'] < -10]
-    logging.info(f"Number of events with weight < -10: {len(negative_events)}")
+
+    # Find events with weights less than -20
+    negative_events = reco_os_df[reco_os_df['weight'] < -20]
+    logging.info(f"Number of events with weight < -20: {len(negative_events)}")
     if len(negative_events) > 0:
-        logging.info(f"Weights of events < -10: {negative_events['weight'].tolist()}")
+        logging.info(f"Weights of events < -20: {negative_events['weight'].tolist()}")
         if len(negative_events) > 10:
-            logging.warning("More than 10 events have weight < -10. Check the reweighting procedure carefully.")
+            logging.warning("More than 10 events have weight < -20. Check the reweighting procedure carefully.")
             logging.warning("Exiting...")
             exit(1)
-        # Remove events with weight < -10
+        # Remove events with weight < -20
         reco_os_df = reco_os_df[reco_os_df['weight'] >= -10]
         logging.info(f"Number of events in reco_os_df after filtering: {len(reco_os_df)}")
         logging.info(f"Total weight in reco_os_df after filtering: {reco_os_df['weight'].sum()}")
@@ -62,7 +62,7 @@ def plot_Rwgt_SSvsOS(ss_df, os_df, out_dir):
     os_data = os_df[os_df['group'] == 'Data'].copy()
     os_mc = os_df[os_df['group'] != 'Data'].copy()
     
-    # os_mc, renorm_fac = normalize_mc(os_data, os_mc, feature='DiJet_pt')
+    os_mc, renorm_fac = normalize_mc(os_data, os_mc, feature='DiTau_dR')
     
     os_df = data_subtract_mc(pd.concat([os_data, os_mc], ignore_index=True))
     logging.info(f"Number of events in OS QCD from subtraction: {os_df['weight'].sum()}")

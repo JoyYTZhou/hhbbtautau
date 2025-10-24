@@ -8,5 +8,6 @@
         "n_epochs": 150,
         "batch_size": 128,
         "lr": 0.003
-    }
+    },
+    "model_epoch": 160
 }
