@@ -2,7 +2,7 @@
     "Data": {
         "/Tau/Run2022C-22Sep2023-v1/NANOAOD": {
             "shortname": "TauC",
-            "nwgt": 25102989
+            "nwgt": 25875389
         },
         "/Tau/Run2022D-22Sep2023-v1/NANOAOD": {
             "shortname": "TauD",
@@ -10,7 +10,7 @@
         },
         "/Tau/Run2022E-22Sep2023-v1/NANOAOD": {
             "shortname": "TauE",
-            "nwgt": 28529515
+            "nwgt": 30522105
         },
         "/Tau/Run2022F-22Sep2023-v1/NANOAOD": {
             "shortname": "TauF",
