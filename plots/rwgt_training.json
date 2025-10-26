@@ -1,6 +1,6 @@
 {
     "ss_df": "/Users/yuntongzhou/Desktop/Dihiggszztt/training/Adam_ss_data_qcd_0b.csv",
     "os_df": "/Users/yuntongzhou/Desktop/Dihiggszztt/output/Mtauzerob_infer_OS_realTaus.csv",
-    "output_dir": "/Users/yuntongzhou/Desktop/Dihiggszztt/plots/AdamMultiClass/Training_no_renorm",
+    "output_dir": "/Users/yuntongzhou/Desktop/Dihiggszztt/plots/AdamMultiClass/Training",
     "mode": "OriVSRwgt"
 }

@@ -4,7 +4,7 @@
     "output_dir": "/Users/yuntongzhou/Desktop/Dihiggszztt/training",
     "mode": "SStoFakes",
     "session_name": "Adam",
-    "inference_only": false,
+    "inference_only": true,
     "training_args": {
     "n_epochs": 100,
         "batch_size": 128,

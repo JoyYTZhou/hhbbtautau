@@ -1,6 +1,6 @@
 {
     "ss_df": "/Users/yuntongzhou/Desktop/Dihiggszztt/training/Adam_ss_data_qcd_1b.csv",
     "os_df": "/Users/yuntongzhou/Desktop/Dihiggszztt/output/Mtauoneb_infer_lowbb_OS_realTaus.csv",
-    "output_dir": "/Users/yuntongzhou/Desktop/Dihiggszztt/plots/AdamMultiClass",
+    "output_dir": "/Users/yuntongzhou/Desktop/Dihiggszztt/plots/AdamMultiClass/inference_1b",
     "mode": "OriVSRwgt"
 }
