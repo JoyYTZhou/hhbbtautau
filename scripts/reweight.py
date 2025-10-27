@@ -14,9 +14,9 @@ from src.utils.statsutil import normalize_mc
 pjoin = os.path.join
 
 drop_kwds = ['Gen', 'weight_values', 'Weight_values', 'OS', 'group', 'gen', 'dataset', 'label', 'id', 'year', 'Tau_charge', 'X_num', 'weight', 'Tau', 'btag'] 
-features_train = ['Bjet1_pt', 'Bjet2_pt', 'Bjet1_mass', 'Bjet2_mass',
-                 'LDTau_pt', 'LDTau_mass', 'SDTau_pt', 'SDTau_mass', 
-                 'DiTau_pt', 'DiTau_eta', 'DiTau_phi', 'DiTau_mass', 'DiTau_dR', 
+features_train = ['Bjet1_pt', 'Bjet2_pt', 'Bjet1_mass', 'Bjet2_mass', 'Bjet1_eta', 'Bjet2_eta', 'Bjet1_phi', 'Bjet2_phi',
+                 'LDTau_pt', 'LDTau_mass', 'SDTau_pt', 'SDTau_mass', 'LDTau_eta', 'SDTau_eta', 'LDTau_phi', 'SDTau_phi',
+                 'DiTau_pt', 'DiTau_eta', 'DiTau_phi', 'DiTau_mass', 'DiTau_dR', 'HT',
                  'DiJet_dR', 'DiJet_mass', 'DiJet_pt', 'DiJet_eta', 'DiJet_phi',
                  'MET_pt', 'MET_phi']
 
@@ -24,7 +24,7 @@ features_train = ['Bjet1_pt', 'Bjet2_pt', 'Bjet1_mass', 'Bjet2_mass',
 # Define NN classifier
 # -----------------------
 class SimpleNN(nn.Module):
-    def __init__(self, d, p_dropout=0.3, num_classes=1):  # Add num_classes parameter
+    def __init__(self, d, p_dropout=0.2, num_classes=1):  # Add num_classes parameter
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(d, 64),

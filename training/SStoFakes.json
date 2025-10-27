@@ -3,11 +3,11 @@
     "os_input_csv": "/Users/yuntongzhou/Desktop/Dihiggszztt/output/Mtauzerob_infer_OS_realTaus.csv",
     "output_dir": "/Users/yuntongzhou/Desktop/Dihiggszztt/training",
     "mode": "SStoFakes",
-    "session_name": "Adam",
-    "inference_only": true,
+    "session_name": "Adam_wo_norm",
+    "inference_only": false,
     "training_args": {
-    "n_epochs": 100,
-        "batch_size": 128,
+    "n_epochs": 150,
+        "batch_size": 256,
         "lr": 0.003
     },
     "save_interval": 40,
